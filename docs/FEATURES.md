@@ -81,11 +81,11 @@
 - Notas: org `fjgf-dt`, project `javascript-nextjs` (renombrar a `snowboard-booking` en Sentry UI cuando proceda). DSN hardcoded en configs (público por diseño). `tunnelRoute: "/monitoring"` activado por el wizard — revisar colisión con middleware al introducirlo. Ruta de ejemplo borrable post-verificación.
 
 ### F-007 — Vercel Analytics + Speed Insights
-- Sprint: 0 · Estado: backlog · Prioridad: P1
+- Sprint: 0 · Estado: done · Prioridad: P1
 - Depende de: F-002
 - AC:
-  - [ ] `@vercel/analytics` y `@vercel/speed-insights` instalados
-  - [ ] Wrappers en `app/layout.tsx`
+  - [x] `@vercel/analytics` (`^2.0.1`) y `@vercel/speed-insights` (`^2.0.0`) instalados
+  - [x] `<Analytics />` y `<SpeedInsights />` montados en `app/layout.tsx` (imports `/next`)
 - Tests: N/A (verificación post-deploy en F-015).
 
 ### F-008 — Playwright + Vitest instalados, smoke test
