@@ -89,14 +89,14 @@
 - Tests: N/A (verificación post-deploy en F-015).
 
 ### F-008 — Playwright + Vitest instalados, smoke test
-- Sprint: 0 · Estado: backlog · Prioridad: P0
+- Sprint: 0 · Estado: done · Prioridad: P0
 - Depende de: F-002
 - AC:
-  - [ ] `npm i -D @playwright/test vitest @vitejs/plugin-react happy-dom`
-  - [ ] `playwright.config.ts` con baseURL configurable y proyecto chromium
-  - [ ] `vitest.config.ts` con `happy-dom` env
-  - [ ] `e2e/smoke.spec.ts` — `/` carga con HTTP 200 y muestra título esperado
-  - [ ] `npm run test:e2e` y `npm run test:unit` funcionan local
+  - [x] `npm i -D @playwright/test vitest @vitejs/plugin-react happy-dom`
+  - [x] `playwright.config.ts` con baseURL configurable y proyecto chromium
+  - [x] `vitest.config.ts` con `happy-dom` env
+  - [x] `e2e/smoke.spec.ts` — `/` carga con HTTP 200 y muestra título esperado
+  - [x] `npm run test:e2e` y `npm run test:unit` funcionan local
 - Tests: el propio smoke test corre verde.
 
 ### F-009 — `.claude/settings.local.json` con allowlist mínimo
