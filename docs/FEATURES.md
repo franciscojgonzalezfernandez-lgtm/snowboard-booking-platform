@@ -12,13 +12,13 @@
 ## Sprint 0 — Setup (antes del primer deploy a Vercel)
 
 ### F-001 — Init repo en GitHub
-- Sprint: 0 · Estado: in-progress · Prioridad: P0
+- Sprint: 0 · Estado: done · Prioridad: P0
 - Depende de: —
 - AC:
-  - [ ] `gh repo create` ejecutado, repo público o privado según preferencia del owner
-  - [ ] Branch protection en `main`: require PR + 1 approval (auto, con bot) + status checks (CI verde)
-  - [ ] `README.md` mínimo con título + enlace a `docs/PRD.md`
-  - [ ] `.gitignore` Next.js default + `.env*`
+  - [x] `gh repo create` ejecutado, repo público o privado según preferencia del owner
+  - [x] Branch protection en `main`: require PR + 1 approval (auto, con bot) + status checks (CI verde)
+  - [x] `README.md` mínimo con título + enlace a `docs/PRD.md`
+  - [x] `.gitignore` Next.js default + `.env*`
 - Tests: N/A (setup)
 - Notas: trabajar siempre en branch feature `f-XXX-slug`.
 
