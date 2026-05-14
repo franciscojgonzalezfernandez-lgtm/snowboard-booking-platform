@@ -33,13 +33,14 @@
 - Tests: smoke Playwright `/` → 200 (definido en F-008).
 
 ### F-003 — shadcn/ui base + tokens iniciales (Impeccable)
-- Sprint: 0 · Estado: backlog · Prioridad: P0
+- Sprint: 0 · Estado: done · Prioridad: P0
 - Depende de: F-002
 - AC:
-  - [ ] `npx shadcn@latest init` con preset configurado
-  - [ ] Fuente serif para display registrada (no Inter/Geist/DM Sans)
-  - [ ] Paleta inicial: low-saturation, alto contraste (ver CLAUDE.md "Design direction")
-  - [ ] Componentes mínimos instalados: `button`, `input`, `label`, `form`, `card`
+  - [x] `npx shadcn@latest init` con preset configurado (base-nova, neutral)
+  - [x] Fuente serif para display registrada — Cormorant Garamond (300/400/500/600) via `--font-display`
+  - [x] Paleta inicial: low-saturation warm neutral oklch(hue 85), alto contraste
+  - [x] Componentes mínimos instalados: `button`, `input`, `label`, `form`, `card`
+- Notas: `form.tsx` creado manualmente (base-nova no lo tiene en registry); `card` usa ring-1 no shadow (✓ CLAUDE.md).
 - Tests: N/A (visual review viene en F-026/F-027).
 
 ### F-004 — Prisma + Neon adapter + schema mínimo Better Auth
