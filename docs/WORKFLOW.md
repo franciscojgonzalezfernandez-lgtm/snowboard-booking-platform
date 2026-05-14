@@ -26,20 +26,47 @@ Workflow operativo para implementar features con subagentes. Léelo al inicio de
 
 Cada ticket de `FEATURES.md` vive en su propia branch contra `main`. Sin excepción, incluidos los tickets de setup.
 
-1. **Empezar limpio.** Antes del primer edit:
+1. **Empezar limpio — worktree por defecto.** Cada ticket se desarrolla en un worktree dedicado, no haciendo `checkout` sobre el repo principal. Esto evita stashes accidentales y permite tener varios tickets en paralelo sin perder estado.
    ```
    git fetch origin
-   git checkout main
-   git pull origin main
-   git checkout -b f-XXX-kebab-slug
+   git worktree add -b f-XXX-kebab-slug ../booking-platform.f-XXX origin/main
+   cd ../booking-platform.f-XXX
    ```
-2. **Commits progresivos.** `feat(f-XXX): …` para funcionalidad nueva, `chore(f-XXX): …` para config/docs/setup. Nunca `git add -A` — staging explícito por archivo o carpeta.
+   - Convención de ruta: hermana del repo principal, sufijo `.f-XXX`.
+   - Tras merge del PR, limpiar: `git worktree remove ../booking-platform.f-XXX && git branch -d f-XXX-kebab-slug`.
+   - Excepción: edits triviales al propio `WORKFLOW.md` / `CLAUDE.md` / `FEATURES.md` (meta-docs sin ticket) pueden ir en el repo principal sobre una branch corta — pero siguen necesitando branch + PR.
+2. **Commits progresivos y descriptivos.** Nunca `git add -A` — staging explícito por archivo o carpeta. Cada commit debe poder leerse aislado y dejar claro **qué cambió, por qué y cómo verificarlo**.
+
+   **Subject (línea 1, ≤72 chars):**
+   - Formato: `tipo(f-XXX): verbo + objeto concreto + motivación corta`.
+   - Tipos: `feat`, `fix`, `chore`, `refactor`, `docs`, `test`, `perf`, `style`.
+   - Ejemplos válidos:
+     - `feat(f-005): add Better Auth email+password to unblock student signup`
+     - `fix(f-007): clamp availability search to season window to prevent off-season bookings`
+     - `chore(f-002): pin Tailwind v4 + shadcn registry to lock design tokens`
+   - Ejemplos prohibidos: `update auth`, `fixes`, `wip`, `f-005 changes`.
+
+   **Body (obligatorio, separado del subject por línea en blanco):**
+   ```
+   Qué:
+   - <bullet por cambio relevante; nombrar archivos/módulos si ayuda a auditar>
+
+   Por qué:
+   - <motivación de negocio o técnica; enlazar al ticket/PRD/decisión>
+
+   Cómo verificar:
+   - <pasos manuales, comando de test, ruta a abrir, o "N/A: refactor sin cambio observable">
+
+   Refs: F-XXX[, PRD §X.Y][, Architecture §A.B][, ADR-NNN]
+   ```
+   - El footer `Refs:` siempre lleva al menos el ticket. PRD/Architecture/ADR cuando apliquen.
+   - Si el commit es trivial (typo, rename mecánico), el body puede ser una línea — pero el `Refs:` sigue siendo obligatorio.
 3. **Push + PR antes de marcar `done`.**
    ```
    git push -u origin f-XXX-kebab-slug
    gh pr create --base main --title "feat(f-XXX): <título>" --body "<summary + test plan + closes F-XXX>"
    ```
-4. **Higiene de branches.** Tras merge, borrar local (`git branch -d f-XXX-kebab-slug`). Nunca reutilizar la branch de un ticket anterior — aunque ya esté mergeada.
+4. **Higiene de worktrees y branches.** Tras merge: `git worktree remove ../booking-platform.f-XXX` + `git branch -d f-XXX-kebab-slug`. Nunca reutilizar el worktree ni la branch de un ticket anterior — aunque ya esté mergeada. Verificar con `git worktree list` que no queden huérfanos.
 
 Sin PR abierta, el ticket **no está done**, aunque el código funcione localmente.
 

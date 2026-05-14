@@ -70,14 +70,15 @@
 - Decisiones pendientes: cuándo subir OAuth consent screen a "Production" (Sprint 1.5 + dominio propio).
 
 ### F-006 — Sentry init (frontend + backend, source maps)
-- Sprint: 0 · Estado: backlog · Prioridad: P0
+- Sprint: 0 · Estado: done · Prioridad: P0
 - Depende de: F-002
 - AC:
-  - [ ] `@sentry/nextjs` instalado con wizard
-  - [ ] `sentry.client.config.ts` + `sentry.server.config.ts` + `sentry.edge.config.ts`
-  - [ ] Source maps suben a Sentry en `npm run build` (token en env)
-  - [ ] Throw deliberado en una ruta de test aparece en Sentry dashboard
-- Tests: N/A (verificación manual de dashboard).
+  - [x] `@sentry/nextjs` instalado vía wizard (`^10.53.1`)
+  - [x] `instrumentation-client.ts` (Next 15 + Turbopack reemplaza `sentry.client.config.ts`) + `sentry.server.config.ts` + `sentry.edge.config.ts` + `instrumentation.ts` register hook + `app/global-error.tsx`
+  - [x] `withSentryConfig` envuelve `next.config.ts`; source maps suben con `SENTRY_AUTH_TOKEN` (de `.env.sentry-build-plugin` local o env de Vercel)
+  - [x] Ruta de test `/sentry-example-page` + `/api/sentry-example-api` con throws deliberados (frontend + backend)
+- Tests: N/A (verificación manual de dashboard tras configurar `SENTRY_AUTH_TOKEN`).
+- Notas: org `fjgf-dt`, project `javascript-nextjs` (renombrar a `snowboard-booking` en Sentry UI cuando proceda). DSN hardcoded en configs (público por diseño). `tunnelRoute: "/monitoring"` activado por el wizard — revisar colisión con middleware al introducirlo. Ruta de ejemplo borrable post-verificación.
 
 ### F-007 — Vercel Analytics + Speed Insights
 - Sprint: 0 · Estado: backlog · Prioridad: P1

@@ -113,6 +113,41 @@ app/
 
 ---
 
+## Git workflow (full spec in `docs/WORKFLOW.md` §Ritual de git)
+
+**Worktrees por defecto.** Cada ticket vive en su propio worktree hermano del repo (`../booking-platform.f-XXX`), cortado desde `origin/main`. No hacer `checkout` que cambie la branch del repo principal salvo edits triviales a meta-docs.
+
+```
+git fetch origin
+git worktree add -b f-XXX-kebab-slug ../booking-platform.f-XXX origin/main
+```
+
+Tras merge: `git worktree remove ../booking-platform.f-XXX && git branch -d f-XXX-kebab-slug`.
+
+**Commits descriptivos.** Cada commit debe leerse aislado. No `wip`, no `update X`, no `fixes`.
+
+**Subject (≤72 chars):** `tipo(f-XXX): verbo + objeto concreto + motivación corta`
+- Good: `feat(f-005): add Better Auth email+password to unblock student signup`
+- Bad: `update auth`, `f-005 changes`
+
+**Body (obligatorio):**
+```
+Qué:
+- <archivos/módulos relevantes y qué cambió>
+
+Por qué:
+- <motivación de negocio o técnica>
+
+Cómo verificar:
+- <pasos manuales / comando de test / "N/A: refactor">
+
+Refs: F-XXX[, PRD §X.Y][, Architecture §A.B][, ADR-NNN]
+```
+
+Trivial commits (typo, rename mecánico) pueden llevar body de una línea, pero el footer `Refs:` con el ticket es siempre obligatorio. Staging explícito por archivo/carpeta — nunca `git add -A`.
+
+---
+
 ## Data and money
 
 - All monetary fields end in `Cents` (`totalPriceCents`, `amountCents`)
