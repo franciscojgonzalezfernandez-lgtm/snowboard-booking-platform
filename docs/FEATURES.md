@@ -56,17 +56,19 @@
 - Tests: `prisma db push` smoke en CI; Vitest test que importa `prisma` y hace `prisma.user.count()` (Vitest llega en F-008).
 
 ### F-005 — Better Auth completo (email+pwd + magicLink + Google OAuth)
-- Sprint: 0 · Estado: backlog · Prioridad: P0
+- Sprint: 0 · Estado: review · Prioridad: P0
 - Depende de: F-004
 - AC:
-  - [ ] `lib/auth/index.ts` con Better Auth configurado
-  - [ ] Email+password habilitado (`emailAndPassword.enabled=true`, `requireEmailVerification=false` por ahora — Resend llega en Sprint 1.5)
-  - [ ] Plugin `magicLink` registrado (sin envío real hasta Sprint 1.5)
-  - [ ] Provider `google` con `clientId`/`clientSecret` desde env
-  - [ ] `app/api/auth/[...all]/route.ts` con handler catch-all
-  - [ ] Google Cloud project creado; OAuth consent screen en "Testing"; callback registrado: `http://localhost:3000/api/auth/callback/google`
-  - [ ] Login con Google en dev funciona end-to-end (sesión persiste, `auth.api.getSession` la devuelve)
-- Tests: Playwright E2E `e2e/f-005-auth-google.spec.ts` — abrir `/login`, clic Google, mock OAuth o usar test account, verificar redirección + sesión.
+  - [x] `lib/auth/index.ts` con Better Auth configurado
+  - [x] Email+password habilitado (`emailAndPassword.enabled=true`, `requireEmailVerification=false` por ahora — Resend llega en Sprint 1.5)
+  - [x] Plugin `magicLink` registrado (sin envío real hasta Sprint 1.5)
+  - [x] Provider `google` con `clientId`/`clientSecret` desde env (`GOOGLE_ID`/`GOOGLE_SECRET`)
+  - [x] `app/api/auth/[...all]/route.ts` con handler catch-all
+  - [x] Página `/login` provisional con email+pwd, Google y magic-link (se moverá a `app/[locale]/(auth)/login/` cuando aterrice next-intl en Sprint 5)
+  - [ ] Google Cloud project creado; OAuth consent screen en "Testing"; callback registrado: `http://localhost:3000/api/auth/callback/google` *(acción del owner; bloquea el último AC)*
+  - [ ] Login con Google en dev funciona end-to-end (sesión persiste, `auth.api.getSession` la devuelve) *(depende del AC anterior)*
+- Tests: Playwright E2E `e2e/f-005-auth-google.spec.ts` — `/login` renderiza los tres métodos, signup crea sesión leíble por `/api/auth/get-session`, signin reusa credenciales, botón Google emite `POST /api/auth/sign-in/social {provider:"google"}`, magic-link muestra confirmación stub.
+- Notas: para correr el spec en local hace falta `DATABASE_URL` apuntando a una branch Neon limpia; el test de Google no necesita OAuth real (verifica wiring vía request intercept). Subir a `done` cuando el owner registre credenciales Google y el último AC pase.
 - Decisiones pendientes: cuándo subir OAuth consent screen a "Production" (Sprint 1.5 + dominio propio).
 
 ### F-006 — Sentry init (frontend + backend, source maps)
