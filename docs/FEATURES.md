@@ -44,15 +44,16 @@
 - Tests: N/A (visual review viene en F-026/F-027).
 
 ### F-004 — Prisma + Neon adapter + schema mínimo Better Auth
-- Sprint: 0 · Estado: backlog · Prioridad: P0
+- Sprint: 0 · Estado: done · Prioridad: P0
 - Depende de: F-002
 - AC:
-  - [ ] Neon project + branch `dev` creados, `DATABASE_URL` + `DIRECT_URL` en `.env.local`
-  - [ ] `npm i prisma @prisma/client @prisma/adapter-neon @neondatabase/serverless`
-  - [ ] `prisma/schema.prisma` con tablas Better Auth mínimas (user, session, account, verification) — ver Architecture §4.1
-  - [ ] `lib/db/index.ts` exporta `prisma` singleton con Neon adapter (ver ADR-002)
-  - [ ] `npx prisma migrate dev --name init` corre sin error
-- Tests: `prisma db push` smoke en CI; Vitest test que importa `prisma` y hace `prisma.user.count()`.
+  - [x] Neon project `booking-platform` (id `sweet-fog-90943639`) + branch `dev` (id `br-quiet-art-ajwht9s8`) creados; `DATABASE_URL` + `DIRECT_URL` en `.env`
+  - [x] `npm i prisma @prisma/client @prisma/adapter-neon @neondatabase/serverless ws` (Prisma v6.19.3 — v7 introduce breaking change en `datasource`)
+  - [x] `prisma/schema.prisma` con tablas Better Auth mínimas (User, Session, Account, Verification) + enums `Locale`/`Role` — ver Architecture §4.1, §4.3
+  - [x] `lib/db/index.ts` exporta `prisma` singleton con `PrismaNeon` adapter (ver ADR-002)
+  - [x] `npx prisma migrate dev --name init` corre limpio sobre branch `dev`
+- Notas: secrets en `.env` (no `.env.local`) porque Prisma CLI sólo autocarga `.env`; Next.js también lo lee. `.env` está en `.gitignore`. `.env.example` documenta nombres.
+- Tests: `prisma db push` smoke en CI; Vitest test que importa `prisma` y hace `prisma.user.count()` (Vitest llega en F-008).
 
 ### F-005 — Better Auth completo (email+pwd + magicLink + Google OAuth)
 - Sprint: 0 · Estado: backlog · Prioridad: P0
