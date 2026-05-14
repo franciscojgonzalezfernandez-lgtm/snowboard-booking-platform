@@ -303,6 +303,11 @@ enum CreditStatus      { ACTIVE, LOCKED, USED, EXPIRED }
 - **Pendiente:** review legal con bufete suizo antes de producción. Si invalida el modelo para cancelaciones operativas, v1.1 añade refund cash automático en ops cancellations.
 - **Trazabilidad:** `accountCredit.reason` distingue `USER_CANCEL` de `OPS_CANCEL` — facilita migración a futuro.
 
+### ADR-009 — Prisma pinned a v6.x (no v7)
+- **Contexto:** Prisma 7.x (released Q4 2025) mueve `datasource.url`/`directUrl` desde `schema.prisma` a un nuevo `prisma.config.ts`. La convención documentada en `CLAUDE.md` y la decisión de ADR-002 asumen el shape v6.
+- **Decisión:** pinear `prisma@^6` y `@prisma/client@^6` en `package.json`. Re-evaluar cuando v7 sea LTS y existan migration guides estables.
+- **Coste:** quedamos un mayor por detrás; sin breaking impact mientras Neon adapter siga soportando v6 (lo hace).
+
 ---
 
 ## Fin de Architecture.md

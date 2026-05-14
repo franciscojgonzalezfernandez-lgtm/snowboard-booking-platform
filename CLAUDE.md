@@ -173,6 +173,14 @@ app/
 
 ---
 
+## Environment variables
+
+- **Secrets viven en `.env`** (no `.env.local`). Razón: Prisma CLI sólo autocarga `.env`; Next.js también lo lee. Tener un solo archivo evita drift.
+- `.env` está en `.gitignore`. `.env.example` documenta los nombres requeridos (sin valores).
+- Variables actuales: `DATABASE_URL` (pooled Neon), `DIRECT_URL` (direct Neon, para migrations). Más llegarán en F-005 (`BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID/SECRET`) y F-018 (`STRIPE_*`).
+
+---
+
 ## Testing
 
 - **E2E tests with Playwright** for: happy-path booking, cancellation, credit redemption, auth flows

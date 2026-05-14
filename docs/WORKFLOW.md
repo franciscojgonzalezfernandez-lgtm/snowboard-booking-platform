@@ -45,6 +45,20 @@ Sin PR abierta, el ticket **no está done**, aunque el código funcione localmen
 
 ---
 
+## Dónde van las decisiones
+
+| Tipo | Archivo | Ejemplo |
+|---|---|---|
+| Stack / arquitectura | `docs/Architecture.md` (ADR) | "Pinear Prisma v6" |
+| Scope/notas de ticket | `docs/FEATURES.md` (Notas del ticket) | ".env no .env.local en F-004" |
+| Proceso / workflow | `docs/WORKFLOW.md` | "Branch por ticket" |
+| Constraint diario | `CLAUDE.md` | "Money in cents Int" |
+| Feedback Claude cross-sesión | `~/.claude/projects/.../memory/` | "Prefer terse PR bodies" |
+
+**Regla:** una decisión sin hogar = decisión olvidada. Si dudas, ADR.
+
+---
+
 ## Playwright per-feature (Sprint 1 en adelante)
 
 Todo ticket de Sprint ≥1 que toque UI o endpoint público debe:
