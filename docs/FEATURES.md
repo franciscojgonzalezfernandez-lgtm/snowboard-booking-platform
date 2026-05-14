@@ -23,13 +23,13 @@
 - Notas: trabajar siempre en branch feature `f-XXX-slug`.
 
 ### F-002 — Scaffold Next.js 15 + TypeScript strict + Tailwind v4
-- Sprint: 0 · Estado: backlog · Prioridad: P0
+- Sprint: 0 · Estado: done · Prioridad: P0
 - Depende de: F-001
 - AC:
-  - [ ] `create-next-app` con App Router + TS + Tailwind v4 + alias `@/*`
-  - [ ] `tsconfig.json` con `"strict": true` y `"noUncheckedIndexedAccess": true`
-  - [ ] `npm run dev` sirve `/` con HTTP 200
-  - [ ] `npm run build` corre limpio
+  - [x] `create-next-app` con App Router + TS + Tailwind v4 + alias `@/*`
+  - [x] `tsconfig.json` con `"strict": true` y `"noUncheckedIndexedAccess": true`
+  - [x] `npm run dev` sirve `/` con HTTP 200
+  - [x] `npm run build` corre limpio
 - Tests: smoke Playwright `/` → 200 (definido en F-008).
 
 ### F-003 — shadcn/ui base + tokens iniciales (Impeccable)
