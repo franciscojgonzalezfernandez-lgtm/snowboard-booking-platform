@@ -22,6 +22,29 @@ Workflow operativo para implementar features con subagentes. Léelo al inicio de
 
 ---
 
+## Ritual de git (por ticket — OBLIGATORIO)
+
+Cada ticket de `FEATURES.md` vive en su propia branch contra `main`. Sin excepción, incluidos los tickets de setup.
+
+1. **Empezar limpio.** Antes del primer edit:
+   ```
+   git fetch origin
+   git checkout main
+   git pull origin main
+   git checkout -b f-XXX-kebab-slug
+   ```
+2. **Commits progresivos.** `feat(f-XXX): …` para funcionalidad nueva, `chore(f-XXX): …` para config/docs/setup. Nunca `git add -A` — staging explícito por archivo o carpeta.
+3. **Push + PR antes de marcar `done`.**
+   ```
+   git push -u origin f-XXX-kebab-slug
+   gh pr create --base main --title "feat(f-XXX): <título>" --body "<summary + test plan + closes F-XXX>"
+   ```
+4. **Higiene de branches.** Tras merge, borrar local (`git branch -d f-XXX-kebab-slug`). Nunca reutilizar la branch de un ticket anterior — aunque ya esté mergeada.
+
+Sin PR abierta, el ticket **no está done**, aunque el código funcione localmente.
+
+---
+
 ## Playwright per-feature (Sprint 1 en adelante)
 
 Todo ticket de Sprint ≥1 que toque UI o endpoint público debe:
@@ -78,6 +101,8 @@ Skills declarados en `CLAUDE.md` pero no auto-activos: `taste`, `ui-ux-pro-max`.
 
 ## Antes de cada PR a `main`
 
+- [ ] Branch es `f-XXX-kebab-slug` cortada desde `main` actualizado — no piggyback sobre branch de ticket previo.
+- [ ] PR abierta contra `main` con título `feat(f-XXX): <título>` (o `chore(f-XXX): …`).
 - [ ] Tests verdes en CI (lint + typecheck + vitest + playwright smoke).
 - [ ] Si toca UI: review con skill `impeccable`.
 - [ ] Si toca auth/pagos/webhooks/cron: review con skill `security-review`.
