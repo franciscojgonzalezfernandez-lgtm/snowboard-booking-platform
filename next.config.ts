@@ -1,6 +1,9 @@
 import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
 import path from "path";
+
+const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 const nextConfig: NextConfig = {
   turbopack: {
@@ -8,7 +11,10 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
+// withNextIntl wraps first so the next-intl plugin sees the raw nextConfig;
+// withSentryConfig wraps last so Sentry's runtime hooks land on the final
+// resolved config object.
+export default withSentryConfig(withNextIntl(nextConfig), {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
