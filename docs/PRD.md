@@ -494,6 +494,20 @@ Ver Diagrama 4 (Estructura de páginas públicas + home) en el documento de disc
 - CI/CD básico (Vercel deploy preview en PRs)
 - CLAUDE.md y skills (Impeccable + Playwright) configuradas
 
+### Sprint 0.5 — Home + Login visibles (pre-Sprint 1, repriorización)
+
+> Pulled forward from Sprint 5 so the owner can manually validate sessions, locale routing and brand direction before the booking engine work begins. Out of scope: full marketing landing (still Sprint 5), booking wizard, instructor/admin views.
+
+- Reprioritization in `FEATURES.md` (F-028)
+- Reset `app/globals.css` to a neutral baseline + drop the placeholder Cormorant Garamond import (F-028b) so the design phase isn't biased
+- Design exploration: 3 greenfield HTML hi-fi mockups (home + login) via `huashu-design`; owner picks one (F-029)
+- Design tokens + `docs/design-system.md` via `impeccable` (oklch palette, type scale, spacing, motion) + fonts reintroduced in `app/layout.tsx` (F-030)
+- `next-intl` scaffolding: `[locale]` segment, `middleware.ts`, `messages/{en,de,es}.json` (F-031). English slugs (`/en/login`, `/de/login`, `/es/login`); translated slugs deferred to Sprint 5 via `pathnames` config
+- Home page minimal en `app/[locale]/page.tsx` × 3 locales — hero + "Book a lesson" CTA + Sign in + language switcher (F-032)
+- Login moved to `app/[locale]/login/` × 3 locales, auth wiring (better-auth client, `auth.api.getSession`) intact (F-033)
+- Playwright E2E: home + login × 3 locales, language switcher, redirect-on-session (F-034)
+- Cross-ref Section 10 (route table) — final URLs land here
+
 ### Sprint 1 — Core booking engine (semanas 2-3)
 - `lib/booking-engine/` con algoritmo availability y tests unitarios completos
 - Modelo de datos completo (todas las tablas + seed data: 1 instructor = yo, 1 season activa)
@@ -522,13 +536,13 @@ Ver Diagrama 4 (Estructura de páginas públicas + home) en el documento de disc
 - Email de notificación a instructor en cancelaciones
 
 ### Sprint 5 — Landing y SEO (semanas 9-10)
-- Home con estética editorial (estilo Impeccable mode "brand")
+- Home editorial completa (sections, instructor teaser, etc.) — la home **minimal** ya existe desde Sprint 0.5 (F-032); aquí se expande con la narrativa editorial
 - Página de instructores y perfiles individuales
 - Página de precios
 - Blog MDX con primeros 2-3 posts
 - Páginas estáticas: sobre, contacto, FAQ, T&C, privacidad
 - SEO completo: sitemap dinámico, structured data, hreflang, OG images
-- next-intl con 3 locales (EN, DE, ES)
+- next-intl ya scaffolded en Sprint 0.5 (F-031); aquí se añaden **slugs traducidos** vía `pathnames` (`/es/iniciar-sesion`, `/de/anmelden`, etc.) y mensajes para el resto del producto
 
 ### Sprint 6 — Polish y QA (semanas 11-12)
 - E2E tests Playwright para flujos críticos (happy path + cancelación + crédito)

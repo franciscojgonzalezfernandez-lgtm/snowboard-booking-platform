@@ -324,6 +324,117 @@
 
 ---
 
+## Sprint 0.5 — Home + Login visibles (pre-Sprint 1, repriorización)
+
+> Pulled forward from Sprint 5 so the owner can manually validate sessions, locale routing, and brand direction before the booking engine work begins. One branch + PR per ticket per memory rule.
+
+### F-028 — Reprioritize PRD §12 + FEATURES backlog
+
+- Sprint: 0.5 · Estado: review · Prioridad: P0
+- Depende de: F-011
+- AC:
+  - [x] `docs/PRD.md` §12 incluye "Sprint 0.5" entre Sprint 0 y Sprint 1 cubriendo F-028..F-034
+  - [x] `docs/PRD.md` §12 Sprint 5 actualiza para reflejar que home minimal + i18n scaffolding ya existen desde Sprint 0.5
+  - [x] `docs/FEATURES.md` añade tickets F-028..F-034 con AC binarios
+  - [ ] PR mergeado a `main`
+- Tests: N/A (docs only).
+- Notas: rama `f-028-repriorize-docs`. No toca código.
+
+### F-028b — Reset `app/globals.css` + drop Cormorant baseline
+
+- Sprint: 0.5 · Estado: backlog · Prioridad: P0
+- Depende de: F-028
+- AC:
+  - [ ] `app/globals.css` colapsado a baseline neutro: blanco/casi-negro, sin warm hue, sin chart palette. Nombres de variables shadcn preservados (background, foreground, primary, secondary, muted, accent, destructive, border, input, ring, popover, card, sidebar*, chart-1..5, radius)
+  - [ ] `app/layout.tsx` elimina import de `Cormorant_Garamond` y la variable `--font-display` queda sin asignar (el override de F-030 reintroducirá lo que toque)
+  - [ ] `npm run build` corre limpio
+  - [ ] `/login` carga sin errores y los primitives shadcn renderizan (botón, input) — visual "feo pero funcional" es aceptable; F-030 viene después
+- Tests: smoke Playwright existente sigue verde en `/`.
+- Notas: rama `f-028b-reset-design-baseline`. Acto deliberado de borrado — no se reintroduce nada estético aquí.
+
+### F-029 — Design exploration: 3 hi-fi mockups (huashu-design)
+
+- Sprint: 0.5 · Estado: backlog · Prioridad: P0
+- Depende de: F-028b
+- AC:
+  - [ ] `docs/design-exploration/variant-A/index.html`, `variant-B/index.html`, `variant-C/index.html` — cada uno cubre **home + login** del producto, con su propia paleta, tipografía, tono editorial. Greenfield (no anclar al placeholder warm-neutral previo)
+  - [ ] `docs/design-exploration/README.md` — tabla de 1 página: por variante, su filosofía (ej. Pentagram-editorial / Field.io alpine-motion / Kenya Hara Swiss-minimal o lo que proponga el advisor), paleta hex/oklch, type pairing, tono
+  - [ ] Owner elige una variante; el README anota la elección al final ("Chosen: Variant X — date")
+- Tests: visual inspection en navegador.
+- Notas: rama `f-029-design-exploration`. Usa skill `huashu-design` modo "design direction advisor". No toca `app/*` aún.
+
+### F-030 — Design tokens + design-system.md (impeccable)
+
+- Sprint: 0.5 · Estado: backlog · Prioridad: P0
+- Depende de: F-029
+- AC:
+  - [ ] `app/globals.css` reescrito con tokens de la variante elegida (oklch values reales)
+  - [ ] `app/layout.tsx` reintroduce las fuentes de la variante elegida (display + body o lo que aplique), wired vía `next/font` y variables CSS
+  - [ ] `docs/design-system.md` — tabla concisa: paleta (token name + oklch + uso), type scale (display/h1..h4/body/small con sizes y line-heights), spacing scale, radius scale, motion tokens (durations/easings)
+  - [ ] `npm run build` corre limpio
+  - [ ] Visual review por skill `impeccable` antes de marcar done
+- Tests: Playwright screenshot de `/login` y `/` confirma que tokens se aplican (no es regresión visual, es smoke).
+- Notas: rama `f-030-design-tokens`. Usa skill `impeccable`.
+
+### F-031 — `next-intl` scaffolding ([locale] + middleware + messages)
+
+- Sprint: 0.5 · Estado: backlog · Prioridad: P0
+- Depende de: F-030
+- AC:
+  - [ ] `npm i next-intl` instalado
+  - [ ] `i18n/routing.ts` con `defineRouting({ locales: ['en','de','es'], defaultLocale: 'en' })`
+  - [ ] `i18n/request.ts` con `getRequestConfig` cargando `messages/{locale}.json`
+  - [ ] `middleware.ts` en root con `createMiddleware(routing)`. Matcher excluye `/api/*` (crítico para better-auth catch-all), `/_next`, `/sentry-example-page`, `/api/sentry-example-api`, assets estáticos
+  - [ ] `next.config.ts` envuelve config con `withNextIntl(routing)` **antes** de `withSentryConfig`
+  - [ ] `messages/en.json`, `messages/de.json`, `messages/es.json` con namespaces vacíos (`home: {}`, `login: {}`, `nav: {}`) — F-032/F-033 los pueblan
+  - [ ] `app/[locale]/layout.tsx` creado con `<html lang={locale}>`, `NextIntlClientProvider`, `setRequestLocale(locale)`
+  - [ ] `app/layout.tsx` actualizado: elimina `<html lang="en">` y `<body>`-wrap (esos viven en `[locale]/layout`); mantiene Analytics + SpeedInsights
+  - [ ] Visitar `/` redirige a `/en` (default locale); `/de` y `/es` rinden con su `<html lang>` correcto
+  - [ ] `/api/auth/get-session` sigue respondiendo (verificación de matcher de middleware)
+- Tests: Playwright API `/api/auth/get-session` devuelve 200; smoke en `/en`, `/de`, `/es`.
+- Notas: rama `f-031-next-intl`. No incluye UI nueva — solo plumbing.
+
+### F-032 — Home page minimal × 3 locales
+
+- Sprint: 0.5 · Estado: backlog · Prioridad: P0
+- Depende de: F-031
+- AC:
+  - [ ] `app/[locale]/page.tsx` con hero (headline + sub-copy + CTA primario "Book a lesson" → `/${locale}/reservar` placeholder + secundario "Sign in" → `/${locale}/login`)
+  - [ ] `app/components/LanguageSwitcher.tsx` (client) usando `useLocale()` + `usePathname()` + `useRouter()` de `next-intl`; preserva path al cambiar locale
+  - [ ] Nav header con logo placeholder + `LanguageSwitcher` + "Sign in" link
+  - [ ] `messages/{en,de,es}.json` namespace `home` y `nav` poblados (headline, sub, CTAs)
+  - [ ] `app/page.tsx` (root) eliminado o reemplazado por redirect a default locale (next-intl middleware ya lo cubre; eliminar para evitar duplicación)
+- Tests: Playwright E2E (cubierto por F-034) — cada locale renderiza copy correcto, switcher cambia URL+copy, CTAs llevan a path con locale.
+- Notas: rama `f-032-home`. Imágenes: usar gradient/solid color placeholder o foto temática genérica de Unsplash (license-free); D-LOGO sigue blocking para Sprint 5.
+
+### F-033 — Move login to `app/[locale]/login/` + translate strings
+
+- Sprint: 0.5 · Estado: backlog · Prioridad: P0
+- Depende de: F-031
+- AC:
+  - [ ] `app/[locale]/login/page.tsx` (server component) con `auth.api.getSession({ headers: await headers() })`; si sesión, `redirect(\`/\${locale}\`)`; copy traducido (heading, sub, terms link)
+  - [ ] `app/[locale]/login/login-form.tsx` (client) usa `useTranslations('login')` para labels (email, password, name), tab labels (sign in / sign up), button copy (sign in / create account / continue with Google / email me a magic link), magic-sent confirmation, error fallback
+  - [ ] `callbackURL` de `signIn.social` y `signIn.magicLink` pasa a `/${locale}` (no `/`)
+  - [ ] `messages/{en,de,es}.json` namespace `login` poblado
+  - [ ] `app/login/page.tsx` y `app/login/login-form.tsx` eliminados
+  - [ ] Auth wiring intacto: `authClient.signIn.email`, `signUp.email`, `signIn.social({ provider: 'google' })`, `signIn.magicLink` sin cambios
+- Tests: cubierto por F-034.
+- Notas: rama `f-033-login-i18n`. Google OAuth callback (`/api/auth/callback/google`) en Google Cloud Console NO cambia — sigue sin locale prefix.
+
+### F-034 — Playwright E2E: home + login × 3 locales
+
+- Sprint: 0.5 · Estado: backlog · Prioridad: P0
+- Depende de: F-032, F-033
+- AC:
+  - [ ] `e2e/f-005-auth-google.spec.ts` actualizado: paths `/login` → `/en/login`; quick check en `/de/login` y `/es/login` renderiza los 3 métodos
+  - [ ] `e2e/f-032-home-locales.spec.ts` nuevo: `/`, `/en`, `/de`, `/es` rinden; H1 distinto por locale; language switcher rota EN→DE→ES; CTAs incluyen locale en href
+  - [ ] `e2e/f-033-login-locales.spec.ts` nuevo: labels traducidas por locale (match `messages/{locale}.json`); tab signin↔signup funciona; redirect-on-session va a `/${locale}` (no `/`)
+  - [ ] `npm run test:e2e` corre verde
+- Tests: las propias suites.
+- Notas: rama `f-034-e2e-locales`.
+
+---
+
 ## Sprints 2-6 — Bullets gruesos (desglose al cerrar Sprint 1)
 
 ### Sprint 2 — Auth + Pagos (semanas 4-5)
@@ -356,13 +467,13 @@
 
 ### Sprint 5 — Landing + SEO (semanas 9-10)
 
-- Home editorial (skill `impeccable` mode "brand").
+- Home editorial completa (sections, instructor teaser, narrative) — la home **minimal** ya existe desde F-032 (Sprint 0.5); aquí se expande.
 - Página de instructores + perfiles individuales.
 - Página de precios.
 - Blog MDX (2-3 posts iniciales).
 - Estáticas: sobre, contacto, FAQ, T&C, privacidad.
 - SEO completo: sitemap dinámico con hreflang, structured data Schema.org/LocalBusiness, OG images dinámicas, robots.txt.
-- next-intl con 3 locales completados (mensajes JSON, slugs traducidos).
+- next-intl ya scaffolded en F-031 (Sprint 0.5); aquí se añaden **slugs traducidos** vía `pathnames` (`/es/iniciar-sesion`, `/de/anmelden`, etc.) y mensajes para el resto del producto.
 - **Decisión pendiente:** logo, hero photography, Place ID Google Business.
 
 ### Sprint 6 — Polish + QA (semanas 11-12)
