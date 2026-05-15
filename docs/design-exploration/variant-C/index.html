@@ -1,0 +1,846 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Variant C — Aman quiet-luxury · Snowboard School</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300..600;1,300..500&family=Inter:wght@200;300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0e0e0c;
+        --bg-card: #16161300;
+        --bg-veil: #1a1815;
+        --ink: #f2ede4;
+        --ink-soft: #c8c2b6;
+        --mute: #8a7e6e;
+        --hairline: rgba(242, 237, 228, 0.12);
+        --hairline-strong: rgba(242, 237, 228, 0.22);
+        --bronze: #b8845f;
+        --bronze-soft: #8d6644;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Inter", system-ui, -apple-system, sans-serif;
+        font-size: 16px;
+        line-height: 1.55;
+        font-weight: 300;
+        letter-spacing: 0.005em;
+        -webkit-font-smoothing: antialiased;
+      }
+      body {
+        background-image: radial-gradient(
+          ellipse at top right,
+          rgba(184, 132, 95, 0.06),
+          transparent 60%
+        );
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .container {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 36px;
+      }
+
+      /* —— nav —— */
+      .nav {
+        padding: 28px 0 24px;
+        position: relative;
+        z-index: 10;
+      }
+      .nav-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .brand {
+        font-family: "Playfair Display", "Times New Roman", serif;
+        font-weight: 400;
+        font-style: italic;
+        font-size: 22px;
+        letter-spacing: 0.01em;
+      }
+      .brand .bronze {
+        color: var(--bronze);
+        font-style: normal;
+        margin: 0 4px;
+      }
+      .nav-links {
+        display: none;
+        gap: 38px;
+      }
+      @media (min-width: 820px) {
+        .nav-links {
+          display: flex;
+        }
+      }
+      .nav-links a {
+        font-size: 12px;
+        font-weight: 300;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+        transition: 200ms;
+      }
+      .nav-links a:hover {
+        color: var(--bronze);
+      }
+      .nav-right {
+        display: flex;
+        align-items: center;
+        gap: 32px;
+      }
+      .lang {
+        display: flex;
+        gap: 14px;
+        font-size: 11px;
+        font-weight: 300;
+        letter-spacing: 0.28em;
+        color: var(--mute);
+      }
+      .lang span {
+        cursor: pointer;
+      }
+      .lang span.active {
+        color: var(--bronze);
+      }
+      .nav-signin {
+        font-family: "Playfair Display", serif;
+        font-style: italic;
+        font-size: 14px;
+        color: var(--bronze);
+        border-bottom: 1px solid var(--bronze-soft);
+        padding-bottom: 3px;
+      }
+
+      /* —— hero: cinematic full-bleed —— */
+      .hero {
+        position: relative;
+        min-height: 100vh;
+        max-height: 1080px;
+        display: flex;
+        align-items: flex-end;
+        overflow: hidden;
+        margin-top: -90px;
+        padding-top: 90px;
+      }
+      .hero-img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.62;
+        filter: contrast(1.05) saturate(0.92);
+      }
+      .hero-veil {
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(
+            to bottom,
+            rgba(14, 14, 12, 0.55) 0%,
+            rgba(14, 14, 12, 0.1) 35%,
+            rgba(14, 14, 12, 0.7) 80%,
+            rgba(14, 14, 12, 1) 100%
+          ),
+          radial-gradient(
+            ellipse at center top,
+            rgba(184, 132, 95, 0.12),
+            transparent 50%
+          );
+      }
+      .hero-content {
+        position: relative;
+        z-index: 2;
+        padding: 0 0 120px;
+        width: 100%;
+      }
+      .hero-eyebrow {
+        font-size: 11px;
+        font-weight: 400;
+        letter-spacing: 0.42em;
+        text-transform: uppercase;
+        color: var(--bronze);
+        margin-bottom: 32px;
+        display: inline-flex;
+        align-items: center;
+        gap: 18px;
+      }
+      .hero-eyebrow::before {
+        content: "";
+        width: 36px;
+        height: 1px;
+        background: var(--bronze);
+      }
+      .hero h1 {
+        font-family: "Playfair Display", serif;
+        font-weight: 300;
+        font-size: clamp(48px, 7vw, 96px);
+        line-height: 1.04;
+        letter-spacing: -0.015em;
+        margin-bottom: 36px;
+        max-width: 900px;
+        text-wrap: balance;
+      }
+      .hero h1 em {
+        font-style: italic;
+        font-weight: 400;
+        color: var(--bronze);
+      }
+      .hero-sub {
+        font-size: 17px;
+        line-height: 1.55;
+        max-width: 540px;
+        margin-bottom: 48px;
+        color: var(--ink-soft);
+        font-weight: 300;
+      }
+      .hero-cta {
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .btn {
+        font-family: "Inter", sans-serif;
+        font-weight: 400;
+        font-size: 12px;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        padding: 18px 36px;
+        cursor: pointer;
+        transition: 240ms ease;
+        border: 1px solid var(--bronze);
+        background: transparent;
+        color: var(--bronze);
+      }
+      .btn:hover {
+        background: var(--bronze);
+        color: var(--bg);
+      }
+      .btn-filled {
+        background: var(--bronze);
+        color: var(--bg);
+      }
+      .btn-filled:hover {
+        background: var(--bronze-soft);
+        color: var(--bg);
+        border-color: var(--bronze-soft);
+      }
+      .btn-link {
+        background: none;
+        border: none;
+        color: var(--ink);
+        font-family: "Playfair Display", serif;
+        font-style: italic;
+        font-size: 16px;
+        letter-spacing: 0.01em;
+        text-transform: none;
+        padding: 0;
+        border-bottom: 1px solid var(--hairline-strong);
+        padding-bottom: 4px;
+      }
+      .btn-link:hover {
+        color: var(--bronze);
+        border-bottom-color: var(--bronze);
+      }
+
+      /* —— hero feature row —— */
+      .hero-feature {
+        position: relative;
+        z-index: 2;
+        padding-bottom: 64px;
+      }
+      .feature-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+        border-top: 1px solid var(--hairline);
+        padding-top: 32px;
+      }
+      @media (min-width: 720px) {
+        .feature-row {
+          grid-template-columns: repeat(3, 1fr);
+          gap: 48px;
+        }
+      }
+      .feature-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .feature-cell .num {
+        font-family: "Playfair Display", serif;
+        font-style: italic;
+        font-size: 14px;
+        color: var(--bronze);
+        margin-bottom: 4px;
+      }
+      .feature-cell h4 {
+        font-family: "Playfair Display", serif;
+        font-weight: 300;
+        font-size: 22px;
+        line-height: 1.25;
+        margin-bottom: 6px;
+        color: var(--ink);
+      }
+      .feature-cell p {
+        font-size: 14px;
+        color: var(--ink-soft);
+        line-height: 1.55;
+      }
+
+      /* —— testimonial —— */
+      .testimonial {
+        padding: 140px 0;
+        text-align: center;
+        position: relative;
+      }
+      .testimonial::before {
+        content: "“";
+        position: absolute;
+        top: 60px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-family: "Playfair Display", serif;
+        font-size: 220px;
+        line-height: 1;
+        color: var(--bronze);
+        opacity: 0.22;
+        pointer-events: none;
+      }
+      .testimonial blockquote {
+        font-family: "Playfair Display", serif;
+        font-weight: 300;
+        font-style: italic;
+        font-size: clamp(26px, 3.4vw, 40px);
+        line-height: 1.35;
+        max-width: 780px;
+        margin: 0 auto 36px;
+        color: var(--ink);
+        letter-spacing: -0.005em;
+        text-wrap: pretty;
+        position: relative;
+      }
+      .testimonial .attrib {
+        font-size: 11px;
+        font-weight: 400;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: var(--mute);
+      }
+      .testimonial .attrib span.bronze {
+        color: var(--bronze);
+      }
+
+      /* —— login —— */
+      .login {
+        padding: 120px 0 140px;
+        background: linear-gradient(
+            180deg,
+            rgba(184, 132, 95, 0.04),
+            transparent 30%
+          ),
+          var(--bg);
+        border-top: 1px solid var(--hairline);
+      }
+      .login-grid {
+        display: grid;
+        gap: 80px;
+        grid-template-columns: 1fr;
+      }
+      @media (min-width: 940px) {
+        .login-grid {
+          grid-template-columns: 1.1fr 1fr;
+          align-items: center;
+        }
+      }
+      .login-text .hero-eyebrow {
+        margin-bottom: 28px;
+      }
+      .login-text h2 {
+        font-family: "Playfair Display", serif;
+        font-weight: 300;
+        font-size: clamp(40px, 5.4vw, 64px);
+        line-height: 1.08;
+        letter-spacing: -0.015em;
+        margin-bottom: 28px;
+      }
+      .login-text h2 em {
+        font-style: italic;
+        color: var(--bronze);
+      }
+      .login-text p {
+        font-size: 16px;
+        color: var(--ink-soft);
+        max-width: 440px;
+        line-height: 1.6;
+      }
+      .login-card {
+        background: var(--bg-veil);
+        border: 1px solid var(--hairline-strong);
+        padding: 56px 48px;
+        backdrop-filter: blur(8px);
+      }
+      .login-tabs {
+        display: flex;
+        gap: 28px;
+        margin-bottom: 40px;
+        border-bottom: 1px solid var(--hairline);
+        padding-bottom: 4px;
+      }
+      .login-tab {
+        font-family: "Inter", sans-serif;
+        font-weight: 400;
+        font-size: 11px;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        padding: 0 0 18px;
+        cursor: pointer;
+        color: var(--mute);
+        background: none;
+        border: none;
+        border-bottom: 1px solid transparent;
+        margin-bottom: -5px;
+        transition: 200ms;
+      }
+      .login-tab.active {
+        color: var(--bronze);
+        border-bottom-color: var(--bronze);
+      }
+      .field {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 24px;
+      }
+      .field label {
+        font-size: 10px;
+        font-weight: 400;
+        letter-spacing: 0.32em;
+        text-transform: uppercase;
+        color: var(--mute);
+        margin-bottom: 12px;
+      }
+      .field input {
+        font-family: "Inter", sans-serif;
+        font-weight: 300;
+        font-size: 15px;
+        padding: 14px 0;
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid var(--hairline-strong);
+        color: var(--ink);
+        outline: none;
+        transition: 200ms;
+      }
+      .field input:focus {
+        border-bottom-color: var(--bronze);
+      }
+      .login-form .btn {
+        width: 100%;
+        margin-top: 8px;
+      }
+      .login-divider {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        margin: 36px 0;
+        color: var(--mute);
+      }
+      .login-divider::before,
+      .login-divider::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--hairline);
+      }
+      .login-divider span {
+        font-family: "Playfair Display", serif;
+        font-style: italic;
+        font-size: 13px;
+      }
+      .oauth-row {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .terms {
+        font-size: 13px;
+        line-height: 1.55;
+        color: var(--mute);
+        margin-top: 36px;
+        font-family: "Playfair Display", serif;
+        font-style: italic;
+        font-weight: 300;
+      }
+      .terms a {
+        color: var(--ink-soft);
+        border-bottom: 1px solid var(--hairline-strong);
+        padding-bottom: 1px;
+      }
+
+      /* —— mobile spotlight —— */
+      .mobile-spotlight {
+        padding: 120px 0;
+        background: linear-gradient(
+          180deg,
+          transparent,
+          rgba(184, 132, 95, 0.04)
+        );
+        border-top: 1px solid var(--hairline);
+      }
+      .mobile-spotlight h3 {
+        font-family: "Playfair Display", serif;
+        font-weight: 300;
+        font-size: clamp(32px, 4vw, 48px);
+        line-height: 1.1;
+        margin-bottom: 56px;
+        text-align: center;
+        text-wrap: balance;
+      }
+      .mobile-spotlight h3 em {
+        font-style: italic;
+        color: var(--bronze);
+      }
+      .phones {
+        display: flex;
+        gap: 48px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .phone {
+        width: 320px;
+        max-width: 100%;
+        background: var(--bg-veil);
+        border: 1px solid var(--hairline-strong);
+        overflow: hidden;
+      }
+      .phone .phone-label {
+        padding: 12px 18px;
+        font-size: 10px;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: var(--bronze);
+        border-bottom: 1px solid var(--hairline);
+      }
+      .phone-photo {
+        aspect-ratio: 9 / 16;
+        background: linear-gradient(160deg, #2a2520, #0e0e0c);
+        overflow: hidden;
+        position: relative;
+      }
+      .phone-photo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.7;
+        filter: contrast(1.05);
+      }
+      .phone-overlay {
+        position: absolute;
+        inset: 0;
+        padding: 22px 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        background: linear-gradient(
+          to top,
+          rgba(14, 14, 12, 0.9) 0%,
+          rgba(14, 14, 12, 0.1) 70%
+        );
+      }
+      .phone-overlay .hero-eyebrow {
+        font-size: 9px;
+        margin-bottom: 14px;
+        letter-spacing: 0.32em;
+      }
+      .phone-overlay .hero-eyebrow::before {
+        width: 24px;
+      }
+      .phone-overlay h4 {
+        font-family: "Playfair Display", serif;
+        font-weight: 300;
+        font-size: 28px;
+        line-height: 1.1;
+        margin-bottom: 18px;
+      }
+      .phone-overlay h4 em {
+        font-style: italic;
+        color: var(--bronze);
+      }
+      .phone-overlay .btn {
+        font-size: 10px;
+        padding: 14px 22px;
+      }
+      .phone-login {
+        padding: 22px 22px 24px;
+        aspect-ratio: 9 / 16;
+        display: flex;
+        flex-direction: column;
+      }
+      .phone-login h4 {
+        font-family: "Playfair Display", serif;
+        font-weight: 300;
+        font-size: 28px;
+        margin: 12px 0 6px;
+      }
+      .phone-login h4 em {
+        font-style: italic;
+        color: var(--bronze);
+      }
+      .phone-login p {
+        font-size: 12px;
+        color: var(--ink-soft);
+        margin-bottom: 24px;
+      }
+      .phone-login .field {
+        margin-bottom: 18px;
+      }
+      .phone-login .field label {
+        font-size: 9px;
+        letter-spacing: 0.3em;
+      }
+      .phone-login .field input {
+        font-size: 13px;
+        padding: 10px 0;
+      }
+      .phone-login .btn {
+        margin-top: auto;
+        font-size: 10px;
+        padding: 13px 20px;
+      }
+
+      /* —— footer —— */
+      .footer {
+        padding: 80px 0 60px;
+        border-top: 1px solid var(--hairline);
+      }
+      .footer-inner {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 24px;
+        font-size: 11px;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: var(--mute);
+      }
+      .footer .bronze {
+        color: var(--bronze);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- nav -->
+    <header class="nav">
+      <div class="container nav-inner">
+        <div class="brand">Adlerhorst<span class="bronze">·</span><em>maison de l'alpage</em></div>
+        <nav class="nav-links">
+          <a href="#">The school</a>
+          <a href="#">Instructors</a>
+          <a href="#">Rates</a>
+          <a href="#">Journal</a>
+        </nav>
+        <div class="nav-right">
+          <div class="lang">
+            <span class="active">EN</span>
+            <span>DE</span>
+            <span>ES</span>
+          </div>
+          <a href="#login" class="nav-signin"><em>Sign in</em></a>
+        </div>
+      </div>
+    </header>
+
+    <!-- hero: cinematic -->
+    <section class="hero">
+      <img
+        class="hero-img"
+        src="https://images.unsplash.com/photo-1483136256025-bfbdb2c2c8e3?auto=format&fit=crop&w=2400&q=80"
+        alt="Alpine peaks at dusk under low cloud"
+        onerror="this.style.opacity=0.15"
+      />
+      <div class="hero-veil"></div>
+      <div class="hero-content">
+        <div class="container">
+          <div class="hero-eyebrow"><span>Est. 2014 · Valais</span></div>
+          <h1>
+            A quiet way to learn<br />
+            the <em>upper slopes</em>.
+          </h1>
+          <p class="hero-sub">
+            Private lessons in Verbier, taught by one local instructor at a
+            pace set by the mountain. Four durations. Three languages. No
+            crowds, no scripts.
+          </p>
+          <div class="hero-cta">
+            <button class="btn btn-filled">Reserve a lesson</button>
+            <a href="#login" class="btn-link"><em>Sign in →</em></a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- feature row (small) -->
+    <section class="hero-feature">
+      <div class="container">
+        <div class="feature-row">
+          <div class="feature-cell">
+            <div class="num"><em>i.</em></div>
+            <h4>One instructor.</h4>
+            <p>Pair with a single instructor for the full lesson. They learn how you ride.</p>
+          </div>
+          <div class="feature-cell">
+            <div class="num"><em>ii.</em></div>
+            <h4>One to four people.</h4>
+            <p>Private for the duration. Yours, your family's, your friends'.</p>
+          </div>
+          <div class="feature-cell">
+            <div class="num"><em>iii.</em></div>
+            <h4>Three languages.</h4>
+            <p>EN, DE, ES. Picked by you when you book — not guessed at on the slope.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- testimonial -->
+    <section class="testimonial">
+      <div class="container">
+        <blockquote>
+          A morning that felt like a long, careful conversation with the
+          mountain. We left tired in the body and clear in the head.
+        </blockquote>
+        <div class="attrib">— Sofía P. <span class="bronze">·</span> Madrid <span class="bronze">·</span> March 2026</div>
+      </div>
+    </section>
+
+    <!-- login -->
+    <section class="login" id="login">
+      <div class="container login-grid">
+        <div class="login-text">
+          <div class="hero-eyebrow"><span>Account</span></div>
+          <h2>
+            Welcome back to your<br />
+            <em>reservations</em>.
+          </h2>
+          <p>
+            Sign in with email and password, request a one-time link, or use
+            Google. New to us? Switch to "Create account" — it takes a moment.
+          </p>
+        </div>
+        <div class="login-card">
+          <div class="login-tabs">
+            <button class="login-tab active">Sign in</button>
+            <button class="login-tab">Create account</button>
+          </div>
+          <form class="login-form" onsubmit="event.preventDefault()">
+            <div class="field">
+              <label>Email</label>
+              <input type="email" autocomplete="email" />
+            </div>
+            <div class="field">
+              <label>Password</label>
+              <input type="password" />
+            </div>
+            <button type="submit" class="btn btn-filled">Sign in</button>
+          </form>
+          <div class="login-divider"><span><em>or</em></span></div>
+          <div class="oauth-row">
+            <button class="btn">Continue with Google</button>
+            <button class="btn-link" style="text-align: left">
+              <em>Email me a magic link →</em>
+            </button>
+          </div>
+          <p class="terms">
+            By continuing you accept the
+            <a href="#">terms of service</a> and our
+            <a href="#">privacy policy</a>.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- mobile spotlight -->
+    <section class="mobile-spotlight">
+      <div class="container">
+        <h3>
+          On a phone, kept<br />
+          <em>cinematic</em>.
+        </h3>
+        <div class="phones">
+          <div class="phone">
+            <div class="phone-label">Home · 390 × 844</div>
+            <div class="phone-photo">
+              <img
+                src="https://images.unsplash.com/photo-1551524559-8af4e6624178?auto=format&fit=crop&w=800&q=80"
+                alt=""
+                onerror="this.style.opacity=0"
+              />
+              <div class="phone-overlay">
+                <div class="hero-eyebrow"><span>Est. 2014 · Valais</span></div>
+                <h4>
+                  Learn the<br />
+                  <em>upper slopes</em>.
+                </h4>
+                <button class="btn btn-filled" style="align-self: flex-start">
+                  Reserve a lesson
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="phone">
+            <div class="phone-label">Login · 390 × 844</div>
+            <div class="phone-login">
+              <div class="hero-eyebrow"><span>Account</span></div>
+              <h4>
+                Welcome <em>back</em>.
+              </h4>
+              <p>Email & password, magic link, or Google.</p>
+              <div class="field">
+                <label>Email</label>
+                <input type="email" disabled placeholder="you@email.com" />
+              </div>
+              <div class="field">
+                <label>Password</label>
+                <input type="password" disabled />
+              </div>
+              <button class="btn btn-filled">Sign in</button>
+              <div class="login-divider" style="margin: 16px 0">
+                <span><em>or</em></span>
+              </div>
+              <button class="btn" style="margin-bottom: 8px">
+                Continue with Google
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="container footer-inner">
+        <div>© 2026 Adlerhorst <span class="bronze">·</span> Maison de l'Alpage</div>
+        <div>Verbier <span class="bronze">·</span> Valais <span class="bronze">·</span> Switzerland</div>
+        <div>EN <span class="bronze">·</span> DE <span class="bronze">·</span> ES</div>
+      </div>
+    </footer>
+  </body>
+</html>
