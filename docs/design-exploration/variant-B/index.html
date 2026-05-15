@@ -1,0 +1,975 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Variant B — Patagonia editorial · Snowboard School</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #faf6f0;
+        --bg-alt: #f1ead9;
+        --ink: #1f1a14;
+        --ink-soft: #3b342a;
+        --mute: #6b6258;
+        --hairline: #d4c9b3;
+        --accent: #c7361c;
+        --accent-deep: #952b18;
+        --moss: #4d5a3a;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Archivo", system-ui, -apple-system, sans-serif;
+        font-size: 16px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      /* —— layout —— */
+      .container {
+        max-width: 1320px;
+        margin: 0 auto;
+        padding: 0 28px;
+      }
+      .display {
+        font-family: "Archivo Black", "Archivo", sans-serif;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: -0.015em;
+        line-height: 0.92;
+      }
+      .label {
+        font-family: "Archivo", sans-serif;
+        font-weight: 700;
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+      .accent {
+        color: var(--accent);
+      }
+
+      /* —— top utility bar —— */
+      .utility {
+        background: var(--ink);
+        color: var(--bg);
+      }
+      .utility-inner {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+      .utility .lang {
+        display: flex;
+        gap: 14px;
+      }
+      .utility .lang span {
+        cursor: pointer;
+        opacity: 0.55;
+      }
+      .utility .lang span.active {
+        opacity: 1;
+        color: var(--accent);
+      }
+
+      /* —— nav —— */
+      .nav {
+        border-bottom: 2px solid var(--ink);
+      }
+      .nav-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 22px 0;
+      }
+      .brand {
+        font-family: "Archivo Black", sans-serif;
+        font-size: 22px;
+        letter-spacing: -0.01em;
+        text-transform: uppercase;
+      }
+      .brand span {
+        color: var(--accent);
+      }
+      .nav-links {
+        display: none;
+        gap: 32px;
+      }
+      @media (min-width: 800px) {
+        .nav-links {
+          display: flex;
+        }
+      }
+      .nav-links a {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+      }
+      .nav-links a:hover {
+        color: var(--accent);
+      }
+      .signin-btn {
+        background: var(--ink);
+        color: var(--bg);
+        padding: 12px 22px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        border: 2px solid var(--ink);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: 140ms;
+      }
+      .signin-btn:hover {
+        background: var(--accent);
+        border-color: var(--accent);
+      }
+
+      /* —— hero: full-bleed action shot with overlaid editorial type —— */
+      .hero {
+        position: relative;
+        height: 86vh;
+        min-height: 600px;
+        max-height: 880px;
+        background: linear-gradient(135deg, #2c2418, #0e0a07);
+        overflow: hidden;
+        color: var(--bg);
+      }
+      .hero-img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.78;
+      }
+      .hero-veil {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          to top,
+          rgba(20, 14, 8, 0.78) 0%,
+          rgba(20, 14, 8, 0.1) 55%,
+          rgba(20, 14, 8, 0.55) 100%
+        );
+      }
+      .hero-content {
+        position: absolute;
+        inset: 0;
+        padding: 32px 28px 56px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+      }
+      .hero-content .container {
+        padding: 0;
+      }
+      .hero-eyebrow {
+        font-family: "Archivo", sans-serif;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        margin-bottom: 28px;
+        display: inline-flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .hero-eyebrow::before {
+        content: "";
+        width: 48px;
+        height: 2px;
+        background: var(--accent);
+      }
+      .hero h1 {
+        font-family: "Archivo Black", sans-serif;
+        font-size: clamp(48px, 9.5vw, 132px);
+        line-height: 0.9;
+        text-transform: uppercase;
+        letter-spacing: -0.02em;
+        margin-bottom: 24px;
+        text-wrap: balance;
+      }
+      .hero h1 .red {
+        color: var(--accent);
+      }
+      .hero-sub {
+        font-size: 18px;
+        max-width: 560px;
+        line-height: 1.45;
+        margin-bottom: 36px;
+        color: rgba(250, 246, 240, 0.85);
+      }
+      .hero-cta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .btn {
+        font-family: "Archivo", sans-serif;
+        font-weight: 700;
+        font-size: 13px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        padding: 18px 32px;
+        border: 2px solid currentColor;
+        border-radius: 6px;
+        cursor: pointer;
+        background: var(--accent);
+        color: var(--bg);
+        border-color: var(--accent);
+        transition: 140ms;
+      }
+      .btn:hover {
+        background: var(--accent-deep);
+        border-color: var(--accent-deep);
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--bg);
+        border-color: var(--bg);
+      }
+      .btn-ghost:hover {
+        background: var(--bg);
+        color: var(--ink);
+      }
+      .btn-dark {
+        background: var(--ink);
+        color: var(--bg);
+        border-color: var(--ink);
+      }
+      .btn-dark:hover {
+        background: var(--accent);
+        border-color: var(--accent);
+      }
+
+      /* —— gear list value props (3-up) —— */
+      .gearlist {
+        padding: 96px 0 80px;
+        border-bottom: 2px solid var(--ink);
+        background: var(--bg-alt);
+        position: relative;
+        overflow: hidden;
+      }
+      .contour {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.18;
+      }
+      .gearlist-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        margin-bottom: 56px;
+        flex-wrap: wrap;
+        gap: 24px;
+      }
+      .gearlist-header h2 {
+        font-family: "Archivo Black", sans-serif;
+        font-size: clamp(36px, 5.5vw, 64px);
+        line-height: 0.95;
+        text-transform: uppercase;
+        letter-spacing: -0.02em;
+        max-width: 720px;
+      }
+      .gearlist-header .label {
+        color: var(--mute);
+      }
+      .gear-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0;
+        border-top: 1px solid var(--ink);
+        position: relative;
+      }
+      @media (min-width: 720px) {
+        .gear-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+      .gear-cell {
+        padding: 36px 0 40px;
+        border-bottom: 1px solid var(--ink);
+      }
+      @media (min-width: 720px) {
+        .gear-cell {
+          padding: 36px 36px 40px 0;
+          border-right: 1px solid var(--ink);
+          border-bottom: none;
+        }
+        .gear-cell:last-child {
+          border-right: none;
+          padding-right: 0;
+        }
+        .gear-cell + .gear-cell {
+          padding-left: 36px;
+        }
+      }
+      .gear-cell .label {
+        color: var(--accent);
+        margin-bottom: 16px;
+      }
+      .gear-cell h3 {
+        font-family: "Archivo Black", sans-serif;
+        font-size: 28px;
+        text-transform: uppercase;
+        line-height: 1;
+        letter-spacing: -0.01em;
+        margin-bottom: 16px;
+      }
+      .gear-cell p {
+        font-size: 15px;
+        line-height: 1.55;
+        color: var(--ink-soft);
+      }
+
+      /* —— editorial pull quote —— */
+      .editorial {
+        padding: 120px 0;
+        border-bottom: 2px solid var(--ink);
+      }
+      .editorial-grid {
+        display: grid;
+        gap: 56px;
+        grid-template-columns: 1fr;
+      }
+      @media (min-width: 900px) {
+        .editorial-grid {
+          grid-template-columns: 0.9fr 1.1fr;
+          align-items: center;
+        }
+      }
+      .ed-photo {
+        aspect-ratio: 5 / 6;
+        background: linear-gradient(160deg, #6b5c3f, #2b2218);
+        overflow: hidden;
+        position: relative;
+      }
+      .ed-photo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .ed-photo::after {
+        content: "Verbier · 2620m";
+        position: absolute;
+        bottom: 18px;
+        left: 18px;
+        background: var(--accent);
+        color: var(--bg);
+        font-family: "Archivo", sans-serif;
+        font-weight: 700;
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        padding: 8px 14px;
+      }
+      .editorial blockquote {
+        font-family: "Archivo Black", sans-serif;
+        font-size: clamp(28px, 4vw, 44px);
+        line-height: 1.05;
+        text-transform: uppercase;
+        letter-spacing: -0.015em;
+        margin: 0 0 32px;
+        text-wrap: balance;
+      }
+      .editorial blockquote span.accent {
+        color: var(--accent);
+      }
+      .editorial .attrib {
+        font-family: "Archivo", sans-serif;
+        font-weight: 700;
+        font-size: 12px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--mute);
+      }
+
+      /* —— login —— */
+      .login {
+        background: var(--ink);
+        color: var(--bg);
+        padding: 120px 0;
+      }
+      .login-grid {
+        display: grid;
+        gap: 64px;
+        grid-template-columns: 1fr;
+      }
+      @media (min-width: 900px) {
+        .login-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .login-text .hero-eyebrow {
+        color: var(--accent);
+        margin-bottom: 28px;
+      }
+      .login-text h2 {
+        font-family: "Archivo Black", sans-serif;
+        font-size: clamp(40px, 6vw, 80px);
+        line-height: 0.95;
+        text-transform: uppercase;
+        letter-spacing: -0.02em;
+        margin-bottom: 24px;
+      }
+      .login-text p {
+        font-size: 16px;
+        line-height: 1.6;
+        max-width: 420px;
+        color: rgba(250, 246, 240, 0.7);
+      }
+      .login-card {
+        background: var(--bg);
+        color: var(--ink);
+        padding: 48px 40px;
+        border: 2px solid var(--accent);
+      }
+      .login-tabs {
+        display: flex;
+        gap: 0;
+        margin-bottom: 32px;
+        border: 2px solid var(--ink);
+      }
+      .login-tab {
+        flex: 1;
+        font-family: "Archivo", sans-serif;
+        font-weight: 700;
+        font-size: 11px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        padding: 14px 0;
+        cursor: pointer;
+        background: var(--bg);
+        color: var(--ink);
+        border: none;
+      }
+      .login-tab.active {
+        background: var(--ink);
+        color: var(--bg);
+      }
+      .field {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 20px;
+      }
+      .field label {
+        font-family: "Archivo", sans-serif;
+        font-weight: 700;
+        font-size: 10px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--mute);
+        margin-bottom: 10px;
+      }
+      .field input {
+        font-family: "Archivo", sans-serif;
+        font-weight: 500;
+        font-size: 15px;
+        padding: 13px 14px;
+        background: var(--bg);
+        border: 2px solid var(--ink);
+        color: var(--ink);
+        outline: none;
+      }
+      .field input:focus {
+        border-color: var(--accent);
+      }
+      .login-form .btn {
+        width: 100%;
+      }
+      .login-divider {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin: 28px 0;
+        font-family: "Archivo", sans-serif;
+        font-weight: 700;
+        font-size: 11px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--mute);
+      }
+      .login-divider::before,
+      .login-divider::after {
+        content: "";
+        flex: 1;
+        height: 2px;
+        background: var(--ink);
+        opacity: 0.15;
+      }
+      .oauth-row {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .oauth-row .btn {
+        background: var(--bg);
+        color: var(--ink);
+        border-color: var(--ink);
+      }
+      .oauth-row .btn:hover {
+        background: var(--ink);
+        color: var(--bg);
+      }
+      .oauth-row .btn.magic {
+        background: transparent;
+        border-style: dashed;
+      }
+      .terms {
+        font-size: 12px;
+        line-height: 1.5;
+        color: var(--mute);
+        margin-top: 24px;
+      }
+      .terms a {
+        color: var(--ink);
+        border-bottom: 1px solid var(--ink);
+      }
+
+      /* —— mobile spotlight —— */
+      .mobile-spotlight {
+        background: var(--bg);
+        padding: 96px 0;
+        border-bottom: 2px solid var(--ink);
+      }
+      .mobile-spotlight h3 {
+        font-family: "Archivo Black", sans-serif;
+        font-size: clamp(28px, 4.5vw, 56px);
+        line-height: 0.95;
+        text-transform: uppercase;
+        letter-spacing: -0.015em;
+        margin-bottom: 48px;
+      }
+      .phones {
+        display: flex;
+        gap: 36px;
+        flex-wrap: wrap;
+        align-items: flex-start;
+      }
+      .phone {
+        width: 320px;
+        max-width: 100%;
+        border: 2px solid var(--ink);
+        background: var(--bg);
+      }
+      .phone .label {
+        background: var(--ink);
+        color: var(--bg);
+        padding: 8px 14px;
+      }
+      .phone-photo {
+        aspect-ratio: 9 / 14;
+        background: linear-gradient(160deg, #6b5c3f, #2b2218);
+        overflow: hidden;
+        position: relative;
+      }
+      .phone-photo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.85;
+      }
+      .phone-overlay {
+        position: absolute;
+        inset: 0;
+        padding: 22px 18px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        background: linear-gradient(
+          to top,
+          rgba(20, 14, 8, 0.88),
+          rgba(20, 14, 8, 0) 60%
+        );
+        color: var(--bg);
+      }
+      .phone-overlay .hero-eyebrow {
+        font-size: 9px;
+        margin-bottom: 12px;
+      }
+      .phone-overlay h4 {
+        font-family: "Archivo Black", sans-serif;
+        font-size: 26px;
+        line-height: 0.95;
+        text-transform: uppercase;
+        margin-bottom: 14px;
+      }
+      .phone-overlay .red {
+        color: var(--accent);
+      }
+      .phone-overlay .btn {
+        font-size: 10px;
+        padding: 13px 18px;
+      }
+      .phone-login {
+        padding: 22px 20px;
+        background: var(--ink);
+        color: var(--bg);
+        aspect-ratio: 9 / 14;
+        display: flex;
+        flex-direction: column;
+      }
+      .phone-login h4 {
+        font-family: "Archivo Black", sans-serif;
+        font-size: 28px;
+        text-transform: uppercase;
+        line-height: 0.95;
+        margin: 8px 0 16px;
+      }
+      .phone-login .login-tabs {
+        border-color: var(--bg);
+        margin-bottom: 18px;
+      }
+      .phone-login .login-tab {
+        background: var(--ink);
+        color: var(--bg);
+        font-size: 9px;
+        padding: 10px 0;
+      }
+      .phone-login .login-tab.active {
+        background: var(--bg);
+        color: var(--ink);
+      }
+      .phone-login .field label {
+        color: rgba(250, 246, 240, 0.65);
+      }
+      .phone-login .field input {
+        background: transparent;
+        border-color: var(--bg);
+        color: var(--bg);
+      }
+      .phone-login .btn {
+        margin-top: auto;
+      }
+
+      /* —— footer —— */
+      .footer {
+        background: var(--ink);
+        color: var(--bg);
+        padding: 56px 0;
+      }
+      .footer-inner {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 24px;
+        font-family: "Archivo", sans-serif;
+        font-weight: 700;
+        font-size: 11px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+      }
+      .footer .accent {
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- top utility bar -->
+    <div class="utility">
+      <div class="container utility-inner">
+        <span>Verbier · 4 Vallées · Open Nov 27 → Apr 26</span>
+        <div class="lang">
+          <span class="active">EN</span>
+          <span>DE</span>
+          <span>ES</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- nav -->
+    <header class="nav">
+      <div class="container nav-inner">
+        <div class="brand">Adlerhorst<span>·</span>SBS</div>
+        <nav class="nav-links">
+          <a href="#">About</a>
+          <a href="#">Instructors</a>
+          <a href="#">Prices</a>
+          <a href="#">Field notes</a>
+        </nav>
+        <button class="signin-btn">Sign in</button>
+      </div>
+    </header>
+
+    <!-- hero: full-bleed action shot -->
+    <section class="hero">
+      <img
+        class="hero-img"
+        src="https://images.unsplash.com/photo-1547036967-23d11aacaee0?auto=format&fit=crop&w=2400&q=80"
+        alt="A snowboarder mid-carve under alpine peaks"
+        onerror="this.style.opacity=0.2"
+      />
+      <div class="hero-veil"></div>
+      <div class="hero-content">
+        <div class="container">
+          <div class="hero-eyebrow">
+            <span>Field manual · No. 04</span>
+          </div>
+          <h1>
+            Learn to ride<br />
+            the <span class="red">Valais</span>.
+          </h1>
+          <p class="hero-sub">
+            Private snowboard lessons in Verbier — 1 to 4 people, four lesson
+            durations, three languages, one local instructor who actually skis
+            the lines you'll learn.
+          </p>
+          <div class="hero-cta">
+            <button class="btn">Book a lesson</button>
+            <button class="btn btn-ghost">Sign in</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- gear list (3 value props) -->
+    <section class="gearlist">
+      <svg
+        class="contour"
+        viewBox="0 0 1200 600"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <defs>
+          <pattern
+            id="contour"
+            patternUnits="userSpaceOnUse"
+            width="1200"
+            height="600"
+          >
+            <path
+              d="M-100 60 Q 200 120 500 80 T 1300 100"
+              fill="none"
+              stroke="#1f1a14"
+              stroke-width="1"
+            />
+            <path
+              d="M-100 140 Q 200 200 500 160 T 1300 180"
+              fill="none"
+              stroke="#1f1a14"
+              stroke-width="1"
+            />
+            <path
+              d="M-100 220 Q 200 280 500 240 T 1300 260"
+              fill="none"
+              stroke="#1f1a14"
+              stroke-width="1"
+            />
+            <path
+              d="M-100 300 Q 200 360 500 320 T 1300 340"
+              fill="none"
+              stroke="#1f1a14"
+              stroke-width="1"
+            />
+            <path
+              d="M-100 380 Q 200 440 500 400 T 1300 420"
+              fill="none"
+              stroke="#1f1a14"
+              stroke-width="1"
+            />
+            <path
+              d="M-100 460 Q 200 520 500 480 T 1300 500"
+              fill="none"
+              stroke="#1f1a14"
+              stroke-width="1"
+            />
+          </pattern>
+        </defs>
+        <rect width="1200" height="600" fill="url(#contour)" />
+      </svg>
+      <div class="container" style="position: relative">
+        <div class="gearlist-header">
+          <h2>
+            What's in<br />
+            the rucksack.
+          </h2>
+          <div class="label">§ 01 — Built for serious learners</div>
+        </div>
+        <div class="gear-grid">
+          <div class="gear-cell">
+            <div class="label">01 / Pairing</div>
+            <h3>One instructor.<br />For the whole day.</h3>
+            <p>
+              No swapping between groups. You pair with a single instructor for
+              the entire lesson — they learn how you ride and stay with you.
+            </p>
+          </div>
+          <div class="gear-cell">
+            <div class="label">02 / Sizes</div>
+            <h3>Groups of 1 to 4.<br />Friends or family.</h3>
+            <p>
+              All lessons are private. Bring up to three companions; same price
+              up to four heads. We never combine bookings.
+            </p>
+          </div>
+          <div class="gear-cell">
+            <div class="label">03 / Languages</div>
+            <h3>English. Deutsch.<br />Español.</h3>
+            <p>
+              Pick your instructor by the language you ride in. We match you to
+              someone who teaches in your tongue, not just translates.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- editorial pull quote -->
+    <section class="editorial">
+      <div class="container editorial-grid">
+        <div class="ed-photo">
+          <img
+            src="https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=1200&q=80"
+            alt="An instructor on a ridge, late afternoon"
+            onerror="this.style.opacity=0.2"
+          />
+        </div>
+        <div>
+          <div class="hero-eyebrow accent" style="color: var(--accent)">
+            <span>Instructor profile</span>
+          </div>
+          <blockquote>
+            "I teach the way my grandfather taught me to read a wind —
+            <span class="accent">slowly, and on the actual hill</span>."
+          </blockquote>
+          <div class="attrib">— Lukas H., lead instructor since 2014</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- login -->
+    <section class="login" id="login">
+      <div class="container login-grid">
+        <div class="login-text">
+          <div class="hero-eyebrow">
+            <span>§ 02 — Account</span>
+          </div>
+          <h2>
+            Sign in.<br />
+            Pick up where you left.
+          </h2>
+          <p>
+            Use email and password, ask for a one-time magic link, or continue
+            with Google. New here? Create an account in 30 seconds.
+          </p>
+        </div>
+        <div class="login-card">
+          <div class="login-tabs">
+            <button class="login-tab active">Sign in</button>
+            <button class="login-tab">Create account</button>
+          </div>
+          <form class="login-form" onsubmit="event.preventDefault()">
+            <div class="field">
+              <label>Email</label>
+              <input type="email" autocomplete="email" />
+            </div>
+            <div class="field">
+              <label>Password</label>
+              <input type="password" />
+            </div>
+            <button type="submit" class="btn">Sign in</button>
+          </form>
+          <div class="login-divider"><span>or</span></div>
+          <div class="oauth-row">
+            <button class="btn">Continue with Google</button>
+            <button class="btn magic">Email me a magic link</button>
+          </div>
+          <p class="terms">
+            By continuing you accept the
+            <a href="#">terms of service</a> and our
+            <a href="#">privacy policy</a>.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- mobile spotlight -->
+    <section class="mobile-spotlight">
+      <div class="container">
+        <div class="label" style="color: var(--accent); margin-bottom: 14px">
+          On a phone
+        </div>
+        <h3>
+          Mobile, full-bleed,<br />
+          built like a field guide.
+        </h3>
+        <div class="phones">
+          <div class="phone">
+            <div class="label">Home · 390 × 844</div>
+            <div class="phone-photo">
+              <img
+                src="https://images.unsplash.com/photo-1551524559-8af4e6624178?auto=format&fit=crop&w=800&q=80"
+                alt=""
+                onerror="this.style.opacity=0"
+              />
+              <div class="phone-overlay">
+                <div class="hero-eyebrow">
+                  <span>Field manual · No. 04</span>
+                </div>
+                <h4>
+                  Learn the<br /><span class="red">Valais</span>.
+                </h4>
+                <button class="btn">Book a lesson</button>
+              </div>
+            </div>
+          </div>
+          <div class="phone">
+            <div class="label">Login · 390 × 844</div>
+            <div class="phone-login">
+              <div class="hero-eyebrow accent" style="color: var(--accent)">
+                <span>§ 02 — Account</span>
+              </div>
+              <h4>Sign in.</h4>
+              <div class="login-tabs">
+                <button class="login-tab active">Sign in</button>
+                <button class="login-tab">Sign up</button>
+              </div>
+              <div class="field">
+                <label>Email</label>
+                <input type="email" disabled placeholder="you@email.com" />
+              </div>
+              <div class="field">
+                <label>Password</label>
+                <input type="password" disabled />
+              </div>
+              <button class="btn">Sign in</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="container footer-inner">
+        <div>© 2026 Adlerhorst <span class="accent">·</span> SBS</div>
+        <div>Verbier · Valais · Switzerland</div>
+        <div>EN <span class="accent">·</span> DE <span class="accent">·</span> ES</div>
+      </div>
+    </footer>
+  </body>
+</html>
