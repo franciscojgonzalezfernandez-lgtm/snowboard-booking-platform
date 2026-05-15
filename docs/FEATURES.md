@@ -12,6 +12,7 @@
 ## Sprint 0 — Setup (antes del primer deploy a Vercel)
 
 ### F-001 — Init repo en GitHub
+
 - Sprint: 0 · Estado: done · Prioridad: P0
 - Depende de: —
 - AC:
@@ -23,6 +24,7 @@
 - Notas: trabajar siempre en branch feature `f-XXX-slug`.
 
 ### F-002 — Scaffold Next.js 15 + TypeScript strict + Tailwind v4
+
 - Sprint: 0 · Estado: done · Prioridad: P0
 - Depende de: F-001
 - AC:
@@ -33,6 +35,7 @@
 - Tests: smoke Playwright `/` → 200 (definido en F-008).
 
 ### F-003 — shadcn/ui base + tokens iniciales (Impeccable)
+
 - Sprint: 0 · Estado: done · Prioridad: P0
 - Depende de: F-002
 - AC:
@@ -44,6 +47,7 @@
 - Tests: N/A (visual review viene en F-026/F-027).
 
 ### F-004 — Prisma + Neon adapter + schema mínimo Better Auth
+
 - Sprint: 0 · Estado: done · Prioridad: P0
 - Depende de: F-002
 - AC:
@@ -56,6 +60,7 @@
 - Tests: `prisma db push` smoke en CI; Vitest test que importa `prisma` y hace `prisma.user.count()` (Vitest llega en F-008).
 
 ### F-005 — Better Auth completo (email+pwd + magicLink + Google OAuth)
+
 - Sprint: 0 · Estado: review · Prioridad: P0
 - Depende de: F-004
 - AC:
@@ -65,13 +70,14 @@
   - [x] Provider `google` con `clientId`/`clientSecret` desde env (`GOOGLE_ID`/`GOOGLE_SECRET`)
   - [x] `app/api/auth/[...all]/route.ts` con handler catch-all
   - [x] Página `/login` provisional con email+pwd, Google y magic-link (se moverá a `app/[locale]/(auth)/login/` cuando aterrice next-intl en Sprint 5)
-  - [ ] Google Cloud project creado; OAuth consent screen en "Testing"; callback registrado: `http://localhost:3000/api/auth/callback/google` *(acción del owner; bloquea el último AC)*
-  - [ ] Login con Google en dev funciona end-to-end (sesión persiste, `auth.api.getSession` la devuelve) *(depende del AC anterior)*
+  - [x] Google Cloud project creado; OAuth consent screen en "Testing"; callback registrado: `http://localhost:3000/api/auth/callback/google` _(acción del owner; bloquea el último AC)_
+  - [ ] Login con Google en dev funciona end-to-end (sesión persiste, `auth.api.getSession` la devuelve) _(depende del AC anterior)_
 - Tests: Playwright E2E `e2e/f-005-auth-google.spec.ts` — `/login` renderiza los tres métodos, signup crea sesión leíble por `/api/auth/get-session`, signin reusa credenciales, botón Google emite `POST /api/auth/sign-in/social {provider:"google"}`, magic-link muestra confirmación stub.
 - Notas: para correr el spec en local hace falta `DATABASE_URL` apuntando a una branch Neon limpia; el test de Google no necesita OAuth real (verifica wiring vía request intercept). Subir a `done` cuando el owner registre credenciales Google y el último AC pase.
 - Decisiones pendientes: cuándo subir OAuth consent screen a "Production" (Sprint 1.5 + dominio propio).
 
 ### F-006 — Sentry init (frontend + backend, source maps)
+
 - Sprint: 0 · Estado: done · Prioridad: P0
 - Depende de: F-002
 - AC:
@@ -83,6 +89,7 @@
 - Notas: org `fjgf-dt`, project `javascript-nextjs` (renombrar a `snowboard-booking` en Sentry UI cuando proceda). DSN hardcoded en configs (público por diseño). `tunnelRoute: "/monitoring"` activado por el wizard — revisar colisión con middleware al introducirlo. Ruta de ejemplo borrable post-verificación.
 
 ### F-007 — Vercel Analytics + Speed Insights
+
 - Sprint: 0 · Estado: done · Prioridad: P1
 - Depende de: F-002
 - AC:
@@ -91,6 +98,7 @@
 - Tests: N/A (verificación post-deploy en F-015).
 
 ### F-008 — Playwright + Vitest instalados, smoke test
+
 - Sprint: 0 · Estado: done · Prioridad: P0
 - Depende de: F-002
 - AC:
@@ -102,6 +110,7 @@
 - Tests: el propio smoke test corre verde.
 
 ### F-009 — `.claude/settings.local.json` con allowlist mínimo
+
 - Sprint: 0 · Estado: backlog · Prioridad: P1
 - Depende de: F-001
 - AC:
@@ -110,6 +119,7 @@
 - Tests: N/A.
 
 ### F-010 — Split de `docs/PRD.md` → PRD + Architecture
+
 - Sprint: 0 · Estado: done · Prioridad: P0
 - Depende de: —
 - AC:
@@ -119,6 +129,7 @@
 - Tests: N/A.
 
 ### F-011 — `docs/FEATURES.md` poblado
+
 - Sprint: 0 · Estado: in-progress · Prioridad: P0
 - Depende de: —
 - AC:
@@ -127,6 +138,7 @@
 - Tests: N/A.
 
 ### F-012 — `docs/WORKFLOW.md` (corta, ≤80 líneas)
+
 - Sprint: 0 · Estado: backlog · Prioridad: P0
 - Depende de: F-011
 - AC:
@@ -136,6 +148,7 @@
 - Tests: N/A.
 
 ### F-013 — CI con GitHub Actions
+
 - Sprint: 0 · Estado: backlog · Prioridad: P0
 - Depende de: F-002, F-008
 - AC:
@@ -145,6 +158,7 @@
 - Tests: el propio workflow verde.
 
 ### F-014 — Vercel: conectar repo + deploy previews
+
 - Sprint: 0 · Estado: backlog · Prioridad: P0
 - Depende de: F-013
 - AC:
@@ -154,6 +168,7 @@
 - Tests: PR de prueba dispara preview verde.
 
 ### F-015 — Primer deploy a `main` (URL pública disponible)
+
 - Sprint: 0 · Estado: backlog · Prioridad: P0
 - Depende de: F-014
 - AC:
@@ -168,6 +183,7 @@
 ## Sprint 1.5 — Servicios externos que requieren URL pública
 
 ### F-016 — Añadir URL de Vercel al callback list de Google OAuth
+
 - Sprint: 1.5 · Estado: backlog · Prioridad: P0
 - Depende de: F-015
 - AC:
@@ -176,6 +192,7 @@
 - Tests: Playwright E2E en preview env.
 
 ### F-017 — Resend account + verificación de dominio DNS
+
 - Sprint: 1.5 · Estado: backlog · Prioridad: P0
 - Depende de: F-015
 - AC:
@@ -187,6 +204,7 @@
 - Decisiones pendientes: dominio definitivo + proveedor DNS suizo.
 
 ### F-018 — Stripe account + activar TWINT + claves test
+
 - Sprint: 1.5 · Estado: backlog · Prioridad: P0
 - Depende de: F-015
 - AC:
@@ -198,6 +216,7 @@
 - Tests: Stripe CLI `stripe trigger payment_intent.succeeded` en dev, verifica que el webhook se procesa.
 
 ### F-019 — Secrets de Stripe + Resend + Google en Vercel
+
 - Sprint: 1.5 · Estado: backlog · Prioridad: P0
 - Depende de: F-016, F-017, F-018
 - AC:
@@ -212,6 +231,7 @@
 > Playwright E2E obligatorio en tickets que tocan UI o endpoint público.
 
 ### F-020 — Schema completo (dominio + enums)
+
 - Sprint: 1 · Estado: backlog · Prioridad: P0
 - Depende de: F-004
 - AC:
@@ -222,6 +242,7 @@
 - Tests: Vitest snapshot del schema; `prisma validate`.
 
 ### F-021 — Seed `prisma/seed.ts`
+
 - Sprint: 1 · Estado: backlog · Prioridad: P0
 - Depende de: F-020
 - AC:
@@ -233,6 +254,7 @@
 - Tests: Vitest que tras seed verifica counts y relaciones.
 
 ### F-022 — `lib/booking-engine/` (algoritmo availability + Vitest 90%+)
+
 - Sprint: 1 · Estado: backlog · Prioridad: P0
 - Depende de: F-021
 - AC:
@@ -246,6 +268,7 @@
 - Decisiones pendientes: ¿branch Neon dedicada para tests o SQLite en memoria? — decidir aquí. Recomendación: branch Neon `playwright` + reset entre suites.
 
 ### F-023 — `GET /api/availability/calendar` + nearby fallback
+
 - Sprint: 1 · Estado: backlog · Prioridad: P0
 - Depende de: F-022
 - AC:
@@ -256,6 +279,7 @@
 - Tests: Playwright API test que cubre happy path + edge (rango >3 meses → 400; idioma inválido → 400).
 
 ### F-024 — `GET /api/availability/slots`
+
 - Sprint: 1 · Estado: backlog · Prioridad: P0
 - Depende de: F-022
 - AC:
@@ -266,6 +290,7 @@
 - Tests: Playwright API + Vitest unit en booking-engine.
 
 ### F-025 — UI Step 1 (filtros: duración + idioma)
+
 - Sprint: 1 · Estado: backlog · Prioridad: P0
 - Depende de: F-003
 - AC:
@@ -276,6 +301,7 @@
 - Tests: Playwright E2E `e2e/f-025-step1.spec.ts` — completar filtros, verificar navegación + URL.
 
 ### F-026 — UI Step 2 (smart calendar)
+
 - Sprint: 1 · Estado: backlog · Prioridad: P0
 - Depende de: F-023, F-025
 - AC:
@@ -286,6 +312,7 @@
 - Tests: Playwright E2E `e2e/f-026-step2.spec.ts` — seleccionar día activo, intentar click en día inactivo, verificar nearby UI.
 
 ### F-027 — UI Step 3 (anchor time + instructor)
+
 - Sprint: 1 · Estado: backlog · Prioridad: P0
 - Depende de: F-024, F-026
 - AC:
@@ -300,6 +327,7 @@
 ## Sprints 2-6 — Bullets gruesos (desglose al cerrar Sprint 1)
 
 ### Sprint 2 — Auth + Pagos (semanas 4-5)
+
 - Auth UI: login, registro, magic link recibido por email (depende de F-017), Google OAuth en producción.
 - Dashboard alumno básico: lista de reservas (vacío en MVP), datos personales.
 - Step 4: booker + attendees (1-4) + niveles + notas + T&C.
@@ -310,6 +338,7 @@
 - **Decisión pendiente que bloquea:** precios por duración.
 
 ### Sprint 3 — Cancelaciones + Créditos (semana 6)
+
 - Flujo cancelación user desde dashboard (≥1h antes).
 - Sistema de créditos: generación, locking durante PaymentIntent, commit en webhook success.
 - UI aplicar créditos en Step 5 (toggle + breakdown).
@@ -317,6 +346,7 @@
 - Email cancelación user + notif a instructor.
 
 ### Sprint 4 — Vista instructor + Admin (semanas 7-8)
+
 - Vista instructor: agenda diaria, gestión de `availabilityBlock`, perfil.
 - Conectar Google Calendar (OAuth offline access, encriptación ADR-007).
 - Inserción/borrado de eventos en Google Calendar.
@@ -325,6 +355,7 @@
 - **Decisión pendiente:** tip split policy (afecta `Tip` table flow).
 
 ### Sprint 5 — Landing + SEO (semanas 9-10)
+
 - Home editorial (skill `impeccable` mode "brand").
 - Página de instructores + perfiles individuales.
 - Página de precios.
@@ -335,6 +366,7 @@
 - **Decisión pendiente:** logo, hero photography, Place ID Google Business.
 
 ### Sprint 6 — Polish + QA (semanas 11-12)
+
 - E2E Playwright críticos: happy path booking, cancelación user, redención crédito, cancelación ops, auth flows.
 - Visual review loop con skill `playwright-skill` + screenshots.
 - Accessibility audit WCAG 2.1 AA.
@@ -346,10 +378,10 @@
 
 ## Bloqueantes / decisiones abiertas (consolidadas)
 
-| Ref | Decisión | Bloquea | Acción |
-|---|---|---|---|
-| D-PRC | Precios por duración | Sprint 2 (Step 5 muestra totales) | Owner define antes de Sprint 2 |
-| D-TIP | Tip split policy | Sprint 4 (flujo `Tip`) | Owner define antes de Sprint 4 |
-| D-LEG | Legal review credit-only (ADR-008) | Producción (no Sprint 1-3) | Contratar bufete antes de Sprint 5 |
-| D-LOGO | Logo + hero photography | Sprint 5 (landing) | Owner produce antes de Sprint 5 |
-| D-PLACE | Google Place ID | Sprint 5 (email post-clase CTA) | Confirmar perfil escuela en Sprint 5 |
+| Ref     | Decisión                           | Bloquea                           | Acción                               |
+| ------- | ---------------------------------- | --------------------------------- | ------------------------------------ |
+| D-PRC   | Precios por duración               | Sprint 2 (Step 5 muestra totales) | Owner define antes de Sprint 2       |
+| D-TIP   | Tip split policy                   | Sprint 4 (flujo `Tip`)            | Owner define antes de Sprint 4       |
+| D-LEG   | Legal review credit-only (ADR-008) | Producción (no Sprint 1-3)        | Contratar bufete antes de Sprint 5   |
+| D-LOGO  | Logo + hero photography            | Sprint 5 (landing)                | Owner produce antes de Sprint 5      |
+| D-PLACE | Google Place ID                    | Sprint 5 (email post-clase CTA)   | Confirmar perfil escuela en Sprint 5 |
