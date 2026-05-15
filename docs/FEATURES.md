@@ -111,12 +111,13 @@
 
 ### F-009 — `.claude/settings.local.json` con allowlist mínimo
 
-- Sprint: 0 · Estado: backlog · Prioridad: P1
+- Sprint: 0 · Estado: done · Prioridad: P1
 - Depende de: F-001
 - AC:
-  - [ ] Allowlist incluye `npm:*`, `npx prisma:*`, `npx playwright:*`, comandos git no destructivos
-  - [ ] `CLAUDE.md` y `docs/*.md` presentes en el repo
+  - [x] Allowlist incluye `npm:*`, `npx prisma:*`, `npx playwright:*`, comandos git no destructivos (`status`, `diff`, `log`, `add`, `commit`, `branch`, `checkout`, `push`, `worktree`) — más `npx @better-auth/cli:*`, `npx shadcn:*`, `gh pr:*`, `gh repo view:*` que ya se usan en el flujo
+  - [x] `CLAUDE.md` y `docs/*.md` (`PRD`, `Architecture`, `FEATURES`, `WORKFLOW`) presentes en el repo
 - Tests: N/A.
+- Notas: archivo trackeado en git (no gitignored) para que el allowlist sea consistente entre worktrees y reproducible para futuros colaboradores.
 
 ### F-010 — Split de `docs/PRD.md` → PRD + Architecture
 
