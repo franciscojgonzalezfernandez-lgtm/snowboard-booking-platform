@@ -1,6 +1,27 @@
 {
-  "nav": {},
-  "home": {},
-  "login": {},
-  "common": {}
+  "common": {
+    "locale_label": "Español",
+    "locale_short": "ES"
+  },
+  "nav": {
+    "about": "Sobre nosotros",
+    "instructors": "Instructores",
+    "prices": "Precios",
+    "journal": "Cuaderno",
+    "signin": "Iniciar sesión",
+    "switch_language_aria": "Cambiar idioma"
+  },
+  "home": {
+    "utility": "Verbier · 4 Vallées · Abierto del 27 nov al 26 abr",
+    "eyebrow": "Cuaderno de campo · Nº 04",
+    "title_line1": "Aprende a montar",
+    "title_line2_pre": "el",
+    "title_accent": "Valais",
+    "sub": "Clases privadas de snowboard en Verbier — de 1 a 4 personas, cuatro duraciones, tres idiomas, un instructor local que esquía de verdad las líneas que vas a aprender.",
+    "cta_primary": "Reservar clase",
+    "cta_signin": "Iniciar sesión",
+    "footer_copy": "© 2026 Adlerhorst · SBS",
+    "footer_loc": "Verbier · Valais · Suiza"
+  },
+  "login": {}
 }
