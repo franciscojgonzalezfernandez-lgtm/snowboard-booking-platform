@@ -1,15 +1,7 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
-
-const cormorantGaramond = Cormorant_Garamond({
-  variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
-  style: ["normal", "italic"],
-});
 
 export const metadata: Metadata = {
   title: "Snowboard Booking Platform",
@@ -23,7 +15,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${cormorantGaramond.variable} antialiased`}>
+      <body className="antialiased">
         {children}
         <Analytics />
         <SpeedInsights />

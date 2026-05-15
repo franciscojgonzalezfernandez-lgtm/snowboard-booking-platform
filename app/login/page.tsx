@@ -19,7 +19,7 @@ export default async function LoginPage() {
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-16">
       <div className="space-y-2">
         <h1
-          className="font-[family-name:var(--font-display)] text-4xl tracking-tight"
+          className="text-4xl tracking-tight"
           data-testid="login-title"
         >
           Sign in
