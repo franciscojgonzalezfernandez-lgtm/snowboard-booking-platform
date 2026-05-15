@@ -16,7 +16,14 @@
       "Bash(git push:*)",
       "Bash(gh pr:*)",
       "Bash(gh repo view:*)",
-      "Bash(git worktree *)"
+      "Bash(git worktree *)",
+      "Bash(git -C /Users/javi/Desktop/React-Projects/booking-platform worktree list)",
+      "Bash(git -C /Users/javi/Desktop/React-Projects/booking-platform fetch origin)",
+      "Bash(git -C /Users/javi/Desktop/React-Projects/booking-platform diff .claude/settings.local.json)",
+      "Bash(git -C /Users/javi/Desktop/React-Projects/booking-platform show origin/main:.claude/settings.local.json)",
+      "Bash(git *)",
+      "Read(//Users/javi/Desktop/React-Projects/booking-platform.f-009/.claude/**)",
+      "Read(//Users/javi/Desktop/React-Projects/booking-platform.f-009/**)"
     ]
   }
 }
