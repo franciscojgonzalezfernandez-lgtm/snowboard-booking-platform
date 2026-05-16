@@ -23,5 +23,30 @@
     "footer_copy": "© 2026 Adlerhorst · SBS",
     "footer_loc": "Verbier · Valais · Suiza"
   },
-  "login": {}
+  "login": {
+    "metadata_title": "Iniciar sesión — Snowboard Booking Platform",
+    "heading": "Inicia sesión",
+    "sub": "E-mail y contraseña, magic link o Google.",
+    "terms_prefix": "Al continuar aceptas las ",
+    "terms_link": "condiciones del servicio",
+    "terms_suffix": ".",
+    "aria_tablist": "Modo de autenticación",
+    "tab_signin": "Iniciar sesión",
+    "tab_signup": "Crear cuenta",
+    "name_label": "Nombre",
+    "email_label": "E-mail",
+    "password_label": "Contraseña",
+    "submit_signin": "Iniciar sesión",
+    "submit_signup": "Crear cuenta",
+    "submit_working": "Procesando…",
+    "divider": "o",
+    "google": "Continuar con Google",
+    "magic_link": "Envíame un magic link",
+    "magic_sent": "Magic link enviado. En dev sale en los logs del servidor (Resend llega en F-017).",
+    "error_fallback": "Autenticación fallida",
+    "validation_email_invalid": "E-mail inválido",
+    "validation_password_min": "Mínimo 8 caracteres",
+    "validation_name_required": "Obligatorio",
+    "validation_email_first": "Introduce primero un e-mail válido"
+  }
 }

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,22 +19,27 @@ import {
 } from "@/components/ui/form";
 import { authClient } from "@/lib/auth/client";
 
-const credentialsSchema = z.object({
-  email: z.string().email("Invalid email"),
-  password: z.string().min(8, "Min 8 characters"),
-  name: z.string().min(1, "Required").optional(),
-});
-
-type CredentialsValues = z.infer<typeof credentialsSchema>;
-
 type Mode = "signin" | "signup";
 
-export function LoginForm() {
+export function LoginForm({ locale }: { locale: string }) {
+  const t = useTranslations("login");
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("signin");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [magicSent, setMagicSent] = useState(false);
+
+  const credentialsSchema = useMemo(
+    () =>
+      z.object({
+        email: z.string().email(t("validation_email_invalid")),
+        password: z.string().min(8, t("validation_password_min")),
+        name: z.string().min(1, t("validation_name_required")).optional(),
+      }),
+    [t],
+  );
+
+  type CredentialsValues = z.infer<typeof credentialsSchema>;
 
   const form = useForm<CredentialsValues>({
     resolver: zodResolver(
@@ -43,6 +49,8 @@ export function LoginForm() {
     ),
     defaultValues: { email: "", password: "", name: "" },
   });
+
+  const localeHome = `/${locale}`;
 
   function onSubmit(values: CredentialsValues) {
     setError(null);
@@ -60,10 +68,10 @@ export function LoginForm() {
             });
 
       if (result.error) {
-        setError(result.error.message ?? "Authentication failed");
+        setError(result.error.message ?? t("error_fallback"));
         return;
       }
-      router.push("/");
+      router.push(localeHome);
       router.refresh();
     });
   }
@@ -72,7 +80,7 @@ export function LoginForm() {
     setError(null);
     await authClient.signIn.social({
       provider: "google",
-      callbackURL: "/",
+      callbackURL: localeHome,
     });
   }
 
@@ -81,16 +89,16 @@ export function LoginForm() {
     const email = form.getValues("email");
     const parsed = z.string().email().safeParse(email);
     if (!parsed.success) {
-      form.setError("email", { message: "Enter a valid email first" });
+      form.setError("email", { message: t("validation_email_first") });
       return;
     }
     setMagicSent(false);
     const result = await authClient.signIn.magicLink({
       email: parsed.data,
-      callbackURL: "/",
+      callbackURL: localeHome,
     });
     if (result.error) {
-      setError(result.error.message ?? "Magic link failed");
+      setError(result.error.message ?? t("error_fallback"));
       return;
     }
     setMagicSent(true);
@@ -100,7 +108,7 @@ export function LoginForm() {
     <div className="space-y-6">
       <div
         role="tablist"
-        aria-label="Authentication mode"
+        aria-label={t("aria_tablist")}
         className="grid grid-cols-2 gap-2 border-b border-border pb-2"
       >
         <button
@@ -116,7 +124,7 @@ export function LoginForm() {
               : "text-muted-foreground hover:text-foreground")
           }
         >
-          Sign in
+          {t("tab_signin")}
         </button>
         <button
           type="button"
@@ -131,7 +139,7 @@ export function LoginForm() {
               : "text-muted-foreground hover:text-foreground")
           }
         >
-          Create account
+          {t("tab_signup")}
         </button>
       </div>
 
@@ -147,7 +155,7 @@ export function LoginForm() {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>{t("name_label")}</FormLabel>
                   <FormControl>
                     <Input
                       autoComplete="name"
@@ -166,7 +174,7 @@ export function LoginForm() {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>{t("email_label")}</FormLabel>
                 <FormControl>
                   <Input
                     type="email"
@@ -185,7 +193,7 @@ export function LoginForm() {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Password</FormLabel>
+                <FormLabel>{t("password_label")}</FormLabel>
                 <FormControl>
                   <Input
                     type="password"
@@ -208,17 +216,17 @@ export function LoginForm() {
             className="w-full"
           >
             {pending
-              ? "Working…"
+              ? t("submit_working")
               : mode === "signup"
-                ? "Create account"
-                : "Sign in"}
+                ? t("submit_signup")
+                : t("submit_signin")}
           </Button>
         </form>
       </Form>
 
       <div className="flex items-center gap-3 text-xs text-muted-foreground">
         <span className="h-px flex-1 bg-border" />
-        <span>or</span>
+        <span>{t("divider")}</span>
         <span className="h-px flex-1 bg-border" />
       </div>
 
@@ -230,7 +238,7 @@ export function LoginForm() {
           onClick={onGoogle}
           data-testid="btn-google"
         >
-          Continue with Google
+          {t("google")}
         </Button>
         <Button
           type="button"
@@ -239,7 +247,7 @@ export function LoginForm() {
           onClick={onMagicLink}
           data-testid="btn-magic-link"
         >
-          Email me a magic link
+          {t("magic_link")}
         </Button>
       </div>
 
@@ -249,8 +257,7 @@ export function LoginForm() {
           role="status"
           data-testid="magic-sent"
         >
-          Magic link sent. Check the server logs in dev (Resend wiring lands in
-          F-017).
+          {t("magic_sent")}
         </p>
       ) : null}
 
