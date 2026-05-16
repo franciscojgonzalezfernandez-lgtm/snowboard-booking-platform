@@ -411,7 +411,7 @@
 
 ### F-033 — Move login to `app/[locale]/login/` + translate strings
 
-- Sprint: 0.5 · Estado: review · Prioridad: P0
+- Sprint: 0.5 · Estado: done · Prioridad: P0
 - Depende de: F-031
 - AC:
   - [x] `app/[locale]/login/page.tsx` (server component) con `auth.api.getSession({ headers: await headers() })`; si sesión, `redirect(\`/\${locale}\`)`; copy traducido (heading, sub, terms link)
@@ -426,15 +426,15 @@
 
 ### F-034 — Playwright E2E: home + login × 3 locales
 
-- Sprint: 0.5 · Estado: backlog · Prioridad: P0
+- Sprint: 0.5 · Estado: done · Prioridad: P0
 - Depende de: F-032, F-033
 - AC:
-  - [ ] `e2e/f-005-auth-google.spec.ts` actualizado: paths `/login` → `/en/login`; quick check en `/de/login` y `/es/login` renderiza los 3 métodos
-  - [ ] `e2e/f-032-home-locales.spec.ts` nuevo: `/`, `/en`, `/de`, `/es` rinden; H1 distinto por locale; language switcher rota EN→DE→ES; CTAs incluyen locale en href
-  - [ ] `e2e/f-033-login-locales.spec.ts` nuevo: labels traducidas por locale (match `messages/{locale}.json`); tab signin↔signup funciona; redirect-on-session va a `/${locale}` (no `/`)
-  - [ ] `npm run test:e2e` corre verde
+  - [x] `e2e/f-005-auth-google.spec.ts` actualizado: paths `/login` → `/en/login`; quick check en `/de/login` y `/es/login` renderiza los 3 métodos
+  - [x] `e2e/f-032-home-locales.spec.ts` nuevo: `/`, `/en`, `/de`, `/es` rinden; H1 distinto por locale; language switcher rota EN→DE→ES; CTAs incluyen locale en href
+  - [x] `e2e/f-033-login-locales.spec.ts` nuevo: labels traducidas por locale (match `messages/{locale}.json`); tab signin↔signup funciona; redirect-on-session va a `/${locale}` (no `/`)
+  - [x] `npm run test:e2e` corre verde (20/20 chromium suites)
 - Tests: las propias suites.
-- Notas: rama `f-034-e2e-locales`.
+- Notas: rama `f-034-e2e-locales`. PR cierra Sprint 0.5.
 
 ---
 
