@@ -6,7 +6,7 @@ function uniqueEmail() {
 
 test.describe("F-005 — Better Auth", () => {
   test("login page renders three auth methods", async ({ page }) => {
-    await page.goto("/login");
+    await page.goto("/en/login");
     await expect(page.getByTestId("login-title")).toHaveText("Sign in");
     await expect(page.getByTestId("input-email")).toBeVisible();
     await expect(page.getByTestId("input-password")).toBeVisible();
@@ -14,13 +14,25 @@ test.describe("F-005 — Better Auth", () => {
     await expect(page.getByTestId("btn-magic-link")).toBeVisible();
   });
 
+  for (const locale of ["de", "es"] as const) {
+    test(`/${locale}/login also renders the three auth methods`, async ({
+      page,
+    }) => {
+      await page.goto(`/${locale}/login`);
+      await expect(page.getByTestId("input-email")).toBeVisible();
+      await expect(page.getByTestId("input-password")).toBeVisible();
+      await expect(page.getByTestId("btn-google")).toBeVisible();
+      await expect(page.getByTestId("btn-magic-link")).toBeVisible();
+    });
+  }
+
   test("email+password signup creates a session getSession can read", async ({
     page,
   }) => {
     const email = uniqueEmail();
     const password = "Sn0wb0ard!Strong";
 
-    await page.goto("/login");
+    await page.goto("/en/login");
     await page.getByTestId("tab-signup").click();
     await page.getByTestId("input-name").fill("F005 Tester");
     await page.getByTestId("input-email").fill(email);
@@ -44,7 +56,7 @@ test.describe("F-005 — Better Auth", () => {
     const email = uniqueEmail();
     const password = "Sn0wb0ard!Strong";
 
-    await page.goto("/login");
+    await page.goto("/en/login");
     await page.getByTestId("tab-signup").click();
     await page.getByTestId("input-name").fill("F005 Returning");
     await page.getByTestId("input-email").fill(email);
@@ -54,7 +66,7 @@ test.describe("F-005 — Better Auth", () => {
 
     await page.context().clearCookies();
 
-    await page.goto("/login");
+    await page.goto("/en/login");
     await page.getByTestId("input-email").fill(email);
     await page.getByTestId("input-password").fill(password);
     await page.getByTestId("submit-credentials").click();
@@ -72,7 +84,7 @@ test.describe("F-005 — Better Auth", () => {
   test("Google button posts to the social sign-in endpoint", async ({
     page,
   }) => {
-    await page.goto("/login");
+    await page.goto("/en/login");
 
     const [request] = await Promise.all([
       page.waitForRequest(
@@ -89,7 +101,7 @@ test.describe("F-005 — Better Auth", () => {
   });
 
   test("magic link button surfaces the stub confirmation", async ({ page }) => {
-    await page.goto("/login");
+    await page.goto("/en/login");
     await page.getByTestId("input-email").fill(uniqueEmail());
     await page.getByTestId("btn-magic-link").click();
     await expect(page.getByTestId("magic-sent")).toBeVisible({ timeout: 5000 });
