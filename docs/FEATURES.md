@@ -131,12 +131,13 @@
 
 ### F-011 — `docs/FEATURES.md` poblado
 
-- Sprint: 0 · Estado: in-progress · Prioridad: P0
+- Sprint: 0 · Estado: done · Prioridad: P0
 - Depende de: —
 - AC:
-  - [ ] Tickets de Sprint 0 + 1.5 + 1 con AC binarios
-  - [ ] Bullets gruesos para Sprints 2-6
+  - [x] Tickets de Sprint 0 + 1.5 + 1 con AC binarios (F-001..F-027; F-028..F-034 de Sprint 0.5 añadidos en repriorización posterior)
+  - [x] Bullets gruesos para Sprints 2-6
 - Tests: N/A.
+- Notas: backlog vivo — nuevos tickets se añaden al cerrar sprints. Sprint 0.5 (F-028..F-034) y F-028b se incorporaron post-aterrizaje de F-011 sin reabrir el ticket.
 
 ### F-012 — `docs/WORKFLOW.md` (corta, ≤80 líneas)
 
