@@ -1,13 +1,13 @@
 {
   "permissions": {
-    "defaultMode": "acceptEdits",
     "allow": [
       "Bash(*)",
       "Read(**)",
       "Edit(**)",
       "Write(**)",
       "WebFetch(*)",
-      "WebSearch(*)"
+      "WebSearch(*)",
+      "Skill(*)"
     ],
     "deny": [
       "Bash(git push origin main*)",
@@ -23,6 +23,7 @@
       "Bash(rm -rf .git*)",
       "Bash(git branch -D main*)",
       "Bash(git update-ref -d refs/heads/main*)"
-    ]
+    ],
+    "defaultMode": "acceptEdits"
   }
 }
