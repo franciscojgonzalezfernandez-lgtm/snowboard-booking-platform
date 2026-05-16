@@ -61,7 +61,7 @@
 
 ### F-005 — Better Auth completo (email+pwd + magicLink + Google OAuth)
 
-- Sprint: 0 · Estado: review · Prioridad: P0
+- Sprint: 0 · Estado: done · Prioridad: P0
 - Depende de: F-004
 - AC:
   - [x] `lib/auth/index.ts` con Better Auth configurado
@@ -71,7 +71,7 @@
   - [x] `app/api/auth/[...all]/route.ts` con handler catch-all
   - [x] Página `/login` provisional con email+pwd, Google y magic-link (se moverá a `app/[locale]/(auth)/login/` cuando aterrice next-intl en Sprint 5)
   - [x] Google Cloud project creado; OAuth consent screen en "Testing"; callback registrado: `http://localhost:3000/api/auth/callback/google` _(acción del owner; bloquea el último AC)_
-  - [ ] Login con Google en dev funciona end-to-end (sesión persiste, `auth.api.getSession` la devuelve) _(depende del AC anterior)_
+  - [x] Login con Google en dev funciona end-to-end (sesión persiste, `auth.api.getSession` la devuelve) _(depende del AC anterior)_
 - Tests: Playwright E2E `e2e/f-005-auth-google.spec.ts` — `/login` renderiza los tres métodos, signup crea sesión leíble por `/api/auth/get-session`, signin reusa credenciales, botón Google emite `POST /api/auth/sign-in/social {provider:"google"}`, magic-link muestra confirmación stub.
 - Notas: para correr el spec en local hace falta `DATABASE_URL` apuntando a una branch Neon limpia; el test de Google no necesita OAuth real (verifica wiring vía request intercept). Subir a `done` cuando el owner registre credenciales Google y el último AC pase.
 - Decisiones pendientes: cuándo subir OAuth consent screen a "Production" (Sprint 1.5 + dominio propio).
@@ -332,49 +332,49 @@
 
 ### F-028 — Reprioritize PRD §12 + FEATURES backlog
 
-- Sprint: 0.5 · Estado: review · Prioridad: P0
+- Sprint: 0.5 · Estado: done · Prioridad: P0
 - Depende de: F-011
 - AC:
   - [x] `docs/PRD.md` §12 incluye "Sprint 0.5" entre Sprint 0 y Sprint 1 cubriendo F-028..F-034
   - [x] `docs/PRD.md` §12 Sprint 5 actualiza para reflejar que home minimal + i18n scaffolding ya existen desde Sprint 0.5
   - [x] `docs/FEATURES.md` añade tickets F-028..F-034 con AC binarios
-  - [ ] PR mergeado a `main`
+  - [x] PR mergeado a `main`
 - Tests: N/A (docs only).
 - Notas: rama `f-028-repriorize-docs`. No toca código.
 
 ### F-028b — Reset `app/globals.css` + drop Cormorant baseline
 
-- Sprint: 0.5 · Estado: backlog · Prioridad: P0
+- Sprint: 0.5 · Estado: done · Prioridad: P0
 - Depende de: F-028
 - AC:
-  - [ ] `app/globals.css` colapsado a baseline neutro: blanco/casi-negro, sin warm hue, sin chart palette. Nombres de variables shadcn preservados (background, foreground, primary, secondary, muted, accent, destructive, border, input, ring, popover, card, sidebar*, chart-1..5, radius)
-  - [ ] `app/layout.tsx` elimina import de `Cormorant_Garamond` y la variable `--font-display` queda sin asignar (el override de F-030 reintroducirá lo que toque)
-  - [ ] `npm run build` corre limpio
-  - [ ] `/login` carga sin errores y los primitives shadcn renderizan (botón, input) — visual "feo pero funcional" es aceptable; F-030 viene después
+  - [x] `app/globals.css` colapsado a baseline neutro: blanco/casi-negro, sin warm hue, sin chart palette. Nombres de variables shadcn preservados (background, foreground, primary, secondary, muted, accent, destructive, border, input, ring, popover, card, sidebar\*, chart-1..5, radius)
+  - [x] `app/layout.tsx` elimina import de `Cormorant_Garamond` y la variable `--font-display` queda sin asignar (el override de F-030 reintroducirá lo que toque)
+  - [x] `npm run build` corre limpio
+  - [x] `/login` carga sin errores y los primitives shadcn renderizan (botón, input) — visual "feo pero funcional" es aceptable; F-030 viene después
 - Tests: smoke Playwright existente sigue verde en `/`.
 - Notas: rama `f-028b-reset-design-baseline`. Acto deliberado de borrado — no se reintroduce nada estético aquí.
 
 ### F-029 — Design exploration: 3 hi-fi mockups (huashu-design)
 
-- Sprint: 0.5 · Estado: backlog · Prioridad: P0
+- Sprint: 0.5 · Estado: done · Prioridad: P0
 - Depende de: F-028b
 - AC:
-  - [ ] `docs/design-exploration/variant-A/index.html`, `variant-B/index.html`, `variant-C/index.html` — cada uno cubre **home + login** del producto, con su propia paleta, tipografía, tono editorial. Greenfield (no anclar al placeholder warm-neutral previo)
-  - [ ] `docs/design-exploration/README.md` — tabla de 1 página: por variante, su filosofía (ej. Pentagram-editorial / Field.io alpine-motion / Kenya Hara Swiss-minimal o lo que proponga el advisor), paleta hex/oklch, type pairing, tono
-  - [ ] Owner elige una variante; el README anota la elección al final ("Chosen: Variant X — date")
+  - [x] `docs/design-exploration/variant-A/index.html`, `variant-B/index.html`, `variant-C/index.html` — cada uno cubre **home + login** del producto, con su propia paleta, tipografía, tono editorial. Greenfield (no anclar al placeholder warm-neutral previo)
+  - [x] `docs/design-exploration/README.md` — tabla de 1 página: por variante, su filosofía (ej. Pentagram-editorial / Field.io alpine-motion / Kenya Hara Swiss-minimal o lo que proponga el advisor), paleta hex/oklch, type pairing, tono
+  - [x] Owner elige una variante; el README anota la elección al final ("Chosen: Variant X — date")
 - Tests: visual inspection en navegador.
 - Notas: rama `f-029-design-exploration`. Usa skill `huashu-design` modo "design direction advisor". No toca `app/*` aún.
 
 ### F-030 — Design tokens + design-system.md (impeccable)
 
-- Sprint: 0.5 · Estado: backlog · Prioridad: P0
+- Sprint: 0.5 · Estado: done · Prioridad: P0
 - Depende de: F-029
 - AC:
-  - [ ] `app/globals.css` reescrito con tokens de la variante elegida (oklch values reales)
-  - [ ] `app/layout.tsx` reintroduce las fuentes de la variante elegida (display + body o lo que aplique), wired vía `next/font` y variables CSS
-  - [ ] `docs/design-system.md` — tabla concisa: paleta (token name + oklch + uso), type scale (display/h1..h4/body/small con sizes y line-heights), spacing scale, radius scale, motion tokens (durations/easings)
-  - [ ] `npm run build` corre limpio
-  - [ ] Visual review por skill `impeccable` antes de marcar done
+  - [x] `app/globals.css` reescrito con tokens de la variante elegida (oklch values reales)
+  - [x] `app/layout.tsx` reintroduce las fuentes de la variante elegida (display + body o lo que aplique), wired vía `next/font` y variables CSS
+  - [x] `docs/design-system.md` — tabla concisa: paleta (token name + oklch + uso), type scale (display/h1..h4/body/small con sizes y line-heights), spacing scale, radius scale, motion tokens (durations/easings)
+  - [x] `npm run build` corre limpio
+  - [x] Visual review por skill `impeccable` antes de marcar done
 - Tests: Playwright screenshot de `/login` y `/` confirma que tokens se aplican (no es regresión visual, es smoke).
 - Notas: rama `f-030-design-tokens`. Usa skill `impeccable`.
 
