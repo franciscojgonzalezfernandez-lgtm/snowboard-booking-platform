@@ -27,7 +27,7 @@ test.describe("F-005 — Better Auth", () => {
     await page.getByTestId("input-password").fill(password);
     await page.getByTestId("submit-credentials").click();
 
-    await page.waitForURL("**/");
+    await page.waitForURL(/\/(en|de|es)\/?$/);
 
     const session = await page.evaluate(async () => {
       const res = await fetch("/api/auth/get-session", {
@@ -50,20 +50,15 @@ test.describe("F-005 — Better Auth", () => {
     await page.getByTestId("input-email").fill(email);
     await page.getByTestId("input-password").fill(password);
     await page.getByTestId("submit-credentials").click();
-    await page.waitForURL("**/");
+    await page.waitForURL(/\/(en|de|es)\/?$/);
 
-    await page.evaluate(async () => {
-      await fetch("/api/auth/sign-out", {
-        method: "POST",
-        credentials: "include",
-      });
-    });
+    await page.context().clearCookies();
 
     await page.goto("/login");
     await page.getByTestId("input-email").fill(email);
     await page.getByTestId("input-password").fill(password);
     await page.getByTestId("submit-credentials").click();
-    await page.waitForURL("**/");
+    await page.waitForURL(/\/(en|de|es)\/?$/);
 
     const session = await page.evaluate(async () => {
       const res = await fetch("/api/auth/get-session", {
