@@ -24,6 +24,6 @@
       "Bash(git branch -D main*)",
       "Bash(git update-ref -d refs/heads/main*)"
     ],
-    "defaultMode": "acceptEdits"
+    "defaultMode": "bypassPermissions"
   }
 }
