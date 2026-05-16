@@ -42,13 +42,35 @@
 
 ## Skills active in this project
 
+**Design + testing (kept from before):**
 - **impeccable** — primary design driver, both "brand" mode (landing) and "product" mode (booking/dashboard)
-- **playwright-skill** — E2E testing + visual review loop
+- **playwright-skill** — E2E testing + visual review loop (browser automation)
+
+**Engineering experts (Next.js 15 + Prisma + i18n):**
+- **vercel-react-best-practices** — React/Next.js perf base from Vercel Engineering (402K installs)
+- **nextjs-app-router-patterns** — App Router, RSC, streaming, Server Actions
+- **typescript-advanced-types** — strict-mode TS, generics, conditional/mapped types
+- **prisma-database-setup** — Prisma schema + provider setup (official Prisma)
+- **prisma-client-api** — query patterns, `$transaction`, filters (official Prisma)
+- **prisma-postgres** — Neon-compatible Postgres provisioning + operations
+- **next-intl-add-language** — add/maintain locale `en | de | es` and slug translations
+
+**QA + performance:**
+- **testing-strategy** — Anthropic-official test strategy & coverage design
+- **playwright-testing** — extra Playwright tactics (augments `playwright-skill`)
+- **booking-platform-perf** — Web Vitals auditor enforcing this project's budgets (LCP < 2.5s, CLS < 0.1, availability p95 < 500ms, home bundle < 200KB)
 
 **Skills installed globally but NOT active here unless I explicitly invoke them:**
 - huashu-design — not compatible with Next.js architecture
 - taste — invoke with `"use taste for X"`
 - ui-ux-pro-max — invoke with `"check ui-ux-pro-max for Y"`
+- design-taste-frontend, high-end-visual-design, imagegen-frontend-web, imagegen-frontend-mobile — design-asset skills, invoke explicitly when needed
+
+**Out of scope for now (can install later if needed):**
+- Better Auth specialist skill
+- Stripe payments / webhooks specialist skill
+- Accessibility / WCAG auditor
+- System architect / ADR writer
 
 ---
 
