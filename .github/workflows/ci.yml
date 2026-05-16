@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: lint + typecheck + unit + e2e smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      # Dummy values keep module-load happy on CI for the smoke path,
+      # which never touches the database or auth flows.
+      # Full E2E with a Neon branch is tracked in F-022.
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci?sslmode=disable
+      DIRECT_URL: postgresql://ci:ci@localhost:5432/ci?sslmode=disable
+      BETTER_AUTH_SECRET: ci-not-a-real-secret-ci-not-a-real-secret
+      BETTER_AUTH_URL: http://localhost:3000
+      GOOGLE_ID: ci-dummy
+      GOOGLE_SECRET: ci-dummy
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prisma generate
+        run: npx prisma generate
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright system deps
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: E2E smoke
+        run: npx playwright test e2e/smoke.spec.ts --project=chromium

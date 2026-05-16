@@ -151,12 +151,12 @@
 
 ### F-013 — CI con GitHub Actions
 
-- Sprint: 0 · Estado: backlog · Prioridad: P0
+- Sprint: 0 · Estado: review · Prioridad: P0
 - Depende de: F-002, F-008
 - AC:
-  - [ ] `.github/workflows/ci.yml` corre `lint`, `typecheck`, `test:unit`, `test:e2e` (smoke) en cada PR
-  - [ ] Cache de `node_modules` configurado
-  - [ ] Job falla bloquea merge (status check requerido por branch protection de F-001)
+  - [x] `.github/workflows/ci.yml` corre `lint`, `typecheck`, `test:unit`, `test:e2e` (smoke) en cada PR
+  - [x] Cache de `node_modules` configurado (vía `actions/setup-node` con `cache: npm` + cache de browsers de Playwright)
+  - [ ] Job falla bloquea merge (status check requerido por branch protection de F-001 — requiere marcar `CI / lint + typecheck + unit + e2e smoke` como required check en GitHub tras el primer run verde)
 - Tests: el propio workflow verde.
 
 ### F-014 — Vercel: conectar repo + deploy previews
