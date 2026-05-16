@@ -1,29 +1,28 @@
 {
   "permissions": {
+    "defaultMode": "acceptEdits",
     "allow": [
-      "Bash(npm:*)",
-      "Bash(npx prisma:*)",
-      "Bash(npx playwright:*)",
-      "Bash(npx @better-auth/cli:*)",
-      "Bash(npx shadcn:*)",
-      "Bash(git status:*)",
-      "Bash(git diff:*)",
-      "Bash(git log:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git branch:*)",
-      "Bash(git checkout:*)",
-      "Bash(git push:*)",
-      "Bash(gh pr:*)",
-      "Bash(gh repo view:*)",
-      "Bash(git worktree *)",
-      "Bash(git -C /Users/javi/Desktop/React-Projects/booking-platform worktree list)",
-      "Bash(git -C /Users/javi/Desktop/React-Projects/booking-platform fetch origin)",
-      "Bash(git -C /Users/javi/Desktop/React-Projects/booking-platform diff .claude/settings.local.json)",
-      "Bash(git -C /Users/javi/Desktop/React-Projects/booking-platform show origin/main:.claude/settings.local.json)",
-      "Bash(git *)",
-      "Read(//Users/javi/Desktop/React-Projects/booking-platform.f-009/.claude/**)",
-      "Read(//Users/javi/Desktop/React-Projects/booking-platform.f-009/**)"
+      "Bash(*)",
+      "Read(**)",
+      "Edit(**)",
+      "Write(**)",
+      "WebFetch(*)",
+      "WebSearch(*)"
+    ],
+    "deny": [
+      "Bash(git push origin main*)",
+      "Bash(git push origin HEAD:main*)",
+      "Bash(git push * main:*)",
+      "Bash(git push * HEAD:main*)",
+      "Bash(git push -f*)",
+      "Bash(git push --force*)",
+      "Bash(git push --force-with-lease*)",
+      "Bash(gh repo delete*)",
+      "Bash(rm -rf /Users/javi/Desktop/React-Projects/booking-platform)",
+      "Bash(rm -rf /Users/javi/Desktop/React-Projects/booking-platform/*)",
+      "Bash(rm -rf .git*)",
+      "Bash(git branch -D main*)",
+      "Bash(git update-ref -d refs/heads/main*)"
     ]
   }
 }
