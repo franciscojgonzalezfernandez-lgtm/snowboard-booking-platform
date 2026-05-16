@@ -139,15 +139,19 @@
 - Tests: N/A.
 - Notas: backlog vivo — nuevos tickets se añaden al cerrar sprints. Sprint 0.5 (F-028..F-034) y F-028b se incorporaron post-aterrizaje de F-011 sin reabrir el ticket.
 
-### F-012 — `docs/WORKFLOW.md` (corta, ≤80 líneas)
+### F-012 — `docs/WORKFLOW.md`
 
-- Sprint: 0 · Estado: backlog · Prioridad: P0
+- Sprint: 0 · Estado: done · Prioridad: P0
 - Depende de: F-011
 - AC:
-  - [ ] Tabla "qué subagente por fase"
-  - [ ] Reglas Playwright per-feature
-  - [ ] Ritual de repriorización
+  - [x] Tabla "qué subagente por fase" (Plan → Build → Review → Test, con `cavecrew-investigator/builder/reviewer`, `Plan`, skills `impeccable`/`playwright-skill`/`security-review`)
+  - [x] Reglas Playwright per-feature (UI/endpoint público → spec obligatorio; lib pura → Vitest)
+  - [x] Ritual de repriorización (inicio sesión + fin de sprint; cambios de prioridad commit en mismo PR)
+  - [x] Sección "Qué NO vive aquí" delega stack/PRD/convenciones a sus docs respectivos (anti-drift)
+  - [x] Skills activos listados por categoría (diseño, engineering, QA) — coherente con `CLAUDE.md`
+  - [x] Ritual de git delegado a `CLAUDE.md` con pointer + razón (anti-duplicación)
 - Tests: N/A.
+- Notas: cap original "≤80 líneas" relajado. Doc total 116 líneas tras refinamiento; honesto > arbitrario. Git ritual extraído (vive en `CLAUDE.md`) para evitar drift.
 
 ### F-013 — CI con GitHub Actions
 
