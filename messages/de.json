@@ -23,5 +23,30 @@
     "footer_copy": "© 2026 Adlerhorst · SBS",
     "footer_loc": "Verbier · Wallis · Schweiz"
   },
-  "login": {}
+  "login": {
+    "metadata_title": "Anmelden — Snowboard Booking Platform",
+    "heading": "Anmelden",
+    "sub": "E-Mail und Passwort, Magic Link oder Google.",
+    "terms_prefix": "Mit der Anmeldung akzeptierst du die ",
+    "terms_link": "Nutzungsbedingungen",
+    "terms_suffix": ".",
+    "aria_tablist": "Anmeldemodus",
+    "tab_signin": "Anmelden",
+    "tab_signup": "Konto erstellen",
+    "name_label": "Name",
+    "email_label": "E-Mail",
+    "password_label": "Passwort",
+    "submit_signin": "Anmelden",
+    "submit_signup": "Konto erstellen",
+    "submit_working": "Lädt…",
+    "divider": "oder",
+    "google": "Mit Google fortfahren",
+    "magic_link": "Magic Link per E-Mail",
+    "magic_sent": "Magic Link gesendet. In dev steht er im Server-Log (Resend-Wiring kommt in F-017).",
+    "error_fallback": "Anmeldung fehlgeschlagen",
+    "validation_email_invalid": "Ungültige E-Mail",
+    "validation_password_min": "Mindestens 8 Zeichen",
+    "validation_name_required": "Erforderlich",
+    "validation_email_first": "Zuerst eine gültige E-Mail eingeben"
+  }
 }

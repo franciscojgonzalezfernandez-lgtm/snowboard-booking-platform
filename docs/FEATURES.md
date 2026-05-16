@@ -379,48 +379,49 @@
 
 ### F-031 — `next-intl` scaffolding ([locale] + middleware + messages)
 
-- Sprint: 0.5 · Estado: backlog · Prioridad: P0
+- Sprint: 0.5 · Estado: done · Prioridad: P0
 - Depende de: F-030
 - AC:
-  - [ ] `npm i next-intl` instalado
-  - [ ] `i18n/routing.ts` con `defineRouting({ locales: ['en','de','es'], defaultLocale: 'en' })`
-  - [ ] `i18n/request.ts` con `getRequestConfig` cargando `messages/{locale}.json`
-  - [ ] `middleware.ts` en root con `createMiddleware(routing)`. Matcher excluye `/api/*` (crítico para better-auth catch-all), `/_next`, `/sentry-example-page`, `/api/sentry-example-api`, assets estáticos
-  - [ ] `next.config.ts` envuelve config con `withNextIntl(routing)` **antes** de `withSentryConfig`
-  - [ ] `messages/en.json`, `messages/de.json`, `messages/es.json` con namespaces vacíos (`home: {}`, `login: {}`, `nav: {}`) — F-032/F-033 los pueblan
-  - [ ] `app/[locale]/layout.tsx` creado con `<html lang={locale}>`, `NextIntlClientProvider`, `setRequestLocale(locale)`
-  - [ ] `app/layout.tsx` actualizado: elimina `<html lang="en">` y `<body>`-wrap (esos viven en `[locale]/layout`); mantiene Analytics + SpeedInsights
-  - [ ] Visitar `/` redirige a `/en` (default locale); `/de` y `/es` rinden con su `<html lang>` correcto
-  - [ ] `/api/auth/get-session` sigue respondiendo (verificación de matcher de middleware)
+  - [x] `npm i next-intl` instalado
+  - [x] `i18n/routing.ts` con `defineRouting({ locales: ['en','de','es'], defaultLocale: 'en' })`
+  - [x] `i18n/request.ts` con `getRequestConfig` cargando `messages/{locale}.json`
+  - [x] `middleware.ts` en root con `createMiddleware(routing)`. Matcher excluye `/api/*` (crítico para better-auth catch-all), `/_next`, `/sentry-example-page`, `/api/sentry-example-api`, assets estáticos
+  - [x] `next.config.ts` envuelve config con `withNextIntl(routing)` **antes** de `withSentryConfig`
+  - [x] `messages/en.json`, `messages/de.json`, `messages/es.json` con namespaces vacíos (`home: {}`, `login: {}`, `nav: {}`) — F-032/F-033 los pueblan
+  - [x] `app/[locale]/layout.tsx` creado con `<html lang={locale}>`, `NextIntlClientProvider`, `setRequestLocale(locale)`
+  - [x] `app/layout.tsx` actualizado: elimina `<html lang="en">` y `<body>`-wrap (esos viven en `[locale]/layout`); mantiene Analytics + SpeedInsights
+  - [x] Visitar `/` redirige a `/en` (default locale); `/de` y `/es` rinden con su `<html lang>` correcto
+  - [x] `/api/auth/get-session` sigue respondiendo (verificación de matcher de middleware)
 - Tests: Playwright API `/api/auth/get-session` devuelve 200; smoke en `/en`, `/de`, `/es`.
-- Notas: rama `f-031-next-intl`. No incluye UI nueva — solo plumbing.
+- Notas: rama `f-031-next-intl`. Mergeada en PR #15 (commit `27a635d`). No incluye UI nueva — solo plumbing.
 
 ### F-032 — Home page minimal × 3 locales
 
-- Sprint: 0.5 · Estado: backlog · Prioridad: P0
+- Sprint: 0.5 · Estado: done · Prioridad: P0
 - Depende de: F-031
 - AC:
-  - [ ] `app/[locale]/page.tsx` con hero (headline + sub-copy + CTA primario "Book a lesson" → `/${locale}/reservar` placeholder + secundario "Sign in" → `/${locale}/login`)
-  - [ ] `app/components/LanguageSwitcher.tsx` (client) usando `useLocale()` + `usePathname()` + `useRouter()` de `next-intl`; preserva path al cambiar locale
-  - [ ] Nav header con logo placeholder + `LanguageSwitcher` + "Sign in" link
-  - [ ] `messages/{en,de,es}.json` namespace `home` y `nav` poblados (headline, sub, CTAs)
-  - [ ] `app/page.tsx` (root) eliminado o reemplazado por redirect a default locale (next-intl middleware ya lo cubre; eliminar para evitar duplicación)
+  - [x] `app/[locale]/page.tsx` con hero (headline + sub-copy + CTA primario "Book a lesson" → `/${locale}/reservar` placeholder + secundario "Sign in" → `/${locale}/login`)
+  - [x] `app/components/LanguageSwitcher.tsx` (client) usando `useLocale()` + `usePathname()` + `useRouter()` de `next-intl`; preserva path al cambiar locale
+  - [x] Nav header con logo placeholder + `LanguageSwitcher` + "Sign in" link
+  - [x] `messages/{en,de,es}.json` namespace `home` y `nav` poblados (headline, sub, CTAs)
+  - [x] `app/page.tsx` (root) eliminado o reemplazado por redirect a default locale (next-intl middleware ya lo cubre; eliminar para evitar duplicación)
 - Tests: Playwright E2E (cubierto por F-034) — cada locale renderiza copy correcto, switcher cambia URL+copy, CTAs llevan a path con locale.
-- Notas: rama `f-032-home`. Imágenes: usar gradient/solid color placeholder o foto temática genérica de Unsplash (license-free); D-LOGO sigue blocking para Sprint 5.
+- Notas: rama `f-032-home`. Mergeada en PR #16 (commit `eaa94df`). Variante visual elegida: Patagonia-editorial (Variant B de F-029). Imágenes: placeholders; D-LOGO sigue blocking para Sprint 5.
 
 ### F-033 — Move login to `app/[locale]/login/` + translate strings
 
-- Sprint: 0.5 · Estado: backlog · Prioridad: P0
+- Sprint: 0.5 · Estado: review · Prioridad: P0
 - Depende de: F-031
 - AC:
-  - [ ] `app/[locale]/login/page.tsx` (server component) con `auth.api.getSession({ headers: await headers() })`; si sesión, `redirect(\`/\${locale}\`)`; copy traducido (heading, sub, terms link)
-  - [ ] `app/[locale]/login/login-form.tsx` (client) usa `useTranslations('login')` para labels (email, password, name), tab labels (sign in / sign up), button copy (sign in / create account / continue with Google / email me a magic link), magic-sent confirmation, error fallback
-  - [ ] `callbackURL` de `signIn.social` y `signIn.magicLink` pasa a `/${locale}` (no `/`)
-  - [ ] `messages/{en,de,es}.json` namespace `login` poblado
-  - [ ] `app/login/page.tsx` y `app/login/login-form.tsx` eliminados
-  - [ ] Auth wiring intacto: `authClient.signIn.email`, `signUp.email`, `signIn.social({ provider: 'google' })`, `signIn.magicLink` sin cambios
+  - [x] `app/[locale]/login/page.tsx` (server component) con `auth.api.getSession({ headers: await headers() })`; si sesión, `redirect(\`/\${locale}\`)`; copy traducido (heading, sub, terms link)
+  - [x] `app/[locale]/login/login-form.tsx` (client) usa `useTranslations('login')` para labels (email, password, name), tab labels (sign in / sign up), button copy (sign in / create account / continue with Google / email me a magic link), magic-sent confirmation, error fallback
+  - [x] `callbackURL` de `signIn.social` y `signIn.magicLink` pasa a `/${locale}` (no `/`)
+  - [x] `messages/{en,de,es}.json` namespace `login` poblado
+  - [x] `app/login/page.tsx` y `app/login/login-form.tsx` eliminados
+  - [x] Auth wiring intacto: `authClient.signIn.email`, `signUp.email`, `signIn.social({ provider: 'google' })`, `signIn.magicLink` sin cambios
+  - [x] `middleware.ts` matcher actualizado: removida la exclusión `/login` (ya no existe ruta legacy fuera de `[locale]`)
 - Tests: cubierto por F-034.
-- Notas: rama `f-033-login-i18n`. Google OAuth callback (`/api/auth/callback/google`) en Google Cloud Console NO cambia — sigue sin locale prefix.
+- Notas: rama `f-033-login-i18n`. Google OAuth callback (`/api/auth/callback/google`) en Google Cloud Console NO cambia — sigue sin locale prefix. `setRequestLocale(locale)` añadido al top de la page server-side para mantener el segmento estático (recomendación skill `booking-platform-perf`). Bundle First Load JS `/[locale]/login` = 374 kB total (113 kB de página + 258 kB shared) — auth client + RHF + Zod; aceptable porque /login no entra en el budget de home.
 
 ### F-034 — Playwright E2E: home + login × 3 locales
 
