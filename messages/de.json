@@ -1,6 +1,27 @@
 {
-  "nav": {},
-  "home": {},
-  "login": {},
-  "common": {}
+  "common": {
+    "locale_label": "Deutsch",
+    "locale_short": "DE"
+  },
+  "nav": {
+    "about": "Über uns",
+    "instructors": "Lehrer",
+    "prices": "Preise",
+    "journal": "Feldnotizen",
+    "signin": "Anmelden",
+    "switch_language_aria": "Sprache wechseln"
+  },
+  "home": {
+    "utility": "Verbier · 4 Vallées · Saison 27. Nov – 26. Apr",
+    "eyebrow": "Feldhandbuch · Nr. 04",
+    "title_line1": "Snowboarden im",
+    "title_line2_pre": "",
+    "title_accent": "Wallis",
+    "sub": "Private Snowboardstunden in Verbier — 1 bis 4 Personen, vier Stundenlängen, drei Sprachen, ein lokaler Lehrer, der die Hänge wirklich kennt.",
+    "cta_primary": "Stunde buchen",
+    "cta_signin": "Anmelden",
+    "footer_copy": "© 2026 Adlerhorst · SBS",
+    "footer_loc": "Verbier · Wallis · Schweiz"
+  },
+  "login": {}
 }
