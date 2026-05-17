@@ -25,6 +25,10 @@ jobs:
       BETTER_AUTH_URL: http://localhost:3000
       GOOGLE_ID: ci-dummy
       GOOGLE_SECRET: ci-dummy
+      # Forward Vercel Deployment Protection bypass token to Playwright when
+      # the secret exists in repo settings. Empty/undefined on PRs from forks
+      # is fine — local smoke spec hits localhost and ignores the header.
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
 
     steps:
       - name: Checkout
