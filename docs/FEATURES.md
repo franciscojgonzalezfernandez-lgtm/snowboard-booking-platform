@@ -286,15 +286,16 @@
 
 ### F-021 — Seed `prisma/seed.ts`
 
-- Sprint: 1 · Estado: backlog · Prioridad: P0
+- Sprint: 1 · Estado: done · Prioridad: P0
 - Depende de: F-020
 - AC:
-  - [ ] 1 user con roles `[student, instructor, admin]` (el owner)
-  - [ ] 1 instructor enlazado al user, `acceptsSameDayIfBooked=false`, idiomas `[en, de, es]`
-  - [ ] 1 season activa (Nov-Apr) con `anchorTimes=["09:00","11:00","13:00","15:00"]`, `operatingHoursStart="09:00"`, `operatingHoursEnd="17:00"`
-  - [ ] `availabilityBlock` cubriendo días del season
-  - [ ] `npx prisma db seed` corre limpio sobre branch vacío
-- Tests: Vitest que tras seed verifica counts y relaciones.
+  - [x] 1 user con roles `[student, instructor, admin]` (el owner — `franciscojgonzalezfernandez@gmail.com`, name "Javi", phone `+41 766381870`, locale `en`)
+  - [x] 1 instructor enlazado al user, `acceptsSameDayIfBooked=false`, `calendarConnected=false`, idiomas `[en, de, es]`, 6 specialties (`beginner-friendly`, `freestyle`, `powder`, `race-carving`, `kids-4-12`, `special-needs`), bio real del owner
+  - [x] 1 season `Season 26/27` activa, `2026-11-15 → 2027-04-30`, anchor times `["09:00","11:00","13:00","15:00"]`, operating hours `09:00 - 17:00`
+  - [x] 56 `availabilityBlock` (8 semanas × 7 días, sin huecos) cubriendo desde `startDate`, cada uno con kind `AVAILABLE` y span `operatingHoursStart → operatingHoursEnd` del season
+  - [x] `npx prisma db seed` corre limpio (validado dos veces consecutivas → mismos ids → idempotente). Aplicado en Neon `dev` y promovido a Neon `main`.
+- Tests: `tests/seed.test.ts` con 6 specs Vitest leyendo `prisma/seed.ts` source — verifican counts (3 roles, 3 languages, 4 anchor times, 8 weeks), pattern idempotente (upsert/findFirst/deleteMany+createMany) y default `acceptsSameDayIfBooked=false`. La verificación con DB real queda para F-022 que decide la estrategia de test DB (branch Neon dedicada vs in-memory).
+- Notas: añadido `tsx` (devDep) + bloque `prisma.seed = "tsx prisma/seed.ts"` en `package.json` + script `db:seed`. Bio cargada de transcript del owner (sesión F-021). Foto = `null` por ahora; Vercel Blob URL llegará cuando el owner suba imagen (Sprint 5 / D-LOGO).
 
 ### F-022 — `lib/booking-engine/` (algoritmo availability + Vitest 90%+)
 
