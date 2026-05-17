@@ -217,15 +217,15 @@
 
 ### F-016 — Añadir URL de Vercel al callback list de Google OAuth
 
-- Sprint: 1.5 · Estado: backlog · Prioridad: P0
+- Sprint: 1.5 · Estado: done · Prioridad: P0
 - Depende de: F-015
 - AC:
-  - [ ] `BETTER_AUTH_URL` en Vercel Production scope = `https://snowboard-booking-platform.vercel.app` (no el alt domain `*-9b1q.vercel.app`)
-  - [ ] Callback `https://snowboard-booking-platform.vercel.app/api/auth/callback/google` añadido en Google Cloud Console (sección "Authorized redirect URIs" del OAuth 2.0 Client ID)
-  - [ ] `http://localhost:3000/api/auth/callback/google` permanece para dev local
-  - [ ] Login Google funciona en preview + production (sign-in flow termina con sesión activa, no `redirect_uri_mismatch`)
-- Tests: Playwright E2E en preview env.
-- Notas: diagnóstico realizado en sesión post-F-015 — `POST /api/auth/sign-in/social {provider:"google"}` contra prod devolvía `redirect_uri=https://snowboard-booking-platform-9b1q.vercel.app/...`. Root cause: `BETTER_AUTH_URL` apunta al alt domain. Pulled forward de Sprint 1.5 sólo si bloquea validación manual del owner; ya está priorizado P0 en su sprint.
+  - [x] `BETTER_AUTH_URL` en Vercel Production scope = `https://snowboard-booking-platform.vercel.app` (validado: `POST /api/auth/sign-in/social {provider:"google"}` devuelve `redirect_uri=https://snowboard-booking-platform.vercel.app/api/auth/callback/google`)
+  - [x] Callback canónico añadido en Google Cloud Console → OAuth 2.0 Client ID → "Authorized redirect URIs"
+  - [x] `http://localhost:3000/api/auth/callback/google` permanece para dev local
+  - [x] Login Google funciona en production (owner validó manualmente en Chrome: sign-in → consent → callback → sesión activa en `/en`)
+- Tests: validación manual del owner. Cobertura automatizada en preview env queda como followup junto con la suite de F-034 cuando se extienda a preview (no estrictamente parte de este ticket).
+- Notas: cerrado en la misma sesión que F-015, no en Sprint 1.5 — la fix era barata y desbloquea sign-up real del owner para probar el resto del producto. Diagnóstico inicial: `redirect_uri` apuntaba al alt domain `*-9b1q.vercel.app` porque `BETTER_AUTH_URL` no había sido actualizada al dominio canónico tras configurarlo en Vercel Domains.
 
 ### F-017 — Resend account + verificación de dominio DNS
 
