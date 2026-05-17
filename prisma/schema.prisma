@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -20,6 +21,46 @@ enum Role {
   admin
 }
 
+enum Duration {
+  ONE_HOUR
+  TWO_HOURS
+  INTENSIVE
+  FULL_DAY
+}
+
+enum Level {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT_FREESTYLE
+}
+
+enum BookingStatus {
+  PENDING_PAYMENT
+  CONFIRMED
+  COMPLETED
+  CANCELLED_BY_USER
+  CANCELLED_BY_OPS
+  PAYMENT_FAILED
+}
+
+enum AvailabilityKind {
+  AVAILABLE
+  BLOCKED
+}
+
+enum CreditReason {
+  USER_CANCEL
+  OPS_CANCEL
+}
+
+enum CreditStatus {
+  ACTIVE
+  LOCKED
+  USED
+  EXPIRED
+}
+
 model User {
   id            String   @id @default(cuid())
   email         String   @unique
@@ -33,8 +74,13 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  sessions Session[]
-  accounts Account[]
+  sessions       Session[]
+  accounts       Account[]
+  instructor     Instructor?
+  bookings       Booking[]
+  accountCredits AccountCredit[]
+
+  @@map("user")
 }
 
 model Session {
@@ -50,6 +96,7 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@map("session")
 }
 
 model Account {
@@ -71,6 +118,7 @@ model Account {
 
   @@unique([providerId, accountId])
   @@index([userId])
+  @@map("account")
 }
 
 model Verification {
@@ -82,4 +130,134 @@ model Verification {
   updatedAt  DateTime @updatedAt
 
   @@index([identifier])
+  @@map("verification")
+}
+
+model Instructor {
+  id                     String   @id @default(cuid())
+  userId                 String   @unique
+  photo                  String?
+  bio                    String?  @db.Text
+  specialties            String[]
+  languages              Locale[]
+  active                 Boolean  @default(true)
+  acceptsSameDayIfBooked Boolean  @default(false)
+  calendarConnected      Boolean  @default(false)
+  googleRefreshToken     String?
+  createdAt              DateTime @default(now())
+
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  availabilityBlocks AvailabilityBlock[]
+  bookings           Booking[]
+  tips               Tip[]
+}
+
+model AvailabilityBlock {
+  id            String           @id @default(cuid())
+  instructorId  String
+  startDateTime DateTime
+  endDateTime   DateTime
+  kind          AvailabilityKind
+
+  instructor Instructor @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+
+  @@index([instructorId, startDateTime])
+  @@index([startDateTime, endDateTime])
+}
+
+model Season {
+  id                  String   @id @default(cuid())
+  name                String
+  startDate           DateTime @db.Date
+  endDate             DateTime @db.Date
+  active              Boolean  @default(true)
+  anchorTimes         String[]
+  operatingHoursStart String
+  operatingHoursEnd   String
+
+  @@index([active, startDate, endDate])
+}
+
+model Booking {
+  id                    String        @id @default(cuid())
+  bookerId              String
+  instructorId          String
+  date                  DateTime      @db.Date
+  anchorTime            String
+  duration              Duration
+  language              Locale
+  status                BookingStatus
+  totalPriceCents       Int
+  stripePaymentIntentId String?       @unique
+  icsUid                String        @unique
+  googleEventId         String?
+  notes                 String?       @db.Text
+  cancelledByUserAt     DateTime?
+  cancelledByOpsAt      DateTime?
+  opsReason             String?
+  reminder24hSentAt     DateTime?
+  postClassEmailSentAt  DateTime?
+  createdAt             DateTime      @default(now())
+
+  booker          User            @relation(fields: [bookerId], references: [id])
+  instructor      Instructor      @relation(fields: [instructorId], references: [id])
+  attendees       Attendee[]
+  tip             Tip?
+  creditsSourced  AccountCredit[] @relation("CreditSource")
+  creditsRedeemed AccountCredit[] @relation("CreditRedemption")
+  creditsLocking  AccountCredit[] @relation("CreditLock")
+
+  @@index([bookerId, status])
+  @@index([instructorId, date])
+  @@index([date, status])
+}
+
+model Attendee {
+  id        String   @id @default(cuid())
+  bookingId String
+  name      String
+  birthDate DateTime @db.Date
+  level     Level
+  isBooker  Boolean  @default(false)
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+}
+
+model AccountCredit {
+  id                String       @id @default(cuid())
+  userId            String
+  amountCents       Int
+  sourceBookingId   String
+  usedOnBookingId   String?
+  lockedByBookingId String?
+  reason            CreditReason
+  status            CreditStatus
+  expiresAt         DateTime
+  usedAt            DateTime?
+  createdAt         DateTime     @default(now())
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceBooking   Booking  @relation("CreditSource", fields: [sourceBookingId], references: [id])
+  usedOnBooking   Booking? @relation("CreditRedemption", fields: [usedOnBookingId], references: [id])
+  lockedByBooking Booking? @relation("CreditLock", fields: [lockedByBookingId], references: [id])
+
+  @@index([userId, status])
+  @@index([status, expiresAt])
+}
+
+model Tip {
+  id                    String   @id @default(cuid())
+  bookingId             String   @unique
+  instructorId          String
+  amountCents           Int
+  stripePaymentIntentId String   @unique
+  paidAt                DateTime
+  requestEmailSentAt    DateTime
+
+  booking    Booking    @relation(fields: [bookingId], references: [id])
+  instructor Instructor @relation(fields: [instructorId], references: [id])
+
+  @@index([instructorId, paidAt])
 }

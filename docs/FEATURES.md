@@ -268,14 +268,15 @@
 
 ### F-020 — Schema completo (dominio + enums)
 
-- Sprint: 1 · Estado: backlog · Prioridad: P0
+- Sprint: 1 · Estado: done · Prioridad: P0
 - Depende de: F-004
 - AC:
-  - [ ] Tablas `instructor`, `availabilityBlock`, `season`, `booking`, `attendee`, `accountCredit`, `tip` en `prisma/schema.prisma` (ver Architecture §4.2)
-  - [ ] Enums `Locale, Role, Duration, Level, BookingStatus, AvailabilityKind, CreditReason, CreditStatus` (ver Architecture §4.3)
-  - [ ] Migración aplicada en branch Neon dev
-  - [ ] `npx @better-auth/cli generate` ejecutado tras cambios a `lib/auth/`
-- Tests: Vitest snapshot del schema; `prisma validate`.
+  - [x] Tablas `Instructor`, `AvailabilityBlock`, `Season`, `Booking`, `Attendee`, `AccountCredit`, `Tip` en `prisma/schema.prisma` (ver Architecture §4.2). 7 modelos de dominio + 4 de Better Auth + `_prisma_migrations` = 11 tablas verificadas en Neon `main`.
+  - [x] Enums `Locale`, `Role`, `Duration`, `Level`, `BookingStatus`, `AvailabilityKind`, `CreditReason`, `CreditStatus` (ver Architecture §4.3)
+  - [x] Migración `20260517111100_domain_schema` (204 líneas SQL) aplicada en Neon `dev` vía `prisma migrate dev` y promovida a Neon `main` vía `prisma migrate deploy`
+  - [x] `npx @better-auth/cli generate` ejecutado (no-op estructural — los modelos auth ya estaban alineados; el CLI confirma que el schema casa con `lib/auth/`)
+- Tests: `tests/prisma-schema.test.ts` con 4 specs Vitest cubren snapshot de modelos + enums, unicidad de `Booking.stripePaymentIntentId` + `Booking.icsUid`, y la convención `*Cents: Int` (ADR-004). `prisma validate` corre limpio.
+- Notas: índices añadidos para queries que vendrán en F-022/F-023 — `AvailabilityBlock(instructorId, startDateTime)` + `(startDateTime, endDateTime)`, `Booking(instructorId, date)` + `(date, status)` + `(bookerId, status)`, `Season(active, startDate, endDate)`, `AccountCredit(userId, status)` + `(status, expiresAt)`, `Attendee(bookingId)`, `Tip(instructorId, paidAt)`. Tabla `WebhookEvent` (idempotencia Stripe, ADR-006) no aterriza aquí — entra con F-018/Sprint 2 cuando se construya el webhook handler.
 
 ### F-021 — Seed `prisma/seed.ts`
 
