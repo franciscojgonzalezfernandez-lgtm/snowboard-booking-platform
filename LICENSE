@@ -1,0 +1,77 @@
+PROPRIETARY SOFTWARE LICENSE — ALL RIGHTS RESERVED
+
+Copyright (c) 2026 Francisco Javier González Fernández
+All rights reserved.
+
+This repository and all of its contents (the "Software") — including but not
+limited to source code, configuration, documentation, design assets, copy,
+schemas, migrations, and any associated files — are the exclusive property of
+Francisco Javier González Fernández (the "Author").
+
+The Software is made publicly viewable solely for portfolio, evaluation, and
+read-only educational reference purposes. Public visibility on a hosting
+platform such as GitHub does NOT constitute a grant of any license, express or
+implied, under any patent, copyright, trademark, trade secret, or other
+intellectual property right.
+
+1. PERMITTED
+
+   You MAY:
+     a. View the source code in its hosted location.
+     b. Read it for personal, non-commercial educational reference.
+     c. Cite small excerpts (under fair-use / fair-dealing) with attribution
+        to the Author and a link to this repository.
+
+2. PROHIBITED
+
+   Without the prior, explicit, written permission of the Author, you MAY NOT:
+     a. Copy, clone for redistribution, fork for redistribution, mirror, or
+        otherwise reproduce the Software, in whole or in substantial part.
+     b. Modify, adapt, translate, port, or create derivative works of the
+        Software.
+     c. Distribute, sublicense, publish, sell, rent, lease, or otherwise
+        transfer the Software or any derivative work.
+     d. Use the Software, in whole or in part, in any commercial product,
+        commercial service, or revenue-generating activity.
+     e. Use the Software, in whole or in part, to train, fine-tune, evaluate,
+        or otherwise develop machine-learning models, datasets, or AI systems.
+     f. Remove, alter, or obscure any copyright, trademark, or proprietary
+        notice contained in the Software.
+
+3. NO LICENSE GRANT
+
+   No license is granted herein. The act of cloning, forking, downloading,
+   running, or otherwise obtaining a copy of the Software does not create
+   any licensing relationship between you and the Author. Any such act
+   performed outside the scope of section 1 is unauthorized and constitutes
+   infringement.
+
+4. CONTRIBUTIONS
+
+   Pull requests, issues, and other contributions are not solicited and will
+   not be accepted unless arranged in advance with the Author in writing. Any
+   contribution that is nonetheless submitted is assigned in full to the
+   Author with no compensation.
+
+5. NO WARRANTY
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING
+   FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
+
+6. ENFORCEMENT
+
+   The Author reserves the right to enforce this license to the fullest
+   extent permitted by applicable law, including pursuit of injunctive
+   relief, damages, and recovery of legal fees.
+
+7. CONTACT
+
+   For licensing inquiries, commercial use, or any permission request,
+   contact: franciscojgonzalezfernandez@gmail.com
+
+   Unauthorized use is prohibited. All rights not expressly granted above
+   are reserved.
