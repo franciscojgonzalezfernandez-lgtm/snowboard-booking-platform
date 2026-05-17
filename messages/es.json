@@ -48,5 +48,27 @@
     "validation_password_min": "Mínimo 8 caracteres",
     "validation_name_required": "Obligatorio",
     "validation_email_first": "Introduce primero un e-mail válido"
+  },
+  "reservar": {
+    "step1": {
+      "metadata_title": "Reservar clase — Snowboard Booking Platform",
+      "eyebrow": "Paso 1 de 4 · Filtros",
+      "heading": "Reservar tu clase",
+      "sub": "Dinos cuánto quieres montar y en qué idioma prefieres que te enseñe el instructor.",
+      "duration_label": "Duración de la clase",
+      "duration_placeholder": "Elige una duración",
+      "duration_1h": "1 hora",
+      "duration_2h": "2 horas",
+      "duration_4h": "4 horas · intensiva",
+      "duration_6h": "6 horas · día completo",
+      "language_label": "Idioma del instructor",
+      "language_placeholder": "Elige un idioma",
+      "language_en": "Inglés",
+      "language_de": "Alemán",
+      "language_es": "Español",
+      "cta_continue": "Continuar",
+      "validation_duration_required": "Elige una duración",
+      "validation_language_required": "Elige un idioma"
+    }
   }
 }
