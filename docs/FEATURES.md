@@ -347,6 +347,18 @@
   - [ ] Visual review con skill `impeccable` antes de marcar done (no shadows en days, borders OK)
 - Tests: Playwright E2E `e2e/f-026-step2.spec.ts` — seleccionar día activo, intentar click en día inactivo, verificar nearby UI.
 
+### F-035 — Backend-driven durations (Season config → Step 1)
+
+- Sprint: post-MVP · Estado: backlog · Prioridad: P2
+- Depende de: F-022, F-025
+- AC:
+  - [ ] `Season` (o equivalente) expone las duraciones activas + sus labels traducidos como fuente de verdad — eliminar el hardcode en `app/[locale]/reservar/step1-filters-form.tsx` (`DURATIONS` + `DURATION_LABEL_KEYS`)
+  - [ ] Endpoint o cache (p.ej. `GET /api/seasons/active` o bootstrap en `/api/availability/calendar`) sirve `Array<{ value: Duration, hours: number, labelKey: string }>`
+  - [ ] El form Step 1 consume la lista del backend; añadir una nueva duración no requiere tocar código del cliente
+  - [ ] Mapping `Duration → horas` (`ONE_HOUR=1h, TWO_HOURS=2h, INTENSIVE=4h, FULL_DAY=6h`) deja de duplicarse entre PRD/FEATURES y el bundle del cliente
+- Tests: Vitest sobre el endpoint + Playwright que falsea la respuesta con un set extendido y verifica que el select renderiza las opciones nuevas sin recompilar.
+- Notas: marcado P2 porque el set actual (4 duraciones) es estable y el coste de cambio es trivial. Ticket existe para no perder el seguimiento; ver `TODO(F-035)` en `step1-filters-form.tsx`.
+
 ### F-027 — UI Step 3 (anchor time + instructor + idioma de la clase)
 
 - Sprint: 1 · Estado: backlog · Prioridad: P0

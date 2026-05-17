@@ -18,6 +18,11 @@ import {
 import { cn } from "@/lib/utils";
 import { useRouter } from "@/i18n/navigation";
 
+// TODO(F-035): source durations from the backend (Season config) instead of
+// hardcoding them here. Today the four-option enum is duplicated between this
+// client and the Prisma `Duration` enum; once F-022 ships the booking engine,
+// expose `GET /api/seasons/active` (or include in `/api/availability/calendar`
+// bootstrap) so adding a new duration only requires a season edit.
 const DURATIONS = ["ONE_HOUR", "TWO_HOURS", "INTENSIVE", "FULL_DAY"] as const;
 
 const DURATION_LABEL_KEYS: Record<(typeof DURATIONS)[number], string> = {
