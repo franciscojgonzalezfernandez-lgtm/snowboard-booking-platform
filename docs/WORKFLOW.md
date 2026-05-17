@@ -4,6 +4,15 @@ Workflow operativo para implementar features con subagentes. Léelo al inicio de
 
 **Fuente de verdad del scope:** [`FEATURES.md`](./FEATURES.md). Sin ticket, no se delega.
 
+### Qué NO vive aquí
+
+- **Stack + arquitectura + ADRs** → [`Architecture.md`](./Architecture.md).
+- **Producto + negocio + sprints + bloqueantes** → [`PRD.md`](./PRD.md).
+- **Convenciones de código + naming + git ritual + design rules** → [`../CLAUDE.md`](../CLAUDE.md).
+- **Scope por ticket + AC binarios** → [`FEATURES.md`](./FEATURES.md).
+
+WORKFLOW solo cubre: cómo orquestar subagentes + skills + tests + repriorización por feature.
+
 ---
 
 ## Loop por feature: Plan → Build → Review → Test
@@ -22,51 +31,9 @@ Workflow operativo para implementar features con subagentes. Léelo al inicio de
 
 ---
 
-## Ritual de git (por ticket — OBLIGATORIO)
+## Ritual de git
 
-Cada ticket de `FEATURES.md` vive en su propia branch contra `main`. Sin excepción, incluidos los tickets de setup.
-
-1. **Empezar limpio — worktree por defecto.** Cada ticket se desarrolla en un worktree dedicado, no haciendo `checkout` sobre el repo principal. Esto evita stashes accidentales y permite tener varios tickets en paralelo sin perder estado.
-   ```
-   git fetch origin
-   git worktree add -b f-XXX-kebab-slug ../booking-platform.f-XXX origin/main
-   cd ../booking-platform.f-XXX
-   ```
-   - Convención de ruta: hermana del repo principal, sufijo `.f-XXX`.
-   - Tras merge del PR, limpiar: `git worktree remove ../booking-platform.f-XXX && git branch -d f-XXX-kebab-slug`.
-   - Excepción: edits triviales al propio `WORKFLOW.md` / `CLAUDE.md` / `FEATURES.md` (meta-docs sin ticket) pueden ir en el repo principal sobre una branch corta — pero siguen necesitando branch + PR.
-2. **Commits progresivos y descriptivos.** Nunca `git add -A` — staging explícito por archivo o carpeta. Cada commit debe poder leerse aislado y dejar claro **qué cambió, por qué y cómo verificarlo**.
-
-   **Subject (línea 1, ≤72 chars):**
-   - Formato: `tipo(f-XXX): verbo + objeto concreto + motivación corta`.
-   - Tipos: `feat`, `fix`, `chore`, `refactor`, `docs`, `test`, `perf`, `style`.
-   - Ejemplos válidos:
-     - `feat(f-005): add Better Auth email+password to unblock student signup`
-     - `fix(f-007): clamp availability search to season window to prevent off-season bookings`
-     - `chore(f-002): pin Tailwind v4 + shadcn registry to lock design tokens`
-   - Ejemplos prohibidos: `update auth`, `fixes`, `wip`, `f-005 changes`.
-
-   **Body (obligatorio, separado del subject por línea en blanco):**
-   ```
-   Qué:
-   - <bullet por cambio relevante; nombrar archivos/módulos si ayuda a auditar>
-
-   Por qué:
-   - <motivación de negocio o técnica; enlazar al ticket/PRD/decisión>
-
-   Cómo verificar:
-   - <pasos manuales, comando de test, ruta a abrir, o "N/A: refactor sin cambio observable">
-
-   Refs: F-XXX[, PRD §X.Y][, Architecture §A.B][, ADR-NNN]
-   ```
-   - El footer `Refs:` siempre lleva al menos el ticket. PRD/Architecture/ADR cuando apliquen.
-   - Si el commit es trivial (typo, rename mecánico), el body puede ser una línea — pero el `Refs:` sigue siendo obligatorio.
-3. **Push + PR antes de marcar `done`.**
-   ```
-   git push -u origin f-XXX-kebab-slug
-   gh pr create --base main --title "feat(f-XXX): <título>" --body "<summary + test plan + closes F-XXX>"
-   ```
-4. **Higiene de worktrees y branches.** Tras merge: `git worktree remove ../booking-platform.f-XXX` + `git branch -d f-XXX-kebab-slug`. Nunca reutilizar el worktree ni la branch de un ticket anterior — aunque ya esté mergeada. Verificar con `git worktree list` que no queden huérfanos.
+Worktree por ticket, commits descriptivos con body `Qué/Por qué/Cómo verificar/Refs`, push + `gh pr create` antes de marcar `done`. Spec completa en [`../CLAUDE.md`](../CLAUDE.md) §"Git workflow". Esa es la fuente de verdad — no duplicar aquí para evitar drift.
 
 Sin PR abierta, el ticket **no está done**, aunque el código funcione localmente.
 
@@ -117,12 +84,24 @@ Fixtures: branch Neon dedicada (default `playwright`) con `prisma/seed.ts` recar
 
 ---
 
-## Skills activos en este proyecto
+## Skills activos
 
+**Diseño + testing:**
 - `impeccable` — visual review (marketing + booking + dashboard).
 - `playwright-skill` — E2E + visual review loop.
 
-Skills declarados en `CLAUDE.md` pero no auto-activos: `taste`, `ui-ux-pro-max`. Invocar explícitamente si se necesitan (revisar inventario antes de Sprint 5).
+**Engineering experts (Next.js 15 + Prisma + i18n):**
+- `vercel-react-best-practices` — React/Next perf base.
+- `nextjs-app-router-patterns` — RSC, streaming, Server Actions.
+- `typescript-advanced-types` — strict-mode TS, conditional/mapped types.
+- `prisma-database-setup`, `prisma-client-api`, `prisma-postgres` — schema, queries, Neon ops.
+- `next-intl-add-language` — locale `en|de|es` + slug translations.
+
+**QA + performance:**
+- `testing-strategy` — test plans + coverage design.
+- `booking-platform-perf` — Web Vitals auditor (LCP <2.5s, CLS <0.1, availability p95 <500ms, home JS <200KB).
+
+Skills instalados global pero NO auto-activos aquí: `huashu-design`, `taste`, `ui-ux-pro-max`, `design-taste-frontend`, `high-end-visual-design`, `imagegen-frontend-*`. Invocar explícitamente cuando se necesiten. Fuente de verdad del inventario: `CLAUDE.md` §"Skills active in this project".
 
 ---
 
