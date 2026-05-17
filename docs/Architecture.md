@@ -303,6 +303,16 @@ enum CreditStatus      { ACTIVE, LOCKED, USED, EXPIRED }
 - **Pendiente:** review legal con bufete suizo antes de producción. Si invalida el modelo para cancelaciones operativas, v1.1 añade refund cash automático en ops cancellations.
 - **Trazabilidad:** `accountCredit.reason` distingue `USER_CANCEL` de `OPS_CANCEL` — facilita migración a futuro.
 
+### ADR-009 — `prisma generate` corre vía `postinstall`, no en el build script
+- **Contexto:** El cliente de Prisma (`@prisma/client`) se genera desde `prisma/schema.prisma` y debe regenerarse cada vez que cambia el schema o se instala en una máquina nueva. Vercel ejecuta `npm install` + `npm run build` con cache limpio entre deploys; sin un paso explícito, el cliente no incluye los tipos/enums nuevos y `next build` rompe con "Module '@prisma/client' has no exported member 'X'". GitHub Actions ya corre `npx prisma generate` explícito en `.github/workflows/ci.yml`, pero Vercel no.
+- **Decisión:** declarar `"postinstall": "prisma generate"` en `package.json`. Es la receta oficial de Vercel para proyectos con Prisma y se ejecuta en cualquier entorno que respete npm lifecycle hooks (Vercel, GH Actions, local).
+- **Por qué `postinstall` y no el build script:**
+  1. Cubre flujos que no llegan al build (p.ej. `vercel env pull`, contenedores que sólo instalan, otros agentes de CI).
+  2. Funciona incluso con `--prebuilt` (Vercel CLI) o build cache parcial.
+  3. Idempotente y barato (~2 s); no introduce ramas en la lógica de build.
+- **Coste:** `npm install` local pasa de N a N+2 s. Aceptable.
+- **Trampa conocida:** si en el futuro se añade `--ignore-scripts` o un instalador alternativo (p.ej. `pnpm install --frozen-lockfile --ignore-scripts`) el hook se salta y reaparece la regresión. Mantener `npx prisma generate` también en el workflow CI como red de seguridad y documentarlo aquí antes de cambiar el package manager.
+
 ---
 
 ## Fin de Architecture.md
