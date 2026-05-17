@@ -165,13 +165,26 @@
 
 ### F-014 — Vercel: conectar repo + deploy previews
 
-- Sprint: 0 · Estado: backlog · Prioridad: P0
+- Sprint: 0 · Estado: review · Prioridad: P0
 - Depende de: F-013
 - AC:
-  - [ ] Repo conectado a Vercel project
-  - [ ] Preview deploy en cada PR
-  - [ ] Env vars de dev configuradas (DATABASE_URL preview, etc.)
-- Tests: PR de prueba dispara preview verde.
+  - [x] Repo conectado a Vercel project (`prj_VJbAGNQAtfgmsAMldIFRvoH8RWvD`, scope `franciscojgonzalezfernandez-4774s-projects`)
+  - [x] Preview deploy en cada PR (validado en PR #24: status `Vercel SUCCESS`, preview `snowboard-git-*.vercel.app`)
+  - [x] Env vars dev configuradas (`DATABASE_URL`, `DIRECT_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `GOOGLE_ID`, `GOOGLE_SECRET` validados en runtime: `/api/auth/get-session` → 200 con bypass header). Pendiente: `SENTRY_DSN` + `NEXT_PUBLIC_SENTRY_DSN` (acción del owner antes de marcar `done`).
+- Tests: PR de prueba dispara preview verde (PR #24 ✓).
+- Notas: Vercel Deployment Protection mantenida en **Standard Protection** (Option B). Acceso automatizado vía Protection Bypass for Automation token; wiring de Playwright/CI en F-014b. Estrategia de DB para previews: por ahora compartida con Neon `main` branch (no per-PR). Migrar a Neon ↔ Vercel integration (branch-per-PR) cuando empiece F-022/F-025.
+
+### F-014b — Vercel preview Protection Bypass wiring
+
+- Sprint: 0 · Estado: review · Prioridad: P0
+- Depende de: F-014
+- AC:
+  - [x] `playwright.config.ts` lee `VERCEL_AUTOMATION_BYPASS_SECRET` y, si existe, inyecta `x-vercel-protection-bypass` en `use.extraHTTPHeaders` (no-op si falta — local dev sigue funcionando)
+  - [x] `.env.example` documenta `VERCEL_AUTOMATION_BYPASS_SECRET` con explicación de dónde se usa y cómo rotarlo
+  - [x] `.github/workflows/ci.yml` reenvía `secrets.VERCEL_AUTOMATION_BYPASS_SECRET` al job env (forks reciben vacío → smoke contra localhost sigue verde)
+  - [x] Repo secret `VERCEL_AUTOMATION_BYPASS_SECRET` creado vía `gh secret set` (owner action; token rotable post-leak)
+- Tests: smoke spec local (`/` → 200 contra `localhost:3000`, sin header) sigue verde. En Sprint 1, primer spec que apunte a preview confirmará el header.
+- Notas: token compartido en chat → rotar tras merge (Vercel dashboard → Deployment Protection → Protection Bypass for Automation → Regenerate). Vercel auto-inyecta `VERCEL_AUTOMATION_BYPASS_SECRET` en su propio runtime/build env; GitHub Actions + local `.env.local` necesitan el var explícitamente.
 
 ### F-015 — Primer deploy a `main` (URL pública disponible)
 

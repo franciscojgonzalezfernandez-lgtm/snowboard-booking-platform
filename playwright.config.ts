@@ -2,6 +2,11 @@ import { defineConfig, devices } from "@playwright/test";
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
 
+const bypassToken = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+const extraHTTPHeaders = bypassToken
+  ? { "x-vercel-protection-bypass": bypassToken }
+  : undefined;
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
@@ -10,6 +15,7 @@ export default defineConfig({
   reporter: process.env.CI ? "github" : "list",
   use: {
     baseURL,
+    extraHTTPHeaders,
     trace: "on-first-retry",
   },
   projects: [
