@@ -188,14 +188,28 @@
 
 ### F-015 — Primer deploy a `main` (URL pública disponible)
 
-- Sprint: 0 · Estado: backlog · Prioridad: P0
+- Sprint: 0 · Estado: done · Prioridad: P0
 - Depende de: F-014
 - AC:
-  - [ ] Merge a `main` despliega a producción
-  - [ ] URL pública (`https://<project>.vercel.app`) accesible
-  - [ ] Sentry recibe eventos del entorno production
-  - [ ] Vercel Analytics registra pageview
-- Tests: smoke Playwright contra URL de producción en CI post-deploy.
+  - [x] Merge a `main` despliega a producción (Vercel commit status `success` en `93ae21d`, build deploy `https://vercel.com/.../4cPMeyXNbV4n45P8N8Qes4dMkX7S`)
+  - [x] URL pública `https://snowboard-booking-platform.vercel.app` accesible (`/` → 307 → `/en` 200; `/de` 200; `/es` 200; `/api/auth/get-session` 200 con body `null`; HSTS + locale cookie correctos)
+  - [x] Sentry recibe eventos del entorno production (verificado por el owner en dashboard tras throw deliberado en `/api/sentry-example-api`)
+  - [x] Vercel Analytics registra pageview (scripts `/_vercel/insights/script.js` + `/_vercel/speed-insights/script.js` sirven 200; pageview confirmado en dashboard)
+- Tests: smoke Playwright contra URL de producción en CI post-deploy → entregado en F-015b.
+- Notas: dominio canónico `snowboard-booking-platform.vercel.app` configurado por el owner en Vercel Project Settings → Domains. Alt domain `snowboard-booking-platform-9b1q.vercel.app` sigue activa; bloquea Google OAuth en prod porque `BETTER_AUTH_URL` apuntaba al alt (ver nota en F-016).
+
+### F-015b — Post-deploy production smoke en CI
+
+- Sprint: 0 · Estado: done · Prioridad: P0
+- Depende de: F-015
+- AC:
+  - [x] `.github/workflows/post-deploy-smoke.yml` se dispara con el evento `deployment_status` filtrado a `state == 'success' && environment == 'Production'` (Vercel publica este evento tras cada deploy)
+  - [x] Step de wait-and-poll contra `/api/auth/get-session` (30 intentos × 5s ≈ 2.5min) evita el race entre `deployment_status` y el primer hit servido por Vercel
+  - [x] `npx playwright test e2e/smoke.spec.ts --project=chromium` corre contra `PLAYWRIGHT_BASE_URL=https://snowboard-booking-platform.vercel.app`
+  - [x] Reenvía `VERCEL_AUTOMATION_BYPASS_SECRET` por si en algún momento se activa Deployment Protection sobre prod (hoy off; el header se ignora si no aplica)
+  - [x] Concurrency group por environment con cancel-in-progress evita runs apilados si llegan varios deploys seguidos
+- Tests: el propio workflow corre verde en el primer deploy a `main` tras este merge (validable en la pestaña Actions del repo).
+- Notas: separado de F-013 (`CI`) porque allí corre contra `localhost:3000` en cada PR; este corre contra el dominio canónico tras cada merge. Si en Sprint 1 movemos preview-smoke a CI, se podrá unificar la lógica.
 
 ---
 
@@ -206,9 +220,12 @@
 - Sprint: 1.5 · Estado: backlog · Prioridad: P0
 - Depende de: F-015
 - AC:
-  - [ ] Callback `https://<vercel-url>/api/auth/callback/google` añadido en Google Cloud Console
-  - [ ] Login Google funciona en preview + production
+  - [ ] `BETTER_AUTH_URL` en Vercel Production scope = `https://snowboard-booking-platform.vercel.app` (no el alt domain `*-9b1q.vercel.app`)
+  - [ ] Callback `https://snowboard-booking-platform.vercel.app/api/auth/callback/google` añadido en Google Cloud Console (sección "Authorized redirect URIs" del OAuth 2.0 Client ID)
+  - [ ] `http://localhost:3000/api/auth/callback/google` permanece para dev local
+  - [ ] Login Google funciona en preview + production (sign-in flow termina con sesión activa, no `redirect_uri_mismatch`)
 - Tests: Playwright E2E en preview env.
+- Notas: diagnóstico realizado en sesión post-F-015 — `POST /api/auth/sign-in/social {provider:"google"}` contra prod devolvía `redirect_uri=https://snowboard-booking-platform-9b1q.vercel.app/...`. Root cause: `BETTER_AUTH_URL` apunta al alt domain. Pulled forward de Sprint 1.5 sólo si bloquea validación manual del owner; ya está priorizado P0 en su sprint.
 
 ### F-017 — Resend account + verificación de dominio DNS
 
