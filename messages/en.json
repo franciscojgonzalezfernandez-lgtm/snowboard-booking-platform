@@ -48,5 +48,21 @@
     "validation_password_min": "Min 8 characters",
     "validation_name_required": "Required",
     "validation_email_first": "Enter a valid email first"
+  },
+  "reservar": {
+    "step1": {
+      "metadata_title": "Reserve a lesson — Snowboard Booking Platform",
+      "eyebrow": "Step 1 of 4 · Filter",
+      "heading": "Reserve a lesson",
+      "sub": "Tell us how long you want to ride. You'll pick a date, an instructor and the lesson language on the next steps.",
+      "duration_label": "Lesson length",
+      "duration_placeholder": "Select a duration",
+      "duration_1h": "1 hour",
+      "duration_2h": "2 hours",
+      "duration_4h": "4 hours · intensive",
+      "duration_6h": "6 hours · full day",
+      "cta_continue": "Continue",
+      "validation_duration_required": "Please pick a lesson length"
+    }
   }
 }

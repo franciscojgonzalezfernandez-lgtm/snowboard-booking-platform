@@ -302,13 +302,13 @@
 - Sprint: 1 · Estado: backlog · Prioridad: P0
 - Depende de: F-021
 - AC:
-  - [ ] Función `computeCalendar({duration, language, monthFrom, monthTo})` → `Array<{date, hasAvailability, instructorCount}>`
-  - [ ] Función `computeSlotsForDate({date, duration, language})` → `{anchorTimes: [{time, available, instructors[]}]}`
-  - [ ] Función `findNearbyDates({date, duration, language, window=14})` → 3-5 fechas
+  - [ ] Función `computeCalendar({duration, monthFrom, monthTo})` → `Array<{date, hasAvailability, instructorCount}>`
+  - [ ] Función `computeSlotsForDate({date, duration})` → `{anchorTimes: [{time, available, instructors[]}]}` — cada instructor incluye `languages: [{ code, level }]`
+  - [ ] Función `findNearbyDates({date, duration, window=14})` → 3-5 fechas
   - [ ] Respeta buffer 10min entre clases consecutivas mismo instructor
   - [ ] Respeta 24h advance + `acceptsSameDayIfBooked`
   - [ ] Coverage Vitest ≥90% (medido con `vitest --coverage`)
-- Tests: Vitest exclusivo, sin HTTP. Múltiples scenarios edge (instructor saturado, fecha pasada, fuera de season, idioma no soportado).
+- Tests: Vitest exclusivo, sin HTTP. Múltiples scenarios edge (instructor saturado, fecha pasada, fuera de season). El idioma **no** entra en la firma — ver decisión en PRD §6.1.
 - Decisiones pendientes: ¿branch Neon dedicada para tests o SQLite en memoria? — decidir aquí. Recomendación: branch Neon `playwright` + reset entre suites.
 
 ### F-023 — `GET /api/availability/calendar` + nearby fallback
@@ -316,33 +316,33 @@
 - Sprint: 1 · Estado: backlog · Prioridad: P0
 - Depende de: F-022
 - AC:
-  - [ ] Params `duration`, `language`, `monthFrom`, `monthTo` validados con Zod
+  - [ ] Params `duration`, `monthFrom`, `monthTo` validados con Zod
   - [ ] Llama `lib/booking-engine/computeCalendar`
-  - [ ] `GET /api/availability/nearby?date&duration&language` devuelve 3-5 fechas cercanas
+  - [ ] `GET /api/availability/nearby?date&duration` devuelve 3-5 fechas cercanas
   - [ ] p95 < 500ms con seed de 1 instructor (verificar con `autocannon` o similar)
-- Tests: Playwright API test que cubre happy path + edge (rango >3 meses → 400; idioma inválido → 400).
+- Tests: Playwright API test que cubre happy path + edge (rango >3 meses → 400; duration inválida → 400).
 
 ### F-024 — `GET /api/availability/slots`
 
 - Sprint: 1 · Estado: backlog · Prioridad: P0
 - Depende de: F-022
 - AC:
-  - [ ] Params `date`, `duration`, `language` validados con Zod
-  - [ ] Response shape según PRD §6.2
+  - [ ] Params `date`, `duration` validados con Zod
+  - [ ] Response shape según PRD §6.2 (incluye `instructors[].languages` con primario + secundarios y nivel)
   - [ ] Anchor times respetan `operatingHoursEnd`
-  - [ ] "cualquiera disponible" devuelve lista de instructores en orden de prioridad (idioma exacto → menor carga del día → round-robin)
+  - [ ] "cualquiera disponible" devuelve lista de instructores en orden de prioridad: menor carga del día → round-robin (el idioma lo decide el cliente al ver el perfil, no entra en la priorización)
 - Tests: Playwright API + Vitest unit en booking-engine.
 
-### F-025 — UI Step 1 (filtros: duración + idioma)
+### F-025 — UI Step 1 (filtro: duración)
 
-- Sprint: 1 · Estado: backlog · Prioridad: P0
+- Sprint: 1 · Estado: in-progress · Prioridad: P0
 - Depende de: F-003
 - AC:
   - [ ] Página `/[locale]/reservar` con RHF + Zod
   - [ ] Select duración (4 opciones, mostradas en horas, no en enum)
-  - [ ] Select idioma (EN/DE/ES) — preselecciona locale de la URL
-  - [ ] Botón "Continuar" navega a Step 2 con state preservado en URL search params
-- Tests: Playwright E2E `e2e/f-025-step1.spec.ts` — completar filtros, verificar navegación + URL.
+  - [ ] Botón "Continuar" navega a Step 2 con state preservado en URL search param (`?duration=`)
+- Tests: Playwright E2E `e2e/f-025-step1.spec.ts` — completar filtro, verificar navegación + URL.
+- Notas: el idioma del instructor **no** se pide aquí (decisión CRO: filtrar por idioma vacía el calendario cuando la oferta es fina; los clientes aceptan idioma secundario si se les expone al elegir instructor). El idioma se elige en Step 3 sobre la tarjeta del instructor, ver F-027 y PRD §6.2.
 
 ### F-026 — UI Step 2 (smart calendar)
 
@@ -355,16 +355,29 @@
   - [ ] Visual review con skill `impeccable` antes de marcar done (no shadows en days, borders OK)
 - Tests: Playwright E2E `e2e/f-026-step2.spec.ts` — seleccionar día activo, intentar click en día inactivo, verificar nearby UI.
 
-### F-027 — UI Step 3 (anchor time + instructor)
+### F-035 — Backend-driven durations (Season config → Step 1)
+
+- Sprint: post-MVP · Estado: backlog · Prioridad: P2
+- Depende de: F-022, F-025
+- AC:
+  - [ ] `Season` (o equivalente) expone las duraciones activas + sus labels traducidos como fuente de verdad — eliminar el hardcode en `app/[locale]/reservar/step1-filters-form.tsx` (`DURATIONS` + `DURATION_LABEL_KEYS`)
+  - [ ] Endpoint o cache (p.ej. `GET /api/seasons/active` o bootstrap en `/api/availability/calendar`) sirve `Array<{ value: Duration, hours: number, labelKey: string }>`
+  - [ ] El form Step 1 consume la lista del backend; añadir una nueva duración no requiere tocar código del cliente
+  - [ ] Mapping `Duration → horas` (`ONE_HOUR=1h, TWO_HOURS=2h, INTENSIVE=4h, FULL_DAY=6h`) deja de duplicarse entre PRD/FEATURES y el bundle del cliente
+- Tests: Vitest sobre el endpoint + Playwright que falsea la respuesta con un set extendido y verifica que el select renderiza las opciones nuevas sin recompilar.
+- Notas: marcado P2 porque el set actual (4 duraciones) es estable y el coste de cambio es trivial. Ticket existe para no perder el seguimiento; ver `TODO(F-035)` en `step1-filters-form.tsx`.
+
+### F-027 — UI Step 3 (anchor time + instructor + idioma de la clase)
 
 - Sprint: 1 · Estado: backlog · Prioridad: P0
 - Depende de: F-024, F-026
 - AC:
   - [ ] Lista de anchor times con disponibilidad real
-  - [ ] Por anchor: tarjeta de instructor(es) con foto, nombre, idiomas
-  - [ ] Opción "cualquiera disponible" preseleccionada
+  - [ ] Por anchor: tarjeta de instructor(es) con foto, nombre y **perfil de idiomas** (primario + secundarios con nivel, p.ej. `EN native · DE fluent · ES basic`)
+  - [ ] Opción "cualquiera disponible" preseleccionada (asigna por menor carga del día → round-robin; el idioma del instructor asignado se muestra al cliente antes de avanzar para que pueda cambiar de elección si no le sirve)
+  - [ ] Selector de **idioma de la clase**: si el instructor seleccionado habla >1 idioma, mostrar pills con sus idiomas (default = primario); si habla 1, auto-asignar sin pedir input. Valor persiste en URL search params y luego en `Booking.language`
   - [ ] Botón "Continuar" navega a Step 4 (no implementado en este sprint — placeholder OK)
-- Tests: Playwright E2E `e2e/f-027-step3.spec.ts` — flujo completo Steps 1→3.
+- Tests: Playwright E2E `e2e/f-027-step3.spec.ts` — flujo completo Steps 1→3, incluyendo: instructor con 1 idioma (sin selector), instructor con varios (pills visibles, default = primario), cambio de idioma persistido en URL.
 
 ---
 

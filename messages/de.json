@@ -48,5 +48,21 @@
     "validation_password_min": "Mindestens 8 Zeichen",
     "validation_name_required": "Erforderlich",
     "validation_email_first": "Zuerst eine gültige E-Mail eingeben"
+  },
+  "reservar": {
+    "step1": {
+      "metadata_title": "Stunde buchen — Snowboard Booking Platform",
+      "eyebrow": "Schritt 1 von 4 · Filter",
+      "heading": "Stunde buchen",
+      "sub": "Sag uns, wie lange du fahren willst. Datum, Lehrer und Unterrichtssprache wählst du in den nächsten Schritten.",
+      "duration_label": "Stundenlänge",
+      "duration_placeholder": "Dauer wählen",
+      "duration_1h": "1 Stunde",
+      "duration_2h": "2 Stunden",
+      "duration_4h": "4 Stunden · Intensiv",
+      "duration_6h": "6 Stunden · Ganztags",
+      "cta_continue": "Weiter",
+      "validation_duration_required": "Bitte wähle eine Stundenlänge"
+    }
   }
 }
