@@ -1,0 +1,67 @@
+name: Post-deploy smoke (production)
+
+on:
+  deployment_status:
+
+concurrency:
+  group: post-deploy-smoke-${{ github.event.deployment.environment }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Playwright smoke vs prod URL
+    if: >-
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment.environment == 'Production'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      PLAYWRIGHT_BASE_URL: https://snowboard-booking-platform.vercel.app
+      # Prod is public, but if Deployment Protection ever turns on for prod
+      # this lets the smoke keep working without further wiring.
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright system deps
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Wait for prod URL to serve current deployment
+        run: |
+          for i in $(seq 1 30); do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' "$PLAYWRIGHT_BASE_URL/api/auth/get-session" || echo "000")
+            if [ "$code" = "200" ]; then
+              echo "Prod ready after ${i} attempts"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Prod did not return 200 within timeout"
+          exit 1
+
+      - name: Smoke
+        run: npx playwright test e2e/smoke.spec.ts --project=chromium
