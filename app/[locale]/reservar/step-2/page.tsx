@@ -4,7 +4,7 @@ import { routing } from "@/i18n/routing";
 
 type Step2PageProps = {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ duration?: string; language?: string }>;
+  searchParams: Promise<{ duration?: string }>;
 };
 
 export function generateStaticParams() {
@@ -18,7 +18,7 @@ export default async function ReservarStep2Page({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const { duration = "", language = "" } = await searchParams;
+  const { duration = "" } = await searchParams;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-16">
@@ -37,11 +37,10 @@ export default async function ReservarStep2Page({
       <dl className="mt-8 grid grid-cols-[max-content,1fr] gap-x-6 gap-y-2 text-sm">
         <dt className="text-muted-foreground">Duration</dt>
         <dd data-testid="step2-duration">{duration}</dd>
-        <dt className="text-muted-foreground">Language</dt>
-        <dd data-testid="step2-language">{language}</dd>
       </dl>
       <p className="mt-8 text-xs text-muted-foreground">
-        The smart calendar lands in F-026.
+        The smart calendar lands in F-026. Instructor language is exposed at
+        Step 3 (F-027), not here.
       </p>
     </main>
   );

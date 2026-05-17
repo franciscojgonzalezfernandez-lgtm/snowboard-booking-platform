@@ -19,9 +19,6 @@ import { cn } from "@/lib/utils";
 import { useRouter } from "@/i18n/navigation";
 
 const DURATIONS = ["ONE_HOUR", "TWO_HOURS", "INTENSIVE", "FULL_DAY"] as const;
-const LANGUAGES = ["en", "de", "es"] as const;
-
-type Locale = (typeof LANGUAGES)[number];
 
 const DURATION_LABEL_KEYS: Record<(typeof DURATIONS)[number], string> = {
   ONE_HOUR: "duration_1h",
@@ -30,24 +27,15 @@ const DURATION_LABEL_KEYS: Record<(typeof DURATIONS)[number], string> = {
   FULL_DAY: "duration_6h",
 };
 
-export function Step1FiltersForm({ locale }: { locale: string }) {
+export function Step1FiltersForm() {
   const t = useTranslations("reservar.step1");
   const router = useRouter();
-
-  const initialLanguage: Locale = (LANGUAGES as readonly string[]).includes(
-    locale,
-  )
-    ? (locale as Locale)
-    : "en";
 
   const schema = useMemo(
     () =>
       z.object({
         duration: z.enum(DURATIONS, {
           message: t("validation_duration_required"),
-        }),
-        language: z.enum(LANGUAGES, {
-          message: t("validation_language_required"),
         }),
       }),
     [t],
@@ -59,15 +47,11 @@ export function Step1FiltersForm({ locale }: { locale: string }) {
     resolver: zodResolver(schema),
     defaultValues: {
       duration: undefined as unknown as FormValues["duration"],
-      language: initialLanguage,
     },
   });
 
   function onSubmit(values: FormValues) {
-    const params = new URLSearchParams({
-      duration: values.duration,
-      language: values.language,
-    });
+    const params = new URLSearchParams({ duration: values.duration });
     router.push(`/reservar/step-2?${params.toString()}`);
   }
 
@@ -106,35 +90,6 @@ export function Step1FiltersForm({ locale }: { locale: string }) {
                   {DURATIONS.map((d) => (
                     <option key={d} value={d}>
                       {t(DURATION_LABEL_KEYS[d])}
-                    </option>
-                  ))}
-                </select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="language"
-          render={({ field, fieldState }) => (
-            <FormItem>
-              <FormLabel>{t("language_label")}</FormLabel>
-              <FormControl>
-                <select
-                  {...field}
-                  data-testid="select-language"
-                  aria-invalid={!!fieldState.error}
-                  className={selectClass}
-                  value={field.value ?? ""}
-                >
-                  <option value="" disabled>
-                    {t("language_placeholder")}
-                  </option>
-                  {LANGUAGES.map((l) => (
-                    <option key={l} value={l}>
-                      {t(`language_${l}`)}
                     </option>
                   ))}
                 </select>

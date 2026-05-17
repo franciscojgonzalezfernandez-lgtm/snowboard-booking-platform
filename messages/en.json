@@ -52,23 +52,17 @@
   "reservar": {
     "step1": {
       "metadata_title": "Reserve a lesson — Snowboard Booking Platform",
-      "eyebrow": "Step 1 of 4 · Filters",
+      "eyebrow": "Step 1 of 4 · Filter",
       "heading": "Reserve a lesson",
-      "sub": "Tell us how long you want to ride and which language you'd like your instructor to use.",
+      "sub": "Tell us how long you want to ride. You'll pick a date, an instructor and the lesson language on the next steps.",
       "duration_label": "Lesson length",
       "duration_placeholder": "Select a duration",
       "duration_1h": "1 hour",
       "duration_2h": "2 hours",
       "duration_4h": "4 hours · intensive",
       "duration_6h": "6 hours · full day",
-      "language_label": "Instructor language",
-      "language_placeholder": "Select a language",
-      "language_en": "English",
-      "language_de": "German",
-      "language_es": "Spanish",
       "cta_continue": "Continue",
-      "validation_duration_required": "Please pick a lesson length",
-      "validation_language_required": "Please pick a language"
+      "validation_duration_required": "Please pick a lesson length"
     }
   }
 }

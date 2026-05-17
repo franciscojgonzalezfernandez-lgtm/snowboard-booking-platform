@@ -135,11 +135,11 @@ Un mismo `User` puede tener múltiples roles (`student`, `instructor`, `admin`) 
 **Pasos:**
 1. Llega a la home desde Google (SEO orgánico o anuncio)
 2. Clica "Reservar tu clase"
-3. Selecciona duración 2h + idioma preferido EN
+3. Selecciona duración 2h
 4. Ve el calendario smart: sábados con disponibilidad marcados activos
 5. Clica el próximo sábado disponible
-6. Ve 4 anchor times (09:00, 11:00, 13:00, 15:00) con instructores disponibles
-7. Selecciona "11:00 con cualquiera disponible"
+6. Ve 4 anchor times (09:00, 11:00, 13:00, 15:00) con instructores disponibles; cada tarjeta de instructor muestra su perfil de idiomas (p.ej. `EN native · DE fluent · ES basic`)
+7. Selecciona "11:00 con cualquiera disponible" (la lección se impartirá en el idioma principal del instructor asignado; si el instructor habla varios, el cliente confirma idioma en este paso)
 8. Auth gate: se registra con Google OAuth
 9. Añade attendee 2 (su amigo) con nombre + fecha nacimiento + nivel
 10. Confirma datos, acepta T&C en nombre del grupo
@@ -204,14 +204,13 @@ Un mismo `User` puede tener múltiples roles (`student`, `instructor`, `admin`) 
 
 **Parámetros:**
 - `duration` (enum: `ONE_HOUR | TWO_HOURS | INTENSIVE | FULL_DAY`)
-- `language` (enum: `en | de | es`)
 - `monthFrom` (ISO date)
 - `monthTo` (ISO date, max 3 meses desde `monthFrom`)
 
 **Lógica:**
 1. Filtrar `Season` activas que cubran el rango
 2. Para cada día del rango, verificar:
-   - Hay al menos un `Instructor` activo que habla `language`
+   - Hay al menos un `Instructor` activo
    - Existe al menos un anchor time donde:
      - `instructor.availabilityBlock` cubre el rango `[anchor, anchor + duration]`
      - No hay `Booking` confirmado solapando ese instructor en ese rango
@@ -220,11 +219,13 @@ Un mismo `User` puede tener múltiples roles (`student`, `instructor`, `admin`) 
 3. Retornar array de `{ date, hasAvailability: boolean, instructorCount: number }`
 
 **Fallback "fechas cercanas":**
-- Si el usuario clica un día sin disponibilidad, llamar `/api/availability/nearby?date=X&duration&language` que retorna las 3-5 fechas más cercanas con disponibilidad (window: ±14 días)
+- Si el usuario clica un día sin disponibilidad, llamar `/api/availability/nearby?date=X&duration` que retorna las 3-5 fechas más cercanas con disponibilidad (window: ±14 días)
 
 **Performance:**
 - Para MVP con 1-4 instructores: query directo aceptable
-- A futuro: vista materializada o cache Redis por `(date, duration, language)`
+- A futuro: vista materializada o cache Redis por `(date, duration)`
+
+> **Decisión de producto (CRO):** la disponibilidad NO se filtra por idioma. Idioma es preferencia blanda, no restricción dura: filtrarlo en Step 1 vacía el calendario cuando la oferta es fina (MVP arranca con 1 instructor) y bota al usuario al primer paso. El idioma se expone en Step 3 (tarjeta de instructor) y se captura como atributo de la `Booking` cuando el cliente confirma instructor + anchor time. Ver §6.2.
 
 ### 6.2 Selección de slot e instructor
 
@@ -233,7 +234,6 @@ Un mismo `User` puede tener múltiples roles (`student`, `instructor`, `admin`) 
 **Parámetros:**
 - `date` (ISO date)
 - `duration` (enum)
-- `language` (enum)
 
 **Respuesta:**
 ```json
@@ -243,7 +243,17 @@ Un mismo `User` puede tener múltiples roles (`student`, `instructor`, `admin`) 
       "time": "09:00",
       "available": true,
       "instructors": [
-        { "id": "...", "name": "...", "photo": "...", "specialties": [...] }
+        {
+          "id": "...",
+          "name": "...",
+          "photo": "...",
+          "specialties": ["..."],
+          "languages": [
+            { "code": "en", "level": "native" },
+            { "code": "de", "level": "fluent" },
+            { "code": "es", "level": "basic" }
+          ]
+        }
       ]
     },
     ...
@@ -254,12 +264,16 @@ Un mismo `User` puede tener múltiples roles (`student`, `instructor`, `admin`) 
 **Lógica:**
 - Para cada anchor time del día (definido en `Season.anchorTimes`):
   - Verificar si `anchor + duration` cabe en `operatingHoursEnd`
-  - Listar instructores compatibles (idioma, sin booking solapante, dentro de su `availabilityBlock`)
+  - Listar instructores compatibles (sin booking solapante, dentro de su `availabilityBlock`)
   - Aplicar buffer de 10 min entre clases consecutivas del mismo instructor
+  - Adjuntar el perfil de idiomas del instructor (primario + secundarios con nivel) para que el cliente decida en la UI
 
 **UX:**
 - Opción "Cualquiera disponible" preseleccionada por defecto
-- Si "cualquiera": el backend asigna en orden de prioridad: por idioma exacto → por menor carga del día → round-robin
+- Si "cualquiera": el backend asigna en orden de prioridad: menor carga del día → round-robin (sin priorizar por idioma — esa decisión la toma el cliente al ver el perfil del instructor)
+- Cuando el cliente selecciona un instructor concreto: si tiene >1 idioma, mostrar selector de idioma de la clase (default = idioma principal); si tiene 1, auto-asignar. El valor elegido se persiste en `Booking.language`
+
+> **Decisión de producto (CRO):** ver nota en §6.1 — el idioma nunca es filtro de oferta; se elige a nivel de instructor cuando el cliente ya conoce las opciones disponibles, evitando el "calendario vacío" cuando la oferta de idioma exacto es fina.
 
 ### 6.3 Auth gate y datos de attendees
 

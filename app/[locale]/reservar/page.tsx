@@ -42,7 +42,7 @@ export default async function ReservarPage({ params }: ReservarPageProps) {
       </div>
 
       <div className="mt-10">
-        <Step1FiltersForm locale={locale} />
+        <Step1FiltersForm />
       </div>
     </main>
   );
