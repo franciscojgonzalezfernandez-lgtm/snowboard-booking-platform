@@ -79,8 +79,6 @@ model User {
   instructor     Instructor?
   bookings       Booking[]
   accountCredits AccountCredit[]
-
-  @@map("user")
 }
 
 model Session {
@@ -96,7 +94,6 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@map("session")
 }
 
 model Account {
@@ -118,7 +115,6 @@ model Account {
 
   @@unique([providerId, accountId])
   @@index([userId])
-  @@map("account")
 }
 
 model Verification {
@@ -130,7 +126,6 @@ model Verification {
   updatedAt  DateTime @updatedAt
 
   @@index([identifier])
-  @@map("verification")
 }
 
 model Instructor {
@@ -165,14 +160,23 @@ model AvailabilityBlock {
   @@index([startDateTime, endDateTime])
 }
 
+/// Season holds operational config for a booking period (start/end dates,
+/// anchor times, operating hours). No FK from Booking → Season on purpose:
+/// the booking engine derives the active Season from `Booking.date` at query
+/// time, so a FK would be redundant and would require a backfill if season
+/// boundaries ever shift.
 model Season {
   id                  String   @id @default(cuid())
   name                String
   startDate           DateTime @db.Date
   endDate             DateTime @db.Date
   active              Boolean  @default(true)
+  /// 24h "HH:MM" strings, e.g. ["09:00","11:00","13:00","15:00"].
+  /// Order does not matter; the booking engine sorts.
   anchorTimes         String[]
+  /// 24h "HH:MM" — earliest start time a class may begin in this season.
   operatingHoursStart String
+  /// 24h "HH:MM" — latest end time a class may end in this season.
   operatingHoursEnd   String
 
   @@index([active, startDate, endDate])
@@ -199,8 +203,8 @@ model Booking {
   postClassEmailSentAt  DateTime?
   createdAt             DateTime      @default(now())
 
-  booker          User            @relation(fields: [bookerId], references: [id])
-  instructor      Instructor      @relation(fields: [instructorId], references: [id])
+  booker          User            @relation(fields: [bookerId], references: [id], onDelete: Restrict)
+  instructor      Instructor      @relation(fields: [instructorId], references: [id], onDelete: Restrict)
   attendees       Attendee[]
   tip             Tip?
   creditsSourced  AccountCredit[] @relation("CreditSource")
@@ -212,6 +216,11 @@ model Booking {
   @@index([date, status])
 }
 
+/// Attendee = a person attending a class. The booker (Booking.bookerId)
+/// is NOT automatically an attendee — e.g. a parent paying for kids.
+/// At most ONE attendee per booking may have isBooker = true; this is
+/// enforced by a partial unique index added in a follow-up migration
+/// (see `20260518090000_attendee_booker_unique`).
 model Attendee {
   id        String   @id @default(cuid())
   bookingId String

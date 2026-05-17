@@ -1,11 +1,19 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 
 const schema = readFileSync(
   path.resolve(__dirname, "../prisma/schema.prisma"),
   "utf8",
 );
+
+const migrationsDir = path.resolve(__dirname, "../prisma/migrations");
+const allMigrationSql = readdirSync(migrationsDir)
+  .filter((name) => name !== "migration_lock.toml")
+  .map((name) =>
+    readFileSync(path.join(migrationsDir, name, "migration.sql"), "utf8"),
+  )
+  .join("\n");
 
 const extract = (kind: "model" | "enum") =>
   [...schema.matchAll(new RegExp(`^${kind}\\s+(\\w+)\\s*\\{`, "gm"))]
@@ -60,5 +68,15 @@ describe("prisma schema shape (F-020)", () => {
       expect(name).toMatch(/Cents$/);
       expect(type).toBe("Int");
     }
+  });
+
+  it("Attendee.isBooker is constrained to at most one per booking", () => {
+    expect(allMigrationSql).toMatch(
+      /CREATE UNIQUE INDEX\s+"Attendee_oneBookerPerBooking"\s+ON\s+"Attendee"\s*\(\s*"bookingId"\s*\)\s+WHERE\s+"isBooker"\s*=\s*true/i,
+    );
+  });
+
+  it("Better Auth tables keep PascalCase names (no @@map drift)", () => {
+    expect(schema).not.toMatch(/@@map\(\s*"(user|session|account|verification)"\s*\)/);
   });
 });
