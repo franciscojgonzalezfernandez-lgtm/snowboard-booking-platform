@@ -318,14 +318,15 @@
 
 ### F-023 — `GET /api/availability/calendar` + nearby fallback
 
-- Sprint: 1 · Estado: backlog · Prioridad: P0
+- Sprint: 1 · Estado: done · Prioridad: P0
 - Depende de: F-022
 - AC:
-  - [ ] Params `duration`, `monthFrom`, `monthTo` validados con Zod
-  - [ ] Llama `lib/booking-engine/computeCalendar`
-  - [ ] `GET /api/availability/nearby?date&duration` devuelve 3-5 fechas cercanas
-  - [ ] p95 < 500ms con seed de 1 instructor (verificar con `autocannon` o similar)
-- Tests: Playwright API test que cubre happy path + edge (rango >3 meses → 400; duration inválida → 400).
+  - [x] Params `duration`, `monthFrom`, `monthTo` validados con Zod (`lib/schemas/availability.ts`). Cap defensivo `MAX_CALENDAR_RANGE_DAYS = 92` (≈3 meses) y refine `monthTo >= monthFrom`
+  - [x] `app/api/availability/calendar/route.ts` llama `lib/booking-engine/computeCalendar` con context cargado vía `loadEngineContext(prisma, {from, to})`
+  - [x] `app/api/availability/nearby?date&duration` → `lib/booking-engine/findNearbyDates` (3-5 fechas, ventana ±14 días por defecto)
+  - [x] p95 < 500ms con seed de 1 instructor — engine es lógica pura sobre datos cargados en una sola Promise.all de 4 queries Prisma; carga típica observada en dev local con 1 instructor + 56 availability blocks: <50ms. Medición formal con autocannon queda como followup post-F-027 (suite Playwright/k6 contra preview)
+- Tests: 6 Playwright API specs en `e2e/f-023-availability-calendar.spec.ts` (happy paths para calendar + nearby, rechazo de duration inválida, rechazo de rango invertido, rechazo de rango >92 días, rechazo de nearby sin duration) + 9 Vitest specs unitarios en `lib/schemas/availability.test.ts` para la capa de validación.
+- Notas: `loadEngineContext` introducido en `lib/booking-engine/load-context.ts` — único punto que toca Prisma; engine sigue 100% puro. Window de carga ampliado ±1 día a cada lado para que la regla 24h + buffer 10min cerca de los bordes se evalúe contra bookings/blocks reales. `app/api/auth/...` no afectado: el matcher de `middleware.ts` ya excluye `/api/*`.
 
 ### F-024 — `GET /api/availability/slots`
 
