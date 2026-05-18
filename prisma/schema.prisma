@@ -270,3 +270,22 @@ model Tip {
 
   @@index([instructorId, paidAt])
 }
+
+/// Idempotency ledger for inbound provider webhooks (Stripe today, room for
+/// Resend / Google later). Architecture.md ADR-006: insert on receipt with
+/// `skipDuplicates`; if the row already exists, the webhook is a retry and
+/// we return 200 without re-processing. `processedAt` is set only after the
+/// handler finishes successfully so a crash mid-processing leaves the row
+/// re-claimable by manual replay.
+model WebhookEvent {
+  /// Provider event id (Stripe `event.id`). Globally unique per provider.
+  id          String    @id
+  /// Source provider — "stripe" for now. Lowercase, kebab-stable.
+  source      String
+  /// Event type for debugging / dashboards (e.g. "payment_intent.succeeded").
+  type        String
+  receivedAt  DateTime  @default(now())
+  processedAt DateTime?
+
+  @@index([source, receivedAt])
+}

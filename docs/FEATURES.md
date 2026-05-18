@@ -240,17 +240,27 @@
 - Tests: `lib/email/*.test.tsx` mockea Resend en CI; envío real queda manual con Resend API key.
 - Notas: app wiring añadido en `lib/email/`; Better Auth magic-link usa Resend cuando `RESEND_API_KEY` existe y fallback de consola en dev sin API key.
 
-### F-018 — Stripe account + activar TWINT + claves test
+### F-018 — Stripe account + activar TWINT + claves test + webhook skeleton
 
-- Sprint: 1.5 · Estado: backlog · Prioridad: P0
+- Sprint: 1.5 · Estado: in-progress · Prioridad: P0
 - Depende de: F-015
 - AC:
-  - [ ] Cuenta Stripe creada con datos de la escuela
-  - [ ] TWINT activado (request a Stripe support si necesario)
-  - [ ] Claves de test (`pk_test_*`, `sk_test_*`) en Vercel env
-  - [ ] Webhook endpoint registrado apuntando a `<vercel-url>/api/webhooks/stripe`
-  - [ ] `STRIPE_WEBHOOK_SECRET` en Vercel env
-- Tests: Stripe CLI `stripe trigger payment_intent.succeeded` en dev, verifica que el webhook se procesa.
+  - [x] Cuenta Stripe creada con datos de la escuela (owner, 2026-05-18). Validación KYC pendiente — bloquea live mode, no bloquea test mode.
+  - [x] TWINT activado en test mode (owner, 2026-05-18) — confirmado en Stripe Dashboard → Settings → Payment methods. Live TWINT queda detrás del KYC.
+  - [x] SDK + tabla de idempotencia (ADR-006) en el repo:
+    - `npm i stripe` (v22.1.1, API version pinned a `2026-04-22.dahlia` en `lib/stripe/server.ts`)
+    - `WebhookEvent` model añadido a `prisma/schema.prisma` (id PK = `event.id`, source, type, receivedAt default now(), processedAt nullable)
+    - Migración `20260518184019_webhook_event` aplicada en Neon `dev`; owner debe correr `prisma migrate deploy` contra `main` antes del primer deploy a prod que apunte a este endpoint
+    - `lib/stripe/handle-webhook.ts` (puro, testable) + `app/api/webhooks/stripe/route.ts` (wiring con headers + Sentry capture)
+    - 5 Vitest specs (`lib/stripe/handle-webhook.test.ts`) cubriendo missing secret 500, missing signature 400, invalid signature 400, first event 200 + processedAt, duplicate event 200 + no double-update
+  - [ ] Claves de test (`pk_test_*`, `sk_test_*`) en Vercel env (Production + Preview scope) — bloqueado por owner: pegar desde Dashboard test mode → Developers → API keys
+  - [ ] Webhook endpoint registrado apuntando a `https://rideflumserberg.ch/api/webhooks/stripe` (dominio canónico actualizado: ya no es la vercel-app subdomain) — bloqueado por owner: registrar en Dashboard test mode → Webhooks → Add endpoint → copiar signing secret
+  - [ ] `STRIPE_WEBHOOK_SECRET` (whsec_*) en Vercel env (prod + preview) y, opcionalmente, `STRIPE_WEBHOOK_SECRET` distinto en `.env.local` desde `stripe listen` para dev (CLI Stripe imprime su propio `whsec_*` por sesión)
+- Tests: Vitest unit ✓. Stripe CLI `stripe trigger payment_intent.succeeded` contra `localhost:3000/api/webhooks/stripe` con `stripe listen` queda como checklist manual del owner antes de cerrar el ticket (smoke ≠ unit).
+- Notas:
+  - URL productiva: `https://rideflumserberg.ch` (no la vercel-app). Misma URL para Google OAuth callback eventual, Resend reply-to, Sentry tunnel. Memorizado en auto-memory.
+  - `runtime = "nodejs"` + `dynamic = "force-dynamic"` en el route handler — necesario porque Stripe SDK no corre en edge y la idempotencia depende de Prisma → Neon serverless adapter (Node).
+  - Real per-event business logic (booking confirmation, refund handling, dispute) llega en Sprint 2 cuando aterrice el Payment Element en Step 5. F-018 sólo deja el esqueleto idempotente para que registros de Stripe no se duplicen entre intentos.
 
 ### F-019 — Secrets de Stripe + Resend + Google en Vercel
 
