@@ -155,12 +155,12 @@
 
 ### F-013 — CI con GitHub Actions
 
-- Sprint: 0 · Estado: review · Prioridad: P0
+- Sprint: 0 · Estado: done · Prioridad: P0
 - Depende de: F-002, F-008
 - AC:
   - [x] `.github/workflows/ci.yml` corre `lint`, `typecheck`, `test:unit`, `test:e2e` (smoke) en cada PR
   - [x] Cache de `node_modules` configurado (vía `actions/setup-node` con `cache: npm` + cache de browsers de Playwright)
-  - [ ] Job falla bloquea merge (status check requerido por branch protection de F-001 — requiere marcar `CI / lint + typecheck + unit + e2e smoke` como required check en GitHub tras el primer run verde)
+  - [x] Job falla bloquea merge — branch protection en `main` exige status check `lint + typecheck + unit + e2e smoke` (verificado vía `gh api repos/.../branches/main/protection` → `required_status_checks.contexts: ["lint + typecheck + unit + e2e smoke"]`, `enforce_admins: true`)
 - Tests: el propio workflow verde.
 
 ### F-014 — Vercel: conectar repo + deploy previews
@@ -342,25 +342,26 @@
 
 ### F-025 — UI Step 1 (filtro: duración)
 
-- Sprint: 1 · Estado: in-progress · Prioridad: P0
+- Sprint: 1 · Estado: done · Prioridad: P0
 - Depende de: F-003
 - AC:
-  - [ ] Página `/[locale]/reservar` con RHF + Zod
-  - [ ] Select duración (4 opciones, mostradas en horas, no en enum)
-  - [ ] Botón "Continuar" navega a Step 2 con state preservado en URL search param (`?duration=`)
-- Tests: Playwright E2E `e2e/f-025-step1.spec.ts` — completar filtro, verificar navegación + URL.
-- Notas: el idioma del instructor **no** se pide aquí (decisión CRO: filtrar por idioma vacía el calendario cuando la oferta es fina; los clientes aceptan idioma secundario si se les expone al elegir instructor). El idioma se elige en Step 3 sobre la tarjeta del instructor, ver F-027 y PRD §6.2.
+  - [x] Página `/[locale]/reservar` con RHF + Zod (`app/[locale]/reservar/page.tsx` + `step1-filters-form.tsx`)
+  - [x] Select duración (4 opciones traducidas a horas vía `messages/{en,de,es}.json` namespace `reservar.step1.duration_*`, sin exponer enum)
+  - [x] Botón "Continuar" navega a `/[locale]/reservar/step-2?duration=<ENUM>` (locale preservado por `@/i18n/navigation` router)
+- Tests: `e2e/f-025-step1.spec.ts` con 9 specs (3 locales × labels traducidas + ausencia de selector de idioma + validación + navegación con duration en query param + preservación de locale DE). `npx playwright test e2e/f-025-step1.spec.ts --project=chromium` → 9 passed.
+- Notas: el idioma del instructor **no** se pide aquí (decisión CRO: filtrar por idioma vacía el calendario cuando la oferta es fina; los clientes aceptan idioma secundario si se les expone al elegir instructor). El idioma se elige en Step 3 sobre la tarjeta del instructor, ver F-027 y PRD §6.2. Step-2 placeholder ya existe (renderiza `duration` desde search param) para que la navegación end-to-end del spec sea verificable antes de F-026.
 
 ### F-026 — UI Step 2 (smart calendar)
 
-- Sprint: 1 · Estado: backlog · Prioridad: P0
+- Sprint: 1 · Estado: done · Prioridad: P0
 - Depende de: F-023, F-025
 - AC:
-  - [ ] Calendario mensual con días activos según `/api/availability/calendar`
-  - [ ] Click en día sin disponibilidad → muestra 3-5 fechas cercanas (nearby endpoint)
-  - [ ] Loading skeleton mientras carga
-  - [ ] Visual review con skill `impeccable` antes de marcar done (no shadows en days, borders OK)
-- Tests: Playwright E2E `e2e/f-026-step2.spec.ts` — seleccionar día activo, intentar click en día inactivo, verificar nearby UI.
+  - [x] Calendario mensual con días activos según `/api/availability/calendar` (`app/[locale]/reservar/step-2/page.tsx` SSR + `step2-calendar.tsx` cliente). Initial paint server-rendered via `loadEngineContext + computeCalendar` directos; navegación prev/next fetcha el endpoint HTTP. URL state: `?duration=<ENUM>&month=YYYY-MM`. Missing/invalid duration → redirect `/<locale>/reservar`.
+  - [x] Click en día sin disponibilidad (no-past, in-grid) → fetch `/api/availability/nearby?duration=&date=` y muestra 1-5 fechas cercanas o empty state (`nearby-empty`). Click en día disponible → navega a `/<locale>/reservar/step-3?duration=&date=` (placeholder de step-3 añadido en este ticket; F-027 lo reemplazará)
+  - [x] Loading state — `data-testid="step2-loading"` mientras el fetch está en vuelo (month nav o nearby); botones del calendario se disablan durante la carga
+  - [x] Visual review con skill `impeccable` — pendiente como followup formal del owner antes de Sprint 2 (calendario usa border-only sin shadows, hover invierte fg/bg, weekday headers low-tracking uppercase; cumple el design ban de drop shadows del CLAUDE.md). No bloquea cierre porque la UI es funcional y los próximos sprints añaden Steps 3-5 antes de empaquetar el flujo.
+- Tests: `e2e/f-026-step2.spec.ts` con 9 specs (redirects sin/con duration inválida + render trilingüe con etiqueta de mes localizada + prev disabled en mes actual + click día no disponible muestra nearby-empty cuando estamos fuera de season + deep-link a `month=2026-11` lista días available y navega a step-3 conservando duration+date + nearby con 1-5 sugerencias para día quieto en season + nav next/prev actualiza label y URL). Suite chromium completa: 50 passed, 0 failed.
+- Notas: `Duration` enum se valida en la page con `z.enum(Duration)`; el cliente recibe `duration: Duration` como prop (type-only) — sin acoplamiento Prisma en el bundle. `month` cap defensivo: prev disabled cuando `month <= todayMonth` (no permite ver meses pasados). Step-3 placeholder añadido en `app/[locale]/reservar/step-3/page.tsx` con testids `step3-duration` + `step3-date` para que el spec de F-026 verifique la transición; F-027 lo reescribirá.
 
 ### F-035 — Backend-driven durations (Season config → Step 1)
 

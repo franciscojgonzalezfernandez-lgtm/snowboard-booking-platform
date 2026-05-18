@@ -63,6 +63,27 @@
       "duration_6h": "6 Stunden · Ganztags",
       "cta_continue": "Weiter",
       "validation_duration_required": "Bitte wähle eine Stundenlänge"
+    },
+    "step2": {
+      "metadata_title": "Datum wählen — Snowboard Booking Platform",
+      "eyebrow": "Schritt 2 von 4 · Kalender",
+      "heading": "Datum wählen",
+      "sub": "Volle Tage haben mindestens einen Lehrer frei. Tippe auf einen ruhigen Tag, um die nächsten freien Termine zu sehen.",
+      "prev_month": "Zurück",
+      "next_month": "Weiter",
+      "loading": "Verfügbarkeit wird geladen…",
+      "error": "Konnte Verfügbarkeit nicht laden. Bitte erneut versuchen.",
+      "weekday_mon": "Mo",
+      "weekday_tue": "Di",
+      "weekday_wed": "Mi",
+      "weekday_thu": "Do",
+      "weekday_fri": "Fr",
+      "weekday_sat": "Sa",
+      "weekday_sun": "So",
+      "nearby_intro": "Am {date} ist nichts frei. Nächste freie Termine:",
+      "nearby_empty": "Innerhalb von zwei Wochen ist nichts frei. Versuche einen anderen Monat.",
+      "day_available": "{date} — verfügbar",
+      "day_full": "{date} — ausgebucht"
     }
   }
 }

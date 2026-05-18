@@ -75,7 +75,7 @@ test.describe("F-025 — Step 1 filters", () => {
     expect(url.searchParams.get("duration")).toBe("TWO_HOURS");
     expect(url.searchParams.has("language")).toBe(false);
 
-    await expect(page.getByTestId("step2-duration")).toHaveText("TWO_HOURS");
+    await expect(page.getByTestId("step2-calendar")).toBeVisible();
   });
 
   test("locale preserved across navigation: /de/reservar → /de/reservar/step-2", async ({
