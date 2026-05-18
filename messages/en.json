@@ -85,6 +85,22 @@
       "nearby_empty": "No nearby openings within two weeks. Try a different month.",
       "day_available": "{date} — available",
       "day_full": "{date} — no openings"
+    },
+    "step3": {
+      "metadata_title": "Pick a time and instructor — Snowboard Booking Platform",
+      "eyebrow": "Step 3 of 4 · Time + instructor",
+      "heading": "Pick a time and instructor",
+      "anchors_label": "Start time",
+      "instructors_label": "Instructor",
+      "anyone_title": "Anyone available",
+      "anyone_sub_assigned": "We'll match you with {name} — the instructor with the lightest day. Pick one below if you'd rather choose.",
+      "anyone_sub_none": "No instructor available at this time.",
+      "instructor_unnamed": "Instructor",
+      "languages_none": "Language to confirm",
+      "language_label": "Lesson language",
+      "language_sub": "{name} can teach in any of the languages below. The default is their primary.",
+      "language_auto": "Lesson will run in {language}.",
+      "continue": "Continue"
     }
   }
 }

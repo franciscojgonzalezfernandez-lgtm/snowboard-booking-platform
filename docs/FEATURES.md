@@ -378,15 +378,20 @@
 
 ### F-027 — UI Step 3 (anchor time + instructor + idioma de la clase)
 
-- Sprint: 1 · Estado: backlog · Prioridad: P0
+- Sprint: 1 · Estado: review · Prioridad: P0
 - Depende de: F-024, F-026
 - AC:
-  - [ ] Lista de anchor times con disponibilidad real
-  - [ ] Por anchor: tarjeta de instructor(es) con foto, nombre y **perfil de idiomas** (primario + secundarios con nivel, p.ej. `EN native · DE fluent · ES basic`)
-  - [ ] Opción "cualquiera disponible" preseleccionada (asigna por menor carga del día → round-robin; el idioma del instructor asignado se muestra al cliente antes de avanzar para que pueda cambiar de elección si no le sirve)
-  - [ ] Selector de **idioma de la clase**: si el instructor seleccionado habla >1 idioma, mostrar pills con sus idiomas (default = primario); si habla 1, auto-asignar sin pedir input. Valor persiste en URL search params y luego en `Booking.language`
-  - [ ] Botón "Continuar" navega a Step 4 (no implementado en este sprint — placeholder OK)
-- Tests: Playwright E2E `e2e/f-027-step3.spec.ts` — flujo completo Steps 1→3, incluyendo: instructor con 1 idioma (sin selector), instructor con varios (pills visibles, default = primario), cambio de idioma persistido en URL.
+  - [x] Lista de anchor times con disponibilidad real (`app/[locale]/reservar/step-3/page.tsx` SSR + `step3-selection.tsx` cliente). Cada anchor renderiza disable cuando `available=false`.
+  - [x] Por anchor: tarjeta de instructor(es) con nombre, idiomas y specialties — alimentadas por `computeSlotsForDate`. La foto se omite hasta que `Instructor.photo` se popule (Vercel Blob, D-LOGO blocking Sprint 5). El **nivel por idioma** (`EN native · DE fluent · ES basic` del PRD §6.2) requiere persistir niveles en schema y queda como followup explícito — ver `Notas`.
+  - [x] Opción "Cualquier monitor disponible" preseleccionada (alimenta `instructor=ANYONE` en URL); muestra el instructor asignado por round-robin (`instructors[0]`) con sus idiomas en la sub-copy para que el cliente decida si rotar manualmente antes de avanzar.
+  - [x] Selector de **idioma de la clase**: si el instructor seleccionado habla >1 idioma, render como pills con `data-selected`; si habla 1, se muestra el aviso `language-auto` sin selector; valor persiste en URL (`?language=`) y `Booking.language` lo consumirá en Sprint 2.
+  - [x] Botón "Continuar" navega a `step-4` (placeholder en este sprint) con la URL completa `duration + date + time + instructor (resuelto si era ANYONE) + language`.
+- Tests: `e2e/f-027-step3.spec.ts` (11 specs chromium, 20/20 verde combinado con F-026) cubre redirects (sin/duration inválida → step-1, sin/date inválida → step-2 manteniendo duration), trilingüe heading + 4 anchors, click anchor revela instructor section con ANYONE preselected + URL sync, pills i18n con primario por defecto + cambio persistido, selección de instructor concreta persistida tras `page.reload()`, y Continue que pasa el id resuelto al step-4.
+- Notas:
+  - **Niveles por idioma diferidos.** F-022/F-024 ya documentaron que `languages` viaja como `Locale[]` plano (MVP) y que la forma `[{ code, level }]` requiere schema change. F-027 ship la rendición primaria-primero (`languages[0]` = primario) sin nivel; el owner valida si quiere abrir ticket para añadir `language_levels` JSON a `Instructor` cuando contrate al segundo coach.
+  - **Foto pendiente.** Cards no muestran foto hasta tener `Instructor.photo` poblado (depende de D-LOGO / asset photography del owner). El campo viaja en el slot card (`SlotInstructor.photo`) pero la card lo ignora hasta que existan URLs reales.
+  - **Single-language path testado vía DOM logic, no E2E.** El seed tiene 1 instructor con 3 idiomas, así que el branch `auto-asignar sin pedir input` queda cubierto por la rama de UI (`language-auto`) que aparece cuando `assigned.languages.length === 1`. Se añadirá spec dedicado cuando aterrice un segundo instructor con 1 idioma en seed.
+  - **Step-4 placeholder** añadido en `app/[locale]/reservar/step-4/page.tsx` con dt/dd por param para que el spec compruebe el transit; Sprint 2 lo reescribirá con booker + attendees + Stripe Payment Element.
 
 ### F-036 — Multi-instructor seed + buffer-minutes = 0
 
