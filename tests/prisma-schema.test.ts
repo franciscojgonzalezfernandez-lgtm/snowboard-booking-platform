@@ -35,6 +35,7 @@ describe("prisma schema shape (F-020)", () => {
         "Tip",
         "User",
         "Verification",
+        "WebhookEvent",
       ]
     `);
   });
