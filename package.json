@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "node scripts/dev.mjs",
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
@@ -14,7 +14,8 @@
     "test:e2e": "playwright test",
     "email:test": "tsx scripts/send-test-email.ts",
     "db:seed": "prisma db seed",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "dev:next": "next dev --turbopack"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
