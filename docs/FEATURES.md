@@ -416,6 +416,24 @@
   - **Booker fake** vive como `User` real con `Role.student`. Cuando aterricen los flujos de dashboard alumno (Sprint 2) podríamos querer un seed extra de "alumno con historial real" — followup ahí si hace falta, no aquí.
   - **No** se modela la `Tip` table en este seed; queda para cuando F-024/Sprint 4 hagan vista instructor.
 
+### F-037 — Auto-migrate + reseed Neon dev / main on schema PRs
+
+- Sprint: 1 · Estado: review · Prioridad: P0
+- Depende de: F-020, F-021, F-036
+- AC:
+  - [x] `.github/workflows/db-migrate.yml` triggers on `pull_request` + `push` to `main` filtered by paths `prisma/schema.prisma`, `prisma/migrations/**`, `prisma/seed.ts`. Adds a `workflow_dispatch` for manual runs targeting either Neon branch.
+  - [x] PR job runs `prisma migrate deploy` + `npm run db:seed` against the Neon `dev` branch (so the PR author sees the migrated schema in local dev and the dev-pointed preview env stays aligned with the code under review).
+  - [x] Push-to-main job runs the same pair against the Neon `main` branch right after merge.
+  - [x] Concurrency groups `neon-dev-migrate` and `neon-main-migrate` with `cancel-in-progress: false` queue jobs instead of cancelling — never abandon a migration mid-flight on a remote DB.
+  - [x] PRs from forks skip the dev job cleanly (`if: github.event.pull_request.head.repo.full_name == github.repository`) — secrets aren't available there and we don't want a noisy failure.
+  - [x] Repo secrets created via `gh secret set`: `NEON_DEV_DATABASE_URL`, `NEON_DEV_DIRECT_URL`, `NEON_MAIN_DATABASE_URL`, `NEON_MAIN_DIRECT_URL`. Pooler URL for `DATABASE_URL`, direct compute URL for `DIRECT_URL` (Prisma uses the latter for migrations per ADR-002).
+- Tests: workflow is its own test — the next schema-touching PR exercises the dev job; the merge to main exercises the main job. Manual dry-run via `workflow_dispatch` available if the owner wants to validate without touching `prisma/`.
+- Notas:
+  - **No per-PR Neon branches.** Single `dev` and `main` branches are reused across PRs. Two concurrent schema PRs are sequenced by the concurrency group; the second waits for the first to finish before re-running migrate+seed. If load grows we can switch to Neon's branch-per-PR pattern via the `neondatabase/create-branch-action` action — out of scope for MVP.
+  - **Seed always runs after migrate**, even when only `seed.ts` changed and `schema.prisma` didn't. `prisma migrate deploy` is a no-op when there's nothing pending, so it's safe.
+  - **Rotation.** Connection strings are owner-account scoped. Rotate via Neon dashboard → reset password → re-run `gh secret set NEON_*_URL --body '<new>'` for the four secrets.
+  - **`prisma migrate deploy` will not generate migrations.** The owner still runs `prisma migrate dev --name <slug>` locally and commits the SQL — CI only applies what's in `prisma/migrations/`.
+
 ---
 
 ## Sprint 0.5 — Home + Login visibles (pre-Sprint 1, repriorización)

@@ -1,0 +1,116 @@
+name: db-migrate
+
+# Apply pending Prisma migrations + reseed the relevant Neon branch whenever a
+# PR touches the schema, the migrations folder, or the seed script. Keeps the
+# Neon `dev` and `main` branches aligned with the code so previews and local
+# development never read a stale schema.
+#
+# Triggers:
+#   - pull_request → run against the `dev` Neon branch (so the PR author can
+#     validate against an already-migrated copy as soon as the PR opens).
+#   - push to main → run against the `main` Neon branch (production) right
+#     after the merge.
+#
+# Required repository secrets:
+#   NEON_DEV_DATABASE_URL  / NEON_DEV_DIRECT_URL
+#   NEON_MAIN_DATABASE_URL / NEON_MAIN_DIRECT_URL
+#
+# PRs from forks do not get repo secrets — the conditional `if:` on each job
+# skips the run cleanly instead of failing on missing env.
+
+on:
+  pull_request:
+    paths:
+      - "prisma/schema.prisma"
+      - "prisma/migrations/**"
+      - "prisma/seed.ts"
+  push:
+    branches: [main]
+    paths:
+      - "prisma/schema.prisma"
+      - "prisma/migrations/**"
+      - "prisma/seed.ts"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Neon branch to sync"
+        required: true
+        default: dev
+        type: choice
+        options:
+          - dev
+          - main
+
+permissions:
+  contents: read
+
+jobs:
+  migrate-dev:
+    name: "migrate + seed → Neon dev"
+    if: |
+      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) ||
+      (github.event_name == 'workflow_dispatch' && inputs.target == 'dev')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: neon-dev-migrate
+      cancel-in-progress: false
+    env:
+      DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.NEON_DEV_DIRECT_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prisma generate
+        run: npx prisma generate
+
+      - name: Prisma migrate deploy (dev)
+        run: npx prisma migrate deploy
+
+      - name: Prisma db seed (dev)
+        run: npm run db:seed
+
+  migrate-main:
+    name: "migrate + seed → Neon main"
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && inputs.target == 'main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: neon-main-migrate
+      cancel-in-progress: false
+    env:
+      DATABASE_URL: ${{ secrets.NEON_MAIN_DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.NEON_MAIN_DIRECT_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prisma generate
+        run: npx prisma generate
+
+      - name: Prisma migrate deploy (main)
+        run: npx prisma migrate deploy
+
+      - name: Prisma db seed (main)
+        run: npm run db:seed
