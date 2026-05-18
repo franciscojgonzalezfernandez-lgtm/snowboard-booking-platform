@@ -27,11 +27,15 @@ export class EmailSendError extends Error {
   }
 }
 
-let resendClient: Resend | null = null;
+const resendClients = new Map<string, Resend>();
 
 function getResendClient(apiKey: string): Resend {
-  resendClient ??= new Resend(apiKey);
-  return resendClient;
+  let client = resendClients.get(apiKey);
+  if (!client) {
+    client = new Resend(apiKey);
+    resendClients.set(apiKey, client);
+  }
+  return client;
 }
 
 function formatResendError(error: ResendSendResponse["error"]): string {

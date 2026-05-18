@@ -26,7 +26,10 @@ export async function sendTestEmail(
       subject: TEST_EMAIL_SUBJECT,
       react: <TestEmail domain={DOMAIN} />,
       text: `Resend is wired for Ride Flumserberg using ${DOMAIN}.`,
-      tags: [{ name: "kind", value: "resend-test" }],
+      tags: [
+        { name: "feature", value: "ops" },
+        { name: "kind", value: "resend-test" },
+      ],
     },
     { client: opts.client, env },
   );

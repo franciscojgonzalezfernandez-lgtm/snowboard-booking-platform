@@ -1,8 +1,10 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { magicLink } from "better-auth/plugins";
+import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/db";
 import { sendMagicLinkEmail } from "@/lib/email/send-magic-link-email";
+import { getEmailLocaleFromRequest } from "@/lib/email/locale";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
@@ -17,8 +19,19 @@ export const auth = betterAuth({
   },
   plugins: [
     magicLink({
-      sendMagicLink: async ({ email, url }) => {
-        await sendMagicLinkEmail({ email, url });
+      sendMagicLink: async ({ email, url }, ctx) => {
+        try {
+          await sendMagicLinkEmail({
+            email,
+            url,
+            locale: getEmailLocaleFromRequest(ctx?.request),
+          });
+        } catch (err) {
+          Sentry.captureException(err, {
+            tags: { feature: "auth.magic-link" },
+          });
+          throw err;
+        }
       },
     }),
   ],

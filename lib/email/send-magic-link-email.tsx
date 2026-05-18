@@ -1,26 +1,35 @@
 import React from "react";
-import { MagicLinkEmail, MAGIC_LINK_EMAIL_SUBJECT } from "./templates/magic-link-email";
+import {
+  MagicLinkEmail,
+  getMagicLinkCopy,
+} from "./templates/magic-link-email";
 import { sendEmail, type EmailClient } from "./send-email";
+import type { EmailLocale } from "./locale";
 
 export type SendMagicLinkEmailInput = {
   email: string;
   url: string;
+  locale?: EmailLocale;
 };
 
 export async function sendMagicLinkEmail(
   input: SendMagicLinkEmailInput,
   opts: { client?: EmailClient; env?: NodeJS.ProcessEnv } = {},
 ) {
+  const locale: EmailLocale = input.locale ?? "en";
+  const t = getMagicLinkCopy(locale);
+
   return sendEmail(
     {
       to: input.email,
-      subject: MAGIC_LINK_EMAIL_SUBJECT,
-      react: <MagicLinkEmail url={input.url} />,
-      text: [
-        "Use this secure link to finish signing in to Ride Flumserberg.",
-        input.url,
-      ].join("\n\n"),
-      tags: [{ name: "kind", value: "magic-link" }],
+      subject: t.subject,
+      react: <MagicLinkEmail url={input.url} locale={locale} />,
+      text: [t.plainIntro, input.url, t.plainOutro, t.signoff].join("\n\n"),
+      tags: [
+        { name: "feature", value: "auth" },
+        { name: "kind", value: "magic-link" },
+        { name: "locale", value: locale },
+      ],
     },
     opts,
   );

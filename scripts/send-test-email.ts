@@ -21,4 +21,7 @@ async function main() {
   console.log(`Sent test email: ${result.id}`);
 }
 
-void main();
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
