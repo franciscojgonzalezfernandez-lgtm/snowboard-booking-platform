@@ -9,6 +9,22 @@ export default defineConfig({
     include: ["tests/**/*.{test,spec}.{ts,tsx}", "lib/**/*.{test,spec}.{ts,tsx}"],
     exclude: ["node_modules", "e2e", ".next"],
     globals: true,
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "html"],
+      include: ["lib/booking-engine/**/*.ts"],
+      exclude: [
+        "lib/booking-engine/**/*.test.ts",
+        "lib/booking-engine/fixtures.ts",
+        "lib/booking-engine/index.ts",
+      ],
+      thresholds: {
+        statements: 90,
+        branches: 90,
+        functions: 90,
+        lines: 90,
+      },
+    },
   },
   resolve: {
     alias: {
