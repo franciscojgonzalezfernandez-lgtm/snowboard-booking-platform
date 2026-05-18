@@ -16,7 +16,12 @@ import type {
 } from "./types";
 
 /** 10-minute buffer between consecutive lessons for the same instructor. */
-export const BUFFER_MINUTES = 10;
+// Buffer between consecutive bookings. F-036 dropped it from 10 to 0:
+// the instructor manages the gap manually in MVP, and the engine no longer
+// blocks back-to-back slots. Re-introduce when (a) operational complaints
+// surface, or (b) Google Calendar sync (Sprint 4) needs to reserve buffer
+// blocks in the external calendar.
+export const BUFFER_MINUTES = 0;
 
 /** Minimum advance time before a class for clients without prior same-day booking. */
 export const ADVANCE_MINUTES = 24 * 60;
@@ -112,7 +117,8 @@ function intervalsOverlap(
 
 /**
  * Returns true if `[start, end]` collides with any existing booking for this
- * instructor, including the 10-minute buffer on both sides.
+ * instructor, padded by `BUFFER_MINUTES` on both sides. With `BUFFER_MINUTES = 0`
+ * (current MVP value, see F-036) back-to-back bookings are allowed.
  */
 function collidesWithBooking(
   bookings: EngineBooking[],
