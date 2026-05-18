@@ -71,6 +71,7 @@ async function upsertInstructor(userId: string): Promise<Instructor> {
   return prisma.instructor.upsert({
     where: { userId },
     update: {
+      photo: "/instructors/javi.png",
       bio,
       specialties,
       languages: [Locale.en, Locale.de, Locale.es],
@@ -80,6 +81,7 @@ async function upsertInstructor(userId: string): Promise<Instructor> {
     },
     create: {
       userId,
+      photo: "/instructors/javi.png",
       bio,
       specialties,
       languages: [Locale.en, Locale.de, Locale.es],
