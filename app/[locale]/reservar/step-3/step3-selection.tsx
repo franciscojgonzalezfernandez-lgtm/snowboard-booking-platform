@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import type { Duration, Locale } from "@prisma/client";
 
@@ -8,6 +9,58 @@ import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { SlotsForDate, SlotInstructor } from "@/lib/booking-engine/types";
+
+function initialsFromName(name: string | null | undefined): string {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  const first = parts[0]?.[0] ?? "";
+  const last = parts.length > 1 ? (parts.at(-1)?.[0] ?? "") : "";
+  return (first + last).toUpperCase();
+}
+
+function InstructorAvatar({
+  name,
+  photo,
+  size,
+  isSelected,
+}: {
+  name: string | null | undefined;
+  photo: string | null | undefined;
+  size: number;
+  isSelected: boolean;
+}) {
+  const label = name ?? "";
+  if (photo) {
+    return (
+      <Image
+        src={photo}
+        alt={label}
+        width={size}
+        height={size}
+        sizes={`${size}px`}
+        data-testid="instructor-photo"
+        className="flex-shrink-0 rounded-full object-cover"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+  return (
+    <span
+      aria-hidden="true"
+      data-testid="instructor-photo-fallback"
+      style={{ width: size, height: size }}
+      className={cn(
+        "flex flex-shrink-0 items-center justify-center rounded-full text-xs font-semibold uppercase tracking-wider",
+        isSelected
+          ? "bg-background/15 text-background"
+          : "bg-muted text-muted-foreground",
+      )}
+    >
+      {initialsFromName(name)}
+    </span>
+  );
+}
 
 type Props = {
   duration: Duration;
@@ -54,9 +107,7 @@ export function Step3Selection({
   const anchors = slots.anchorTimes;
   const initialAnchor = useMemo(() => {
     if (!initialTime) return null;
-    const match = anchors.find(
-      (a) => a.time === initialTime && a.available,
-    );
+    const match = anchors.find((a) => a.time === initialTime && a.available);
     return match ? match.time : null;
   }, [anchors, initialTime]);
 
@@ -138,9 +189,7 @@ export function Step3Selection({
   }
 
   const continueDisabled =
-    !selectedTime ||
-    !assigned ||
-    (assigned.languages.length > 0 && !language);
+    !selectedTime || !assigned || (assigned.languages.length > 0 && !language);
 
   return (
     <section data-testid="step3-selection" className="space-y-10">
@@ -200,28 +249,38 @@ export function Step3Selection({
                 data-selected={instructor === ANYONE ? "true" : "false"}
                 onClick={() => handleInstructorClick(ANYONE)}
                 className={cn(
-                  "w-full rounded-md border px-4 py-3 text-left transition-colors",
+                  "flex w-full items-center gap-3 rounded-md border px-4 py-3 text-left transition-colors",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   instructor === ANYONE
                     ? "border-foreground bg-foreground text-background"
                     : "border-input hover:border-foreground",
                 )}
               >
-                <p className="font-medium">{t("anyone_title")}</p>
-                <p
-                  className={cn(
-                    "mt-1 text-xs",
-                    instructor === ANYONE
-                      ? "text-background/80"
-                      : "text-muted-foreground",
-                  )}
-                >
-                  {assigned
-                    ? t("anyone_sub_assigned", {
-                        name: assigned.name ?? t("instructor_unnamed"),
-                      })
-                    : t("anyone_sub_none")}
-                </p>
+                {assigned && (
+                  <InstructorAvatar
+                    name={assigned.name}
+                    photo={assigned.photo}
+                    size={40}
+                    isSelected={instructor === ANYONE}
+                  />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium">{t("anyone_title")}</p>
+                  <p
+                    className={cn(
+                      "mt-1 text-xs",
+                      instructor === ANYONE
+                        ? "text-background/80"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    {assigned
+                      ? t("anyone_sub_assigned", {
+                          name: assigned.name ?? t("instructor_unnamed"),
+                        })
+                      : t("anyone_sub_none")}
+                  </p>
+                </div>
               </button>
             </li>
             {candidates.map((cand) => {
@@ -234,43 +293,51 @@ export function Step3Selection({
                     data-selected={isSelected ? "true" : "false"}
                     onClick={() => handleInstructorClick(cand.id)}
                     className={cn(
-                      "w-full rounded-md border px-4 py-4 text-left transition-colors",
+                      "flex w-full items-start gap-4 rounded-md border px-4 py-4 text-left transition-colors",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       isSelected
                         ? "border-foreground bg-foreground text-background"
                         : "border-input hover:border-foreground",
                     )}
                   >
-                    <div className="flex items-baseline justify-between gap-3">
-                      <p className="font-medium">
-                        {cand.name ?? t("instructor_unnamed")}
-                      </p>
-                      <p
-                        className={cn(
-                          "text-xs uppercase tracking-wider",
-                          isSelected
-                            ? "text-background/80"
-                            : "text-muted-foreground",
-                        )}
-                        data-testid={`instructor-${cand.id}-languages`}
-                      >
-                        {cand.languages.length > 0
-                          ? cand.languages.join(" · ").toUpperCase()
-                          : t("languages_none")}
-                      </p>
+                    <InstructorAvatar
+                      name={cand.name}
+                      photo={cand.photo}
+                      size={64}
+                      isSelected={isSelected}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <p className="font-medium">
+                          {cand.name ?? t("instructor_unnamed")}
+                        </p>
+                        <p
+                          className={cn(
+                            "text-xs uppercase tracking-wider",
+                            isSelected
+                              ? "text-background/80"
+                              : "text-muted-foreground",
+                          )}
+                          data-testid={`instructor-${cand.id}-languages`}
+                        >
+                          {cand.languages.length > 0
+                            ? cand.languages.join(" · ").toUpperCase()
+                            : t("languages_none")}
+                        </p>
+                      </div>
+                      {cand.specialties && cand.specialties.length > 0 && (
+                        <p
+                          className={cn(
+                            "mt-2 text-xs",
+                            isSelected
+                              ? "text-background/80"
+                              : "text-muted-foreground",
+                          )}
+                        >
+                          {cand.specialties.join(" · ")}
+                        </p>
+                      )}
                     </div>
-                    {cand.specialties && cand.specialties.length > 0 && (
-                      <p
-                        className={cn(
-                          "mt-2 text-xs",
-                          isSelected
-                            ? "text-background/80"
-                            : "text-muted-foreground",
-                        )}
-                      >
-                        {cand.specialties.join(" · ")}
-                      </p>
-                    )}
                   </button>
                 </li>
               );

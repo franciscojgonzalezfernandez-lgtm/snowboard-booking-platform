@@ -161,4 +161,34 @@ test.describe("F-027 — Step 3 anchor time + instructor + language", () => {
     await expect(page.getByTestId("step4-time")).toHaveText("11:00");
     await expect(page.getByTestId("step4-language")).toHaveText("es");
   });
+
+  test("instructor cards render a photo for Javi and an initials fallback for Lara", async ({
+    page,
+  }) => {
+    await gotoStep3(page);
+    // 11:00 on a Monday in the seeded window: both Javi (photo) and
+    // Lara (photo = null per F-036 seed) are candidates.
+    await page.getByTestId("anchor-11:00").click();
+
+    // Anyone-row avatar is mounted as soon as an anchor is picked.
+    const anyoneCard = page.getByTestId("instructor-anyone");
+    const anyoneAvatar = anyoneCard.locator(
+      '[data-testid="instructor-photo"], [data-testid="instructor-photo-fallback"]',
+    );
+    await expect(anyoneAvatar.first()).toBeVisible();
+
+    // At least one named card shows a real photo (Javi's headshot).
+    const photos = page.locator(
+      'button[data-testid^="instructor-"]:not([data-testid="instructor-anyone"]) [data-testid="instructor-photo"]',
+    );
+    expect(await photos.count()).toBeGreaterThan(0);
+
+    // At least one named card falls back to initials (Lara, photo = null).
+    const fallbacks = page.locator(
+      'button[data-testid^="instructor-"]:not([data-testid="instructor-anyone"]) [data-testid="instructor-photo-fallback"]',
+    );
+    expect(await fallbacks.count()).toBeGreaterThan(0);
+    // Initials are uppercase letters from the instructor name.
+    await expect(fallbacks.first()).toHaveText(/^[A-ZÄÖÜ]{1,2}$/u);
+  });
 });
