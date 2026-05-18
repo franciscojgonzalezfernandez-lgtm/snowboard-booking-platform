@@ -64,6 +64,27 @@
       "duration_6h": "6 horas · día completo",
       "cta_continue": "Continuar",
       "validation_duration_required": "Elige una duración"
+    },
+    "step2": {
+      "metadata_title": "Elige una fecha — Snowboard Booking Platform",
+      "eyebrow": "Paso 2 de 4 · Calendario",
+      "heading": "Elige una fecha",
+      "sub": "Los días resaltados tienen al menos un instructor disponible. Pulsa un día sin disponibilidad para ver fechas cercanas.",
+      "prev_month": "Anterior",
+      "next_month": "Siguiente",
+      "loading": "Cargando disponibilidad…",
+      "error": "No pudimos cargar la disponibilidad. Inténtalo de nuevo.",
+      "weekday_mon": "Lun",
+      "weekday_tue": "Mar",
+      "weekday_wed": "Mié",
+      "weekday_thu": "Jue",
+      "weekday_fri": "Vie",
+      "weekday_sat": "Sáb",
+      "weekday_sun": "Dom",
+      "nearby_intro": "No hay huecos el {date}. Fechas cercanas con disponibilidad:",
+      "nearby_empty": "No hay fechas cercanas en dos semanas. Prueba otro mes.",
+      "day_available": "{date} — disponible",
+      "day_full": "{date} — sin huecos"
     }
   }
 }

@@ -64,6 +64,27 @@
       "duration_6h": "6 hours · full day",
       "cta_continue": "Continue",
       "validation_duration_required": "Please pick a lesson length"
+    },
+    "step2": {
+      "metadata_title": "Pick a date — Snowboard Booking Platform",
+      "eyebrow": "Step 2 of 4 · Calendar",
+      "heading": "Pick a date",
+      "sub": "Solid days have at least one instructor available. Tap a quiet day to see the closest openings.",
+      "prev_month": "Previous",
+      "next_month": "Next",
+      "loading": "Checking availability…",
+      "error": "Couldn't load availability. Try again.",
+      "weekday_mon": "Mon",
+      "weekday_tue": "Tue",
+      "weekday_wed": "Wed",
+      "weekday_thu": "Thu",
+      "weekday_fri": "Fri",
+      "weekday_sat": "Sat",
+      "weekday_sun": "Sun",
+      "nearby_intro": "Nothing open on {date}. Closest dates with availability:",
+      "nearby_empty": "No nearby openings within two weeks. Try a different month.",
+      "day_available": "{date} — available",
+      "day_full": "{date} — no openings"
     }
   }
 }

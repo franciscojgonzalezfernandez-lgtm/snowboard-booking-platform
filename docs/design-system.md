@@ -86,7 +86,9 @@ Use `text-wrap: balance` on hero `h1` and section `h2`; `text-wrap: pretty` on b
 ## Radius
 
 - `--radius` = `0.375rem` (6px) → maps to Tailwind `rounded-md` via the `--radius-*` scale in `@theme inline`.
-- **Applied to buttons only.** Cards, inputs, tabs, login panel stay square. This contrast is part of the variant signature — do not round inputs/cards in F-032 / F-033 / future tickets without revisiting.
+- **Applied across the system.** Buttons, cards, inputs, tabs, panels, day cells, calendar suggestion blocks — anything with a contained surface uses `rounded-md` (6px). Larger containers may step up to `rounded-lg` (8px) when scale demands it, but stay within the radius scale; never combine multiple radii on the same element.
+- Hairline borders + soft 6px corners replace shadows as the elevation language. Drop shadows are still banned (see "What's intentionally absent" below).
+- Decision history: the original Variant B mockup kept inputs/cards square as a stylistic signature; we relaxed that on 2026-05-18 because real product surfaces (calendar grid, nearby suggestion block, eventual instructor cards) read more polished with a small radius and avoid the brutalist edge that wasn't actually wanted.
 
 ## Buttons (component contracts)
 
@@ -127,7 +129,6 @@ Reduced motion: respect `@media (prefers-reduced-motion: reduce)` — set all du
 - Warm-neutral oklch hue 85 (was Sprint-0 placeholder)
 - Drop shadows (not used in Variant B)
 - Multiple accent colors (only `--primary` red carries brand identity)
-- Border-radius on inputs/cards (square stays the language of containers)
 
 ## References
 
