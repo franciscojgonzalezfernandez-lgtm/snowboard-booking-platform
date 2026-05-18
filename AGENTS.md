@@ -1,0 +1,296 @@
+# AGENTS.md — Snowboard Booking Platform
+
+> This file is read by Codex at the start of every session. It defines the project context, constraints, and conventions Codex must follow when generating or modifying code.
+
+---
+
+## Project
+
+**Snowboard booking platform** for a single ski school in Switzerland. Single-developer MVP. Operated initially by one instructor (the owner), architected for multi-instructor expansion.
+
+**Documentos del proyecto:**
+- [`docs/PRD.md`](docs/PRD.md) — producto/negocio.
+- [`docs/Architecture.md`](docs/Architecture.md) — stack, modelo de datos, integraciones, ADRs.
+- [`docs/FEATURES.md`](docs/FEATURES.md) — backlog vivo (fuente de verdad del scope por ticket).
+- [`docs/WORKFLOW.md`](docs/WORKFLOW.md) — workflow con subagentes + reglas Playwright per-feature.
+
+---
+
+## Stack
+
+**Strict — do not substitute any of these:**
+
+| Layer | Tech |
+|---|---|
+| Framework | Next.js 15 (App Router, RSC, Server Actions) |
+| Language | TypeScript strict mode |
+| Styling | Tailwind CSS v4 + shadcn/ui |
+| Forms | React Hook Form + Zod |
+| i18n | next-intl (public routes only) |
+| Auth | **Better Auth** (NOT NextAuth/Auth.js) |
+| ORM | **Prisma** (NOT Drizzle) |
+| DB | Neon Postgres |
+| Payments | Stripe Payment Element |
+| Email | Resend + React Email |
+| Calendar | `ics` package + Google Calendar API |
+| Storage | Vercel Blob |
+| Monitoring | Sentry |
+| Hosting | Vercel |
+| Testing | Playwright (E2E) + Vitest (unit) |
+
+---
+
+## Skills active in this project
+
+**Design + testing (kept from before):**
+- **impeccable** — primary design driver, both "brand" mode (landing) and "product" mode (booking/dashboard)
+- **playwright-skill** — E2E testing + visual review loop (browser automation)
+
+**Engineering experts (Next.js 15 + Prisma + i18n):**
+- **vercel-react-best-practices** — React/Next.js perf base from Vercel Engineering (402K installs)
+- **nextjs-app-router-patterns** — App Router, RSC, streaming, Server Actions
+- **typescript-advanced-types** — strict-mode TS, generics, conditional/mapped types
+- **prisma-database-setup** — Prisma schema + provider setup (official Prisma)
+- **prisma-client-api** — query patterns, `$transaction`, filters (official Prisma)
+- **prisma-postgres** — Neon-compatible Postgres provisioning + operations
+- **next-intl-add-language** — add/maintain locale `en | de | es` and slug translations
+
+**QA + performance:**
+- **testing-strategy** — Anthropic-official test strategy & coverage design
+- **playwright-testing** — extra Playwright tactics (augments `playwright-skill`)
+- **booking-platform-perf** — Web Vitals auditor enforcing this project's budgets (LCP < 2.5s, CLS < 0.1, availability p95 < 500ms, home bundle < 200KB)
+
+**Skills installed globally but NOT active here unless I explicitly invoke them:**
+- huashu-design — not compatible with Next.js architecture
+- taste — invoke with `"use taste for X"`
+- ui-ux-pro-max — invoke with `"check ui-ux-pro-max for Y"`
+- design-taste-frontend, high-end-visual-design, imagegen-frontend-web, imagegen-frontend-mobile — design-asset skills, invoke explicitly when needed
+
+**Out of scope for now (can install later if needed):**
+- Better Auth specialist skill
+- Stripe payments / webhooks specialist skill
+- Accessibility / WCAG auditor
+- System architect / ADR writer
+
+---
+
+## Design direction
+
+**Editorial / premium aesthetic.** References: Aesop, Cereal magazine, Outdoor Voices, Monocle.
+
+**Required:**
+- Serif typography for display (NOT Inter, NOT DM Sans, NOT Geist)
+- Generous whitespace
+- High contrast, low color saturation
+- Photography-led (not illustration-led)
+- Subtle, intentional animations only
+
+**Forbidden:**
+- Purple/blue gradients
+- Generic 3-column card grids with icons on top
+- Hero + CTA + subtitle + 3 stacked features pattern
+- Emoji as decoration
+- Glassmorphism, neumorphism
+- Drop shadows on cards (use borders instead)
+- Lottie animations of generic shapes
+
+When in doubt: check what **Impeccable** would do. The skill is the source of truth for visual decisions.
+
+---
+
+## Routing conventions
+
+```
+app/
+├── [locale]/                # i18n: en, de, es
+│   ├── (marketing)/         # Landing, instructores, blog
+│   ├── (booking)/           # Reservation flow
+│   ├── (auth)/              # Login, register, verify
+│   ├── dashboard/           # Authenticated student
+│   └── layout.tsx
+├── instructor/              # EN only, outside [locale]
+├── admin/                   # EN only, outside [locale]
+├── api/
+└── sitemap.ts, robots.ts
+```
+
+- **Public + student dashboard:** trilingual (`/`, `/de/`, `/es/`)
+- **Instructor + admin panels:** English only
+- **Slug translations:** path segments translated per locale (e.g. `/de/instruktoren/`, `/es/instructores/`)
+- **EN locale: no prefix** in URLs (better SEO for English market)
+
+---
+
+## Naming conventions
+
+- **Files:** kebab-case (`booking-engine.ts`, `availability-calendar.tsx`)
+- **React components:** PascalCase (`BookingCalendar.tsx` exports `BookingCalendar`)
+- **Hooks:** camelCase with `use` prefix
+- **Server Actions:** verbNoun (`createBooking`, `cancelBookingByUser`)
+- **API routes:** REST-ish (`/api/availability/calendar`, `/api/webhooks/stripe`)
+- **DB tables:** singular camelCase in Prisma schema (`user`, `instructor`, `accountCredit`)
+- **Enums:** SCREAMING_SNAKE_CASE values (`CANCELLED_BY_USER`)
+- **Constants:** SCREAMING_SNAKE_CASE
+- **Money:** always store as `priceInCents: Int`, never as float
+
+---
+
+## Git workflow (full spec in `docs/WORKFLOW.md` §Ritual de git)
+
+**Worktrees por defecto.** Cada ticket vive en su propio worktree hermano del repo (`../booking-platform.f-XXX`), cortado desde `origin/main`. No hacer `checkout` que cambie la branch del repo principal salvo edits triviales a meta-docs.
+
+```
+git fetch origin
+git worktree add -b f-XXX-kebab-slug ../booking-platform.f-XXX origin/main
+```
+
+Tras merge: `git worktree remove ../booking-platform.f-XXX && git branch -d f-XXX-kebab-slug`.
+
+**Commits descriptivos.** Cada commit debe leerse aislado. No `wip`, no `update X`, no `fixes`.
+
+**Subject (≤72 chars):** `tipo(f-XXX): verbo + objeto concreto + motivación corta`
+- Good: `feat(f-005): add Better Auth email+password to unblock student signup`
+- Bad: `update auth`, `f-005 changes`
+
+**Body (obligatorio):**
+```
+Qué:
+- <archivos/módulos relevantes y qué cambió>
+
+Por qué:
+- <motivación de negocio o técnica>
+
+Cómo verificar:
+- <pasos manuales / comando de test / "N/A: refactor">
+
+Refs: F-XXX[, PRD §X.Y][, Architecture §A.B][, ADR-NNN]
+```
+
+Trivial commits (typo, rename mecánico) pueden llevar body de una línea, pero el footer `Refs:` con el ticket es siempre obligatorio. Staging explícito por archivo/carpeta — nunca `git add -A`.
+
+---
+
+## Data and money
+
+- All monetary fields end in `Cents` (`totalPriceCents`, `amountCents`)
+- All currency operations on the server, never in the client
+- Currency: only CHF in MVP
+- Format display via `Intl.NumberFormat('de-CH', { style: 'currency', currency: 'CHF' })`
+- Dates: store as UTC, display in `Europe/Zurich` timezone
+- `Date` objects for date-only fields use `@db.Date` in Prisma
+
+---
+
+## Auth and authorization
+
+- **Better Auth** is the only auth library. Do not import `next-auth`.
+- Session shape: `{ user: { id, email, name, image, locale, roles: Role[] } }`
+- Role check: `session.user.roles.includes('admin')`
+- Protected routes via middleware OR via `auth()` in Server Components
+- Never trust client-sent role; always re-check on the server
+
+---
+
+## Component conventions
+
+- **Server Components by default.** Add `'use client'` only when needed (state, effects, events).
+- **shadcn/ui as base**, but modify aggressively to match editorial design (no default rounded cards with shadows)
+- **No barrel files** (`index.ts` re-exports) — explicit imports
+- **Zod schemas** live next to their use, exported from `lib/schemas/` when shared
+- **Server Actions** in `app/(group)/actions.ts` files, never inline in Client Components
+
+---
+
+## Forms
+
+- React Hook Form for client state
+- Zod for validation (client + server)
+- Server Actions consume the same Zod schema for validation
+- Error messages translated via next-intl
+- Loading states obligatory (no silent submits)
+
+---
+
+## Database operations
+
+- **All mutations of multiple tables use Prisma transactions** (e.g. booking cancellation, credit redemption, payment confirmation)
+- **No raw SQL** unless explicitly justified and commented
+- **Migrations:** `prisma migrate dev` for development, `prisma migrate deploy` for production
+- **Seed data** in `prisma/seed.ts` with 1 instructor (the owner) and 1 active season
+
+---
+
+## API and webhooks
+
+- **Stripe webhooks** must verify signature using `STRIPE_WEBHOOK_SECRET`
+- **All webhooks idempotent** via deduplication on `event.id`
+- **Server Actions for mutations** when called from the same app
+- **Route Handlers** for external integrations (webhooks, OAuth callbacks, cron)
+- **Cron secrets:** verify `CRON_SECRET` env var before executing scheduled jobs
+
+---
+
+## Testing
+
+- **E2E tests with Playwright** for: happy-path booking, cancellation, credit redemption, auth flows
+- **Unit tests with Vitest** for: `lib/booking-engine/` (availability algorithm), Zod schemas, currency utils
+- **Visual review:** Playwright opens the running app, takes screenshots, Codex evaluates against design rules
+- **Coverage target:** booking engine 90%+, rest reasonable
+
+---
+
+## Performance budget
+
+- LCP < 2.5s on home (mobile)
+- CLS < 0.1 globally
+- API availability search < 500ms p95
+- Bundle JS < 200KB gzipped on home
+- Images via `next/image` with AVIF + WebP
+
+---
+
+## Security checklist (always apply)
+
+- [ ] CSRF protection on mutations (Better Auth handles for auth, Server Actions handle for app mutations)
+- [ ] Zod validation on all server inputs
+- [ ] Rate limiting on auth + availability endpoints
+- [ ] Secrets in env vars (never in repo, never logged)
+- [ ] Encrypt sensitive data at rest (Google refresh tokens via AES-256-GCM)
+- [ ] HTTPS only, HSTS header
+- [ ] CSP header with strict policy
+- [ ] No `dangerouslySetInnerHTML` unless sanitized
+
+---
+
+## When Codex proposes code
+
+**Always:**
+- Check this AGENTS.md first for conventions
+- Use TypeScript strict mode (no `any` without justification)
+- Prefer Server Components and Server Actions
+- Use Prisma transactions for multi-table mutations
+- Reference `docs/PRD.md` (qué hace) y `docs/Architecture.md` (cómo está construido) when in doubt about requirements
+- Toda nueva feature debe tener su ticket en `docs/FEATURES.md` antes de delegar a un subagente
+
+**Never:**
+- Substitute the stack (no Drizzle, no Auth.js, no SendGrid, no other ORM)
+- Use `localStorage` for sensitive data (use server session)
+- Hardcode strings that should be translated (use next-intl `useTranslations`)
+- Generate UI without consulting Impeccable conventions
+- Skip the design rules in this file because "it would be faster"
+
+---
+
+## Outstanding decisions (to be revisited)
+
+These were flagged in the PRD as needing review:
+
+1. Legal validation of credit-only model for operational cancellations
+2. Final pricing per duration
+3. Google Business Profile Place ID for review CTA
+4. Brand identity assets (logo, hero photography)
+5. Tipping split policy (instructor 100% or split with school)
+
+---
+
+**Last updated:** 2026-05-14
