@@ -388,6 +388,29 @@
   - [ ] Botón "Continuar" navega a Step 4 (no implementado en este sprint — placeholder OK)
 - Tests: Playwright E2E `e2e/f-027-step3.spec.ts` — flujo completo Steps 1→3, incluyendo: instructor con 1 idioma (sin selector), instructor con varios (pills visibles, default = primario), cambio de idioma persistido en URL.
 
+### F-036 — Multi-instructor seed + buffer-minutes = 0
+
+- Sprint: 1 · Estado: review · Prioridad: P0
+- Depende de: F-021, F-022, F-027
+- AC:
+  - [x] Engine: `BUFFER_MINUTES` baja de `10` a `0` para liberar slots back-to-back. Gestión del gap real queda en manos del instructor en MVP; cuando crezca la operativa volveremos a parametrizarlo (ver `Notas`). Doc-comment de `collidesWithBooking` actualizado, specs `availability.test.ts` actualizadas para reflejar la nueva semántica (back-to-back permitido, antes rechazado).
+  - [x] Seed: segundo instructor `Lara Müller` (`languages: [de, en]`, mismas disponibilidades que Javi, foto `null`, specialties propias). Carga diaria diferente a Javi para que el Step 3 muestre rotación real de ANYONE y cards alternativas en multi-instructor.
+  - [x] Seed: usuario booker fake `student+seed@rideflumserberg.ch` (`Role.student`, locale `en`) con 1 attendee por booking (`isBooker=true`) — schema F-020 requiere ≥1 attendee con partial unique index.
+  - [x] Seed: bookings que cubran los tres caminos UX clave:
+    - **Anchor con un solo candidato**: Lara con booking 09:00 de `ONE_HOUR` todos los días seeded (56). Javi solo en 09:00.
+    - **Cargas balanceadas para rotación ANYONE**: Javi con booking 13:00 de `ONE_HOUR` cada miércoles del window (8 días) → en 11:00 ese día ambos workload=1, tiebreak determinístico por id.
+    - **Anchor saturado (anchor disable)**: tanto Javi como Lara con booking 15:00 de `ONE_HOUR` el 2026-12-02 (miércoles concreto) → en step-3 ese día la card de 15:00 sale `data-available="false"`.
+  - [x] Status de bookings mezclado: alterna `CONFIRMED` y `PENDING_PAYMENT` (engine bloquea ambos por ADR-006). Sirve para validar el path PaymentIntent cuando F-018 aterrice.
+  - [x] Seed idempotente: corre limpio dos veces consecutivas → mismos counts. Implementado vía `deleteMany` por booker/instructor antes de `createMany`.
+- Tests:
+  - Vitest engine: añadir spec que verifica buffer=0 (slot 10:00-11:00 colindante con booking 11:00-12:00 ahora se acepta).
+  - Vitest seed: spec actualiza el snapshot estructural — counts (`instructors: 2`, `bookings: 56 + 8 + (2 - duplicados ya contados) = 65`).
+- Notas:
+  - **Buffer=0 es decisión temporal.** El owner asume gestión del gap manual hasta que la operativa lo justifique (segundo instructor activo full-time, calendar bookings concurrentes). Reabrir como ticket nuevo cuando: (a) instructor reporta que el gap no se cumple, o (b) llega el feature de Google Calendar sync (Sprint 4) y necesitamos reservar buffer en el calendario externo. Lo único que cambia es la constante; los tests ya cubren ambos paths.
+  - **Lara Müller** elegida con `languages: [de, en]` (no `[en, de, es]` como Javi) para que el spec de F-027 valide que el default language pill cambia cuando rotas de Javi (default `en`) a Lara (default `de`).
+  - **Booker fake** vive como `User` real con `Role.student`. Cuando aterricen los flujos de dashboard alumno (Sprint 2) podríamos querer un seed extra de "alumno con historial real" — followup ahí si hace falta, no aquí.
+  - **No** se modela la `Tip` table en este seed; queda para cuando F-024/Sprint 4 hagan vista instructor.
+
 ---
 
 ## Sprint 0.5 — Home + Login visibles (pre-Sprint 1, repriorización)

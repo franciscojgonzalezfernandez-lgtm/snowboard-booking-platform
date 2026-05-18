@@ -177,9 +177,9 @@ describe("instructorAvailableAt — bookings + buffer", () => {
     ).toBe(false);
   });
 
-  it("rejects a slot only 5 minutes before an existing booking (buffer hit)", () => {
-    // Existing 11:00 - 12:00. Buffered window: 10:50 - 12:10.
-    // Candidate 10:00 - 11:00 ends inside the buffer → reject.
+  it("accepts a back-to-back slot when BUFFER_MINUTES is 0", () => {
+    // F-036 dropped the buffer. Existing 11:00 - 12:00 + candidate 10:00 - 11:00
+    // are adjacent but non-overlapping → accepted.
     const ctx = makeContext({
       bookings: [booking(JAVI.id, DAY, "11:00", Duration.ONE_HOUR)],
     });
@@ -190,12 +190,26 @@ describe("instructorAvailableAt — bookings + buffer", () => {
         anchorTime: "10:00",
         duration: Duration.ONE_HOUR,
       }),
-    ).toBe(false);
+    ).toBe(true);
   });
 
-  it("accepts a slot at the operating-hours boundary that respects the buffer", () => {
-    // Existing 09:00 - 10:00. Buffer ends at 10:10.
-    // Candidate 11:00 - 12:00 sits comfortably after the buffer.
+  it("accepts a slot that starts exactly when the previous booking ends", () => {
+    // Existing 09:00 - 10:00. Candidate 10:00 - 11:00 is back-to-back; legal at buffer=0.
+    const ctx = makeContext({
+      bookings: [booking(JAVI.id, DAY, "09:00", Duration.ONE_HOUR)],
+    });
+    expect(
+      instructorAvailableAt(ctx, {
+        instructor: JAVI,
+        date: DAY,
+        anchorTime: "10:00",
+        duration: Duration.ONE_HOUR,
+      }),
+    ).toBe(true);
+  });
+
+  it("still accepts a non-adjacent slot after an earlier booking", () => {
+    // Sanity check — even with buffer=0 a comfortably-separated anchor is fine.
     const ctx = makeContext({
       bookings: [booking(JAVI.id, DAY, "09:00", Duration.ONE_HOUR)],
     });
@@ -358,8 +372,8 @@ describe("instructorsAvailableOnDate", () => {
 });
 
 describe("constants", () => {
-  it("BUFFER_MINUTES is 10", () => {
-    expect(BUFFER_MINUTES).toBe(10);
+  it("BUFFER_MINUTES is 0 (F-036 — instructor manages the gap manually in MVP)", () => {
+    expect(BUFFER_MINUTES).toBe(0);
   });
 
   it("ADVANCE_MINUTES is 24h in minutes", () => {

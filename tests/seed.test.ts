@@ -46,3 +46,51 @@ describe("prisma/seed.ts (F-021)", () => {
     expect(seedSource).toMatch(/acceptsSameDayIfBooked:\s*false/);
   });
 });
+
+describe("prisma/seed.ts (F-036)", () => {
+  it("seeds a second instructor (Lara Müller) with [de, en]", () => {
+    expect(seedSource).toMatch(/upsertLaraInstructor/);
+    expect(seedSource).toMatch(
+      /languages:\s*\[\s*Locale\.de\s*,\s*Locale\.en\s*\]/,
+    );
+  });
+
+  it("seeds a fake booker user with student role", () => {
+    expect(seedSource).toMatch(/upsertSeedBooker/);
+    expect(seedSource).toMatch(/student\+seed@rideflumserberg\.ch/);
+  });
+
+  it("reseeds bookings idempotently using the seed prefix", () => {
+    expect(seedSource).toMatch(/SEED_BOOKING_PREFIX\s*=\s*"seed-f036-"/);
+    expect(seedSource).toMatch(/icsUid:\s*\{\s*startsWith:\s*SEED_BOOKING_PREFIX/);
+  });
+
+  it("plans Lara @ 09:00 every seeded day", () => {
+    expect(seedSource).toMatch(
+      /instructor:\s*lara,\s*date:\s*day,\s*anchorTime:\s*"09:00"/,
+    );
+  });
+
+  it("plans Javi @ 13:00 every Wednesday in window", () => {
+    expect(seedSource).toMatch(/day\.getUTCDay\(\)\s*===\s*3/);
+    expect(seedSource).toMatch(
+      /instructor:\s*javi,\s*date:\s*day,\s*anchorTime:\s*"13:00"/,
+    );
+  });
+
+  it("plans the saturated 15:00 anchor on 2026-12-02 (both instructors)", () => {
+    expect(seedSource).toMatch(
+      /SATURATED_DAY\s*=\s*dateOnly\("2026-12-02"\)/,
+    );
+  });
+
+  it("alternates CONFIRMED and PENDING_PAYMENT status across bookings", () => {
+    expect(seedSource).toMatch(/BookingStatus\.CONFIRMED/);
+    expect(seedSource).toMatch(/BookingStatus\.PENDING_PAYMENT/);
+  });
+
+  it("each seeded booking creates one attendee with isBooker = true", () => {
+    expect(seedSource).toMatch(/isBooker:\s*true/);
+    expect(seedSource).toMatch(/Level\.INTERMEDIATE/);
+  });
+});
