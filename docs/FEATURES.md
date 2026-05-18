@@ -229,15 +229,16 @@
 
 ### F-017 — Resend account + verificación de dominio DNS
 
-- Sprint: 1.5 · Estado: backlog · Prioridad: P0
+- Sprint: 1.5 · Estado: review · Prioridad: P0
 - Depende de: F-015
 - AC:
-  - [ ] Cuenta Resend creada
-  - [ ] Dominio (a definir) verificado con DKIM/SPF/DMARC
-  - [ ] API key en Vercel env (prod + preview)
-  - [ ] Email de prueba enviado vía Resend MJML / React Email a una cuenta de control
-- Tests: integration test que envía email mock en CI (no real).
-- Decisiones pendientes: dominio definitivo + proveedor DNS suizo.
+  - [x] Cuenta Resend creada
+  - [x] Dominio `rideflumserberg.ch` creado en Vercel, con nameservers Vercel correctos y production alias activo (`https://rideflumserberg.ch` → `/en`)
+  - [x] Dominio verificado en Resend (envío aceptado desde `hello@rideflumserberg.ch`)
+  - [x] API key en Vercel env (prod + preview): `RESEND_API_KEY`; `EMAIL_FROM` configurado en production y con fallback de código para preview/dev
+  - [x] Email de prueba enviado vía Resend + React Email a cuenta de control (`13744c42-7855-4fc6-9c60-2a4967044efc`)
+- Tests: `lib/email/*.test.tsx` mockea Resend en CI; envío real queda manual con Resend API key.
+- Notas: app wiring añadido en `lib/email/`; Better Auth magic-link usa Resend cuando `RESEND_API_KEY` existe y fallback de consola en dev sin API key.
 
 ### F-018 — Stripe account + activar TWINT + claves test
 

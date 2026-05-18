@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { magicLink } from "better-auth/plugins";
 import { prisma } from "@/lib/db";
+import { sendMagicLinkEmail } from "@/lib/email/send-magic-link-email";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
@@ -17,7 +18,7 @@ export const auth = betterAuth({
   plugins: [
     magicLink({
       sendMagicLink: async ({ email, url }) => {
-        console.log(`[magic-link] ${email} → ${url}`);
+        await sendMagicLinkEmail({ email, url });
       },
     }),
   ],
