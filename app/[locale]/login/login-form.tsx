@@ -98,7 +98,11 @@ export function LoginForm({ locale }: { locale: string }) {
       callbackURL: localeHome,
     });
     if (result.error) {
-      setError(result.error.message ?? t("error_fallback"));
+      if (result.error.code === "MAGIC_LINK_DELIVERY_FAILED") {
+        setError(t("error_magic_link_delivery_failed"));
+      } else {
+        setError(result.error.message ?? t("error_fallback"));
+      }
       return;
     }
     setMagicSent(true);
