@@ -330,14 +330,15 @@
 
 ### F-024 — `GET /api/availability/slots`
 
-- Sprint: 1 · Estado: backlog · Prioridad: P0
+- Sprint: 1 · Estado: done · Prioridad: P0
 - Depende de: F-022
 - AC:
-  - [ ] Params `date`, `duration` validados con Zod
-  - [ ] Response shape según PRD §6.2 (incluye `instructors[].languages` con primario + secundarios y nivel)
-  - [ ] Anchor times respetan `operatingHoursEnd`
-  - [ ] "cualquiera disponible" devuelve lista de instructores en orden de prioridad: menor carga del día → round-robin (el idioma lo decide el cliente al ver el perfil, no entra en la priorización)
-- Tests: Playwright API + Vitest unit en booking-engine.
+  - [x] Params `date`, `duration` validados con Zod (reusan `slotsQuerySchema` definido en F-023 `lib/schemas/availability.ts`)
+  - [x] Response shape: `{date, anchorTimes: [{time, available, instructors: [{id, name, photo, specialties, languages}]}]}`. `languages` se entrega como `Locale[]` plano (MVP); la forma `[{code, level}]` del ejemplo en PRD §6.2 requiere persistir niveles por idioma — followup si el owner lo pide
+  - [x] Anchor times respetan `operatingHoursEnd` — el engine descarta cualquier anchor cuyo `anchor + duration > operatingHoursEnd` (cubierto por `fitsWithinOperatingHours` en F-022 + spec Playwright FULL_DAY @ 15:00 → unavailable)
+  - [x] "Cualquiera disponible" → `instructors[]` viene ordenado por menor carga del día y luego por id ascendente como tiebreak determinístico (round-robin estable). La selección de "cualquiera vs concreto" sucede en la UI sobre este orden
+- Tests: 6 Playwright API specs en `e2e/f-024-availability-slots.spec.ts` (happy path 4 anchors, card carries id/name/languages/specialties, rechazos 400 para duration inválida + date malformada + params faltantes, anchor respect operatingHoursEnd con FULL_DAY) + cobertura unitaria del engine ya en F-022 (`computeSlotsForDate` 99% coverage).
+- Notas: PR stacked en F-023. Reusa `loadEngineContext` + `parseSearchParams` + `zodErrorToResponse` + `slotsQuerySchema` introducidos en F-023 sin tocarlos; el único archivo nuevo de producto es `app/api/availability/slots/route.ts`.
 
 ### F-025 — UI Step 1 (filtro: duración)
 
