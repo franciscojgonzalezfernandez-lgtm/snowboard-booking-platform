@@ -85,6 +85,22 @@
       "nearby_empty": "Innerhalb von zwei Wochen ist nichts frei. Versuche einen anderen Monat.",
       "day_available": "{date} — verfügbar",
       "day_full": "{date} — ausgebucht"
+    },
+    "step3": {
+      "metadata_title": "Wähle Zeit und Coach — Snowboard Booking Platform",
+      "eyebrow": "Schritt 3 von 4 · Zeit + Coach",
+      "heading": "Wähle Zeit und Coach",
+      "anchors_label": "Startzeit",
+      "instructors_label": "Coach",
+      "anyone_title": "Egal welche/r Coach",
+      "anyone_sub_assigned": "Wir teilen dich {name} zu — der/die Coach mit dem freiesten Tag. Wähle unten manuell, wenn du möchtest.",
+      "anyone_sub_none": "Zu dieser Zeit ist kein Coach verfügbar.",
+      "instructor_unnamed": "Coach",
+      "languages_none": "Sprache wird bestätigt",
+      "language_label": "Unterrichtssprache",
+      "language_sub": "{name} kann in jeder der unten genannten Sprachen unterrichten. Standard ist die Primärsprache.",
+      "language_auto": "Der Unterricht läuft auf {language}.",
+      "continue": "Weiter"
     }
   }
 }

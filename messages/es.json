@@ -85,6 +85,22 @@
       "nearby_empty": "No hay fechas cercanas en dos semanas. Prueba otro mes.",
       "day_available": "{date} — disponible",
       "day_full": "{date} — sin huecos"
+    },
+    "step3": {
+      "metadata_title": "Elige hora y monitor — Snowboard Booking Platform",
+      "eyebrow": "Paso 3 de 4 · Hora + monitor",
+      "heading": "Elige hora y monitor",
+      "anchors_label": "Hora de inicio",
+      "instructors_label": "Monitor",
+      "anyone_title": "Cualquier monitor disponible",
+      "anyone_sub_assigned": "Te asignaremos a {name}, el monitor con menos carga ese día. Elige uno abajo si prefieres.",
+      "anyone_sub_none": "Ningún monitor disponible a esta hora.",
+      "instructor_unnamed": "Monitor",
+      "languages_none": "Idioma por confirmar",
+      "language_label": "Idioma de la clase",
+      "language_sub": "{name} puede impartir en cualquiera de los idiomas siguientes. Por defecto se usa el primario.",
+      "language_auto": "La clase será en {language}.",
+      "continue": "Continuar"
     }
   }
 }
