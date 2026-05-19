@@ -12,11 +12,12 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
-      include: ["lib/booking-engine/**/*.ts"],
+      include: ["lib/booking-engine/**/*.ts", "lib/pricing/**/*.ts"],
       exclude: [
         "lib/booking-engine/**/*.test.ts",
         "lib/booking-engine/fixtures.ts",
         "lib/booking-engine/index.ts",
+        "lib/pricing/**/*.test.ts",
       ],
       thresholds: {
         statements: 90,

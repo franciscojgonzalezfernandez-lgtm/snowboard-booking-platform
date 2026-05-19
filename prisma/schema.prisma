@@ -178,6 +178,14 @@ model Season {
   operatingHoursStart String
   /// 24h "HH:MM" — latest end time a class may end in this season.
   operatingHoursEnd   String
+  /// CHF cents (VAT inclusive) per Duration enum value. Invariant: every
+  /// active Season MUST populate all four keys (ONE_HOUR, TWO_HOURS,
+  /// INTENSIVE, FULL_DAY). Read via lib/pricing/get-price.ts which throws
+  /// on missing keys so a misseeded row fails fast at booking time.
+  /// `@default("{}")` exists only to make the ADD COLUMN migration safe on
+  /// the existing Season row; the seed overwrites with real prices right
+  /// after migrate runs.
+  priceCentsByDuration Json   @default("{}")
 
   @@index([active, startDate, endDate])
 }

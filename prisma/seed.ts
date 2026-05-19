@@ -23,12 +23,15 @@ const SEED_BOOKING_PREFIX = "seed-f036-";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-// Placeholder pricing while D-PRC stays open. Real values land in Sprint 2.
-const PLACEHOLDER_PRICE_CENTS: Record<Duration, number> = {
-  ONE_HOUR: 10_000,
-  TWO_HOURS: 18_000,
-  INTENSIVE: 32_000,
-  FULL_DAY: 45_000,
+// Initial CHF prices in cents, VAT-inclusive. Locked in Sprint 2 planning
+// (2026-05-19). Mirrored into Season.priceCentsByDuration by upsertSeason()
+// so the app reads the same values from DB; admin editor in Sprint 4 will
+// rewrite the row, this object only exists for the seed booking totals.
+const INITIAL_PRICE_CENTS: Record<Duration, number> = {
+  ONE_HOUR: 11_000,
+  TWO_HOURS: 20_000,
+  INTENSIVE: 38_500,
+  FULL_DAY: 50_000,
 };
 
 function dateOnly(iso: string): Date {
@@ -203,6 +206,7 @@ async function upsertSeason(): Promise<Season> {
     ],
     operatingHoursStart: "08:00",
     operatingHoursEnd: "17:00",
+    priceCentsByDuration: INITIAL_PRICE_CENTS,
   };
   if (existing) {
     return prisma.season.update({ where: { id: existing.id }, data });
@@ -350,7 +354,7 @@ async function reseedBookings(
         duration: entry.duration,
         language: entry.language,
         status,
-        totalPriceCents: PLACEHOLDER_PRICE_CENTS[entry.duration],
+        totalPriceCents: INITIAL_PRICE_CENTS[entry.duration],
         icsUid,
         attendees: {
           create: [
