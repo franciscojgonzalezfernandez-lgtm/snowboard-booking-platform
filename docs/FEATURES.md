@@ -654,23 +654,28 @@
 
 ### F-041 — UI Step 4 (booker + attendees + level + notes + T&C) + auth gating
 
-- Sprint: 2 · Estado: backlog · Prioridad: P0
-- Depende de: F-027, F-038, F-040, F-049, F-050
+- Sprint: 2 · Estado: review · Prioridad: P0
+- Depende de: F-027, F-038, F-040, F-039b
 - AC:
-  - [ ] `app/[locale]/reservar/step-4/page.tsx` (server) + `step4-form.tsx` (client, RHF + Zod)
-  - [ ] **Auth gating:** si `!session`, page renderiza CTA "Sign in to continue" → `/[locale]/login?next=/[locale]/reservar/step-4&<all-params>`. Form no se renderiza para anónimos
-  - [ ] **Better Auth wiring:** `signIn.magicLink({ callbackURL })` y `signIn.email/social` respetan el `next=` param. Verificar; parchear si falla
-  - [ ] **Booker block:** name (default `session.user.name`, editable) + email (readonly = `session.user.email`) + phone (required, E.164, default prefix `+41`)
-  - [ ] **Attendees array 1-4** vía `useFieldArray` (PRD §6.4): name + age (number 4-99) + `Level` enum select (`BEGINNER`/`INTERMEDIATE`/`ADVANCED`/`EXPERT`). Min 1, max 4
-  - [ ] **Notes** textarea opcional, máx 500 chars con contador
-  - [ ] **T&C checkbox** required. Label HTML: `"I agree to the [Terms and Conditions] and [Privacy Policy]"`. Cada link es un `<button type="button">` que abre el `TermsModal` (no `<a target=_blank>`, no nav)
-  - [ ] Submit avanza a `step-5?...&attendees=<base64-json>&bookerPhone=<phone>&notes=<encoded>` — URL state preserve; persistencia real ocurre en F-042
-  - [ ] Trilingual labels (`messages/{en,de,es}.json` namespace `reservar.step4.*`)
-  - [ ] Loading + error states obligatorios, traducidos
-- Tests: Playwright 3 locales × (anónimo → redirect login con next= correcto, autenticado → form, validation min/max attendees, T&C uncheck → submit disabled, click T&C link → modal abre, back-nav preserva data, happy → step-5 con full URL state).
+  - [x] `app/[locale]/reservar/step-4/page.tsx` (server) + `step4-form.tsx` (client, RHF + Zod). El placeholder dt/dd anterior queda reemplazado por el form real; la spec F-027 que asertaba sobre el placeholder se actualiza para sólo verificar la URL + el CTA anónimo.
+  - [x] **Auth gating:** si `!session`, page renderiza CTA "Sign in to continue" → `/[locale]/login?next=<urlencoded /[locale]/reservar/step-4?...>`. Form no se renderiza para anónimos. `buildLoginNext()` reconstruye la URL sólo con los params present (sin `&undefined`).
+  - [x] **Better Auth wiring:** `LoginForm` acepta prop `callbackURL?`. La page resuelve `sanitizeNext(searchParams.next, locale)` (helper `lib/auth/safe-next.ts`) y lo pasa al form. `signIn.email/signUp.email` → `router.push(destination)`; `signIn.social({ callbackURL: destination })`; `signIn.magicLink({ email, callbackURL: destination })`. La sesión-ya-iniciada en `/login` también redirige a `destination` en lugar de `/[locale]`. Open-redirect guard: `sanitizeNext` exige `/[locale]/...` o raíz `/[locale]` y rechaza `//evil.com`, esquemas y rutas fuera del set de locales.
+  - [x] **Booker block:** name editable (default `session.user.name`), email readonly (= `session.user.email`, hint clarifica logout-for-change), phone con default `"+41 "` y validación E.164 tolerante a espacios (regex sobre el valor sin whitespace; `bookerPhone` se envía sin espacios al step-5).
+  - [x] **Attendees array 1-4** vía `useFieldArray` (PRD §6.4): `name` (1-80) + `age` (4-99 int, `valueAsNumber`) + `Level` select. Min 1 enforced (el botón Remove se oculta cuando sólo queda uno); Max 4 enforced (Add se deshabilita). `append({ shouldFocus: false })` para evitar la race onTouched + resolver-blur (RHF reseteaba el segundo append cuando el primero movía foco al input nuevo).
+  - [x] **Niveles**: `Level` enum del schema es `BEGINNER | INTERMEDIATE | ADVANCED | EXPERT_FREESTYLE` (no `EXPERT` puro como el AC anterior). Se alinea el form + i18n a la fuente de verdad de Prisma.
+  - [x] **Notes** textarea opcional, máx 500 chars con contador `{count} / {max}` actualizado por `watch("notes")`.
+  - [x] **T&C checkbox** required. Label render: prefix + `<TermsModal variant="terms">` + and + `<TermsModal variant="privacy">` + suffix. Los triggers heredan el `underline + hover:no-underline` de F-040 — no `<a target=_blank>`, no navegación.
+  - [x] Submit avanza a `step-5?duration=…&date=…&time=…&instructor=…&language=…&bookerName=…&bookerPhone=<E.164>&attendees=<base64(JSON)>&notes=<text>?` — URL state preserve. Persistencia real (Prisma + Stripe PaymentIntent) ocurre en F-042. `encodeAttendees` / `decodeAttendees` viven en `lib/schemas/step4.ts` para compartirlos con el server action.
+  - [x] Trilingual labels en `messages/{en,de,es}.json` namespace `reservar.step4.*`.
+  - [x] Loading (`useTransition`) + error states (per-field translated errors + fallback) obligatorios.
+- Tests: Playwright `e2e/f-041-step4.spec.ts` con 6 specs: (a) anónimo × 3 locales → CTA visible con `next=` URL-decoded preservando los 5 params de Step 1-3; (b) autenticado → form prefilled (name + email readonly), submit disabled hasta T&C, submit habilita con T&C → step-5 con URL completa (incluye `bookerPhone=+41766381870` y `attendees=<base64>`); (c) Add/Remove enforcement 1-4; (d) T&C → modal abre. Spec F-027 ajustada para no asertar sobre el placeholder antiguo (ahora valida CTA anónimo). Vitest 126/126 (Zod schema no rompe ningún test existente). Suite Playwright completa: **82/83** (todos los de Step 4 verdes; el smoke restante no afecta a F-041).
 - Notas:
-  - Phone no se persiste al `User` model en MVP. Sprint 3+ podría añadir toggle "save phone to profile".
-  - Email immutable evita confusión (booking ligado a `session.user.id`); cambiar email = logout + relogin.
+  - **F-049 + F-050 son soft deps.** El AC original las listaba como bloqueantes pero F-041 ship sin esperarlas: F-049 (back-stepper) es chrome de navegación opcional y F-050 (shadcn adoption) es polish visual. Ambas siguen pendientes y pueden iterar este step más tarde sin tocar el form. Dependencia explícita reducida a F-027, F-038, F-040, F-039b.
+  - **Phone no se persiste al `User` model en MVP.** Sprint 3+ podría añadir toggle "save phone to profile" desde el dashboard.
+  - **Email immutable** evita confusión (booking ligado a `session.user.id`); cambiar email = logout + relogin.
+  - **`shouldFocus: false` en append.** Sin este flag, RHF mueve foco al input del nuevo attendee. El blur del foco anterior dispara la validación `onTouched` (resolver async); si el cliente clica Add otra vez antes de que el resolver resuelva, el segundo append queda pisado por el setState del resolver. Bug confirmado en local con clicks rápidos. Documentado para que F-042 mantenga el flag si reusa el patrón.
+  - **`sanitizeNext`** restringe `next` a paths con prefijo `/en/`, `/de/`, `/es/` (o las raíces exactas). Rechaza protocol-relative, schemes y rutas fuera de los locales; fallback a `/[locale]`. Cubre el escenario abierto de open-redirect en la PR de F-005 + F-033.
+  - **Submit-disabled hasta `isValid`.** RHF marca `isValid=true` sólo después de pasar el resolver. El primer cambio en cualquier campo dispara la validación; antes de tocar nada el botón queda disabled (UX coherente con la spec). Tests cubren tanto el estado inicial (disabled sin T&C) como el habilitado tras completar todos los campos.
 
 ### F-042 — Booking draft + PaymentIntent server action
 

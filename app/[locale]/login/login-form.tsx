@@ -21,7 +21,12 @@ import { authClient } from "@/lib/auth/client";
 
 type Mode = "signin" | "signup";
 
-export function LoginForm({ locale }: { locale: string }) {
+type LoginFormProps = {
+  locale: string;
+  callbackURL?: string;
+};
+
+export function LoginForm({ locale, callbackURL }: LoginFormProps) {
   const t = useTranslations("login");
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("signin");
@@ -50,7 +55,7 @@ export function LoginForm({ locale }: { locale: string }) {
     defaultValues: { email: "", password: "", name: "" },
   });
 
-  const localeHome = `/${locale}`;
+  const destination = callbackURL ?? `/${locale}`;
 
   function onSubmit(values: CredentialsValues) {
     setError(null);
@@ -71,7 +76,7 @@ export function LoginForm({ locale }: { locale: string }) {
         setError(result.error.message ?? t("error_fallback"));
         return;
       }
-      router.push(localeHome);
+      router.push(destination);
       router.refresh();
     });
   }
@@ -80,7 +85,7 @@ export function LoginForm({ locale }: { locale: string }) {
     setError(null);
     await authClient.signIn.social({
       provider: "google",
-      callbackURL: localeHome,
+      callbackURL: destination,
     });
   }
 
@@ -95,7 +100,7 @@ export function LoginForm({ locale }: { locale: string }) {
     setMagicSent(false);
     const result = await authClient.signIn.magicLink({
       email: parsed.data,
-      callbackURL: localeHome,
+      callbackURL: destination,
     });
     if (result.error) {
       if (result.error.code === "MAGIC_LINK_DELIVERY_FAILED") {
