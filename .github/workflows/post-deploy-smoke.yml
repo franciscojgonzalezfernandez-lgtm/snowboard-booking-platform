@@ -17,7 +17,7 @@ jobs:
     timeout-minutes: 10
     env:
       NEXT_TELEMETRY_DISABLED: "1"
-      PLAYWRIGHT_BASE_URL: https://snowboard-booking-platform.vercel.app
+      PLAYWRIGHT_BASE_URL: https://rideflumserberg.ch
       # Prod is public, but if Deployment Protection ever turns on for prod
       # this lets the smoke keep working without further wiring.
       VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
