@@ -18,8 +18,16 @@ export const SEASON: EngineSeason = {
   startDate: new Date("2026-11-15T00:00:00.000Z"),
   endDate: new Date("2027-04-30T00:00:00.000Z"),
   active: true,
-  anchorTimes: ["09:00", "11:00", "13:00", "15:00"],
-  operatingHoursStart: "09:00",
+  anchorTimes: [
+    "09:00",
+    "10:00",
+    "11:00",
+    "12:00",
+    "13:00",
+    "14:00",
+    "15:00",
+  ],
+  operatingHoursStart: "08:00",
   operatingHoursEnd: "17:00",
 };
 

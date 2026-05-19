@@ -151,8 +151,8 @@ name                    String
 startDate               DateTime
 endDate                 DateTime
 active                  Boolean    @default(true)
-anchorTimes             String[]   (ej: ["09:00","11:00","13:00","15:00"])
-operatingHoursStart     String     (ej: "09:00")
+anchorTimes             String[]   (ej: ["09:00","10:00","11:00","12:00","13:00","14:00","15:00"])
+operatingHoursStart     String     (ej: "08:00")
 operatingHoursEnd       String     (ej: "17:00")
 ```
 

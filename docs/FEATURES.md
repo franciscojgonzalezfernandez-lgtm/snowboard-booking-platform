@@ -305,10 +305,10 @@
 - AC:
   - [x] 1 user con roles `[student, instructor, admin]` (el owner — `franciscojgonzalezfernandez@gmail.com`, name "Javi", phone `+41 766381870`, locale `en`)
   - [x] 1 instructor enlazado al user, `acceptsSameDayIfBooked=false`, `calendarConnected=false`, idiomas `[en, de, es]`, 6 specialties (`beginner-friendly`, `freestyle`, `powder`, `race-carving`, `kids-4-12`, `special-needs`), bio real del owner
-  - [x] 1 season `Season 26/27` activa, `2026-11-15 → 2027-04-30`, anchor times `["09:00","11:00","13:00","15:00"]`, operating hours `09:00 - 17:00`
+  - [x] 1 season `Season 26/27` activa, `2026-11-15 → 2027-04-30`, anchor times horarios `["09:00","10:00","11:00","12:00","13:00","14:00","15:00"]`, operating hours `08:00 - 17:00` (actualizado en F-038; baseline original era 4 anchors `["09:00","11:00","13:00","15:00"]` con ops `09:00 - 17:00`)
   - [x] 56 `availabilityBlock` (8 semanas × 7 días, sin huecos) cubriendo desde `startDate`, cada uno con kind `AVAILABLE` y span `operatingHoursStart → operatingHoursEnd` del season
   - [x] `npx prisma db seed` corre limpio (validado dos veces consecutivas → mismos ids → idempotente). Aplicado en Neon `dev` y promovido a Neon `main`.
-- Tests: `tests/seed.test.ts` con 6 specs Vitest leyendo `prisma/seed.ts` source — verifican counts (3 roles, 3 languages, 4 anchor times, 8 weeks), pattern idempotente (upsert/findFirst/deleteMany+createMany) y default `acceptsSameDayIfBooked=false`. La verificación con DB real queda para F-022 que decide la estrategia de test DB (branch Neon dedicada vs in-memory).
+- Tests: `tests/seed.test.ts` con 6 specs Vitest leyendo `prisma/seed.ts` source — verifican counts (3 roles, 3 languages, 7 anchor times tras F-038, 8 weeks), pattern idempotente (upsert/findFirst/deleteMany+createMany) y default `acceptsSameDayIfBooked=false`. La verificación con DB real queda para F-022 que decide la estrategia de test DB (branch Neon dedicada vs in-memory).
 - Notas: añadido `tsx` (devDep) + bloque `prisma.seed = "tsx prisma/seed.ts"` en `package.json` + script `db:seed`. Bio cargada de transcript del owner (sesión F-021). Foto = `/instructors/javi.png` servida desde `public/` (1254×1254, retrato del owner). Para MVP single-instructor el asset estático bate Blob en simplicidad; migrar a Vercel Blob cuando llegue admin upload UI (Sprint 4) o segundo instructor.
 
 ### F-022 — `lib/booking-engine/` (algoritmo availability + Vitest 90%+)
@@ -351,7 +351,7 @@
   - [x] Response shape: `{date, anchorTimes: [{time, available, instructors: [{id, name, photo, specialties, languages}]}]}`. `languages` se entrega como `Locale[]` plano (MVP); la forma `[{code, level}]` del ejemplo en PRD §6.2 requiere persistir niveles por idioma — followup si el owner lo pide
   - [x] Anchor times respetan `operatingHoursEnd` — el engine descarta cualquier anchor cuyo `anchor + duration > operatingHoursEnd` (cubierto por `fitsWithinOperatingHours` en F-022 + spec Playwright FULL_DAY @ 15:00 → unavailable)
   - [x] "Cualquiera disponible" → `instructors[]` viene ordenado por menor carga del día y luego por id ascendente como tiebreak determinístico (round-robin estable). La selección de "cualquiera vs concreto" sucede en la UI sobre este orden
-- Tests: 6 Playwright API specs en `e2e/f-024-availability-slots.spec.ts` (happy path 4 anchors, card carries id/name/languages/specialties, rechazos 400 para duration inválida + date malformada + params faltantes, anchor respect operatingHoursEnd con FULL_DAY) + cobertura unitaria del engine ya en F-022 (`computeSlotsForDate` 99% coverage).
+- Tests: 6 Playwright API specs en `e2e/f-024-availability-slots.spec.ts` (happy path 7 anchors tras F-038, card carries id/name/languages/specialties, rechazos 400 para duration inválida + date malformada + params faltantes, anchor respect operatingHoursEnd con FULL_DAY) + cobertura unitaria del engine ya en F-022 (`computeSlotsForDate` 99% coverage).
 - Notas: PR stacked en F-023. Reusa `loadEngineContext` + `parseSearchParams` + `zodErrorToResponse` + `slotsQuerySchema` introducidos en F-023 sin tocarlos; el único archivo nuevo de producto es `app/api/availability/slots/route.ts`.
 
 ### F-025 — UI Step 1 (filtro: duración)
@@ -399,7 +399,7 @@
   - [x] Opción "Cualquier monitor disponible" preseleccionada (alimenta `instructor=ANYONE` en URL); muestra el instructor asignado por round-robin (`instructors[0]`) con sus idiomas en la sub-copy para que el cliente decida si rotar manualmente antes de avanzar.
   - [x] Selector de **idioma de la clase**: si el instructor seleccionado habla >1 idioma, render como pills con `data-selected`; si habla 1, se muestra el aviso `language-auto` sin selector; valor persiste en URL (`?language=`) y `Booking.language` lo consumirá en Sprint 2.
   - [x] Botón "Continuar" navega a `step-4` (placeholder en este sprint) con la URL completa `duration + date + time + instructor (resuelto si era ANYONE) + language`.
-- Tests: `e2e/f-027-step3.spec.ts` (11 specs chromium, 20/20 verde combinado con F-026) cubre redirects (sin/duration inválida → step-1, sin/date inválida → step-2 manteniendo duration), trilingüe heading + 4 anchors, click anchor revela instructor section con ANYONE preselected + URL sync, pills i18n con primario por defecto + cambio persistido, selección de instructor concreta persistida tras `page.reload()`, y Continue que pasa el id resuelto al step-4.
+- Tests: `e2e/f-027-step3.spec.ts` (11 specs chromium, 20/20 verde combinado con F-026) cubre redirects (sin/duration inválida → step-1, sin/date inválida → step-2 manteniendo duration), trilingüe heading + anchors (4 al cerrar el ticket; F-038 los amplía a 7 horarios sin tocar las specs), click anchor revela instructor section con ANYONE preselected + URL sync, pills i18n con primario por defecto + cambio persistido, selección de instructor concreta persistida tras `page.reload()`, y Continue que pasa el id resuelto al step-4.
 - Notas:
   - **Niveles por idioma diferidos.** F-022/F-024 ya documentaron que `languages` viaja como `Locale[]` plano (MVP) y que la forma `[{ code, level }]` requiere schema change. F-027 ship la rendición primaria-primero (`languages[0]` = primario) sin nivel; el owner valida si quiere abrir ticket para añadir `language_levels` JSON a `Instructor` cuando contrate al segundo coach.
   - **Foto pendiente.** Cards no muestran foto hasta tener `Instructor.photo` poblado (depende de D-LOGO / asset photography del owner). El campo viaja en el slot card (`SlotInstructor.photo`) pero la card lo ignora hasta que existan URLs reales.
@@ -446,6 +446,34 @@
   - **Seed always runs after migrate**, even when only `seed.ts` changed and `schema.prisma` didn't. `prisma migrate deploy` is a no-op when there's nothing pending, so it's safe.
   - **Rotation.** Connection strings are owner-account scoped. Rotate via Neon dashboard → reset password → re-run `gh secret set NEON_*_URL --body '<new>'` for the four secrets.
   - **`prisma migrate deploy` will not generate migrations.** The owner still runs `prisma migrate dev --name <slug>` locally and commits the SQL — CI only applies what's in `prisma/migrations/`.
+
+### F-038 — Hourly anchor times (09:00 → 15:00) + operating hours 08:00 → 17:00
+
+- Sprint: 1 · Estado: review · Prioridad: P0
+- Depende de: F-021, F-024, F-027, F-036
+- Motivación (CRO): la baseline de 4 anchors cada 2h (`09/11/13/15`) quemaba slots adyacentes. Un booking `ONE_HOUR` @ 09:00 termina a 10:00 pero el siguiente anchor disponible era 11:00 — la hora 10:00 quedaba inalcanzable como punto de inicio aunque el instructor estuviera libre. Resultado: reservas perdidas a partir de la segunda hora de cada bloque. Con `BUFFER_MINUTES=0` tras F-036 podemos exponer anchors horarios sin retocar el engine. Operating hours pasan a `08:00 → 17:00` para reflejar el horario real de la estación de Flumserberg (apertura a las 08:00) — los anchors siguen empezando a las 09:00 porque es la primera hora de clase razonable; las 08:00–09:00 quedan como margen operacional del instructor.
+- AC:
+  - [x] `prisma/seed.ts` actualiza el upsert de `Season 26/27` con `anchorTimes: ["09:00","10:00","11:00","12:00","13:00","14:00","15:00"]` y `operatingHoursStart: "08:00"`. `operatingHoursEnd` se mantiene en `"17:00"`. Los 56 `availabilityBlock` derivan automáticamente del nuevo span (08:00–17:00) porque `reseedAvailability` ya consume `season.operatingHoursStart/End`.
+  - [x] `lib/booking-engine/fixtures.ts` espeja el nuevo array de anchors y `operatingHoursStart: "08:00"` en el `SEASON` de los tests unitarios.
+  - [x] `lib/booking-engine/slots.test.ts` actualiza el expected en `computeSlotsForDate` happy path a la lista de 7 anchors.
+  - [x] `lib/booking-engine/availability.test.ts` ajusta la spec `rejects anchor before operatingHoursStart` de `"08:00"` a `"07:30"` (08:00 ahora está dentro de horario).
+  - [x] `tests/seed.test.ts` reemplaza la aserción `expect(times).toEqual([…4 anchors…])` por la lista de 7 + renombra el `it("…the four anchor times…")` a `it("…hourly anchor times from 09:00 to 15:00")`.
+  - [x] `e2e/f-024-availability-slots.spec.ts` cambia `toHaveLength(4) → 7` y actualiza el comentario del caso FULL_DAY (ahora caben `09/10/11`, no caben `12–15`).
+  - [x] `app/[locale]/reservar/step-3/step3-selection.tsx` añade `lg:grid-cols-7` a la lista de anchors para que en viewports grandes los 7 botones fluyan en una sola fila (`sm:grid-cols-4` se mantiene → 4+3 con wrap limpio en tablet).
+  - [x] `docs/PRD.md` user-journey de Lucía (Step 6) listando los 7 anchors. `docs/Architecture.md` schema-doc de `Season` actualiza el ejemplo del array y `operatingHoursStart`. `docs/FEATURES.md` anota la supersesión en los tickets afectados (F-021, F-024, F-027).
+- Tests:
+  - Vitest 110/110 ✅ con el nuevo expected en `slots.test.ts` / `tests/seed.test.ts` / `availability.test.ts`.
+  - `tsc --noEmit` clean.
+  - E2E `f-024-availability-slots.spec.ts` se ejercita en el preview que el workflow `db-migrate.yml` recarga contra Neon `dev` al abrir el PR (F-037).
+- Verificación en prod tras merge: el workflow `db-migrate.yml` corre `prisma migrate deploy` (no-op, no hay schema change) + `npm run db:seed` contra Neon `main`. El `upsertSeason()` sobrescribe el row de `Season 26/27` con el nuevo array y el nuevo `operatingHoursStart`; `reseedAvailability` regenera los 56 blocks con el span 08:00–17:00. Verificación manual: `GET /api/availability/slots?date=2026-12-05&duration=ONE_HOUR` devuelve `anchorTimes.length === 7`.
+- Implicaciones engine:
+  - `INTENSIVE` (4h): anchors válidos pasan de 3 (09/11/13) → 5 (09/10/11/12/13). `14:00 + 4h = 18:00` y `15:00 + 4h = 19:00` siguen sobrepasando `operatingHoursEnd` y el engine los marca unavailable vía `fitsWithinOperatingHours`.
+  - `FULL_DAY` (6h): anchors válidos pasan de 2 (09/11) → 3 (09/10/11). `12:00+` overshoot el end.
+  - Round-robin (`rankInstructors`) no requiere cambios: la métrica es "bookings del día" y sigue siendo monotónica con anchors más densos.
+- Notas:
+  - **No migration.** `Season.anchorTimes` es `String[]` y `operatingHoursStart` es `String`; el upsert del seed actualiza valores, no schema. El workflow `db-migrate.yml` (F-037) basta para promover el cambio a prod.
+  - **Margen 08:00–09:00.** Se reserva como ventana de aproximación / setup del instructor; no se expone como anchor de reserva. Si en el futuro el owner quiere abrir 08:00 como punto de inicio bookable, basta con extender el array de `anchorTimes` (sin tocar ops).
+  - **Buffer.** El feature depende explícitamente de `BUFFER_MINUTES=0` (F-036). Si se reintroduce un buffer > 0 hay que reevaluar el espaciado de anchors o el engine bloqueará el anchor adyacente al final de una clase previa.
 
 ---
 

@@ -18,8 +18,11 @@ describe("computeSlotsForDate", () => {
     expect(out.date).toBe("2026-12-05");
     expect(out.anchorTimes.map((a) => a.time)).toEqual([
       "09:00",
+      "10:00",
       "11:00",
+      "12:00",
       "13:00",
+      "14:00",
       "15:00",
     ]);
   });

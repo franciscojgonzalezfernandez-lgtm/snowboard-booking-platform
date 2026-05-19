@@ -200,7 +200,7 @@ export function Step3Selection({
         <ul
           role="list"
           data-testid="anchor-list"
-          className="grid grid-cols-2 gap-3 sm:grid-cols-4"
+          className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7"
         >
           {anchors.map((anchor) => {
             const isSelected = anchor.time === selectedTime;
