@@ -154,7 +154,15 @@ active                  Boolean    @default(true)
 anchorTimes             String[]   (ej: ["09:00","10:00","11:00","12:00","13:00","14:00","15:00"])
 operatingHoursStart     String     (ej: "08:00")
 operatingHoursEnd       String     (ej: "17:00")
+priceCentsByDuration    Json       (ver invariante abajo; ej: {"ONE_HOUR":11000,"TWO_HOURS":20000,"INTENSIVE":38500,"FULL_DAY":50000})
 ```
+
+Invariante de `priceCentsByDuration` (F-039):
+- Shape: `Record<Duration, number>` con las cuatro keys del enum `Duration` (`ONE_HOUR`, `TWO_HOURS`, `INTENSIVE`, `FULL_DAY`).
+- Valores: enteros positivos en CHF cents, **VAT-inclusive** (convención global del proyecto, ver §"Data and money" en CLAUDE.md).
+- DB-level default `'{}'` existe sólo para que la migración `20260519090554_season_prices` corra sobre el row existente; el seed sobrescribe inmediatamente con valores reales y `lib/pricing/get-price.ts` (`PriceConfigurationError`) hace fallar fast cualquier read sobre un row mal poblado.
+- Admin editor (Sprint 4) escribe el mismo JSON; no se introduce tabla nueva.
+- Valores iniciales locked en Sprint 2 planning (2026-05-19): `ONE_HOUR=11000`, `TWO_HOURS=20000`, `INTENSIVE=38500`, `FULL_DAY=50000`.
 
 **booking**
 ```

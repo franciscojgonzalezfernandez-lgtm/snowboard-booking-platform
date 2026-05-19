@@ -102,3 +102,25 @@ describe("prisma/seed.ts (F-036)", () => {
     expect(seedSource).toMatch(/Level\.INTERMEDIATE/);
   });
 });
+
+describe("prisma/seed.ts (F-039)", () => {
+  it("declares INITIAL_PRICE_CENTS with all four Duration keys (VAT-inclusive CHF)", () => {
+    const block = seedSource.match(
+      /INITIAL_PRICE_CENTS:\s*Record<Duration,\s*number>\s*=\s*\{([\s\S]*?)\};/,
+    );
+    expect(block).not.toBeNull();
+    const body = block![1] ?? "";
+    expect(body).toMatch(/ONE_HOUR:\s*11_000/);
+    expect(body).toMatch(/TWO_HOURS:\s*20_000/);
+    expect(body).toMatch(/INTENSIVE:\s*38_500/);
+    expect(body).toMatch(/FULL_DAY:\s*50_000/);
+  });
+
+  it("upsertSeason writes INITIAL_PRICE_CENTS into priceCentsByDuration", () => {
+    expect(seedSource).toMatch(/priceCentsByDuration:\s*INITIAL_PRICE_CENTS/);
+  });
+
+  it("seeded bookings derive totalPriceCents from INITIAL_PRICE_CENTS", () => {
+    expect(seedSource).toMatch(/totalPriceCents:\s*INITIAL_PRICE_CENTS\[entry\.duration\]/);
+  });
+});
