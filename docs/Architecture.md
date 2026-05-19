@@ -297,11 +297,19 @@ enum CreditStatus      { ACTIVE, LOCKED, USED, EXPIRED }
 - **Decisión:** encriptar con AES-256-GCM antes de persistir; key en `ENCRYPTION_KEY` (env var, 32 bytes base64). Helpers en `lib/calendar/crypto.ts`.
 - **Coste:** rotación de key requiere re-encriptar todos los tokens — proceso documentado en `lib/calendar/README.md` cuando se implemente.
 
-### ADR-008 — Cancelaciones: credit-only (legal review pendiente)
-- **Contexto:** Modelo de negocio prefiere créditos a refunds cash; reduce fricción operativa pero puede ser legalmente cuestionable bajo CO Art. 19 (cláusulas leoninas) y nLPD.
-- **Decisión MVP:** todas las cancelaciones generan crédito (válido 1 año, FIFO al redimir, locking durante PaymentIntent).
-- **Pendiente:** review legal con bufete suizo antes de producción. Si invalida el modelo para cancelaciones operativas, v1.1 añade refund cash automático en ops cancellations.
-- **Trazabilidad:** `accountCredit.reason` distingue `USER_CANCEL` de `OPS_CANCEL` — facilita migración a futuro.
+### ADR-008 — Cancelaciones: cash si la escuela falla, credit si el cliente cancela ≥48h, forfeit <48h
+- **Contexto:** El riesgo legal del modelo credit-only (CO Art. 19, nLPD) se concentraba en las cancelaciones operativas — el cliente paga, la escuela no entrega, y forzar credit en lugar de cash es la pieza débil. El resto del modelo (credit por user-cancel voluntaria con ventana razonable) es defendible: el servicio estaba disponible y el cliente eligió no usarlo.
+- **Decisión MVP — política dividida por eje "quién falla a entregar":**
+  - **`CANCELLED_BY_OPS` (admin cancela)** → **cash refund** vía `stripe.refunds.create({ payment_intent })`. Sin `AccountCredit`. Aplica a cierre de estación por clima/avalancha/fuerza mayor del operador, instructor enfermo sin reemplazo y cualquier otro fallo del lado escuela.
+  - **`CANCELLED_BY_USER` con `≥ 48h` antes del slot** → **credit** (válido 1 año, FIFO al redimir, locking durante PaymentIntent). Aplica a "no puedo subir hoy", clima en el pueblo del cliente, transporte, decisión voluntaria. La pista está abierta y la escuela podía entregar; el cliente decide no usar el slot.
+  - **`CANCELLED_BY_USER` con `< 48h` antes del slot** → **forfeit** (no credit, no cash). El cliente puede contactar al teléfono operativo si quiere negociar caso a caso fuera del sistema; el panel admin permitirá emitir un credit manual si la escuela decide hacerlo a discreción.
+  - **No-show** → forfeit (igual que cancelación tardía).
+- **Implementación:** sin schema change. El branch lo decide `BookingStatus` + el delta `startDateTime - now` en el server action de cancelación. `CreditReason.OPS_CANCEL` queda en el enum como valor legacy sin emisores (puede limpiarse en una migration cosmética post-MVP). El email template "Cancelación ops" referencia el `Stripe refund id`, no `AccountCredit`.
+- **Coste / consecuencia:**
+  - Webhook / server action ops-cancel debe llamar a `stripe.refunds.create` en `CANCELLED_BY_OPS`. Idempotencia: tracker en `WebhookEvent` (ADR-006) o el propio Stripe (mismo `payment_intent` → no double-refund). Sprint 3 lo aterriza.
+  - El admin pierde flexibilidad para forzar credit en ops-cancel (era el behaviour anterior). Aceptado: la flexibilidad valía menos que el riesgo legal.
+  - Ventana 48h endurece la antigua 1h; cubre coste de oportunidad del instructor cuyo slot ya no se puede revender.
+- **Bloqueante anterior resuelto:** la línea "Validación legal del modelo credit-only en cancelación operativa" sale del backlog de decisiones pendientes (PRD §13.2). El review legal general antes de soft-launch (D-LEG) sigue, pero ya no bloquea el diseño del flujo de cancelación.
 
 ### ADR-009 — `prisma generate` corre vía `postinstall`, no en el build script
 - **Contexto:** El cliente de Prisma (`@prisma/client`) se genera desde `prisma/schema.prisma` y debe regenerarse cada vez que cambia el schema o se instala en una máquina nueva. Vercel ejecuta `npm install` + `npm run build` con cache limpio entre deploys; sin un paso explícito, el cliente no incluye los tipos/enums nuevos y `next build` rompe con "Module '@prisma/client' has no exported member 'X'". GitHub Actions ya corre `npx prisma generate` explícito en `.github/workflows/ci.yml`, pero Vercel no.

@@ -328,25 +328,34 @@ Un mismo `User` puede tener múltiples roles (`student`, `instructor`, `admin`) 
 
 ### 6.5 Cancelaciones
 
+> Política refinada en ADR-008: **cash** si la escuela falla a entregar, **credit** si el cliente cancela con `≥ 48h`, **forfeit** si cancela con `< 48h` o no se presenta. El eje de decisión es "quién falla a entregar el servicio".
+
 **Por usuario:**
-- Validaciones: booking.bookerId === session.user.id, status === CONFIRMED, startDateTime > now
-- Transacción Prisma:
+- Validaciones: `booking.bookerId === session.user.id`, `status === CONFIRMED`, `startDateTime > now`.
+- Ventana **`≥ 48h` antes del slot** → emisión de credit. Transacción Prisma:
   - `booking.status = CANCELLED_BY_USER`, `cancelledByUserAt = now`
   - Liberar `AvailabilityBlock`
-  - Crear `AccountCredit` con `reason='user_cancel'`, `expiresAt = now + 1y`
+  - Crear `AccountCredit` con `reason = USER_CANCEL`, `expiresAt = now + 1y`
   - Eliminar evento Google Calendar si existe
-- Emails async: a booker (confirmación) y a instructor (notificación)
-- No se permite cancelar < 1h antes del slot (forzar contacto telefónico)
+- Ventana **`< 48h` antes del slot** → **forfeit**. Misma transición de status + liberar `AvailabilityBlock` + borrar el evento de Google Calendar, pero **sin** crear `AccountCredit`. El email al booker explica la política y ofrece teléfono operativo para casos excepcionales (el admin puede emitir un credit manual a discreción).
+- No-show (cliente no aparece y nadie cancela): igual que `< 48h` — sin credit, sin cash. Cleanup nocturno marca `Booking` correspondientes como `CANCELLED_BY_USER` con `cancelledByUserAt = startDateTime` para liberar la disponibilidad.
+- Emails async: a booker (confirmación con desglose del outcome — credit emitido / forfeit) y a instructor (notificación).
 
 **Por operaciones (admin):**
-- Modal "Cancel day": date picker + reason (enum: weather, closed_slopes, other) + mensaje opcional
-- Preview del impacto antes de confirmar (número de bookings + total CHF en créditos)
-- Misma lógica de transacción aplicada en batch
-- Emails en el locale de cada booker (no en el del admin)
+- Modal "Cancel day": date picker + reason (enum: `weather_station_closed`, `slopes_closed`, `instructor_unavailable`, `other`) + mensaje opcional.
+- Preview del impacto antes de confirmar: número de bookings afectados, total CHF a reembolsar en cash, total de instructores notificados.
+- Transacción Prisma en batch (un commit por booking dentro del día):
+  - `booking.status = CANCELLED_BY_OPS`, `cancelledByOpsAt = now`
+  - Liberar `AvailabilityBlock`
+  - `stripe.refunds.create({ payment_intent: booking.stripePaymentIntentId, reason: 'requested_by_customer' })` — registrar `Booking.stripeRefundId` (sprint 3 añade el campo si no existe)
+  - **No** se crea `AccountCredit` en este flujo
+  - Eliminar evento Google Calendar si existe
+- Emails en el locale de cada booker (no en el del admin). Copy: motivo + referencia al refund cash de Stripe (5-10 días hábiles según método de pago) + CTA para reservar otro día.
+- Caso edge — booking pagado con `AccountCredit` 100% (sin Stripe payment): el ops-cancel **devuelve el credit** (re-emite un nuevo `AccountCredit` con el monto consumido, `reason = USER_CANCEL` para conservar el FIFO) en lugar de cash refund, porque nunca hubo cargo en Stripe que reembolsar.
 
 ### 6.6 Sistema de créditos
 
-**Generación:** automática en cualquier cancelación (user o ops). Monto = `totalPriceCents` original.
+**Generación:** sólo en `CANCELLED_BY_USER` con `≥ 48h` antes del slot (ver §6.5 + ADR-008). Monto = `totalPriceCents` original. Las cancelaciones operativas emiten **cash refund** directo en Stripe, no credit. Las cancelaciones de usuario `< 48h` y los no-shows quedan en **forfeit** (sin credit). El admin puede emitir un `AccountCredit` manual desde el panel cuando decida hacer una excepción.
 
 **Uso:**
 - En Step 5 (pago) si user autenticado y tiene créditos activos:
@@ -576,7 +585,7 @@ Ver Diagrama 4 (Estructura de páginas públicas + home) en el documento de disc
 
 | Riesgo | Severidad | Mitigación |
 |---|---|---|
-| Modelo credit-only puede ser legalmente cuestionable en cancelaciones operativas | Alta | Review legal antes de producción; considerar refund cash automático en cancelación ops para v1.1 |
+| Política de cancelación bajo CO Art. 19 / nLPD | Media | Resuelto en MVP: ops-cancel → cash refund Stripe, user-cancel ≥48h → credit, <48h → forfeit. Ver ADR-008. Review legal general antes de soft-launch sigue (D-LEG). |
 | Verificación dominio Resend con proveedores suizos (Infomaniak, Hostpoint) puede tardar | Media | Iniciar semana 1, no semana 8 |
 | Google Calendar refresh token expiry sin user revoke | Media | Implementar retry con re-auth flow; logging exhaustivo |
 | TVA umbral CHF 100k cruzado a futuro | Baja | Flag `vatEnabled` en config + precios en `priceInCents` desde día 1 |
@@ -586,7 +595,6 @@ Ver Diagrama 4 (Estructura de páginas públicas + home) en el documento de disc
 
 ### 13.2 Decisiones pendientes (a revisar antes de producción)
 
-- **Validación legal del modelo credit-only** en cancelación operativa
 - **Place ID exacto de la escuela en Google Business Profile** para el CTA de review
 - **Logo final de la marca** (afecta a OG images, favicons, email templates)
 - **Fotografía hero de la home** (estética editorial, full-bleed, alta calidad)
