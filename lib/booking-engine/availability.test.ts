@@ -47,7 +47,7 @@ describe("fitsWithinOperatingHours", () => {
   });
 
   it("rejects anchor before operatingHoursStart", () => {
-    expect(fitsWithinOperatingHours(SEASON, "08:00", Duration.ONE_HOUR)).toBe(false);
+    expect(fitsWithinOperatingHours(SEASON, "07:30", Duration.ONE_HOUR)).toBe(false);
   });
 });
 

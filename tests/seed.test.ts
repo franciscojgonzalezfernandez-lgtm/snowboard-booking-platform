@@ -20,14 +20,22 @@ describe("prisma/seed.ts (F-021)", () => {
     );
   });
 
-  it("active season uses the four anchor times from the PRD baseline", () => {
+  it("active season exposes hourly anchor times from 09:00 to 15:00", () => {
     const match = seedSource.match(/anchorTimes:\s*\[([^\]]+)\]/);
     expect(match).not.toBeNull();
     const times = (match![1] ?? "")
       .split(",")
       .map((s) => s.replace(/['"\s]/g, ""))
       .filter(Boolean);
-    expect(times).toEqual(["09:00", "11:00", "13:00", "15:00"]);
+    expect(times).toEqual([
+      "09:00",
+      "10:00",
+      "11:00",
+      "12:00",
+      "13:00",
+      "14:00",
+      "15:00",
+    ]);
   });
 
   it("pre-seeds eight weeks of availability blocks", () => {

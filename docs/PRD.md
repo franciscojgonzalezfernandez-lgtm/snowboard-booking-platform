@@ -138,7 +138,7 @@ Un mismo `User` puede tener múltiples roles (`student`, `instructor`, `admin`) 
 3. Selecciona duración 2h
 4. Ve el calendario smart: sábados con disponibilidad marcados activos
 5. Clica el próximo sábado disponible
-6. Ve 4 anchor times (09:00, 11:00, 13:00, 15:00) con instructores disponibles; cada tarjeta de instructor muestra su perfil de idiomas (p.ej. `EN native · DE fluent · ES basic`)
+6. Ve 7 anchor times horarios (09:00, 10:00, 11:00, 12:00, 13:00, 14:00, 15:00) con instructores disponibles; cada tarjeta de instructor muestra su perfil de idiomas (p.ej. `EN native · DE fluent · ES basic`)
 7. Selecciona "11:00 con cualquiera disponible" (la lección se impartirá en el idioma principal del instructor asignado; si el instructor habla varios, el cliente confirma idioma en este paso)
 8. Auth gate: se registra con Google OAuth
 9. Añade attendee 2 (su amigo) con nombre + fecha nacimiento + nivel

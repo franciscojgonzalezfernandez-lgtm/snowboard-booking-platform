@@ -9,8 +9,8 @@ test.describe("F-024 — /api/availability/slots", () => {
     const body = await res.json();
     expect(body).toHaveProperty("date", "2026-12-05");
     expect(Array.isArray(body.anchorTimes)).toBe(true);
-    // Season seed (F-021) carries 4 anchor times.
-    expect(body.anchorTimes).toHaveLength(4);
+    // Season seed exposes hourly anchors 09:00–15:00 (7 entries).
+    expect(body.anchorTimes).toHaveLength(7);
     for (const row of body.anchorTimes) {
       expect(typeof row.time).toBe("string");
       expect(typeof row.available).toBe("boolean");
@@ -59,9 +59,9 @@ test.describe("F-024 — /api/availability/slots", () => {
 
   test("anchor times respect season operatingHoursEnd for long durations", async ({ request }) => {
     // FULL_DAY (6h) starting at 15:00 would end at 21:00, well past 17:00 operatingHoursEnd.
-    // Engine should mark every anchor unavailable for FULL_DAY because none fit.
-    // Today's seed has operatingHoursEnd = 17:00, so only 09:00 + 11:00 with up to 6h
-    // are theoretically possible, but 11:00 + 6h = 17:00 (fits), 09:00 + 6h = 15:00 (fits).
+    // Seed exposes hourly anchors 09:00–15:00 with operatingHoursEnd = 17:00, so only
+    // 09:00 (→15:00), 10:00 (→16:00) and 11:00 (→17:00) fit FULL_DAY. Anchors 12:00–15:00
+    // must be marked unavailable for FULL_DAY.
     const res = await request.get("/api/availability/slots", {
       params: { duration: "FULL_DAY", date: "2026-12-05" },
     });
