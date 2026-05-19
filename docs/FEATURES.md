@@ -640,7 +640,7 @@
 ### F-041 — UI Step 4 (booker + attendees + level + notes + T&C) + auth gating
 
 - Sprint: 2 · Estado: backlog · Prioridad: P0
-- Depende de: F-027, F-038, F-040
+- Depende de: F-027, F-038, F-040, F-049, F-050
 - AC:
   - [ ] `app/[locale]/reservar/step-4/page.tsx` (server) + `step4-form.tsx` (client, RHF + Zod)
   - [ ] **Auth gating:** si `!session`, page renderiza CTA "Sign in to continue" → `/[locale]/login?next=/[locale]/reservar/step-4&<all-params>`. Form no se renderiza para anónimos
@@ -754,6 +754,44 @@
   - [ ] Personal data block (read-only): name, email, phone si existe. Phone update deferred a Sprint 3+
 - Tests: Playwright 3 locales × (empty + with-bookings + anonymous → redirect login).
 
+### F-049 — Booking flow navigation: back stepper + minimal header (CRO fix)
+
+- Sprint: 2 · Estado: backlog · Prioridad: P0
+- Depende de: F-025, F-026, F-027, F-040
+- AC:
+  - [ ] `app/[locale]/reservar/layout.tsx` nuevo — wraps steps 1-5 con header minimal (logo → `/[locale]`, language switcher, exit link "Back to site")
+  - [ ] **Persistent stepper** `app/[locale]/reservar/components/booking-stepper.tsx` (server): muestra 5 pasos con estado actual + completados. Pasos completados son clickables y preservan URL params relevantes (duration/date/time/instructor/language). Pasos futuros disabled
+  - [ ] **Step 5 (payment) excepción:** layout reduce header a sólo logo + exit. NO stepper visible (CRO: minimizar distracciones en checkout, alinea con Stripe best practices). Exit + logo click → `Dialog` "Discard payment?" antes de salir (proteger PaymentIntent draft activo)
+  - [ ] Forward navigation sigue siendo botón "Continue" único; back vía stepper click, browser back, o exit
+  - [ ] Mobile: stepper colapsa a "Step 3 of 5 ←" linkeable
+  - [ ] Trilingual (`messages/{en,de,es}.json` namespace `reservar.nav.*`)
+- Tests: Playwright 3 locales × (stepper click step-3 → step-2 preserves date; logo click pre-checkout → home; logo click en Step 5 → Dialog → confirm sale; mobile stepper colapsado renderiza; back-button preserva URL state).
+- Notas:
+  - **CRO racional:** dead-end multi-step flows tienen abandonment ↑40-60% vs flows con back. Mantener URL state también beneficia retargeting + bookmark recovery + share-link.
+  - Componentes shadcn requeridos: `Dialog` (Step 5 discard) + `Button` variant. Si Tabs es la abstracción correcta para el stepper, instalar; sino composición manual con Button + dot indicators. Decidir con skill `vercel:shadcn`.
+  - F-040 antes que F-049 (Dialog primitive reuse).
+
+### F-050 — shadcn adoption pass: replace raw HTML primitives across reservar/login/home
+
+- Sprint: 2 · Estado: backlog · Prioridad: P0
+- Depende de: F-049
+- AC:
+  - [ ] Install missing shadcn primitives via `npx shadcn@latest add`: `Select`, `Dialog`, `Checkbox`, `RadioGroup`, `Textarea`, `Tabs`, `Sheet`, `Toast`
+  - [ ] Replace raw HTML:
+    - `app/[locale]/reservar/step1-filters-form.tsx`: `<select>` → `Select`
+    - `app/[locale]/reservar/step-2/step2-calendar.tsx`: raw `<button>` calendar cells → `Button` variants + theming overrides
+    - `app/[locale]/reservar/step-3/step3-selection.tsx`: raw `<button>` anchor/instructor cards + language pills → `Button` variants + composition
+  - [ ] Auditar `app/[locale]/login/login-form.tsx` → `Input`/`Label`/`Tabs` shadcn primitives donde aplique
+  - [ ] Auditar home (`app/[locale]/page.tsx`): CTAs y nav usan `Button` con variants definidos por design tokens (F-030)
+  - [ ] Theming overrides en `components/ui/<comp>.tsx` cuando el default no match editorial — documentar cada override inline
+  - [ ] `npm run build` clean; visual regression manual vs screenshots `docs/screenshots/{step1,step2,step3}.png` — sólo refactor estructural, sin breaking visual changes
+  - [ ] Bundle delta ≤ +5KB gz por route (shadcn primitives son tree-shakable)
+- Tests: suites E2E existentes (F-025/26/27/33/34) siguen verdes. Si rompen por selector, ajustar `data-testid` (preferred over class selectors).
+- Notas:
+  - **Foundation para F-041** (Step 4) — booker form usa heavily `Form` + `Input` + `Select` + `Textarea` + `Checkbox`. Sin esta pasada, F-041 introduce más raw HTML.
+  - Ship después de F-049 para que el nuevo layout/stepper use shadcn primitives desde día 1.
+  - **Workflow rule actualizada en `CLAUDE.md` Component conventions** dentro de este sprint planning — F-050 limpia el pasado, la regla evita reincidencia.
+
 ### F-048 — Reminder cron 24h + post-class T+2h emails
 
 - Sprint: 2 · Estado: backlog · Prioridad: P1
@@ -777,13 +815,16 @@
 
 ```
 F-039 (prices schema) ─┐
-F-040 (T&C + modal) ───┤
-                       └─ F-041 (Step 4) ─ F-042 (draft+PI) ─ F-043 (Step 5) ─ F-044 (webhook) ─ F-045 (email+ics) ─┬─ F-046 (success)
-                                                                                                                     ├─ F-047 (dashboard)
-                                                                                                                     └─ F-048 (crons)
+F-040 (T&C + modal) ───┴─ F-049 (back nav + header) ─ F-050 (shadcn adoption) ─ F-041 (Step 4) ─ F-042 (draft+PI) ─ F-043 (Step 5) ─ F-044 (webhook) ─ F-045 (email+ics) ─┬─ F-046 (success)
+                                                                                                                                                                          ├─ F-047 (dashboard)
+                                                                                                                                                                          └─ F-048 (crons)
 ```
 
-Critical path: F-039 → F-040 → F-041 → F-042 → F-043 → F-044 → F-045 (≈7 PRs serial). F-046/F-047/F-048 parallel después de F-045.
+Critical path: F-039 → F-040 → F-049 → F-050 → F-041 → F-042 → F-043 → F-044 → F-045 (≈9 PRs serial). F-046/F-047/F-048 parallel después de F-045.
+
+**Why F-049/F-050 ride inside Sprint 2 (not deferred):**
+- F-049 (back nav + header) is a CRO blocker — dead-end flows abandonment ↑40-60%. Cheaper to fix once now than retrofit after Stripe live mode.
+- F-050 (shadcn adoption) is a precondition for F-041's Step 4 form quality. Booker + attendees + T&C checkbox needs `Form`/`Select`/`Checkbox`/`Textarea` primitives; without F-050, F-041 would either bloat the audit later or ship more raw HTML.
 
 ---
 
@@ -810,7 +851,7 @@ Critical path: F-039 → F-040 → F-041 → F-042 → F-043 → F-044 → F-045
 
 - Home editorial completa (sections, instructor teaser, narrative) — la home **minimal** ya existe desde F-032 (Sprint 0.5); aquí se expande.
 - Página de instructores + perfiles individuales.
-- Página de precios.
+- Página de precios — value-prop por duración: qué incluye cada clase (nivel target, ratio instructor/alumno, equipo incluido/excluido, ubicación de meeting point, idiomas disponibles), beneficios diferenciales (p. ej. `INTENSIVE` = mejor curva de aprendizaje vs hora suelta; `FULL_DAY` = lunch break + 2 bloques). Cross-link a `/reservar` con `duration` preseleccionada. CRO: pricing page convierte cuando explica el "qué", no sólo el "cuánto". Contenido trilingüe vía `messages/{en,de,es}.json` namespace `pricing.*`.
 - Blog MDX (2-3 posts iniciales).
 - Estáticas: sobre, contacto, FAQ, T&C, privacidad.
 - SEO completo: sitemap dinámico con hreflang, structured data Schema.org/LocalBusiness, OG images dinámicas, robots.txt.
