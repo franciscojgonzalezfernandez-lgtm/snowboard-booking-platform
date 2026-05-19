@@ -55,6 +55,9 @@
 - **prisma-postgres** — Neon-compatible Postgres provisioning + operations
 - **next-intl-add-language** — add/maintain locale `en | de | es` and slug translations
 
+**UI / components:**
+- **vercel:shadcn** — shadcn/ui CLI, component installation, composition patterns, theming, custom registries. Default reference for any UI primitive work. Invoke before hand-rolling `<input>`/`<button>`/`<select>`/`<dialog>`/etc.
+
 **QA + performance:**
 - **testing-strategy** — Anthropic-official test strategy & coverage design
 - **playwright-testing** — extra Playwright tactics (augments `playwright-skill`)
@@ -194,7 +197,8 @@ Trivial commits (typo, rename mecánico) pueden llevar body de una línea, pero 
 ## Component conventions
 
 - **Server Components by default.** Add `'use client'` only when needed (state, effects, events).
-- **shadcn/ui as base**, but modify aggressively to match editorial design (no default rounded cards with shadows)
+- **shadcn/ui is the default for every UI primitive.** Before writing a raw `<input>`, `<button>`, `<select>`, `<dialog>`, `<textarea>`, etc., check `components/ui/`; install via `npx shadcn@latest add <comp>` if missing. Reach for the `vercel:shadcn` skill when composing, theming, or extending. Modify the installed primitive aggressively to match editorial design (no default rounded cards with shadows) — do not work around by hand-rolling a parallel element.
+- **Hand-rolled HTML primitives only allowed when** (a) the shadcn equivalent does not exist AND installing it would add disproportionate bloat, or (b) the element is a structural layout container with zero state/behavior (`<section>`, `<div>`, `<header>`, `<main>`). Document the exception inline.
 - **No barrel files** (`index.ts` re-exports) — explicit imports
 - **Zod schemas** live next to their use, exported from `lib/schemas/` when shared
 - **Server Actions** in `app/(group)/actions.ts` files, never inline in Client Components
