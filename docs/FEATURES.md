@@ -613,17 +613,35 @@
   - Admin editor (Sprint 4) leerá el mismo JSON y editará vía form. Sin tabla nueva.
   - Mismo helper alimenta Step 5 (F-043) y email confirmación (F-045).
 
+### F-039b — Refine cancellation policy (cash on ops, credit ≥48h, forfeit <48h)
+
+- Sprint: 2 · Estado: review · Prioridad: P0
+- Depende de: F-011
+- Motivación: la baseline credit-only de ADR-008 dejaba el flujo de cancelación operativa como pieza legal débil (CO Art. 19 / nLPD: si la escuela no entrega, forzar credit en lugar de cash es cuestionable). La política refinada cierra ese riesgo y endurece la ventana de cancelación de cliente — de 1h a 48h — para cubrir el coste de oportunidad del instructor cuyo slot ya no se puede revender. Sin schema change; sólo docs. F-040 (T&C copy) y todo Sprint 3 consumen esta política.
+- AC:
+  - [x] `docs/Architecture.md` ADR-008 reescrito: política dividida por "quién falla a entregar" — `CANCELLED_BY_OPS` → cash refund Stripe, `CANCELLED_BY_USER ≥48h` → credit, `<48h` o no-show → forfeit. Bloqueante anterior ("legal review credit-only en ops") marcado como resuelto.
+  - [x] `docs/PRD.md` §6.5 reescrita con tres ramas (user ≥48h / user <48h / ops) + caso edge "booking pagado 100% credit" (ops-cancel re-emite credit en lugar de cash porque no hubo cargo Stripe). §6.6 acota la generación de credit a `USER_CANCEL ≥48h`. §13.1 actualiza el riesgo legal (severidad Media en lugar de Alta, mitigación = ADR-008). §13.2 quita la línea "validación legal del modelo credit-only" (resuelta).
+  - [x] `CLAUDE.md` "Outstanding decisions" quita la línea 1 (credit-only legal validation).
+  - [x] `docs/FEATURES.md` Sprint 3 bullets reescritos con la ventana 48h + cron nightly de no-show + branch ops-cancel cash refund (server action en Sprint 3, UI admin en Sprint 4). Tabla `D-LEG` aclara que la política de cancelación ya **no** es el bloqueante específico — el review legal general sigue gating prod launch.
+  - [x] `docs/FEATURES.md` F-040 AC items 3 + 4 actualizan el copy T&C a la nueva política.
+- Tests: docs-only. CI: `npm run lint` + `tsc --noEmit` deben seguir verdes (no se tocan archivos de código).
+- Notas:
+  - **No schema change.** `BookingStatus` + `delta(startDateTime, now)` codifican la decisión. `CreditReason.OPS_CANCEL` queda en el enum como legacy sin emisores — limpieza cosmética post-MVP, no bloquea.
+  - **`stripe.refunds.create`** se aterriza en Sprint 3 (F-044 / server action ops-cancel). Idempotencia vía `WebhookEvent` (ADR-006) y/o el propio `payment_intent` (Stripe rechaza double-refund del mismo PI).
+  - **48h vs 1h.** Decisión owner 2026-05-19. Endurece el riesgo operativo del instructor y alinea la copy con escuelas de referencia del mercado CH/AT. Si en post-launch las cancelaciones tardías generan fricción reiterada, el admin tiene la palanca de credit manual desde el panel.
+  - **Admin override.** El panel admin (Sprint 4) permitirá emitir `AccountCredit` manual desde un booking ya forfeiteado, para casos excepcionales (cliente con factura médica, etc.). Sin entrar en el flujo automático.
+
 ### F-040 — T&C page + Privacy page + modal component (3 locales, real content)
 
 - Sprint: 2 · Estado: backlog · Prioridad: P0
-- Depende de: F-030, F-031
+- Depende de: F-030, F-031, F-039b
 - AC:
   - [ ] `app/[locale]/terms/page.tsx` + `app/[locale]/privacy/page.tsx` (server components, static rendering)
   - [ ] Contenido **T&C real** cubre 6 secciones obligatorias (owner drafts EN, Claude traduce DE/ES, owner revisa antes de merge):
     1. Service description — school identity, lesson types, jurisdiction (Flumserberg, SG canton)
     2. Booking & payment — CHF inclusive VAT, payment methods (Card/TWINT/Apple Pay/Google Pay), when charged (at booking, before lesson)
-    3. Cancellation policy — credit-only per ADR-008, copy explícita "no cash refunds for operational cancellations", user-initiated cancellation ≥1h antes (Sprint 3)
-    4. Liability disclaimer — snowboard inherent risk, weather force majeure, no-show forfeiture
+    3. Cancellation policy (ADR-008, refinada en F-039b) — copy explícita: (a) si la escuela cancela (clima en montaña, cierre de pistas, instructor sin reemplazo) → **cash refund** al método de pago original vía Stripe (5-10 días hábiles); (b) si el cliente cancela `≥ 48h` antes del slot → **credit** válido 1 año; (c) `< 48h` o no-show → **forfeit** (sin credit, sin cash). Mencionar el teléfono operativo para excepciones a discreción.
+    4. Liability disclaimer — snowboard inherent risk, weather force majeure (sólo aplica al cierre del **operador** — cancelación lado-cliente no es force majeure, cae bajo la regla de las 48h), no-show forfeiture
     5. Data processing — link a `/privacy`
     6. Governing law — Swiss federal law, jurisdicción Sarganserland / SG canton
   - [ ] Contenido **Privacy real** cubre: data collected (name/email/phone/payment), processors (Stripe/Resend/Sentry/Vercel/Neon/Google), retention (until account deletion), user rights (access/erasure/rectification per nLPD CH + GDPR para residentes EU), DPO contact
@@ -634,7 +652,7 @@
   - [ ] SEO básico: `<title>` + `<meta description>` traducidos. Hreflang + structured data quedan para Sprint 5
 - Tests: Playwright 3 locales — `/terms` y `/privacy` rinden 200, headings traducidos, footer links presentes en `/`, `/en`, `/de`, `/es`. Modal integration test en F-041.
 - Notas:
-  - **D-LEG sigue blocking prod launch.** Owner contrata bufete CH antes de soft-launch; copy actual cuenta como draft de buena fe documentando ya el modelo credit-only.
+  - **D-LEG sigue blocking prod launch.** Owner contrata bufete CH antes de soft-launch; copy actual cuenta como draft de buena fe documentando ya la política cash-on-ops / credit-≥48h / forfeit-<48h refinada en F-039b.
   - **No GDPR cookie banner aquí.** Site no usa cookies de tracking (Vercel Analytics es cookieless). Solo Better Auth session cookie = strictly necessary → no banner requerido. Re-evaluar si Sprint 5 añade GA4 o similar.
 
 ### F-041 — UI Step 4 (booker + attendees + level + notes + T&C) + auth gating
@@ -832,11 +850,18 @@ Critical path: F-039 → F-040 → F-049 → F-050 → F-041 → F-042 → F-043
 
 ### Sprint 3 — Cancelaciones + Créditos (semana 6)
 
-- Flujo cancelación user desde dashboard (≥1h antes).
+> Política base en ADR-008: ops-cancel → cash refund Stripe; user-cancel `≥48h` → credit; `<48h` → forfeit; no-show → forfeit. Ver F-039b.
+
+- Flujo cancelación user desde dashboard:
+  - `≥ 48h` antes del slot → emite `AccountCredit` (`USER_CANCEL`, 1 año).
+  - `< 48h` → forfeit. Mismo cambio de status / liberación de slot, sin credit.
+  - Copy y CTA en dashboard reflejan la ventana 48h y la opción de contactar al teléfono operativo para excepciones.
+- Server action ops-cancel (admin) — Sprint 4 monta la UI pero la **lógica del refund cash** debe quedar lista para uso programático aquí: `stripe.refunds.create({ payment_intent })` + persistencia `Booking.stripeRefundId` + branch para bookings 100% credit (re-emite credit en lugar de cash).
 - Sistema de créditos: generación, locking durante PaymentIntent, commit en webhook success.
 - UI aplicar créditos en Step 5 (toggle + breakdown).
 - Cron mensual de expiración (`0 0 1 * *`).
-- Email cancelación user + notif a instructor.
+- Cron nightly de no-show: bookings `CONFIRMED` con `startDateTime + duration < now` que sigan sin estado terminal → marcar `CANCELLED_BY_USER` con `cancelledByUserAt = startDateTime`, sin credit.
+- Email cancelación user (variante credit / variante forfeit) + notif a instructor.
 
 ### Sprint 4 — Vista instructor + Admin (semanas 7-8)
 
@@ -875,6 +900,6 @@ Critical path: F-039 → F-040 → F-049 → F-050 → F-041 → F-042 → F-043
 | ------- | ---------------------------------- | --------------------------------- | ------------------------------------ |
 | D-PRC   | Precios por duración               | ✅ Resuelto (planning 2026-05-19): valores iniciales `{ONE_HOUR:11000, TWO_HOURS:20000, INTENSIVE:38500, FULL_DAY:50000}` CHF cents VAT-inclusive en `Season.priceCentsByDuration` (F-039). Admin editor en Sprint 4. | — |
 | D-TIP   | Tip split policy                   | Sprint 4 (flujo `Tip`)            | Owner define antes de Sprint 4       |
-| D-LEG   | Legal review credit-only (ADR-008) | Producción (no Sprint 1-3)        | Contratar bufete antes de Sprint 5   |
+| D-LEG   | Legal review general T&C + privacy + cancelación split (ADR-008) | Producción (no Sprint 1-3) | Contratar bufete antes de Sprint 5. Política de cancelación ya **no** es el bloqueante específico — pasó a cash/credit/forfeit en F-039b. |
 | D-LOGO  | Logo + hero photography            | Sprint 5 (landing)                | Owner produce antes de Sprint 5      |
 | D-PLACE | Google Place ID                    | Sprint 5 (email post-clase CTA)   | Confirmar perfil escuela en Sprint 5 |

@@ -289,11 +289,10 @@ Trivial commits (typo, rename mecánico) pueden llevar body de una línea, pero 
 
 These were flagged in the PRD as needing review:
 
-1. Legal validation of credit-only model for operational cancellations
-2. Final pricing per duration
-3. Google Business Profile Place ID for review CTA
-4. Brand identity assets (logo, hero photography)
-5. Tipping split policy (instructor 100% or split with school)
+1. Final pricing per duration
+2. Google Business Profile Place ID for review CTA
+3. Brand identity assets (logo, hero photography)
+4. Tipping split policy (instructor 100% or split with school)
 
 ---
 
