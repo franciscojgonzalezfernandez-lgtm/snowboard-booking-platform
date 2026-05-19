@@ -633,27 +633,24 @@
 
 ### F-040 — T&C page + Privacy page + modal component (3 locales, real content)
 
-- Sprint: 2 · Estado: backlog · Prioridad: P0
+- Sprint: 2 · Estado: review · Prioridad: P0
 - Depende de: F-030, F-031, F-039b
 - AC:
-  - [ ] `app/[locale]/terms/page.tsx` + `app/[locale]/privacy/page.tsx` (server components, static rendering)
-  - [ ] Contenido **T&C real** cubre 6 secciones obligatorias (owner drafts EN, Claude traduce DE/ES, owner revisa antes de merge):
-    1. Service description — school identity, lesson types, jurisdiction (Flumserberg, SG canton)
-    2. Booking & payment — CHF inclusive VAT, payment methods (Card/TWINT/Apple Pay/Google Pay), when charged (at booking, before lesson)
-    3. Cancellation policy (ADR-008, refinada en F-039b) — copy explícita: (a) si la escuela cancela (clima en montaña, cierre de pistas, instructor sin reemplazo) → **cash refund** al método de pago original vía Stripe (5-10 días hábiles); (b) si el cliente cancela `≥ 48h` antes del slot → **credit** válido 1 año; (c) `< 48h` o no-show → **forfeit** (sin credit, sin cash). Mencionar el teléfono operativo para excepciones a discreción.
-    4. Liability disclaimer — snowboard inherent risk, weather force majeure (sólo aplica al cierre del **operador** — cancelación lado-cliente no es force majeure, cae bajo la regla de las 48h), no-show forfeiture
-    5. Data processing — link a `/privacy`
-    6. Governing law — Swiss federal law, jurisdicción Sarganserland / SG canton
-  - [ ] Contenido **Privacy real** cubre: data collected (name/email/phone/payment), processors (Stripe/Resend/Sentry/Vercel/Neon/Google), retention (until account deletion), user rights (access/erasure/rectification per nLPD CH + GDPR para residentes EU), DPO contact
-  - [ ] Trilingual via `messages/{en,de,es}.json` namespaces `terms.*` + `privacy.*` (NOT raw MDX en MVP — JSON keys facilitan traducción + reuso en email footer Sprint 5)
-  - [ ] `app/components/TermsModal.tsx` (client, shadcn `Dialog`): renderiza contenido del locale activo, scrollable, ESC + click-outside cierran, max-height 80vh
-  - [ ] Modal display-only: SIN checkbox dentro. Aceptación vive en Step 4 (F-041)
-  - [ ] Footer global en `app/[locale]/layout.tsx` añade links `/terms` + `/privacy` por locale
-  - [ ] SEO básico: `<title>` + `<meta description>` traducidos. Hreflang + structured data quedan para Sprint 5
-- Tests: Playwright 3 locales — `/terms` y `/privacy` rinden 200, headings traducidos, footer links presentes en `/`, `/en`, `/de`, `/es`. Modal integration test en F-041.
+  - [x] `app/[locale]/terms/page.tsx` + `app/[locale]/privacy/page.tsx` — server components con `generateStaticParams` + `generateMetadata` async, prerendered en build por locale.
+  - [x] Contenido **T&C real** en 8 secciones modeladas sobre el referente operativo del owner (Start Snowboarding) y adaptadas a la política F-039b: `prices` (CHF 0 % IVA bajo umbral CHF 100 000, auto-switch 8,1 % al cruzar), `lessons` (clases con cualquier tiempo salvo cierre operativo), `insurance` (no liability, snow-sports + RC), `registration` (vinculante al pago), `cancellation_customer` (≥48h → credit 1y, <48h o no-show → forfeit, excepción accidente/enfermedad con certificado médico → credit discrecional), `cancellation_school` (cash refund Stripe en cierre operativo, 5-10 días hábiles), `ski_tickets` (no incluidos), `jurisdiction` (Mels, Sarganserland, SG; derecho federal suizo). EN drafted + DE/ES traducidos — owner revisa antes del legal review (D-LEG).
+  - [x] Contenido **Privacy real** en 6 secciones MVP: `controller` (Adlerhorst SBS, contacto `franciscojgonzalezfernandez@gmail.com`), `data` (name/email/phone/payment vía Stripe + session cookie), `processors` (Stripe / Resend / Sentry / Vercel / Neon / Google con jurisdicciones), `retention` (cuenta + 10 años contables CO Art. 957a), `rights` (acceso/rectificación/borrado/portabilidad/objeción per nLPD + GDPR, 30 días), `contact` (email + FDPIC).
+  - [x] Trilingual via `messages/{en,de,es}.json` namespaces `terms.*` + `privacy.*` + `footer.*`. Mismas keys en los 3 locales.
+  - [x] `app/components/TermsModal.tsx` (client, shadcn `Dialog` sobre `@base-ui/react/dialog`). Prop `variant: terms | privacy` selecciona namespace; renderiza header + sections + caso exception. `max-h-[80vh]` + `overflow-y-auto`. ESC + click-outside del overlay cierran (default de Base UI Dialog).
+  - [x] Modal display-only: SIN checkbox dentro. Aceptación vive en Step 4 (F-041).
+  - [x] Footer global en `app/components/SiteFooter.tsx` montado en `app/[locale]/layout.tsx` debajo de `{children}`. Replica el estilo dark del antiguo home-footer (manteniendo brand consistency con `SiteNav`) + links a `/terms` y `/privacy` por locale + indicador `EN · DE · ES`. Se elimina el `<footer>` inline de `app/[locale]/page.tsx` para evitar duplicado.
+  - [x] SEO básico: `<title>` + `<meta description>` traducidos por locale (Next 15 `generateMetadata` async). Hreflang + structured data quedan para Sprint 5.
+  - [x] Drift de Verbier→Flumserberg corregido en `home.utility` / `home.title_accent` / `home.sub` / `home.footer_loc` y brand wordmark normalizado a `Adlerhorst SBS` en los 3 locales (alineación con `SiteNav` y memoria `[Production domain]`).
+- Tests: Playwright `e2e/f-040-terms-privacy.spec.ts` con 15 specs (3 locales × terms + 3 locales × privacy + 9 sobre el footer global presente en `/`, `/terms`, `/privacy` × locale). Combinado con F-032 + F-033 (27 specs totales) → **27/27 verde** en local. Modal integration test queda para F-041 cuando lo consume Step 4 con un trigger real. Vitest sin tocar: 110/110.
 - Notas:
   - **D-LEG sigue blocking prod launch.** Owner contrata bufete CH antes de soft-launch; copy actual cuenta como draft de buena fe documentando ya la política cash-on-ops / credit-≥48h / forfeit-<48h refinada en F-039b.
   - **No GDPR cookie banner aquí.** Site no usa cookies de tracking (Vercel Analytics es cookieless). Solo Better Auth session cookie = strictly necessary → no banner requerido. Re-evaluar si Sprint 5 añade GA4 o similar.
+  - **Brand split.** El dominio `rideflumserberg.ch` se cita en `terms.intro` como URL canónica de operación, pero la entidad y el wordmark son `Adlerhorst SBS`. Cuando se constituya sociedad o cambie la trade name, basta con un reemplazo sobre los 3 messages files; sin reescritura de componentes.
+  - **shadcn Dialog en Base UI.** El generator actual de shadcn (v4.7) emite `@base-ui/react/dialog` en lugar de `@radix-ui/react-dialog`. No hace falta tocar dependencias (`@base-ui/react` ya estaba en `package.json`).
 
 ### F-041 — UI Step 4 (booker + attendees + level + notes + T&C) + auth gating
 

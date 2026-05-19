@@ -71,16 +71,6 @@ export default async function HomePage({ params }: HomePageProps) {
         </div>
       </section>
 
-      <footer className="border-t-2 border-foreground bg-foreground text-background">
-        <div className="mx-auto flex max-w-[1320px] flex-wrap items-center justify-between gap-4 px-7 py-12 text-[11px] font-bold uppercase tracking-[0.2em]">
-          <span>{tHome("footer_copy")}</span>
-          <span>{tHome("footer_loc")}</span>
-          <span>
-            EN <span className="text-primary">·</span> DE{" "}
-            <span className="text-primary">·</span> ES
-          </span>
-        </div>
-      </footer>
     </>
   );
 }
