@@ -589,18 +589,205 @@
 
 ---
 
-## Sprints 2-6 — Bullets gruesos (desglose al cerrar Sprint 1)
+## Sprint 2 — Auth + Pagos (semanas 4-5)
 
-### Sprint 2 — Auth + Pagos (semanas 4-5)
+> Decisiones locked en planning (2026-05-19):
+> - Precios CHF VAT-inclusive, configurables en DB (F-039). Valores iniciales: `ONE_HOUR=110, TWO_HOURS=200, INTENSIVE=385, FULL_DAY=500`. Admin editor llega en Sprint 4.
+> - Checkout always with sign-in (magic link mínimo). No guest checkout — evita reservas falsas.
+> - T&C real content desde F-040 (no placeholder), modal opcional en Step 4. Legal review (D-LEG) sigue gating prod launch, no Sprint 2.
+> - Stripe payment methods al lanzar Sprint 2: Card + TWINT (test mode) + Apple/Google Pay (wallets via Payment Element).
 
-- Auth UI: login, registro, magic link recibido por email (depende de F-017), Google OAuth en producción.
-- Dashboard alumno básico: lista de reservas (vacío en MVP), datos personales.
-- Step 4: booker + attendees (1-4) + niveles + notas + T&C.
-- Step 5: pago Stripe Payment Element (Card + TWINT + Apple/Google Pay).
-- Webhook handler `/api/webhooks/stripe` con idempotencia (ADR-006).
-- Emails: confirmación con `.ics` adjunto + cron horario para recordatorio 24h + cron horario para post-clase T+2h.
-- Página de éxito `/[locale]/reservar/exito/[id]`.
-- **Decisión pendiente que bloquea:** precios por duración.
+### F-039 — Schema: `Season.priceCentsByDuration` + pricing helper
+
+- Sprint: 2 · Estado: backlog · Prioridad: P0
+- Depende de: F-020, F-021, F-037
+- AC:
+  - [ ] `Season` model añade `priceCentsByDuration Json` (NOT NULL). Migración `<date>_season_prices` aplicada vía workflow `db-migrate.yml` (Neon `dev` en PR, Neon `main` en merge)
+  - [ ] `prisma/seed.ts` upsert puebla `{ ONE_HOUR: 11000, TWO_HOURS: 20000, INTENSIVE: 38500, FULL_DAY: 50000 }` (CHF cents, VAT-inclusive)
+  - [ ] `lib/pricing/get-price.ts` exporta `getPriceCents(season, duration): number`; throws si la duración falta o el JSON está malformado
+  - [ ] `lib/pricing/format.ts` exporta `formatChf(cents): string` usando `Intl.NumberFormat('de-CH', { style: 'currency', currency: 'CHF' })`
+  - [ ] `docs/Architecture.md` §4.2 documenta `priceCentsByDuration` shape + invariante "todas las 4 entries del enum `Duration` deben estar populadas en cada `Season` activa"
+- Tests: Vitest sobre helper (happy + missing key throws + malformed JSON throws). Seed test añade snapshot del shape.
+- Notas:
+  - VAT-inclusive convention global. CH IVA 8.1% si owner cruza umbral 100k CHF/año — owner consulta contable antes de launch; no afecta storage.
+  - Admin editor (Sprint 4) leerá el mismo JSON y editará vía form. Sin tabla nueva.
+  - Mismo helper alimenta Step 5 (F-043) y email confirmación (F-045).
+
+### F-040 — T&C page + Privacy page + modal component (3 locales, real content)
+
+- Sprint: 2 · Estado: backlog · Prioridad: P0
+- Depende de: F-030, F-031
+- AC:
+  - [ ] `app/[locale]/terms/page.tsx` + `app/[locale]/privacy/page.tsx` (server components, static rendering)
+  - [ ] Contenido **T&C real** cubre 6 secciones obligatorias (owner drafts EN, Claude traduce DE/ES, owner revisa antes de merge):
+    1. Service description — school identity, lesson types, jurisdiction (Flumserberg, SG canton)
+    2. Booking & payment — CHF inclusive VAT, payment methods (Card/TWINT/Apple Pay/Google Pay), when charged (at booking, before lesson)
+    3. Cancellation policy — credit-only per ADR-008, copy explícita "no cash refunds for operational cancellations", user-initiated cancellation ≥1h antes (Sprint 3)
+    4. Liability disclaimer — snowboard inherent risk, weather force majeure, no-show forfeiture
+    5. Data processing — link a `/privacy`
+    6. Governing law — Swiss federal law, jurisdicción Sarganserland / SG canton
+  - [ ] Contenido **Privacy real** cubre: data collected (name/email/phone/payment), processors (Stripe/Resend/Sentry/Vercel/Neon/Google), retention (until account deletion), user rights (access/erasure/rectification per nLPD CH + GDPR para residentes EU), DPO contact
+  - [ ] Trilingual via `messages/{en,de,es}.json` namespaces `terms.*` + `privacy.*` (NOT raw MDX en MVP — JSON keys facilitan traducción + reuso en email footer Sprint 5)
+  - [ ] `app/components/TermsModal.tsx` (client, shadcn `Dialog`): renderiza contenido del locale activo, scrollable, ESC + click-outside cierran, max-height 80vh
+  - [ ] Modal display-only: SIN checkbox dentro. Aceptación vive en Step 4 (F-041)
+  - [ ] Footer global en `app/[locale]/layout.tsx` añade links `/terms` + `/privacy` por locale
+  - [ ] SEO básico: `<title>` + `<meta description>` traducidos. Hreflang + structured data quedan para Sprint 5
+- Tests: Playwright 3 locales — `/terms` y `/privacy` rinden 200, headings traducidos, footer links presentes en `/`, `/en`, `/de`, `/es`. Modal integration test en F-041.
+- Notas:
+  - **D-LEG sigue blocking prod launch.** Owner contrata bufete CH antes de soft-launch; copy actual cuenta como draft de buena fe documentando ya el modelo credit-only.
+  - **No GDPR cookie banner aquí.** Site no usa cookies de tracking (Vercel Analytics es cookieless). Solo Better Auth session cookie = strictly necessary → no banner requerido. Re-evaluar si Sprint 5 añade GA4 o similar.
+
+### F-041 — UI Step 4 (booker + attendees + level + notes + T&C) + auth gating
+
+- Sprint: 2 · Estado: backlog · Prioridad: P0
+- Depende de: F-027, F-038, F-040
+- AC:
+  - [ ] `app/[locale]/reservar/step-4/page.tsx` (server) + `step4-form.tsx` (client, RHF + Zod)
+  - [ ] **Auth gating:** si `!session`, page renderiza CTA "Sign in to continue" → `/[locale]/login?next=/[locale]/reservar/step-4&<all-params>`. Form no se renderiza para anónimos
+  - [ ] **Better Auth wiring:** `signIn.magicLink({ callbackURL })` y `signIn.email/social` respetan el `next=` param. Verificar; parchear si falla
+  - [ ] **Booker block:** name (default `session.user.name`, editable) + email (readonly = `session.user.email`) + phone (required, E.164, default prefix `+41`)
+  - [ ] **Attendees array 1-4** vía `useFieldArray` (PRD §6.4): name + age (number 4-99) + `Level` enum select (`BEGINNER`/`INTERMEDIATE`/`ADVANCED`/`EXPERT`). Min 1, max 4
+  - [ ] **Notes** textarea opcional, máx 500 chars con contador
+  - [ ] **T&C checkbox** required. Label HTML: `"I agree to the [Terms and Conditions] and [Privacy Policy]"`. Cada link es un `<button type="button">` que abre el `TermsModal` (no `<a target=_blank>`, no nav)
+  - [ ] Submit avanza a `step-5?...&attendees=<base64-json>&bookerPhone=<phone>&notes=<encoded>` — URL state preserve; persistencia real ocurre en F-042
+  - [ ] Trilingual labels (`messages/{en,de,es}.json` namespace `reservar.step4.*`)
+  - [ ] Loading + error states obligatorios, traducidos
+- Tests: Playwright 3 locales × (anónimo → redirect login con next= correcto, autenticado → form, validation min/max attendees, T&C uncheck → submit disabled, click T&C link → modal abre, back-nav preserva data, happy → step-5 con full URL state).
+- Notas:
+  - Phone no se persiste al `User` model en MVP. Sprint 3+ podría añadir toggle "save phone to profile".
+  - Email immutable evita confusión (booking ligado a `session.user.id`); cambiar email = logout + relogin.
+
+### F-042 — Booking draft + PaymentIntent server action
+
+- Sprint: 2 · Estado: backlog · Prioridad: P0
+- Depende de: F-018, F-039, F-041
+- AC:
+  - [ ] Server action `createBookingDraft(input)` en `app/[locale]/reservar/actions.ts`
+  - [ ] Zod schema valida full input: `date`, `time`, `duration`, `instructorId` (concreto, no `ANYONE` — Step 3 lo resolvió), `language: Locale`, `attendees: [{name, age, level}]` (1-4), `bookerPhone`, `notes?` (≤500), `acceptedTerms: true`
+  - [ ] Rechaza 401 si `!session` (defensa server-side, mismo header check que routes)
+  - [ ] Prisma `$transaction`:
+    1. Re-check slot via `loadEngineContext` + `computeSlotsForDate` (engine puro) — rechaza con error `SLOT_TAKEN` si ya no disponible
+    2. `getPriceCents(activeSeason, duration)` (F-039)
+    3. `prisma.booking.create({ status: 'PENDING_PAYMENT', bookerId: session.user.id, instructorId, date, startDateTime, endDateTime, duration, language, notes, totalPriceCents, locale })` + `prisma.attendee.createMany` (1-4 rows; primer attendee `isBooker: true` si su name matches booker name)
+    4. Stripe `paymentIntents.create({ amount: totalPriceCents, currency: 'chf', metadata: { bookingId }, automatic_payment_methods: { enabled: true, allow_redirects: 'always' } })` — habilita Card + TWINT + Apple Pay + Google Pay automáticamente vía AMP
+    5. Persist `booking.stripePaymentIntentId`
+  - [ ] Returns `{ bookingId, clientSecret }`
+  - [ ] **Idempotency:** si existe booking `PENDING_PAYMENT` con `(bookerId, instructorId, date, startDateTime)` y `createdAt > now - 15min`, reuse PaymentIntent (no crear nuevo) — evita duplicate intents si user refresca Step 5
+- Tests: Vitest con Prisma mock + Stripe mock. Casos: happy, slot taken race, 401 anonymous, idempotent reuse dentro de 15min, attendees min/max bounds, `priceCents` matches season config, AMP enabled flag.
+- Notas:
+  - `automatic_payment_methods.allow_redirects: 'always'` necesario porque TWINT redirige al banco. Wallets aparecen free.
+  - PI sin TTL explícito; sweep de PENDING expirados llega en Sprint 3 (cron mensual + cleanup de credits-locked).
+
+### F-043 — UI Step 5 (Stripe Payment Element + order summary)
+
+- Sprint: 2 · Estado: backlog · Prioridad: P0
+- Depende de: F-042
+- AC:
+  - [ ] `app/[locale]/reservar/step-5/page.tsx` (server) lee URL params, llama `createBookingDraft`, pasa `{ bookingId, clientSecret, summary }` a client
+  - [ ] `step5-payment.tsx` (client) usa `@stripe/react-stripe-js` `<Elements stripe={stripePromise} options={{ clientSecret, appearance }}>` + `<PaymentElement>`
+  - [ ] **Order summary** (left column en desktop, top en mobile): duration label + date (formato CH) + time + instructor name + attendees count + total CHF (`formatChf` F-039) + nota "VAT included"
+  - [ ] Submit → `stripe.confirmPayment({ confirmParams: { return_url: \`${origin}/${locale}/reservar/exito/${bookingId}\` } })`. Loading state durante confirm
+  - [ ] Error states: declined, 3DS failed, TWINT timeout — todos traducidos
+  - [ ] Wallets aparecen automático cuando browser soporta + PE los expone
+  - [ ] `tsc --noEmit` clean; bundle <60KB extra en route (Stripe.js lazy-loaded vía `loadStripe`)
+- Tests: Playwright con Stripe test card `4242 4242 4242 4242` (3DS-bypass) + TWINT test redirect. Verifica `Booking.status` → `CONFIRMED` post-webhook. 3 locales smoke (summary labels + currency format).
+- Notas:
+  - Step 5 NO re-fetcha precio — usa el `totalPriceCents` ya persistido en `Booking` por F-042 (single source of truth).
+  - Visual review con skill `impeccable` obligatorio antes de marcar done (Payment Element default styling no match brand — appearance API customiza).
+
+### F-044 — Webhook business logic (per-event handlers)
+
+- Sprint: 2 · Estado: backlog · Prioridad: P0
+- Depende de: F-018, F-042
+- AC:
+  - [ ] Extiende `lib/stripe/handle-webhook.ts` con switch por `event.type`:
+    - `payment_intent.succeeded` → `Booking.status = CONFIRMED`, set `paidAt`, dispatch send confirmation email (F-045)
+    - `payment_intent.payment_failed` → `Booking.status = PAYMENT_FAILED`, set `failureReason` (from `last_payment_error.message`)
+    - `payment_intent.canceled` → `Booking.status = CANCELLED_BY_SYSTEM`
+    - `charge.refunded` → `Booking.refundedAt` + `refundAmountCents`, Sentry breadcrumb
+    - `charge.dispute.created` → Sentry alert (no status change auto; owner decide manual)
+  - [ ] Idempotencia heredada: `WebhookEvent` dedupe table de F-018 sigue siendo el gate único
+  - [ ] Todos los handlers en single `$transaction` con upsert del `WebhookEvent.processedAt`
+  - [ ] Email dispatch: post-transaction `await sendBookingConfirmedEmail(bookingId)`. Si falla, log a Sentry pero NO rollback (booking ya confirmado, email reenviable manual desde admin Sprint 4)
+- Tests: extiende `lib/stripe/handle-webhook.test.ts` (5 → ≥10 specs): un spec por event type, happy + duplicate, plus negative case "booking not found logged + 200 OK to prevent Stripe retries".
+- Notas:
+  - Verificar que `BookingStatus` enum tiene `CONFIRMED`, `CANCELLED_BY_USER`, `CANCELLED_BY_SYSTEM`, `PAYMENT_FAILED`, `REFUNDED`. Si falta alguno, mini-migration aquí.
+  - Schema: añadir `Booking.refundedAt DateTime?` + `refundAmountCents Int?` + `failureReason String?` si no existen (mini-migration en este ticket).
+
+### F-045 — Confirmation email + `.ics` attachment
+
+- Sprint: 2 · Estado: backlog · Prioridad: P0
+- Depende de: F-017, F-044
+- AC:
+  - [ ] `lib/email/booking-confirmed.tsx` — React Email template trilingual (recibe `locale` del `Booking.locale`)
+  - [ ] Contenido: greeting + summary (date/time/duration/instructor/attendees count) + total CHF (`formatChf`) + add-to-calendar (.ics adjunto) + cancellation policy short link + contact
+  - [ ] `lib/ics/build-event.ts` usa pkg `ics`; campos: `uid = booking.icsUid`, `title`, `start` (UTC), `duration` (minutos), `location: 'Flumserberg, CH'`, `description`, `organizer: 'booking@rideflumserberg.ch'`, `attendees: [bookerEmail]`
+  - [ ] Send via Resend desde `booking@rideflumserberg.ch` (dominio verificado F-017) con `.ics` adjunto MIME `text/calendar; method=REQUEST`
+  - [ ] **Idempotencia:** skip si `booking.confirmationEmailSentAt` set; al éxito, `prisma.booking.update({ confirmationEmailSentAt: new Date() })`
+  - [ ] Schema: añadir `Booking.confirmationEmailSentAt DateTime?` + `reminderEmailSentAt DateTime?` + `postClassEmailSentAt DateTime?` (mini-migration empaquetada con F-048 también; lo más práctico es shipear las 3 columnas aquí y F-048 sólo las consume)
+- Tests: Vitest — template renderiza 3 locales sin errores, `.ics` output passes RFC 5545 validator (`ics` pkg's `createEvent` retorna no error), idempotency spec (segundo call no resend).
+- Notas:
+  - Schema field `Booking.icsUid` ya existe (F-020).
+  - Resend free tier: 3k emails/mes, 100/día. MVP holgado; vigilar si Sprint 4 admin notifies suben volumen.
+
+### F-046 — Success page `/[locale]/reservar/exito/[id]`
+
+- Sprint: 2 · Estado: backlog · Prioridad: P0
+- Depende de: F-043, F-045
+- AC:
+  - [ ] Server component fetcha `Booking` by id; rechaza con 403 si `booking.bookerId !== session.user.id`
+  - [ ] Render: confirmation hero ("Your lesson is booked, {name}") + full summary (date/time/duration/instructor/attendees/total) + "Add to calendar" link a `/api/booking/[id]/ics` (re-genera server-side) + CTA "Go to dashboard" → `/[locale]/dashboard`
+  - [ ] **Pending state:** si `booking.status === 'PENDING_PAYMENT'` (TWINT async), render banner "Confirming your payment..." + `<meta http-equiv="refresh" content="3">` durante 30s, después fallback "Refresh manually if not confirmed"
+  - [ ] Trilingual via `messages/{en,de,es}.json` namespace `success.*`
+- Tests: Playwright 3 locales × (happy CONFIRMED, pending state, 403 cross-user, anonymous → redirect login).
+- Notas:
+  - Nuevo route handler `app/api/booking/[id]/ics/route.ts` re-genera el `.ics` on demand (auth-gated). Permite re-descarga sin re-disparar email.
+
+### F-047 — Student dashboard (basic)
+
+- Sprint: 2 · Estado: backlog · Prioridad: P1
+- Depende de: F-005, F-044
+- AC:
+  - [ ] `app/[locale]/dashboard/page.tsx` server-rendered, lista `Booking[]` de `session.user.id` ordenados desc por `date`
+  - [ ] Cada row: date · time · duration · instructor · status badge · total CHF · link "View details" (placeholder noop en MVP; Sprint 3 lo conecta con vista detalle + cancelar)
+  - [ ] Empty state con CTA "Book your first lesson" → `/[locale]/reservar`
+  - [ ] Personal data block (read-only): name, email, phone si existe. Phone update deferred a Sprint 3+
+- Tests: Playwright 3 locales × (empty + with-bookings + anonymous → redirect login).
+
+### F-048 — Reminder cron 24h + post-class T+2h emails
+
+- Sprint: 2 · Estado: backlog · Prioridad: P1
+- Depende de: F-045
+- AC:
+  - [ ] `app/api/cron/booking-emails/route.ts` (Route Handler, Node runtime)
+  - [ ] Header check `Authorization: Bearer ${CRON_SECRET}` (Vercel Cron pasa el header automático cuando `crons` configurado en `vercel.ts`)
+  - [ ] Vercel cron `0 * * * *` (hourly) registrado en `vercel.ts`
+  - [ ] **24h reminder:** query `Booking.status = CONFIRMED AND startDateTime BETWEEN now+23h AND now+24h AND reminderEmailSentAt IS NULL`. Send template `lib/email/booking-reminder.tsx` + `.ics` re-attached + set timestamp
+  - [ ] **T+2h post-class:** query `endDateTime BETWEEN now-3h AND now-2h AND postClassEmailSentAt IS NULL AND status = CONFIRMED`. Send template `lib/email/post-class.tsx` con review CTA + tip CTA (degrade graceful si `D-PLACE` Place ID null — link omitido del template) + set timestamp
+  - [ ] Schema: campos `reminderEmailSentAt` + `postClassEmailSentAt` ya añadidos en F-045
+  - [ ] Templates trilingual (`lib/email/{reminder,post-class}.tsx` consumen `Booking.locale`)
+- Tests: Vitest con frozen clock (`vi.useFakeTimers`) — query devuelve filas correctas en bordes ±1min; segunda invocación no re-envía.
+- Notas:
+  - Vercel Hobby plan: 2 crons max. Sprint 3 + Sprint 4 añadirán más (expiry crédito mensual, admin notifies). Plan upgrade probable antes de soft-launch.
+  - Tip CTA degrada cuando D-PLACE null — Sprint 5 reabre el copy.
+
+---
+
+## Sequencing Sprint 2
+
+```
+F-039 (prices schema) ─┐
+F-040 (T&C + modal) ───┤
+                       └─ F-041 (Step 4) ─ F-042 (draft+PI) ─ F-043 (Step 5) ─ F-044 (webhook) ─ F-045 (email+ics) ─┬─ F-046 (success)
+                                                                                                                     ├─ F-047 (dashboard)
+                                                                                                                     └─ F-048 (crons)
+```
+
+Critical path: F-039 → F-040 → F-041 → F-042 → F-043 → F-044 → F-045 (≈7 PRs serial). F-046/F-047/F-048 parallel después de F-045.
+
+---
+
+## Sprints 3-6 — Bullets gruesos (desglose al cerrar el sprint anterior)
 
 ### Sprint 3 — Cancelaciones + Créditos (semana 6)
 
@@ -615,7 +802,7 @@
 - Vista instructor: agenda diaria, gestión de `availabilityBlock`, perfil.
 - Conectar Google Calendar (OAuth offline access, encriptación ADR-007).
 - Inserción/borrado de eventos en Google Calendar.
-- Panel admin: CRUD instructores, vista de reservas, modal "Cancel day" (ops batch + preview de impacto).
+- Panel admin: CRUD instructores, vista de reservas, modal "Cancel day" (ops batch + preview de impacto), **editor de precios por duración** (escribe `Season.priceCentsByDuration` — schema definido en F-039).
 - Email cancelación ops en locale del booker.
 - **Decisión pendiente:** tip split policy (afecta `Tip` table flow).
 
@@ -645,7 +832,7 @@
 
 | Ref     | Decisión                           | Bloquea                           | Acción                               |
 | ------- | ---------------------------------- | --------------------------------- | ------------------------------------ |
-| D-PRC   | Precios por duración               | Sprint 2 (Step 5 muestra totales) | Owner define antes de Sprint 2       |
+| D-PRC   | Precios por duración               | ✅ Resuelto (planning 2026-05-19): valores iniciales `{ONE_HOUR:11000, TWO_HOURS:20000, INTENSIVE:38500, FULL_DAY:50000}` CHF cents VAT-inclusive en `Season.priceCentsByDuration` (F-039). Admin editor en Sprint 4. | — |
 | D-TIP   | Tip split policy                   | Sprint 4 (flujo `Tip`)            | Owner define antes de Sprint 4       |
 | D-LEG   | Legal review credit-only (ADR-008) | Producción (no Sprint 1-3)        | Contratar bufete antes de Sprint 5   |
 | D-LOGO  | Logo + hero photography            | Sprint 5 (landing)                | Owner produce antes de Sprint 5      |
