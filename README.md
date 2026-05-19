@@ -1,29 +1,85 @@
-# 🏂 Snowboard Booking Platform
+# Snowboard Booking Platform
 
-> An **AI-first**, production-grade booking system for a single ski school in Switzerland. Built end-to-end by one developer + Claude Code, architected for multi-instructor expansion.
+> An **AI-first**, production-grade booking system for a snowboard school in the Swiss Alps (Flumserberg). Built end-to-end by one developer + Claude Code, architected for multi-instructor expansion.
 
 [![Next.js 15](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org)
+[![React 19](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38BDF8?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![Prisma](https://img.shields.io/badge/Prisma-6-2D3748?logo=prisma&logoColor=white)](https://www.prisma.io)
 [![Better Auth](https://img.shields.io/badge/Better%20Auth-1.6-1f6feb)](https://www.better-auth.com)
+[![Stripe](https://img.shields.io/badge/Stripe-Payments-635BFF?logo=stripe&logoColor=white)](https://stripe.com)
+[![Neon](https://img.shields.io/badge/Neon-Postgres-00E599?logo=neon&logoColor=white)](https://neon.tech)
+[![Vercel](https://img.shields.io/badge/Vercel-Hosting-000?logo=vercel)](https://vercel.com)
+[![Sentry](https://img.shields.io/badge/Sentry-Monitoring-362D59?logo=sentry&logoColor=white)](https://sentry.io)
 [![Built with Claude Code](https://img.shields.io/badge/Built%20with-Claude%20Code-D97757)](https://docs.anthropic.com/en/docs/claude-code)
-[![Live Demo](https://img.shields.io/badge/Live-Demo-000?logo=vercel)](https://snowboard-booking-platform-9b1q.vercel.app)
+[![Live](https://img.shields.io/badge/Live-rideflumserberg.ch-000?logo=vercel)](https://rideflumserberg.ch)
 [![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red)](LICENSE)
 
-👈 **[Live Demo](https://snowboard-booking-platform-9b1q.vercel.app)** · 📖 **[Product Requirements](docs/PRD.md)** · 🧱 **[Architecture](docs/Architecture.md)** · 🛠️ **[Workflow](docs/WORKFLOW.md)** · 📋 **[Backlog](docs/FEATURES.md)**
+**[Live Demo →](https://rideflumserberg.ch)** · **[PRD](docs/PRD.md)** · **[Architecture](docs/Architecture.md)** · **[Workflow](docs/WORKFLOW.md)** · **[Backlog](docs/FEATURES.md)**
+
+![Editorial landing page](docs/screenshots/hero.png)
 
 ---
 
-## 🎯 Why This Project
+## Why This Project
 
-A real product I'm shipping for **a snowboard school in the Swiss Alps**. It also doubles as the canonical example of how I build software in 2026 — **AI-first**, with strict conventions, explicit agents, and a workflow that produces production code instead of prototype slop.
+A real product I'm shipping for **a snowboard school in Flumserberg, Switzerland**. It also doubles as the canonical example of how I build software in 2026 — **AI-first**, with strict conventions, explicit agents, and a workflow that produces production code instead of prototype slop.
 
 **The thesis:** generic booking platforms (Bókun, Peek, FareHarbor) are functional but ugly, generic, and expensive. Small independent schools deserve a premium, editorial brand and a frictionless multilingual booking flow. That's what this builds — minus the 18% commission.
 
 ---
 
-## 🤖 AI-First Development
+## The Booking Flow (Steps 1 → 3)
+
+A three-step funnel optimized for conversion: **duration → smart calendar → instructor**. Language is a per-instructor attribute revealed only at Step 3 — never a Step 1 filter (thin supply + hard filter = lost sales).
+
+| Step 1 — Duration | Step 2 — Smart calendar | Step 3 — Anchor time + instructor |
+|---|---|---|
+| ![Step 1](docs/screenshots/step1.png) | ![Step 2](docs/screenshots/step2.png) | ![Step 3](docs/screenshots/step3.png) |
+
+**Mobile-first.** Every screen designed for thumb-reach and one-handed use first; desktop is the secondary canvas.
+
+<p align="center">
+  <img src="docs/screenshots/mobile.png" alt="Mobile booking flow" width="320">
+</p>
+
+---
+
+## Architecture at a glance
+
+```mermaid
+flowchart LR
+  user(("Student<br/>browser")) -->|HTTPS| vercel["Vercel Edge<br/>Next.js 15 RSC + Server Actions"]
+
+  subgraph runtime["Runtime"]
+    vercel
+    cron["Vercel Cron<br/>reminders · calendar resync"]
+  end
+
+  vercel -->|Prisma + Neon adapter| neon[("Neon Postgres<br/>main / dev branches")]
+  vercel -->|Payment Element<br/>Card · TWINT · Apple/Google Pay| stripe["Stripe"]
+  stripe -->|webhook<br/>signature-verified, idempotent| vercel
+  vercel -->|React Email| resend["Resend<br/>receipts · reminders"]
+  vercel -->|ICS + Google Calendar API| gcal["Google Calendar<br/>instructor"]
+  vercel -->|errors + RUM| sentry["Sentry · Vercel<br/>Analytics + Speed Insights"]
+  cron --> vercel
+
+  subgraph cicd["CI/CD"]
+    gh["GitHub Actions"]
+    gh -->|lint · typecheck · vitest · playwright smoke| vercel
+    gh -->|prisma migrate deploy + seed| neon
+  end
+
+  pr(("Pull Request")) --> gh
+  gh -->|preview deploy| vercel
+```
+
+Every dependency is intentional. See [`docs/Architecture.md`](docs/Architecture.md) for the full data model + ADRs.
+
+---
+
+## AI-First Development
 
 This isn't "I used Copilot to autocomplete." This is a full agentic pipeline. Every feature follows the same loop, with a documented context surface so Claude makes the right decision the first time.
 
@@ -64,6 +120,7 @@ This isn't "I used Copilot to autocomplete." This is a full agentic pipeline. Ev
 | `typescript-advanced-types` | strict-mode TS, generics, mapped types |
 | `prisma-database-setup` · `prisma-client-api` · `prisma-postgres` | Prisma + Neon end-to-end |
 | `next-intl-add-language` | Locale + slug translation maintenance |
+| `stripe-best-practices` | Payment integration patterns + key hygiene |
 | `testing-strategy` · `booking-platform-perf` | QA + Web Vitals budgets |
 
 ### 4. Hard rules baked into `CLAUDE.md`
@@ -76,18 +133,19 @@ This isn't "I used Copilot to autocomplete." This is a full agentic pipeline. Ev
 
 ---
 
-## 🧱 Tech Stack
+## Tech Stack
 
 | Layer | Tech | Why |
 |---|---|---|
 | Framework | **Next.js 15** (App Router, RSC, Server Actions) | RSC ships less JS, Server Actions kill API boilerplate |
+| Runtime | **React 19** + **Turbopack** | Latest concurrent rendering + fastest dev loop |
 | Language | **TypeScript** (`strict`, `noUncheckedIndexedAccess`) | Compile-time guarantees on a booking domain that loves edge cases |
 | Styling | **Tailwind v4** + **shadcn/ui** (heavily modified) | Editorial-grade defaults, zero runtime CSS |
 | Forms | **React Hook Form** + **Zod** | Same Zod schema validates client + server |
 | i18n | **next-intl** (public routes only) | EN / DE / ES with translated slugs, EN has no prefix for SEO |
 | Auth | **Better Auth** 1.6 (email+pwd, magic link, Google OAuth) | Modern, framework-native, type-safe sessions |
 | ORM | **Prisma** 6 + `@prisma/adapter-neon` | Neon HTTP driver for Edge/serverless runtimes |
-| DB | **Neon Postgres** | Branch-per-feature DBs, serverless pricing |
+| DB | **Neon Postgres** (`main` + `dev` branches) | Branch-per-feature DBs, serverless pricing |
 | Payments | **Stripe** Payment Element (Card · TWINT · Apple Pay · Google Pay) | TWINT is non-negotiable for the Swiss market |
 | Email | **Resend** + React Email | Receipts, reminders, post-class CTA to Google review |
 | Calendar | `ics` package + **Google Calendar API** | `.ics` for the student, push to instructor's Google Calendar |
@@ -98,7 +156,107 @@ This isn't "I used Copilot to autocomplete." This is a full agentic pipeline. Ev
 
 ---
 
-## 🗺️ Project Layout
+## CI/CD — GitHub Actions × Vercel × Neon
+
+Three workflows in [`.github/workflows/`](.github/workflows/) form the deploy pipeline. Together they guarantee that a green PR ≈ a safe production push.
+
+### `ci.yml` — gate every PR
+
+Runs on every PR and every push to `main`:
+
+1. `npm ci` + `prisma generate`
+2. `npm run lint`
+3. `npm run typecheck` (`tsc --noEmit`)
+4. `npm run test:unit` (Vitest — booking engine, Zod schemas, currency utils)
+5. **Playwright smoke** against the local build (cached browsers)
+
+Concurrency group cancels stale runs. PRs from forks degrade cleanly (no secrets leaked).
+
+### `db-migrate.yml` — keep Neon branches in sync with the code
+
+Triggers on changes to `prisma/schema.prisma`, `prisma/migrations/**`, or `prisma/seed.ts`:
+
+- **PR** → `prisma migrate deploy` + reseed the Neon **`dev`** branch (which backs all previews + local dev).
+- **Push to `main`** → same against the Neon **`main`** branch (which backs production).
+
+No human runs `prisma migrate deploy` against prod. Ever. Drift is impossible by design.
+
+### `post-deploy-smoke.yml` — verify production after every deploy
+
+Listens on `deployment_status`. When Vercel reports a successful **Production** deploy:
+
+1. Polls `https://rideflumserberg.ch/api/auth/get-session` until 200 (deploy fully promoted).
+2. Runs Playwright smoke against the live URL.
+3. Fails loud if production is broken — instead of finding out from a customer.
+
+### Deploy story end-to-end
+
+```
+git push origin f-XXX   ──►  GitHub Actions
+                              │
+                              ├─ ci.yml         (lint · typecheck · unit · e2e)
+                              └─ db-migrate.yml (Neon dev migrate + seed)
+                              │
+PR opened ───────────────►  Vercel preview deploy
+                              │
+review + green checks ─────►  merge to main
+                              │
+                              ├─ db-migrate.yml (Neon main migrate + seed)
+                              └─ Vercel production deploy
+                                    │
+                                    └─► post-deploy-smoke.yml (Playwright vs rideflumserberg.ch)
+```
+
+---
+
+## Stripe Integration
+
+Switzerland-specific payments wired correctly from day one.
+
+- **Stripe Payment Element** — single component renders Card, TWINT, Apple Pay, Google Pay based on the customer's device + locale. No bespoke wallet code.
+- **TWINT first-class.** Required for Swiss customers — Bókun and most generic SaaS still treat it as second-tier or charge extra.
+- **PaymentIntents flow.** Server creates the intent → client confirms → webhook reconciles. Never trust the client for booking confirmation.
+- **Webhook hardening** (`/api/webhooks/stripe`):
+  - Signature verified against `STRIPE_WEBHOOK_SECRET` on every request.
+  - Idempotent on `event.id` — replay-safe.
+  - Booking state transitions happen inside a Prisma `$transaction` (booking + payment + credit ledger updated atomically).
+- **Restricted API keys** in production. No `sk_live_*` master key in env. Webhook secret separate from API secret.
+- **Refunds + cancellation policy** mapped to Stripe refund objects; operational cancellations issue **account credit** (legal-reviewed) instead of forcing card refunds.
+
+The `stripe-best-practices` skill is invoked on every PR that touches `lib/stripe/` or webhook code.
+
+---
+
+## Vercel Hosting
+
+| Concern | How it's handled |
+|---|---|
+| **Edge + Fluid Compute** | Server Actions + Route Handlers default to Node.js fluid compute. Edge only for static-ish reads. |
+| **Preview deploys** | Every PR gets a public preview URL, gated by [Deployment Protection Bypass](https://vercel.com/docs/deployment-protection) so Playwright + reviewers can hit it. |
+| **Production domain** | `https://rideflumserberg.ch` (apex) — TLS, HSTS, CSP applied. |
+| **Env vars** | Three scopes (Development / Preview / Production). Secrets never committed. `vercel env pull` for local. |
+| **Cron Jobs** | `/api/cron/reminders` (24h-before SMS/email), `/api/cron/calendar-resync` — both gated by `CRON_SECRET`. |
+| **Observability** | Vercel Analytics + Speed Insights for RUM; Sentry for errors + source maps; Vercel Logs for function-level traces. |
+| **Rollback** | One-click promote of any previous deploy from the Vercel dashboard. |
+
+---
+
+## Internationalization
+
+| Surface | Locales |
+|---|---|
+| Public marketing + booking flow | **EN · DE · ES** |
+| Student dashboard | **EN · DE · ES** |
+| Instructor panel | **EN only** |
+| Admin panel | **EN only** |
+
+- **EN has no `/en` prefix** — better SEO for the English-speaking market that dominates Flumserberg's intl traffic.
+- **Translated slugs per locale** — `/de/instruktoren/`, `/es/instructores/`, `/instructors`. Not just labels, the URL itself.
+- All copy via `useTranslations()` — zero hardcoded strings. ESLint rule enforced.
+
+---
+
+## Project Layout
 
 ```
 booking-platform/
@@ -108,12 +266,18 @@ booking-platform/
 │   ├── Architecture.md             ← data model, integrations, ADRs
 │   ├── FEATURES.md                 ← living backlog (source of truth for scope)
 │   ├── WORKFLOW.md                 ← subagent orchestration
-│   └── design-system.md            ← editorial tokens, typography, spacing
+│   ├── design-system.md            ← editorial tokens, typography, spacing
+│   └── screenshots/                ← README + portfolio assets
+│
+├── .github/workflows/
+│   ├── ci.yml                      ← lint · typecheck · unit · e2e smoke
+│   ├── db-migrate.yml              ← Neon dev/main auto-migrate + reseed
+│   └── post-deploy-smoke.yml       ← Playwright vs production URL
 │
 ├── app/
 │   ├── [locale]/                   ← i18n: EN (no prefix), DE, ES
 │   │   ├── (marketing)/            ← landing, instructors, blog
-│   │   ├── (booking)/              ← reservation flow
+│   │   ├── (booking)/              ← reservation flow (Steps 1-3)
 │   │   ├── (auth)/                 ← login, signup, verify
 │   │   ├── dashboard/              ← authenticated student area
 │   │   └── layout.tsx
@@ -131,7 +295,7 @@ booking-platform/
 ├── lib/
 │   ├── db/                         ← Prisma client (Neon adapter)
 │   ├── auth/                       ← Better Auth config
-│   ├── stripe/                     ← Stripe client + helpers
+│   ├── stripe/                     ← Stripe client + webhook handlers
 │   ├── email/                      ← React Email templates + Resend
 │   ├── calendar/                   ← ICS generator + Google Calendar
 │   ├── i18n/                       ← next-intl config
@@ -145,7 +309,7 @@ booking-platform/
 
 ---
 
-## 🌐 Routing
+## Routing
 
 ```
 /                            EN  landing
@@ -162,13 +326,9 @@ booking-platform/
 /api/cron/reminders          POST  CRON_SECRET-gated
 ```
 
-- **Public + student dashboard:** trilingual (EN / DE / ES).
-- **Instructor + admin panels:** English only — no audience benefit from translating.
-- **EN has no `/en` prefix** — better SEO for the English-speaking market.
-
 ---
 
-## ⚡ Performance Budget
+## Performance Budget
 
 Enforced by the `booking-platform-perf` skill on every UI change.
 
@@ -182,7 +342,7 @@ Enforced by the `booking-platform-perf` skill on every UI change.
 
 ---
 
-## 🎨 Design Direction
+## Design Direction
 
 **Editorial / premium.** References: Aesop, Cereal magazine, Outdoor Voices, Monocle.
 
@@ -194,7 +354,7 @@ When in doubt, the `impeccable` skill is the source of truth.
 
 ---
 
-## 🔐 Security Checklist (applied per PR)
+## Security Checklist (applied per PR)
 
 - [x] CSRF on mutations (Better Auth + Server Actions)
 - [x] Zod validation on every server input
@@ -204,10 +364,11 @@ When in doubt, the `impeccable` skill is the source of truth.
 - [x] Google refresh tokens encrypted at rest (AES-256-GCM)
 - [x] CSP + HSTS headers, HTTPS only
 - [x] Roles re-checked on the server — never trust the client
+- [x] Stripe restricted API keys in production; secrets siloed per Vercel env
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ```bash
 # 1. Clone
@@ -246,7 +407,7 @@ npm run test:e2e         # Playwright
 
 ---
 
-## 🧪 Testing Strategy
+## Testing Strategy
 
 | Layer | Tool | Target |
 |---|---|---|
@@ -254,20 +415,27 @@ npm run test:e2e         # Playwright
 | Zod schemas, currency utils | Vitest | full |
 | Happy-path booking, cancellation, credit redemption, auth | Playwright | per-ticket E2E spec |
 | Visual review | Playwright + Claude | screenshot diff vs. design rules |
+| Production smoke | Playwright (post-deploy workflow) | every prod release |
 
 **Rule:** every Sprint ≥1 ticket that touches UI or a public endpoint ships with `e2e/<ticket-id>.spec.ts`. No green E2E, no `done`.
 
 ---
 
-## 📊 Status
+## Status
 
-This is an **active, in-progress** MVP. Sprint 0 (setup, scaffolding, CI, i18n, design tokens) is done. The booking flow, payments, and instructor panel are next.
+| Sprint | Scope | Status |
+|---|---|---|
+| **Sprint 0** | Repo, scaffolding, CI, design tokens, i18n, Vercel + Neon wiring | ✅ Done |
+| **Sprint 0.5** | Home page × 3 locales, login moved under `[locale]`, design tokens | ✅ Done |
+| **Sprint 1.5** | Resend domain, Stripe + TWINT account, secrets in Vercel | ✅ Done |
+| **Sprint 1** | Booking engine + Steps 1–3 UI, multi-instructor seed, hourly anchors | ✅ Done |
+| **Sprint 2+** | Stripe Payment Element end-to-end, instructor panel, account credit ledger | 🚧 In progress |
 
-Follow progress in [`docs/FEATURES.md`](docs/FEATURES.md) — every shipped commit references a `F-XXX` ticket there.
+Live at **[rideflumserberg.ch](https://rideflumserberg.ch)**. Follow progress in [`docs/FEATURES.md`](docs/FEATURES.md) — every shipped commit references an `F-XXX` ticket there.
 
 ---
 
-## 📜 License
+## License
 
 **Proprietary — All Rights Reserved.** See [`LICENSE`](LICENSE).
 
@@ -277,7 +445,7 @@ For commercial licensing or any permission request: **franciscojgonzalezfernande
 
 ---
 
-## 👤 Author
+## Author
 
 **Francisco Javier González** — Full-Stack Developer, Zürich
 
@@ -287,6 +455,6 @@ For commercial licensing or any permission request: **franciscojgonzalezfernande
 
 ---
 
-> Built with ❤️ in the Swiss Alps, with **Next.js 15**, **Claude Code**, and a strong opinion about how AI-assisted software should be shipped in 2026.
+> Built in the Swiss Alps with **Next.js 15**, **Claude Code**, and a strong opinion about how AI-assisted software should be shipped in 2026.
 
 **⭐ Star if this is the kind of workflow you want to see more of.**
