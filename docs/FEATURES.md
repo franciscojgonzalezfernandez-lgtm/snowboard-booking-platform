@@ -679,24 +679,28 @@
 
 ### F-042 — Booking draft + PaymentIntent server action
 
-- Sprint: 2 · Estado: backlog · Prioridad: P0
+- Sprint: 2 · Estado: review · Prioridad: P0
 - Depende de: F-018, F-039, F-041
 - AC:
-  - [ ] Server action `createBookingDraft(input)` en `app/[locale]/reservar/actions.ts`
-  - [ ] Zod schema valida full input: `date`, `time`, `duration`, `instructorId` (concreto, no `ANYONE` — Step 3 lo resolvió), `language: Locale`, `attendees: [{name, age, level}]` (1-4), `bookerPhone`, `notes?` (≤500), `acceptedTerms: true`
-  - [ ] Rechaza 401 si `!session` (defensa server-side, mismo header check que routes)
-  - [ ] Prisma `$transaction`:
-    1. Re-check slot via `loadEngineContext` + `computeSlotsForDate` (engine puro) — rechaza con error `SLOT_TAKEN` si ya no disponible
-    2. `getPriceCents(activeSeason, duration)` (F-039)
-    3. `prisma.booking.create({ status: 'PENDING_PAYMENT', bookerId: session.user.id, instructorId, date, startDateTime, endDateTime, duration, language, notes, totalPriceCents, locale })` + `prisma.attendee.createMany` (1-4 rows; primer attendee `isBooker: true` si su name matches booker name)
-    4. Stripe `paymentIntents.create({ amount: totalPriceCents, currency: 'chf', metadata: { bookingId }, automatic_payment_methods: { enabled: true, allow_redirects: 'always' } })` — habilita Card + TWINT + Apple Pay + Google Pay automáticamente vía AMP
-    5. Persist `booking.stripePaymentIntentId`
-  - [ ] Returns `{ bookingId, clientSecret }`
-  - [ ] **Idempotency:** si existe booking `PENDING_PAYMENT` con `(bookerId, instructorId, date, startDateTime)` y `createdAt > now - 15min`, reuse PaymentIntent (no crear nuevo) — evita duplicate intents si user refresca Step 5
-- Tests: Vitest con Prisma mock + Stripe mock. Casos: happy, slot taken race, 401 anonymous, idempotent reuse dentro de 15min, attendees min/max bounds, `priceCents` matches season config, AMP enabled flag.
+  - [x] Server Action `createBookingDraft(input)` en `app/[locale]/reservar/actions.ts` ('use server'). Wrapper thin que resuelve `session = await auth.api.getSession(headers())`, instancia `getStripe()` y delega en `createBookingDraftWith(deps, enginePrisma, input)` — la lógica pura vive en `lib/booking/create-draft.ts` con sus deps explícitas (session, prisma, stripe, now, newIcsUid) para poder testear sin red.
+  - [x] `createBookingDraftSchema` Zod en `lib/schemas/booking-draft.ts` valida todo el payload: `date` (regex `YYYY-MM-DD`), `time` (regex `HH:MM` 00:00–23:59), `duration` (`Duration` enum), `instructorId` (refine no `"ANYONE"`), `language` (`Locale`), `bookerName` (1-80), `bookerPhone` (strip whitespace → regex E.164), `attendees` (1-4 de `{ name 1-80, age int 4-99, level }`), `notes` (≤500, opcional), `acceptedTerms` literal `true`. Errores → `INVALID_INPUT` con `issues` Zod adjuntos.
+  - [x] Rechaza `UNAUTHORIZED` cuando `!session?.user` antes de tocar input (defensa server-side; el form en F-041 ya bloquea al cliente, pero el server action puede ser llamado directamente).
+  - [x] Re-check de slot via `loadEngineContext` + `instructorAvailableAt` puro (no se reusa `computeSlotsForDate` para evitar recorrer todos los anchors — basta con un check exacto del par instructor+anchor solicitado). `SLOT_TAKEN` si el instructor desaparece del context (inactivo / temporada) o si el engine reporta no disponible (booking solapante, BLOCKED, 24h rule, etc.).
+  - [x] `getPriceCents(season, duration)` (F-039). `PriceConfigurationError` se traduce a `PRICING_MISSING` (en lugar de propagar el throw); cualquier otro error sube tal cual.
+  - [x] Prisma `$transaction(async tx => …)`: `tx.booking.create({ status: PENDING_PAYMENT, bookerId, instructorId, date, anchorTime, duration, language, notes, totalPriceCents, icsUid })` + `tx.attendee.createMany({ data: [{ bookingId, name, birthDate, level, isBooker }] })`. `birthDate` derivado de `age` con aproximación `now - age años` (date-only, suficiente para emails + dashboard; F-049+ podrá cambiar a date picker real si el owner lo pide). `isBooker = true` sólo en el primer attendee cuyo `name.trim().toLowerCase() === bookerName.trim().toLowerCase()`.
+  - [x] Stripe `paymentIntents.create({ amount: totalPriceCents, currency: 'chf', automatic_payment_methods: { enabled: true, allow_redirects: 'always' }, metadata: { bookingId, bookerId, instructorId, startDateTime, endDateTime }, description: 'Snowboard lesson · <duration> · <date> <time>' }, { idempotencyKey: \`booking-${bookingId}\` })` — el flag `allow_redirects: 'always'` habilita TWINT (redirige al banco). Wallets (Apple/Google Pay) aparecen sin más config.
+  - [x] Persiste `booking.stripePaymentIntentId` con `prisma.booking.update` después del `create` de Stripe.
+  - [x] Returns `{ ok: true, bookingId, clientSecret, totalPriceCents, reused }`.
+  - [x] **Idempotency window 15 min:** si existe booking `PENDING_PAYMENT` con `(bookerId, instructorId, date, anchorTime)` + `createdAt > now - 15min` + `stripePaymentIntentId` no null, se `retrieve` el PaymentIntent existente y se devuelve su `client_secret` con `reused: true`. Refrescar Step 5 / volver de magic-link no crea duplicate intents ni double-charges accidentales.
+- Tests: `lib/booking/create-draft.test.ts` con 13 specs Vitest sobre la versión pura (mocks de Prisma + Stripe + `enginePrisma`): happy path (Booking + Attendee creados + Stripe llamado con AMP `enabled:true` / `allow_redirects:'always'` / currency `chf` / idempotencyKey + `booking.update` con el PI id), `priceCents` por duración (`TWO_HOURS` → 20000 cents del seed), `UNAUTHORIZED` anónimo, `INVALID_INPUT` para `instructorId='ANYONE'` / attendees < 1 / attendees > 4 / `acceptedTerms=false` / phone inválido, `SLOT_TAKEN` cuando el engine reporta no cubierto, `PRICING_MISSING` cuando falta la entrada del enum en `priceCentsByDuration`, idempotencia (reuse del PaymentIntent existente, no se llama `create` ni `bookingCreate`), `isBooker` sólo en el primer attendee que matchea el booker (case-insensitive, trim) y `false` para todos si el booker no monta. Suite completa: 139/139 (16 previos + 13 nuevos). `tsc --noEmit` clean.
 - Notas:
-  - `automatic_payment_methods.allow_redirects: 'always'` necesario porque TWINT redirige al banco. Wallets aparecen free.
-  - PI sin TTL explícito; sweep de PENDING expirados llega en Sprint 3 (cron mensual + cleanup de credits-locked).
+  - **Inner function exportada para tests.** `createBookingDraftWith(deps, enginePrisma, input)` es pura y testeable sin Next/Vercel runtime. El wrapper `'use server'` sólo encadena el contexto del framework. Patrón pedido por la testing-strategy del project (mismo enfoque que `handleStripeWebhook` en F-018).
+  - **`allow_redirects: 'always'` para TWINT.** Sin ese flag Stripe filtra los métodos que requieren redirect; los wallets quedan disponibles igualmente.
+  - **`idempotencyKey = booking-<bookingId>`.** Garantiza que reintentos del mismo `paymentIntents.create` (network blip, server retry) no creen un segundo PI. Combinado con la ventana 15min en el lado Prisma, cubre tanto retries del cliente como retries del transport.
+  - **Sin TTL explícito de PI.** Sweep de `PENDING_PAYMENT` expirados llega en Sprint 3 (cron mensual + cleanup de credits-locked). Mientras tanto Stripe expira el PI por sí solo tras ~24h.
+  - **`birthDate` aproximado.** F-041 colecciona `age` (UX simple para un Step 4 de booking). Schema persiste `birthDate @db.Date`. Conversión `birthDate = (now.year - age, now.month, now.day)`. Suficiente para mostrar "Lara (12)" en emails / dashboard. Si la escuela necesita la fecha real (p.ej. seguros), F-047+ puede añadir el campo en Step 4 sin schema change.
+  - **`icsUid` único** generado vía `randomUUID()` con dominio `rideflumserberg.ch` — feed del `.ics` adjunto en F-045.
+  - **`SLOT_TAKEN` cubre el race condition.** Entre Step 3 (selección) y Step 5 (pago) otro usuario puede confirmar el mismo slot. El re-check del engine en el server action es la última línea de defensa antes de cobrar.
 
 ### F-043 — UI Step 5 (Stripe Payment Element + order summary)
 
