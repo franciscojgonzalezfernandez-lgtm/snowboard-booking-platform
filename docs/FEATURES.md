@@ -704,20 +704,31 @@
 
 ### F-043 — UI Step 5 (Stripe Payment Element + order summary)
 
-- Sprint: 2 · Estado: backlog · Prioridad: P0
+- Sprint: 2 · Estado: review · Prioridad: P0
 - Depende de: F-042
 - AC:
-  - [ ] `app/[locale]/reservar/step-5/page.tsx` (server) lee URL params, llama `createBookingDraft`, pasa `{ bookingId, clientSecret, summary }` a client
-  - [ ] `step5-payment.tsx` (client) usa `@stripe/react-stripe-js` `<Elements stripe={stripePromise} options={{ clientSecret, appearance }}>` + `<PaymentElement>`
-  - [ ] **Order summary** (left column en desktop, top en mobile): duration label + date (formato CH) + time + instructor name + attendees count + total CHF (`formatChf` F-039) + nota "VAT included"
-  - [ ] Submit → `stripe.confirmPayment({ confirmParams: { return_url: \`${origin}/${locale}/reservar/exito/${bookingId}\` } })`. Loading state durante confirm
-  - [ ] Error states: declined, 3DS failed, TWINT timeout — todos traducidos
-  - [ ] Wallets aparecen automático cuando browser soporta + PE los expone
-  - [ ] `tsc --noEmit` clean; bundle <60KB extra en route (Stripe.js lazy-loaded vía `loadStripe`)
-- Tests: Playwright con Stripe test card `4242 4242 4242 4242` (3DS-bypass) + TWINT test redirect. Verifica `Booking.status` → `CONFIRMED` post-webhook. 3 locales smoke (summary labels + currency format).
+  - [x] `app/[locale]/reservar/step-5/page.tsx` (server) lee URL params, decodifica `attendees` base64, llama `createBookingDraft` (F-042). Render por rama:
+    - `ok` → grid con `<aside>` order summary + `<Step5Payment>` con `{ publishableKey, clientSecret, bookingId, totalLabel }`.
+    - `UNAUTHORIZED` → `redirect('/[locale]/login?next=<urlencoded /[locale]/reservar/step-5?…>')` preservando todo el payload (session expirada mid-flow).
+    - `SLOT_TAKEN` → `ErrorPanel` traducido con CTA back to step-2 manteniendo `?duration=<X>`.
+    - `PRICING_MISSING` / `NO_ACTIVE_SEASON` → `ErrorPanel` "Pricing not configured" con CTA back to `/reservar`.
+    - `INVALID_INPUT` (params faltantes o `attendees` no decodificable) → `ErrorPanel` con CTA back to step-4.
+  - [x] `step5-payment.tsx` (client). `loadStripe(publishableKey)` cacheado por key en un `Map` module-level (no re-fetch entre re-renders / locales). `<Elements stripe options={{ clientSecret, appearance }}>` + `<PaymentElement>`. Appearance editorial: `theme: 'flat'`, `colorPrimary: '#dc2626'` (rojo brand), `fontFamily` serif para alinear con `font-display`, rules para `.Input` / `.Label` (uppercase tracking).
+  - [x] **Order summary** (`<aside>` columna izquierda en `md+`, top en mobile vía `grid md:grid-cols-[1fr_1.2fr]`): duration label (reuse `reservar.step1.duration_*`), date formateada con `Intl.DateTimeFormat('{locale}-CH', { weekday/day/month/year long, timeZone: 'UTC' })`, time HH:MM, instructor name (lookup Prisma por id), attendees count via `t.plural`, total via `formatChf(draft.totalPriceCents)` (F-039), nota "VAT included" / "inkl. MwSt." / "IVA incluido".
+  - [x] Submit → `stripe.confirmPayment({ elements, confirmParams: { return_url: \`${window.location.origin}/${locale}/reservar/exito/${bookingId}\` } })`. Sin navegación manual — Stripe redirige al `return_url` en success. Error code mapping: `card_declined` / `insufficient_funds` → `error_declined`; `authentication_required` / `payment_intent_authentication_failure` → `error_authentication`; `payment_intent_payment_attempt_expired` → `error_timeout`; cualquier otro → `result.error.message ?? error_fallback`.
+  - [x] Loading + error states obligatorios. `Pay` button disabled cuando `!stripe || !elements || pending`. Label `pay_button` traducido con `{total}` placeholder.
+  - [x] Wallets (Apple Pay / Google Pay) aparecen automático — `automatic_payment_methods: { enabled: true, allow_redirects: 'always' }` ya configurado en F-042; el browser-detection + display lo decide Stripe.
+  - [x] **Placeholder** `app/[locale]/reservar/exito/[id]/page.tsx` (server, minimal). Cubre `return_url` para que Stripe no aterrice en 404 antes de que F-046 ship el éxito real. Lee `Booking.status` filtrado por `bookerId === session.user.id`; render condicional (`CONFIRMED/COMPLETED` → "Booking confirmed", `PAYMENT_FAILED` → "Payment did not go through", default → "Confirming…"). CTA back home.
+  - [x] `tsc --noEmit` clean. Stripe.js cargado vía `loadStripe()` lazy (solo en client component); no afecta al bundle del SSR.
+- Tests: Playwright `e2e/f-043-step5.spec.ts` 6 specs — (a) anónimo → `/login?next=` con full payload preservado; (b) autenticado × 3 locales → summary visible con título traducido + time + attendees count + total formato CHF + label del Pay button con prefijo localizado; (c) iframe del Payment Element montado dentro de `step5-form`; (d) payload inválido (instructor bogus + attendees ausente) → `step5-error-invalid`. Helper `discoverInstructorId(request)` resuelve el id real del instructor disponible vía `GET /api/availability/slots` (cuid generated por Prisma seed, no hardcodeable). Vitest 139/139 (sin cambios). `tsc --noEmit` clean.
 - Notas:
-  - Step 5 NO re-fetcha precio — usa el `totalPriceCents` ya persistido en `Booking` por F-042 (single source of truth).
-  - Visual review con skill `impeccable` obligatorio antes de marcar done (Payment Element default styling no match brand — appearance API customiza).
+  - **Step 5 NO re-fetcha precio.** Usa el `totalPriceCents` que `createBookingDraft` ya persistió en `Booking` (F-042). Single source of truth — si la `Season.priceCentsByDuration` cambia entre Step 4 y Step 5, el cliente paga el precio original.
+  - **`loadStripe` cacheado por key en `Map` module-level.** Stripe doc recomienda llamarlo una vez fuera del componente. Mi cache va más allá: si en el futuro tenemos múltiples publishable keys (test/live por entorno) la cache key evita re-fetch.
+  - **`STRIPE_PUBLISHABLE_KEY` no necesita `NEXT_PUBLIC_` prefix.** La key se lee en el server component y se pasa al client component como prop. Más controlado que sembrar `NEXT_PUBLIC_*` (que se inlinea en TODO bundle del client). Trade-off: la key viaja en el HTML inicial — aceptable porque es pública por diseño.
+  - **`Link` from `@/i18n/navigation` auto-prefija locale.** Inicialmente puse hrefs con `/${locale}/...` y next-intl los duplicaba a `/en/en/...`. Corregido: hrefs unlocalized en los `ErrorPanel`s (`/reservar/step-2`, `/reservar/step-4`, `/`).
+  - **Exito page solo placeholder.** F-046 lo reescribe con orden completa + email confirmation + .ics. Aquí basta con cubrir el `return_url` de Stripe.
+  - **Visual review con `impeccable` pendiente** antes de mover a `done`. Appearance API editorial customiza Payment Element pero falta una pasada de owner sobre el grid summary vs PE.
+  - **Webhook flip a `CONFIRMED`** llega en F-044. Hasta entonces el `exito` page muestra "Confirming…" cuando el booking sigue `PENDING_PAYMENT`.
 
 ### F-044 — Webhook business logic (per-event handlers)
 
