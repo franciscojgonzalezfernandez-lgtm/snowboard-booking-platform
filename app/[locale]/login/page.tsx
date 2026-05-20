@@ -4,11 +4,13 @@ import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { auth } from "@/lib/auth";
+import { sanitizeNext } from "@/lib/auth/safe-next";
 import { routing } from "@/i18n/routing";
 import { LoginForm } from "./login-form";
 
 type LoginPageProps = {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ next?: string }>;
 };
 
 export function generateStaticParams() {
@@ -21,13 +23,19 @@ export async function generateMetadata({ params }: LoginPageProps) {
   return { title: t("metadata_title") };
 }
 
-export default async function LoginPage({ params }: LoginPageProps) {
+export default async function LoginPage({
+  params,
+  searchParams,
+}: LoginPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
 
+  const { next: rawNext } = await searchParams;
+  const callbackURL = sanitizeNext(rawNext, locale);
+
   const session = await auth.api.getSession({ headers: await headers() });
   if (session?.user) {
-    redirect(`/${locale}`);
+    redirect(callbackURL);
   }
 
   const t = await getTranslations({ locale, namespace: "login" });
@@ -42,7 +50,7 @@ export default async function LoginPage({ params }: LoginPageProps) {
       </div>
 
       <div className="mt-10">
-        <LoginForm locale={locale} />
+        <LoginForm locale={locale} callbackURL={callbackURL} />
       </div>
 
       <p className="mt-10 text-xs text-muted-foreground">

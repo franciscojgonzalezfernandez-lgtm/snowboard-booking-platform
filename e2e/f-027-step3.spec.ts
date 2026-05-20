@@ -158,8 +158,9 @@ test.describe("F-027 — Step 3 anchor time + instructor + language", () => {
     expect(instructorParam).not.toBeNull();
     expect(instructorParam).not.toBe("ANYONE");
 
-    await expect(page.getByTestId("step4-time")).toHaveText("11:00");
-    await expect(page.getByTestId("step4-language")).toHaveText("es");
+    // Step 4 became the real booker form behind an auth gate (F-041). The
+    // anonymous render shows the localised CTA pointing to /login?next=…
+    await expect(page.getByTestId("step4-anonymous-cta")).toBeVisible();
   });
 
   test("instructor cards render a photo for Javi and an initials fallback for Lara", async ({
