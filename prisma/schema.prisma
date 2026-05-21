@@ -41,7 +41,9 @@ enum BookingStatus {
   COMPLETED
   CANCELLED_BY_USER
   CANCELLED_BY_OPS
+  CANCELLED_BY_SYSTEM
   PAYMENT_FAILED
+  REFUNDED
 }
 
 enum AvailabilityKind {
@@ -207,6 +209,10 @@ model Booking {
   cancelledByUserAt     DateTime?
   cancelledByOpsAt      DateTime?
   opsReason             String?
+  paidAt                DateTime?
+  refundedAt            DateTime?
+  refundAmountCents     Int?
+  failureReason         String?       @db.Text
   reminder24hSentAt     DateTime?
   postClassEmailSentAt  DateTime?
   createdAt             DateTime      @default(now())

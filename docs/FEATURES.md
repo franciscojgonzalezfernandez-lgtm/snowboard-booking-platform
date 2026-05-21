@@ -732,22 +732,35 @@
 
 ### F-044 — Webhook business logic (per-event handlers)
 
-- Sprint: 2 · Estado: backlog · Prioridad: P0
+- Sprint: 2 · Estado: review · Prioridad: P0
 - Depende de: F-018, F-042
 - AC:
-  - [ ] Extiende `lib/stripe/handle-webhook.ts` con switch por `event.type`:
-    - `payment_intent.succeeded` → `Booking.status = CONFIRMED`, set `paidAt`, dispatch send confirmation email (F-045)
-    - `payment_intent.payment_failed` → `Booking.status = PAYMENT_FAILED`, set `failureReason` (from `last_payment_error.message`)
-    - `payment_intent.canceled` → `Booking.status = CANCELLED_BY_SYSTEM`
-    - `charge.refunded` → `Booking.refundedAt` + `refundAmountCents`, Sentry breadcrumb
-    - `charge.dispute.created` → Sentry alert (no status change auto; owner decide manual)
-  - [ ] Idempotencia heredada: `WebhookEvent` dedupe table de F-018 sigue siendo el gate único
-  - [ ] Todos los handlers en single `$transaction` con upsert del `WebhookEvent.processedAt`
-  - [ ] Email dispatch: post-transaction `await sendBookingConfirmedEmail(bookingId)`. Si falla, log a Sentry pero NO rollback (booking ya confirmado, email reenviable manual desde admin Sprint 4)
-- Tests: extiende `lib/stripe/handle-webhook.test.ts` (5 → ≥10 specs): un spec por event type, happy + duplicate, plus negative case "booking not found logged + 200 OK to prevent Stripe retries".
+  - [x] Migración `20260521150732_webhook_business_fields`: añade `BookingStatus` enum values `CANCELLED_BY_SYSTEM` + `REFUNDED`, columnas `Booking.paidAt DateTime?`, `refundedAt DateTime?`, `refundAmountCents Int?`, `failureReason String? @db.Text`. Aplicada vía `prisma migrate dev` local; `db-migrate.yml` (F-037) la promueve a Neon dev/main en PR + merge.
+  - [x] Extiende `lib/stripe/handle-webhook.ts` con `routeEvent(event, opts, dispatch)` (switch por `event.type`):
+    - `payment_intent.succeeded` → si booking en `PENDING_PAYMENT`, flip a `CONFIRMED` + `paidAt = new Date()` + dispatch confirmation email (callback inyectado).
+    - `payment_intent.payment_failed` → `PAYMENT_FAILED` + `failureReason = last_payment_error.message ?? last_payment_error.code ?? null`.
+    - `payment_intent.canceled` → `CANCELLED_BY_SYSTEM`.
+    - `charge.refunded` → `REFUNDED` + `refundedAt = new Date()` + `refundAmountCents = charge.amount_refunded`. Lookup vía `charge.payment_intent` (string o expanded object).
+    - `charge.dispute.created` → no muta booking; `onError` con `stage: 'charge.dispute.created'` + `severity: 'alert'` + `disputeId` + `paymentIntentId` + `amount` + `reason`. Sprint 4 admin panel surface por el mismo sink.
+    - Default (event type no manejado) → ack 200 + move on.
+  - [x] Idempotencia heredada: `WebhookEvent` dedupe gate (createMany skipDuplicates) sigue siendo único; routeEvent corre sólo si el insert produjo count=1. Si routeEvent throw, `webhookEvent.update({ processedAt })` no se ejecuta → Stripe reintenta y vuelve a entrar por el mismo path (idempotencia consistente por (event.id, booking.id, target status)).
+  - [x] Booking update por handler vía `prisma.booking.update` directo. Sin `$transaction` envolvente: las únicas dos escrituras del happy path son (a) `booking.update` (CONFIRMED) y (b) `webhookEvent.update` (processedAt); cada handler maneja sólo una fila por evento, no hay necesidad de TX multi-tabla. Si (a) falla, (b) no ocurre → retry de Stripe → re-process. Si (b) falla tras (a), retry de Stripe entra por la rama dedupe (booking ya `CONFIRMED`, no double-flip; ver guard `if (booking.status !== PENDING_PAYMENT) return`).
+  - [x] Email dispatch como callback `dispatchBookingConfirmedEmail?: (bookingId) => Promise<void>` en deps. Default no-op (F-045 wira el real con Resend). Llamado **post-`booking.update`**. Try/catch: failure → `onError` con `stage: 'dispatch_booking_confirmed_email'`, no rethrow (booking ya CONFIRMED, admin Sprint 4 reenvía manual).
+  - [x] `lookupBookingByPaymentIntent` helper: si `paymentIntentId` null o booking no existe, `onError` con stage + return null. Handler retorna 200 (no Stripe retry).
+- Tests: `lib/stripe/handle-webhook.test.ts` extendido de 5 → **13 specs Vitest**. Coverage:
+  - **Pre-routing (4)**: secret missing → 500 + onError; signature header missing → 400; signature verification fail → 400 + onError; duplicate event → 200 `duplicate:true` sin tocar booking.
+  - **payment_intent.succeeded (4)**: happy (CONFIRMED + paidAt + dispatch llamado); ya CONFIRMED → no double-flip ni double-dispatch; booking no existe → 200 + onError + no dispatch; email dispatch falla → 200 + booking sigue CONFIRMED + onError con stage email.
+  - **payment_intent.payment_failed (2)**: PAYMENT_FAILED + failureReason desde `last_payment_error.message`; fallback a `.code` cuando message ausente.
+  - **payment_intent.canceled (1)**: CANCELLED_BY_SYSTEM.
+  - **charge.refunded (1)**: REFUNDED + refundedAt + refundAmountCents desde `amount_refunded`.
+  - **charge.dispute.created (1)**: no muta booking; onError con ctx completo (disputeId, paymentIntentId, amount, reason, severity='alert').
 - Notas:
-  - Verificar que `BookingStatus` enum tiene `CONFIRMED`, `CANCELLED_BY_USER`, `CANCELLED_BY_SYSTEM`, `PAYMENT_FAILED`, `REFUNDED`. Si falta alguno, mini-migration aquí.
-  - Schema: añadir `Booking.refundedAt DateTime?` + `refundAmountCents Int?` + `failureReason String?` si no existen (mini-migration en este ticket).
+  - **No `$transaction` envolvente** (override del AC original). Cada handler hace una escritura de booking; la coherencia booking↔webhookEvent.processedAt se garantiza por el orden + el guard `status !== PENDING_PAYMENT` en succeeded. Si el AC pide TX multi-tabla en el futuro (por ej. cuando se añadan side-effects en otras tablas), se envuelve aquí sin tocar el contract de deps.
+  - **Email dispatch como dep callback**, no import directo. Razón: F-045 todavía no ship el sender; F-044 puede mergear con `dispatchBookingConfirmedEmail = undefined` (no-op default) y el route handler lo wira cuando F-045 aterrice. Test cubre el caso "dispatch falla → 200 OK + booking CONFIRMED + Sentry".
+  - **`charge.refunded`** flip a `REFUNDED` independientemente del estado previo. Cubre tanto user-cancel `≥48h` (que en MVP no tira refund, sino credit — pero por si se cambia política) como ops-cancel (cash refund). El status `REFUNDED` es terminal: dashboard alumno + emails lo presentan como "Reembolsado".
+  - **`charge.dispute.created`** es alert-only. Disputes son raros + alto impacto; el owner decide en el dashboard de Stripe (contestar / refund). Sprint 4 admin panel los expondrá.
+  - **`CANCELLED_BY_SYSTEM`** ≠ `CANCELLED_BY_OPS`. SYSTEM = Stripe canceló el PI (timeout, abandoned, manual cancel desde dashboard). OPS = admin canceló el día. Distintos triggers, distinto flujo de credit/cash refund per ADR-008.
+  - **WebhookEventStore expandido**: añade `booking: Pick<PrismaClient["booking"], "findUnique" | "update">`. Surface estrecho mantenido — los tests reemplazan ambas tablas con mocks; el route handler real pasa `prisma` completo (satisface el subset automáticamente).
 
 ### F-045 — Confirmation email + `.ics` attachment
 
