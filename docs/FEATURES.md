@@ -679,41 +679,56 @@
 
 ### F-042 — Booking draft + PaymentIntent server action
 
-- Sprint: 2 · Estado: backlog · Prioridad: P0
+- Sprint: 2 · Estado: review · Prioridad: P0
 - Depende de: F-018, F-039, F-041
 - AC:
-  - [ ] Server action `createBookingDraft(input)` en `app/[locale]/reservar/actions.ts`
-  - [ ] Zod schema valida full input: `date`, `time`, `duration`, `instructorId` (concreto, no `ANYONE` — Step 3 lo resolvió), `language: Locale`, `attendees: [{name, age, level}]` (1-4), `bookerPhone`, `notes?` (≤500), `acceptedTerms: true`
-  - [ ] Rechaza 401 si `!session` (defensa server-side, mismo header check que routes)
-  - [ ] Prisma `$transaction`:
-    1. Re-check slot via `loadEngineContext` + `computeSlotsForDate` (engine puro) — rechaza con error `SLOT_TAKEN` si ya no disponible
-    2. `getPriceCents(activeSeason, duration)` (F-039)
-    3. `prisma.booking.create({ status: 'PENDING_PAYMENT', bookerId: session.user.id, instructorId, date, startDateTime, endDateTime, duration, language, notes, totalPriceCents, locale })` + `prisma.attendee.createMany` (1-4 rows; primer attendee `isBooker: true` si su name matches booker name)
-    4. Stripe `paymentIntents.create({ amount: totalPriceCents, currency: 'chf', metadata: { bookingId }, automatic_payment_methods: { enabled: true, allow_redirects: 'always' } })` — habilita Card + TWINT + Apple Pay + Google Pay automáticamente vía AMP
-    5. Persist `booking.stripePaymentIntentId`
-  - [ ] Returns `{ bookingId, clientSecret }`
-  - [ ] **Idempotency:** si existe booking `PENDING_PAYMENT` con `(bookerId, instructorId, date, startDateTime)` y `createdAt > now - 15min`, reuse PaymentIntent (no crear nuevo) — evita duplicate intents si user refresca Step 5
-- Tests: Vitest con Prisma mock + Stripe mock. Casos: happy, slot taken race, 401 anonymous, idempotent reuse dentro de 15min, attendees min/max bounds, `priceCents` matches season config, AMP enabled flag.
+  - [x] Server Action `createBookingDraft(input)` en `app/[locale]/reservar/actions.ts` ('use server'). Wrapper thin que resuelve `session = await auth.api.getSession(headers())`, instancia `getStripe()` y delega en `createBookingDraftWith(deps, enginePrisma, input)` — la lógica pura vive en `lib/booking/create-draft.ts` con sus deps explícitas (session, prisma, stripe, now, newIcsUid) para poder testear sin red.
+  - [x] `createBookingDraftSchema` Zod en `lib/schemas/booking-draft.ts` valida todo el payload: `date` (regex `YYYY-MM-DD`), `time` (regex `HH:MM` 00:00–23:59), `duration` (`Duration` enum), `instructorId` (refine no `"ANYONE"`), `language` (`Locale`), `bookerName` (1-80), `bookerPhone` (strip whitespace → regex E.164), `attendees` (1-4 de `{ name 1-80, age int 4-99, level }`), `notes` (≤500, opcional), `acceptedTerms` literal `true`. Errores → `INVALID_INPUT` con `issues` Zod adjuntos.
+  - [x] Rechaza `UNAUTHORIZED` cuando `!session?.user` antes de tocar input (defensa server-side; el form en F-041 ya bloquea al cliente, pero el server action puede ser llamado directamente).
+  - [x] Re-check de slot via `loadEngineContext` + `instructorAvailableAt` puro (no se reusa `computeSlotsForDate` para evitar recorrer todos los anchors — basta con un check exacto del par instructor+anchor solicitado). `SLOT_TAKEN` si el instructor desaparece del context (inactivo / temporada) o si el engine reporta no disponible (booking solapante, BLOCKED, 24h rule, etc.).
+  - [x] `getPriceCents(season, duration)` (F-039). `PriceConfigurationError` se traduce a `PRICING_MISSING` (en lugar de propagar el throw); cualquier otro error sube tal cual.
+  - [x] Prisma `$transaction(async tx => …)`: `tx.booking.create({ status: PENDING_PAYMENT, bookerId, instructorId, date, anchorTime, duration, language, notes, totalPriceCents, icsUid })` + `tx.attendee.createMany({ data: [{ bookingId, name, birthDate, level, isBooker }] })`. `birthDate` derivado de `age` con aproximación `now - age años` (date-only, suficiente para emails + dashboard; F-049+ podrá cambiar a date picker real si el owner lo pide). `isBooker = true` sólo en el primer attendee cuyo `name.trim().toLowerCase() === bookerName.trim().toLowerCase()`.
+  - [x] Stripe `paymentIntents.create({ amount: totalPriceCents, currency: 'chf', automatic_payment_methods: { enabled: true, allow_redirects: 'always' }, metadata: { bookingId, bookerId, instructorId, startDateTime, endDateTime }, description: 'Snowboard lesson · <duration> · <date> <time>' }, { idempotencyKey: \`booking-${bookingId}\` })` — el flag `allow_redirects: 'always'` habilita TWINT (redirige al banco). Wallets (Apple/Google Pay) aparecen sin más config.
+  - [x] Persiste `booking.stripePaymentIntentId` con `prisma.booking.update` después del `create` de Stripe.
+  - [x] Returns `{ ok: true, bookingId, clientSecret, totalPriceCents, reused }`.
+  - [x] **Idempotency window 15 min:** si existe booking `PENDING_PAYMENT` con `(bookerId, instructorId, date, anchorTime)` + `createdAt > now - 15min` + `stripePaymentIntentId` no null, se `retrieve` el PaymentIntent existente y se devuelve su `client_secret` con `reused: true`. Refrescar Step 5 / volver de magic-link no crea duplicate intents ni double-charges accidentales.
+- Tests: `lib/booking/create-draft.test.ts` con 13 specs Vitest sobre la versión pura (mocks de Prisma + Stripe + `enginePrisma`): happy path (Booking + Attendee creados + Stripe llamado con AMP `enabled:true` / `allow_redirects:'always'` / currency `chf` / idempotencyKey + `booking.update` con el PI id), `priceCents` por duración (`TWO_HOURS` → 20000 cents del seed), `UNAUTHORIZED` anónimo, `INVALID_INPUT` para `instructorId='ANYONE'` / attendees < 1 / attendees > 4 / `acceptedTerms=false` / phone inválido, `SLOT_TAKEN` cuando el engine reporta no cubierto, `PRICING_MISSING` cuando falta la entrada del enum en `priceCentsByDuration`, idempotencia (reuse del PaymentIntent existente, no se llama `create` ni `bookingCreate`), `isBooker` sólo en el primer attendee que matchea el booker (case-insensitive, trim) y `false` para todos si el booker no monta. Suite completa: 139/139 (16 previos + 13 nuevos). `tsc --noEmit` clean.
 - Notas:
-  - `automatic_payment_methods.allow_redirects: 'always'` necesario porque TWINT redirige al banco. Wallets aparecen free.
-  - PI sin TTL explícito; sweep de PENDING expirados llega en Sprint 3 (cron mensual + cleanup de credits-locked).
+  - **Inner function exportada para tests.** `createBookingDraftWith(deps, enginePrisma, input)` es pura y testeable sin Next/Vercel runtime. El wrapper `'use server'` sólo encadena el contexto del framework. Patrón pedido por la testing-strategy del project (mismo enfoque que `handleStripeWebhook` en F-018).
+  - **`allow_redirects: 'always'` para TWINT.** Sin ese flag Stripe filtra los métodos que requieren redirect; los wallets quedan disponibles igualmente.
+  - **`idempotencyKey = booking-<bookingId>`.** Garantiza que reintentos del mismo `paymentIntents.create` (network blip, server retry) no creen un segundo PI. Combinado con la ventana 15min en el lado Prisma, cubre tanto retries del cliente como retries del transport.
+  - **Sin TTL explícito de PI.** Sweep de `PENDING_PAYMENT` expirados llega en Sprint 3 (cron mensual + cleanup de credits-locked). Mientras tanto Stripe expira el PI por sí solo tras ~24h.
+  - **`birthDate` aproximado.** F-041 colecciona `age` (UX simple para un Step 4 de booking). Schema persiste `birthDate @db.Date`. Conversión `birthDate = (now.year - age, now.month, now.day)`. Suficiente para mostrar "Lara (12)" en emails / dashboard. Si la escuela necesita la fecha real (p.ej. seguros), F-047+ puede añadir el campo en Step 4 sin schema change.
+  - **`icsUid` único** generado vía `randomUUID()` con dominio `rideflumserberg.ch` — feed del `.ics` adjunto en F-045.
+  - **`SLOT_TAKEN` cubre el race condition.** Entre Step 3 (selección) y Step 5 (pago) otro usuario puede confirmar el mismo slot. El re-check del engine en el server action es la última línea de defensa antes de cobrar.
 
 ### F-043 — UI Step 5 (Stripe Payment Element + order summary)
 
-- Sprint: 2 · Estado: backlog · Prioridad: P0
+- Sprint: 2 · Estado: review · Prioridad: P0
 - Depende de: F-042
 - AC:
-  - [ ] `app/[locale]/reservar/step-5/page.tsx` (server) lee URL params, llama `createBookingDraft`, pasa `{ bookingId, clientSecret, summary }` a client
-  - [ ] `step5-payment.tsx` (client) usa `@stripe/react-stripe-js` `<Elements stripe={stripePromise} options={{ clientSecret, appearance }}>` + `<PaymentElement>`
-  - [ ] **Order summary** (left column en desktop, top en mobile): duration label + date (formato CH) + time + instructor name + attendees count + total CHF (`formatChf` F-039) + nota "VAT included"
-  - [ ] Submit → `stripe.confirmPayment({ confirmParams: { return_url: \`${origin}/${locale}/reservar/exito/${bookingId}\` } })`. Loading state durante confirm
-  - [ ] Error states: declined, 3DS failed, TWINT timeout — todos traducidos
-  - [ ] Wallets aparecen automático cuando browser soporta + PE los expone
-  - [ ] `tsc --noEmit` clean; bundle <60KB extra en route (Stripe.js lazy-loaded vía `loadStripe`)
-- Tests: Playwright con Stripe test card `4242 4242 4242 4242` (3DS-bypass) + TWINT test redirect. Verifica `Booking.status` → `CONFIRMED` post-webhook. 3 locales smoke (summary labels + currency format).
+  - [x] `app/[locale]/reservar/step-5/page.tsx` (server) lee URL params, decodifica `attendees` base64, llama `createBookingDraft` (F-042). Render por rama:
+    - `ok` → grid con `<aside>` order summary + `<Step5Payment>` con `{ publishableKey, clientSecret, bookingId, totalLabel }`.
+    - `UNAUTHORIZED` → `redirect('/[locale]/login?next=<urlencoded /[locale]/reservar/step-5?…>')` preservando todo el payload (session expirada mid-flow).
+    - `SLOT_TAKEN` → `ErrorPanel` traducido con CTA back to step-2 manteniendo `?duration=<X>`.
+    - `PRICING_MISSING` / `NO_ACTIVE_SEASON` → `ErrorPanel` "Pricing not configured" con CTA back to `/reservar`.
+    - `INVALID_INPUT` (params faltantes o `attendees` no decodificable) → `ErrorPanel` con CTA back to step-4.
+  - [x] `step5-payment.tsx` (client). `loadStripe(publishableKey)` cacheado por key en un `Map` module-level (no re-fetch entre re-renders / locales). `<Elements stripe options={{ clientSecret, appearance }}>` + `<PaymentElement>`. Appearance editorial: `theme: 'flat'`, `colorPrimary: '#dc2626'` (rojo brand), `fontFamily` serif para alinear con `font-display`, rules para `.Input` / `.Label` (uppercase tracking).
+  - [x] **Order summary** (`<aside>` columna izquierda en `md+`, top en mobile vía `grid md:grid-cols-[1fr_1.2fr]`): duration label (reuse `reservar.step1.duration_*`), date formateada con `Intl.DateTimeFormat('{locale}-CH', { weekday/day/month/year long, timeZone: 'UTC' })`, time HH:MM, instructor name (lookup Prisma por id), attendees count via `t.plural`, total via `formatChf(draft.totalPriceCents)` (F-039), nota "VAT included" / "inkl. MwSt." / "IVA incluido".
+  - [x] Submit → `stripe.confirmPayment({ elements, confirmParams: { return_url: \`${window.location.origin}/${locale}/reservar/exito/${bookingId}\` } })`. Sin navegación manual — Stripe redirige al `return_url` en success. Error code mapping: `card_declined` / `insufficient_funds` → `error_declined`; `authentication_required` / `payment_intent_authentication_failure` → `error_authentication`; `payment_intent_payment_attempt_expired` → `error_timeout`; cualquier otro → `result.error.message ?? error_fallback`.
+  - [x] Loading + error states obligatorios. `Pay` button disabled cuando `!stripe || !elements || pending`. Label `pay_button` traducido con `{total}` placeholder.
+  - [x] Wallets (Apple Pay / Google Pay) aparecen automático — `automatic_payment_methods: { enabled: true, allow_redirects: 'always' }` ya configurado en F-042; el browser-detection + display lo decide Stripe.
+  - [x] **Placeholder** `app/[locale]/reservar/exito/[id]/page.tsx` (server, minimal). Cubre `return_url` para que Stripe no aterrice en 404 antes de que F-046 ship el éxito real. Lee `Booking.status` filtrado por `bookerId === session.user.id`; render condicional (`CONFIRMED/COMPLETED` → "Booking confirmed", `PAYMENT_FAILED` → "Payment did not go through", default → "Confirming…"). CTA back home.
+  - [x] `tsc --noEmit` clean. Stripe.js cargado vía `loadStripe()` lazy (solo en client component); no afecta al bundle del SSR.
+- Tests: Playwright `e2e/f-043-step5.spec.ts` 6 specs — (a) anónimo → `/login?next=` con full payload preservado; (b) autenticado × 3 locales → summary visible con título traducido + time + attendees count + total formato CHF + label del Pay button con prefijo localizado; (c) iframe del Payment Element montado dentro de `step5-form`; (d) payload inválido (instructor bogus + attendees ausente) → `step5-error-invalid`. Helper `discoverInstructorId(request)` resuelve el id real del instructor disponible vía `GET /api/availability/slots` (cuid generated por Prisma seed, no hardcodeable). Vitest 139/139 (sin cambios). `tsc --noEmit` clean.
 - Notas:
-  - Step 5 NO re-fetcha precio — usa el `totalPriceCents` ya persistido en `Booking` por F-042 (single source of truth).
-  - Visual review con skill `impeccable` obligatorio antes de marcar done (Payment Element default styling no match brand — appearance API customiza).
+  - **Step 5 NO re-fetcha precio.** Usa el `totalPriceCents` que `createBookingDraft` ya persistió en `Booking` (F-042). Single source of truth — si la `Season.priceCentsByDuration` cambia entre Step 4 y Step 5, el cliente paga el precio original.
+  - **`loadStripe` cacheado por key en `Map` module-level.** Stripe doc recomienda llamarlo una vez fuera del componente. Mi cache va más allá: si en el futuro tenemos múltiples publishable keys (test/live por entorno) la cache key evita re-fetch.
+  - **`STRIPE_PUBLISHABLE_KEY` no necesita `NEXT_PUBLIC_` prefix.** La key se lee en el server component y se pasa al client component como prop. Más controlado que sembrar `NEXT_PUBLIC_*` (que se inlinea en TODO bundle del client). Trade-off: la key viaja en el HTML inicial — aceptable porque es pública por diseño.
+  - **`Link` from `@/i18n/navigation` auto-prefija locale.** Inicialmente puse hrefs con `/${locale}/...` y next-intl los duplicaba a `/en/en/...`. Corregido: hrefs unlocalized en los `ErrorPanel`s (`/reservar/step-2`, `/reservar/step-4`, `/`).
+  - **Exito page solo placeholder.** F-046 lo reescribe con orden completa + email confirmation + .ics. Aquí basta con cubrir el `return_url` de Stripe.
+  - **Visual review con `impeccable` pendiente** antes de mover a `done`. Appearance API editorial customiza Payment Element pero falta una pasada de owner sobre el grid summary vs PE.
+  - **Webhook flip a `CONFIRMED`** llega en F-044. Hasta entonces el `exito` page muestra "Confirming…" cuando el booking sigue `PENDING_PAYMENT`.
 
 ### F-044 — Webhook business logic (per-event handlers)
 
