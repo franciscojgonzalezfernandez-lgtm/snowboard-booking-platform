@@ -4,6 +4,7 @@ import * as Sentry from "@sentry/nextjs";
 
 import { getStripe } from "@/lib/stripe/server";
 import { handleStripeWebhook } from "@/lib/stripe/handle-webhook";
+import { sendBookingConfirmedEmail } from "@/lib/email/send-booking-confirmed";
 import { prisma } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -21,6 +22,9 @@ export async function POST(request: Request) {
     prisma,
     onError: (err, ctx) => {
       Sentry.captureException(err, { tags: { source: "stripe-webhook" }, extra: ctx });
+    },
+    dispatchBookingConfirmedEmail: async (bookingId) => {
+      await sendBookingConfirmedEmail({ bookingId });
     },
   });
 
