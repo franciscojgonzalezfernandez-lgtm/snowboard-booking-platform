@@ -235,14 +235,29 @@
     "exito": {
       "metadata_title": "Buchung bestätigt — Snowboard Booking Platform",
       "eyebrow": "Buchung",
-      "heading_confirmed": "Deine Buchung ist bestätigt",
+      "heading_confirmed": "Deine Lektion ist gebucht, {name}",
       "heading_pending": "Wir bestätigen die Zahlung",
       "heading_failed": "Die Zahlung hat nicht funktioniert",
       "body_confirmed": "Wir haben dir die Details und einen Kalendereintrag per E-Mail geschickt. Bis auf dem Berg.",
       "body_pending": "Stripe verarbeitet die Zahlung noch. Diese Seite aktualisiert sich, sobald das fertig ist.",
+      "body_pending_fallback": "Es dauert noch. Lade die Seite manuell neu, falls sich in einer Minute nichts ändert.",
       "body_failed": "Versuche es erneut oder wähle eine andere Methode.",
+      "summary_legend": "Buchungsdetails",
+      "summary_date": "Datum",
+      "summary_time": "Start",
+      "summary_duration": "Lektion",
+      "summary_instructor": "Instruktor",
+      "summary_attendees": "Teilnehmer",
+      "summary_attendees_count": "{count, plural, one {# Teilnehmer} other {# Teilnehmer}}",
+      "summary_total": "Gesamt",
+      "summary_vat_note": "CHF, MwSt. inklusive.",
       "booking_id_label": "Referenz",
-      "back_home": "Zur Startseite"
+      "add_to_calendar": "Zum Kalender hinzufügen",
+      "go_to_dashboard": "Zum Dashboard",
+      "back_home": "Zur Startseite",
+      "forbidden_title": "Buchung nicht verfügbar",
+      "forbidden_body": "Diese Buchung gehört zu einem anderen Konto. Melde dich mit der E-Mail an, mit der du gebucht hast.",
+      "forbidden_cta": "Anmelden"
     }
   }
 }
