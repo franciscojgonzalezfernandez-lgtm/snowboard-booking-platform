@@ -211,11 +211,12 @@ model Booking {
   opsReason             String?
   paidAt                DateTime?
   refundedAt            DateTime?
-  refundAmountCents     Int?
-  failureReason         String?       @db.Text
-  reminder24hSentAt     DateTime?
-  postClassEmailSentAt  DateTime?
-  createdAt             DateTime      @default(now())
+  refundAmountCents       Int?
+  failureReason           String?       @db.Text
+  confirmationEmailSentAt DateTime?
+  reminder24hSentAt       DateTime?
+  postClassEmailSentAt    DateTime?
+  createdAt               DateTime      @default(now())
 
   booker          User            @relation(fields: [bookerId], references: [id], onDelete: Restrict)
   instructor      Instructor      @relation(fields: [instructorId], references: [id], onDelete: Restrict)

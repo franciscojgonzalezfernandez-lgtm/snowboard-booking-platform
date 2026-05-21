@@ -764,19 +764,26 @@
 
 ### F-045 — Confirmation email + `.ics` attachment
 
-- Sprint: 2 · Estado: backlog · Prioridad: P0
+- Sprint: 2 · Estado: review · Prioridad: P0
 - Depende de: F-017, F-044
 - AC:
-  - [ ] `lib/email/booking-confirmed.tsx` — React Email template trilingual (recibe `locale` del `Booking.locale`)
-  - [ ] Contenido: greeting + summary (date/time/duration/instructor/attendees count) + total CHF (`formatChf`) + add-to-calendar (.ics adjunto) + cancellation policy short link + contact
-  - [ ] `lib/ics/build-event.ts` usa pkg `ics`; campos: `uid = booking.icsUid`, `title`, `start` (UTC), `duration` (minutos), `location: 'Flumserberg, CH'`, `description`, `organizer: 'booking@rideflumserberg.ch'`, `attendees: [bookerEmail]`
-  - [ ] Send via Resend desde `booking@rideflumserberg.ch` (dominio verificado F-017) con `.ics` adjunto MIME `text/calendar; method=REQUEST`
-  - [ ] **Idempotencia:** skip si `booking.confirmationEmailSentAt` set; al éxito, `prisma.booking.update({ confirmationEmailSentAt: new Date() })`
-  - [ ] Schema: añadir `Booking.confirmationEmailSentAt DateTime?` + `reminderEmailSentAt DateTime?` + `postClassEmailSentAt DateTime?` (mini-migration empaquetada con F-048 también; lo más práctico es shipear las 3 columnas aquí y F-048 sólo las consume)
-- Tests: Vitest — template renderiza 3 locales sin errores, `.ics` output passes RFC 5545 validator (`ics` pkg's `createEvent` retorna no error), idempotency spec (segundo call no resend).
+  - [x] Migración `20260521154911_booking_confirmation_email_sent_at` añade `Booking.confirmationEmailSentAt DateTime?`. Los flags `reminder24hSentAt` + `postClassEmailSentAt` ya existían desde F-020 — F-048 los reutilizará.
+  - [x] `lib/email/templates/booking-confirmed.tsx` — React Email trilingual. Props `{ locale, bookerName, dateLabel, timeLabel, durationLabel, instructorName, attendeesCount, totalLabel, contactEmail, manageBookingUrl }`. Render: greeting + body + summary table (date/time/duration/instructor/attendees + total con VAT note) + calendar note (apunta al adjunto) + manage-booking link + cancellation note (refleja política F-039b) + contact line + signoff. Copy DE/ES alineada con `MagicLinkEmail` aesthetic; misma paleta + estilos serif/sans.
+  - [x] `lib/ics/build-event.ts` — `buildBookingIcs(input)` envuelve `ics.createEvent`. Campos: `uid = booking.icsUid` (estable; clientes de mail deduplican), `title`, `start` con `startInputType/startOutputType: "utc"`, `duration: { minutes }`, `location`, `description`, `organizer: { name, email }`, `attendees: [{ name, email, rsvp, partstat, role }]`, `status: CONFIRMED`, `productId: "ride-flumserberg/booking"`, `method: REQUEST`. Errores Z `ics.createEvent` se reempaquetan como `IcsBuildError`.
+  - [x] `lib/email/send-booking-confirmed.ts` — inner pure `sendBookingConfirmedEmailWith(deps, bookingId)` + thin wrapper `sendBookingConfirmedEmail({ bookingId })`. Deps explícitas (`prisma`, `send`, `emailClient`, `now`, `appBaseUrl`, `contactEmail`, `organizerEmail`, `organizerName`, `location`). Carga `Booking` con `booker`/`instructor.user`/`attendees` (select estrecho). Idempotency: skip + return `ALREADY_SENT` si `confirmationEmailSentAt` set. Construye ics + render template + envía vía Resend con attachment `text/calendar; method=REQUEST; charset=UTF-8` (base64). Idempotency key Resend `booking-confirmed-<bookingId>`. Tras éxito → `booking.update({ confirmationEmailSentAt: now })`.
+  - [x] Wrapper `dispatchBookingConfirmedEmail` montado en `app/api/webhooks/stripe/route.ts`: `(bookingId) => sendBookingConfirmedEmail({ bookingId })`. F-044 callback ahora wired al sender real (era no-op default).
+  - [x] Send via Resend desde `booking@rideflumserberg.ch` (dominio verificado F-017). Override de organizer email en deps para tests. Subject por locale (`copy.subject(bookerName)`). Tags Resend: `feature=booking`, `kind=confirmation`, `locale`.
+  - [x] **Idempotencia doble**: (a) DB flag `confirmationEmailSentAt` previene reenvío incluso si webhook reentrega tras `processedAt`; (b) Resend `idempotencyKey: booking-confirmed-<bookingId>` cubre retries del transport antes de que (a) se persista.
+- Tests:
+  - `lib/ics/build-event.test.ts` (2 specs): payload contiene `BEGIN:VCALENDAR`, `UID`, `DTSTART` UTC, `DURATION:PT60M`, `SUMMARY`, `LOCATION`, `METHOD:REQUEST`, organizer/attendee, `STATUS:CONFIRMED`; UID estable entre calls con mismos inputs (importante para mail-client dedupe).
+  - `lib/email/send-booking-confirmed.test.ts` (6 specs): happy (send + `confirmationEmailSentAt` set + flag actualizado a `now`); attachment contiene UID + DTSTART correcto; idempotente segundo call → `ALREADY_SENT` sin Resend call; `BOOKING_NOT_FOUND` cuando no row; subject + locale tag para DE; subject + locale tag para ES.
+  - Suite total: **155/155** Vitest (147 previos + 2 ics + 6 send). `tsc --noEmit` clean.
 - Notas:
-  - Schema field `Booking.icsUid` ya existe (F-020).
-  - Resend free tier: 3k emails/mes, 100/día. MVP holgado; vigilar si Sprint 4 admin notifies suben volumen.
+  - **Schema `icsUid` ya existía** desde F-020. F-042 ya lo generaba con `randomUUID()@rideflumserberg.ch` cuando crea el booking. F-045 lo reusa al construir el .ics; mismo UID en cada email garantiza que mail clients (Gmail, Outlook, Apple Calendar) traten reenvíos como actualizaciones del mismo evento, no duplicates.
+  - **Resend free tier**: 3k emails/mes, 100/día. MVP holgado; vigilar si Sprint 4 admin notifies suben volumen.
+  - **`dispatchBookingConfirmedEmail` se llama post-Prisma update en F-044**. Si Resend falla → `onError` con `stage: 'dispatch_booking_confirmed_email'`, booking sigue `CONFIRMED` (no rollback). El flag `confirmationEmailSentAt` queda `null` → admin Sprint 4 puede dispararlo desde el panel.
+  - **`birthDate` no se incluye en el template** (privacy-by-default). Sólo aparece `attendeesCount`. Si la escuela quiere nombres + niveles individuales en el email, F-047 puede ampliar el template sin schema change.
+  - **`location` y `organizerEmail` overridables** vía deps. Útil para multi-school setups o tests.
 
 ### F-046 — Success page `/[locale]/reservar/exito/[id]`
 
