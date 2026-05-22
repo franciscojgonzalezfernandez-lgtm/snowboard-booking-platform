@@ -670,7 +670,7 @@
   - [x] Loading (`useTransition`) + error states (per-field translated errors + fallback) obligatorios.
 - Tests: Playwright `e2e/f-041-step4.spec.ts` con 6 specs: (a) anónimo × 3 locales → CTA visible con `next=` URL-decoded preservando los 5 params de Step 1-3; (b) autenticado → form prefilled (name + email readonly), submit disabled hasta T&C, submit habilita con T&C → step-5 con URL completa (incluye `bookerPhone=+41766381870` y `attendees=<base64>`); (c) Add/Remove enforcement 1-4; (d) T&C → modal abre. Spec F-027 ajustada para no asertar sobre el placeholder antiguo (ahora valida CTA anónimo). Vitest 126/126 (Zod schema no rompe ningún test existente). Suite Playwright completa: **82/83** (todos los de Step 4 verdes; el smoke restante no afecta a F-041).
 - Notas:
-  - **F-049 + F-050 son soft deps.** El AC original las listaba como bloqueantes pero F-041 ship sin esperarlas: F-049 (back-stepper) es chrome de navegación opcional y F-050 (shadcn adoption) es polish visual. Ambas siguen pendientes y pueden iterar este step más tarde sin tocar el form. Dependencia explícita reducida a F-027, F-038, F-040, F-039b.
+  - **F-049 + F-050 son soft deps.** El AC original las listaba como bloqueantes pero F-041 ship sin esperarlas. F-049 fue reescopeado (2026-05-22) de "back-stepper chrome" a **single-page architecture refactor** (RSC shell + client islands + tanstack-query + 30-min server cache); ahora es un refactor sobre el flujo end-to-end ya verde a través de F-046, no un prerequisito de F-041. F-050 (shadcn pass) sigue siendo polish visual. Dependencia explícita reducida a F-027, F-038, F-040, F-039b.
   - **Phone no se persiste al `User` model en MVP.** Sprint 3+ podría añadir toggle "save phone to profile" desde el dashboard.
   - **Email immutable** evita confusión (booking ligado a `session.user.id`); cambiar email = logout + relogin.
   - **`shouldFocus: false` en append.** Sin este flag, RHF mueve foco al input del nuevo attendee. El blur del foco anterior dispara la validación `onTouched` (resolver async); si el cliente clica Add otra vez antes de que el resolver resuelva, el segundo append queda pisado por el setState del resolver. Bug confirmado en local con clicks rápidos. Documentado para que F-042 mantenga el flag si reusa el patrón.
@@ -814,22 +814,77 @@
   - [ ] Personal data block (read-only): name, email, phone si existe. Phone update deferred a Sprint 3+
 - Tests: Playwright 3 locales × (empty + with-bookings + anonymous → redirect login).
 
-### F-049 — Booking flow navigation: back stepper + minimal header (CRO fix)
+### F-049 — Booking flow single-page architecture (SSR shell + client islands + tanstack-query + 30-min server cache)
 
 - Sprint: 2 · Estado: backlog · Prioridad: P0
-- Depende de: F-025, F-026, F-027, F-040
-- AC:
-  - [ ] `app/[locale]/reservar/layout.tsx` nuevo — wraps steps 1-5 con header minimal (logo → `/[locale]`, language switcher, exit link "Back to site")
-  - [ ] **Persistent stepper** `app/[locale]/reservar/components/booking-stepper.tsx` (server): muestra 5 pasos con estado actual + completados. Pasos completados son clickables y preservan URL params relevantes (duration/date/time/instructor/language). Pasos futuros disabled
-  - [ ] **Step 5 (payment) excepción:** layout reduce header a sólo logo + exit. NO stepper visible (CRO: minimizar distracciones en checkout, alinea con Stripe best practices). Exit + logo click → `Dialog` "Discard payment?" antes de salir (proteger PaymentIntent draft activo)
-  - [ ] Forward navigation sigue siendo botón "Continue" único; back vía stepper click, browser back, o exit
-  - [ ] Mobile: stepper colapsa a "Step 3 of 5 ←" linkeable
-  - [ ] Trilingual (`messages/{en,de,es}.json` namespace `reservar.nav.*`)
-- Tests: Playwright 3 locales × (stepper click step-3 → step-2 preserves date; logo click pre-checkout → home; logo click en Step 5 → Dialog → confirm sale; mobile stepper colapsado renderiza; back-button preserva URL state).
-- Notas:
-  - **CRO racional:** dead-end multi-step flows tienen abandonment ↑40-60% vs flows con back. Mantener URL state también beneficia retargeting + bookmark recovery + share-link.
-  - Componentes shadcn requeridos: `Dialog` (Step 5 discard) + `Button` variant. Si Tabs es la abstracción correcta para el stepper, instalar; sino composición manual con Button + dot indicators. Decidir con skill `vercel:shadcn`.
-  - F-040 antes que F-049 (Dialog primitive reuse).
+- Depende de: F-025, F-026, F-027, F-040, F-042 (atomic slot lock en draft creation ya satisfecho — F-042 mergeado en #57)
+- Reemplaza: F-049 original ("back stepper + minimal header"). El stepper persistente sigue existiendo pero como sub-componente del nuevo shell single-page, no como capa de navegación entre rutas.
+
+**AC — Routing & rendering (SEO-preserving single-page):**
+- [ ] Borrar `app/[locale]/reservar/{step-2,step-3,step-4,step-5}/page.tsx`. Mantener `app/[locale]/reservar/exito/[id]/` (success page sigue siendo ruta separada, gestionada por F-046).
+- [ ] `app/[locale]/reservar/page.tsx` permanece **Server Component (RSC)**. Renderiza el shell completo: header minimal (logo, language switcher, exit link), `<BookingStepper>` sticky, y 5 secciones server-rendered en orden top→bottom — todos los H1/H2/copy/labels via `getTranslations`.
+- [ ] RSC lee `searchParams` (`d`, `dt`, `t`, `i`, `l`) y prefetcha server-side: `computeCalendar`, `computeSlotsForDate`, instructor list — llamando `loadEngineContext` directo (sin fetch HTTP interno).
+- [ ] `<QueryClientProvider>` + `<HydrationBoundary state={dehydrate(queryClient)}>` envuelven los client islands. Hidratación sin refetch en first paint.
+- [ ] Cada bloque interactivo es un client island independiente: `<DurationPicker>`, `<MonthCalendar>`, `<SlotGrid>`, `<InstructorCards>`, `<BookerForm>`, `<PaymentBlock>`. Resto del árbol = Server Components.
+- [ ] `generateMetadata({ searchParams })` produce título state-aware (duración + fecha cuando presentes en URL). JSON-LD `Service` + `Offer` schema en el shell RSC.
+
+**AC — URL state mirror (deep-link + share + bookmark):**
+- [ ] Cada selección (duration / date / time / instructor / language) ejecuta `router.replace(?d=...&dt=...&t=...&i=...&l=..., { scroll: false })`. Source of truth = tanstack cache; URL = projection.
+- [ ] Refresh / deep-link / share / bookmark restauran exactamente el estado visual y la sección activa (RSC re-lee `searchParams` → re-prefetch → re-hydrate).
+
+**AC — Progressive disclosure + editable inline (CRO + UX):**
+- [ ] Sección N se revela cuando la selección de N-1 está completa. Una vez revelada, NUNCA se colapsa.
+- [ ] Toda sección pasada permanece full UI + editable in-place (NO summary cards, NO acordeón). Razón CRO: collapse-to-summary añade un click extra para corregir un typo → micro-friction → abandono. Razón UX (impeccable): la estética editorial favorece long-scroll narrativa sobre stacks de acordeones.
+- [ ] Cambiar una selección pasada invalida queries downstream (`queryClient.invalidateQueries(['availability'])` + queries dependientes) y limpia selecciones inválidas con `Toast` ("Slot no longer available for new duration, please repick").
+- [ ] Botón `Continue` por sección hace smooth-scroll a la siguiente + foco accesible (`scrollIntoView({ behavior: 'smooth' })` + `ref.focus()`).
+- [ ] Sticky CTA bar en mobile con la acción de la sección activa (`Continue` / `Pay CHF X`).
+
+**AC — Persistent stepper:**
+- [ ] `<BookingStepper>` sticky top, 5 pasos. Estados: pending (dim), active (highlight + dot), completed (check + click-jump). Click en paso pasado = smooth-scroll a esa sección (no navega rutas).
+- [ ] Mobile: stepper colapsa a `Step 3 of 5 ←` clickable que abre un mini-menu de jump.
+- [ ] Trilingual (`messages/{en,de,es}.json` namespaces `reservar.nav.*` + `reservar.stepper.*`).
+
+**AC — tanstack-query client cache:**
+- [ ] Instalar `@tanstack/react-query` (+ `@tanstack/react-query-devtools` solo en dev).
+- [ ] Provider montado SOLO en el booking shell (no en `app/[locale]/layout.tsx` raíz) para que home + landing no carguen tanstack en su bundle.
+- [ ] Query keys: `['availability','calendar', duration, month]`, `['availability','slots', duration, date]`, `['availability','nearby', duration, date]`, `['instructors', { duration, date, time, language }]`.
+- [ ] `staleTime: 5 * 60 * 1000` (5 min), `gcTime: 30 * 60 * 1000` (30 min). Prefetch on hover en `<MonthCalendar>` día (`onMouseEnter` → `queryClient.prefetchQuery(['availability','slots', ...])`).
+- [ ] Mutations `createBookingDraft` + `voidActiveDraft` invalidan `['availability']` post-response (tags scope-mínimos cuando posible: `['availability','slots', duration, date]`).
+
+**AC — Server cache 30 min (Next 15 Cache Components):**
+- [ ] `/api/availability/calendar/route.ts`, `/slots/route.ts`, `/nearby/route.ts`: quitar `export const dynamic = "force-dynamic"`. Añadir `'use cache'` + `cacheLife({ revalidate: 60, expire: 1800 })` + `cacheTag('availability', \`month:${month}\`, \`date:${date}\`)` (skill: `vercel:next-cache-components`).
+- [ ] Mutation Server Actions (`createBookingDraft`, `voidActiveDraft`) y webhook handler (`CONFIRMED` / `CANCELLED_BY_SYSTEM` / `REFUNDED`) llaman `updateTag('availability', \`month:...\`, \`date:...\`)` con scope mínimo.
+- [ ] Stale tanstack data tolerada: floor de correctness es F-042 (atomic slot lock en `$transaction`, ya en main). Si draft rechaza con `SLOT_TAKEN`, cliente lanza toast + `invalidateQueries(['availability'])` + repick.
+
+**AC — Dirty-edit guard (PI activo):**
+- [ ] Mientras `paymentIntent.status ∈ {requires_payment_method, requires_confirmation, processing}`: secciones 1-4 entran modo "frozen" (`opacity-60 pointer-events-none` + `aria-disabled="true"`). Stepper past-steps visibles pero dimmed (recomendación documentada: mantener stepper visible para preservar orientación espacial en single-page; ocultarlo causa layout shift y desorientación).
+- [ ] Cualquier intento de edit en sección pasada (click sección, click stepper, browser back) abre `<Dialog>` "Discard payment to edit booking?". Confirm → Server Action `voidActiveDraft(bookingId)` (cancela PI vía Stripe API SI `status ∈ {requires_payment_method, requires_confirmation}`; rechaza explícitamente si `processing` o `succeeded`).
+- [ ] PI `succeeded` → redirect inmediato a `/[locale]/reservar/exito/[id]` (F-046, sin cambios).
+
+**AC — Bundle budget:**
+- [ ] tanstack-query bundle delta acotado a `/reservar/*`. Home + landing no afectados.
+- [ ] Delta `/reservar` ≤ +25KB gz total (tanstack ≈13KB + islands ≈+12KB). Si excede, lazy-load `<PaymentBlock>` con `next/dynamic({ ssr: false })` y/o code-split por sección.
+
+**AC — i18n + a11y:**
+- [ ] Todas las claves nuevas en `messages/{en,de,es}.json` namespaces `reservar.{stepper,nav,sections,dirty,toast}.*`.
+- [ ] Focus management on section reveal (`ref.focus()` + `scroll-margin-top` para acomodar sticky stepper).
+- [ ] `aria-current="step"` en stepper activo, `aria-selected` en selecciones, `aria-live="polite"` en toasts.
+
+**Tests (Playwright):**
+- [ ] 3 locales × happy path Step 1→5 sin navegación de página (network panel: zero full-document loads tras el inicial).
+- [ ] URL mirror: cada selección actualiza `?d=...&dt=...&t=...` sin remount; reload restaura estado y sección activa.
+- [ ] Editable past: estando en Step 4, cambiar duration en Step 1 → toast slot inválido + smooth-scroll back a Step 2; reseleccionar mantiene avance.
+- [ ] Dirty-edit guard: PI en `requires_payment_method` (mocked Stripe) → click Step 1 → Dialog → confirm → PI cancelled + secciones unfrozen + repick funciona.
+- [ ] Server cache: dos requests consecutivos a `/api/availability/calendar` con mismos params → segundo HIT del cache (verificar `x-vercel-cache` header en preview deploy). Mutation → `updateTag` → next request MISS.
+- [ ] SEO/SSR sin JS: spec dedicada con `javaScriptEnabled: false` — HTML rendered en `/reservar?d=ONE_HOUR&dt=2026-06-12` debe contener H1, todos los headings de las 5 secciones, calendar con días disponibles y JSON-LD `Service`+`Offer`.
+
+**Notas:**
+- **Por qué single-page con RSC shell, no SPA puro**: SEO + crawlable HTML + reading-flow editorial. Crawler ve H1/H2/copy + JSON-LD + datos reales server-rendered. Islands hidratan UX interactiva sin sacrificar HTML inicial. tanstack `dehydrate`/`HydrationBoundary` evita refetch en hidratación.
+- **Por qué tanstack no es overkill**: 4 queries con prefetch on hover + invalidation atómica post-mutation + dehydrate/hydrate gratuito → más simple que escribir un client cache a mano. ≈13KB gz justifica.
+- **Por qué Next 15 Cache Components, no `unstable_cache`**: skill `vercel:next-cache-components` recomienda Cache Components como canonical en Next 15. `cacheTag` + `updateTag` API más limpia para scope tags por mes/día.
+- **Stepper visible en Step 5 (decisión final)**: original spec ocultaba en payment para reducir distracción (Stripe best-practice). Único-page model lo invierte — ocultar causa layout shift + desorientación espacial. Mantener visible + dimmed + dirty-guard logra el mismo CRO sin coste UX.
+- **F-050 (shadcn adoption pass) sigue después** — aplicará `Dialog`/`Toast`/`Select`/`RadioGroup`/`Tabs` primitives sobre los islands creados aquí.
+- Componentes shadcn requeridos durante F-049 (instalar inline si faltan): `Dialog` (dirty guard + exit), `Sonner`/`Toast` (invalidations + slot loss), `Button` variants, `Tabs` opcional para mini-stepper mobile.
 
 ### F-050 — shadcn adoption pass: replace raw HTML primitives across reservar/login/home
 
@@ -875,16 +930,16 @@
 
 ```
 F-039 (prices schema) ─┐
-F-040 (T&C + modal) ───┴─ F-049 (back nav + header) ─ F-050 (shadcn adoption) ─ F-041 (Step 4) ─ F-042 (draft+PI) ─ F-043 (Step 5) ─ F-044 (webhook) ─ F-045 (email+ics) ─┬─ F-046 (success)
-                                                                                                                                                                          ├─ F-047 (dashboard)
-                                                                                                                                                                          └─ F-048 (crons)
+F-040 (T&C + modal) ───┴─ F-041 (Step 4) ─ F-042 (draft+PI) ─ F-043 (Step 5) ─ F-044 (webhook) ─ F-045 (email+ics) ─ F-046 (success) ─┬─ F-049 (single-page SPA refactor) ─ F-050 (shadcn pass)
+                                                                                                                                       ├─ F-047 (dashboard)
+                                                                                                                                       └─ F-048 (crons)
 ```
 
-Critical path: F-039 → F-040 → F-049 → F-050 → F-041 → F-042 → F-043 → F-044 → F-045 (≈9 PRs serial). F-046/F-047/F-048 parallel después de F-045.
+Critical path original (multi-page MVP, ya completado a través de F-046): F-039 → F-040 → F-041 → F-042 → F-043 → F-044 → F-045 → F-046. F-049 + F-050 ahora son **refactor polish** sobre ese flujo end-to-end ya verde, no chrome aditivo previo a F-041. F-047/F-048 en paralelo con F-049/F-050.
 
 **Why F-049/F-050 ride inside Sprint 2 (not deferred):**
-- F-049 (back nav + header) is a CRO blocker — dead-end flows abandonment ↑40-60%. Cheaper to fix once now than retrofit after Stripe live mode.
-- F-050 (shadcn adoption) is a precondition for F-041's Step 4 form quality. Booker + attendees + T&C checkbox needs `Form`/`Select`/`Checkbox`/`Textarea` primitives; without F-050, F-041 would either bloat the audit later or ship more raw HTML.
+- F-049 (single-page architecture rewrite) is a CRO + performance blocker — el flujo multi-page actual hace full document loads entre pasos (TTFB + FCP × 5). Single-page con SSR shell + tanstack hydration elimina los re-renders, mantiene SEO, y permite editable-inline past sections (CRO: micro-friction baja, abandonment baja). Cheaper to refactor antes de Stripe live mode que retrofit con tráfico real.
+- F-050 (shadcn adoption) consolida los nuevos client islands de F-049 sobre primitives canónicos (`Dialog`/`Select`/`RadioGroup`/`Textarea`/`Tabs`/`Toast`). Sin esta pasada, F-049 introduciría raw HTML que F-050 luego tendría que reescribir.
 
 ---
 
