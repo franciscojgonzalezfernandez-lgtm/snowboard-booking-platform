@@ -11,10 +11,10 @@ import {
   Text,
 } from "@react-email/components";
 
-import type { EmailLocale } from "../locale";
+import type { Locale } from "@prisma/client";
 
 export type BookingConfirmedEmailProps = {
-  locale: EmailLocale;
+  locale: Locale;
   bookerName: string;
   dateLabel: string;
   timeLabel: string;
@@ -46,7 +46,7 @@ type BookingConfirmedCopy = {
   signoff: string;
 };
 
-const COPY: Record<EmailLocale, BookingConfirmedCopy> = {
+const COPY: Record<Locale, BookingConfirmedCopy> = {
   en: {
     subject: (name: string) =>
       `Your snowboard lesson is booked, ${name}`,
@@ -119,7 +119,7 @@ const COPY: Record<EmailLocale, BookingConfirmedCopy> = {
 };
 
 export function getBookingConfirmedCopy(
-  locale: EmailLocale = "en",
+  locale: Locale = "en",
 ): BookingConfirmedCopy {
   return COPY[locale] ?? COPY.en;
 }

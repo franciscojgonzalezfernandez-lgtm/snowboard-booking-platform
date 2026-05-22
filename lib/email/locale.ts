@@ -1,15 +1,15 @@
-export type EmailLocale = "en" | "de" | "es";
+import { Locale } from "@prisma/client";
 
 const SUPPORTED = ["en", "de", "es"] as const;
 
-function normalize(tag: string): EmailLocale | null {
+function normalize(tag: string): Locale | null {
   const base = tag.trim().toLowerCase().split(/[;-]/)[0] ?? "";
   return (SUPPORTED as readonly string[]).includes(base)
-    ? (base as EmailLocale)
+    ? (base as Locale)
     : null;
 }
 
-export function resolveEmailLocale(input?: string | null): EmailLocale {
+export function resolveEmailLocale(input?: string | null): Locale {
   if (!input) return "en";
   for (const part of input.split(",")) {
     const match = normalize(part);
@@ -24,7 +24,7 @@ type HeadersLike = {
 
 export function getEmailLocaleFromRequest(
   request?: { headers: HeadersLike } | null,
-): EmailLocale {
+): Locale {
   if (!request) return "en";
 
   const cookieHeader = request.headers.get("cookie");
