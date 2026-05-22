@@ -83,19 +83,31 @@ export function DurationPicker({ initialDuration }: Props) {
   }, [urlDuration, form]);
 
   function onSubmit(values: FormValues) {
-    set({ duration: values.duration });
+    // Changing the duration invalidates every downstream selection (date /
+    // time / instructor / language are scoped to a duration). Pass `undefined`
+    // to drop the keys from the URL so the calendar / time-instructor islands
+    // rehydrate from a clean slate. Tanstack keys are duration-scoped, so the
+    // new duration auto-fetches its own data — no explicit invalidation needed.
+    set({
+      duration: values.duration,
+      date: undefined,
+      time: undefined,
+      instructorId: undefined,
+      language: undefined,
+    });
 
-    // Stage 2a hybrid: if section 2 has not been inlined yet (2b),
-    // fall back to the legacy /step-2 route so the booking flow stays
-    // unbroken end-to-end. Once `<MonthCalendar>` ships in stage 2b
-    // the in-page section overrides this branch via smooth-scroll.
+    // Section 2 (calendar) ships inline as of stage 2b. If for some reason the
+    // section element is not in the DOM (e.g. stale 2a fallback), route to the
+    // legacy /step-2 page so the funnel still completes.
     const inlineCalendar = document.getElementById("section-2");
     if (inlineCalendar) {
-      inlineCalendar.scrollIntoView({ behavior: "smooth", block: "start" });
-      const focusable = inlineCalendar.querySelector<HTMLElement>(
-        "[data-section-focus]",
-      );
-      focusable?.focus({ preventScroll: true });
+      requestAnimationFrame(() => {
+        inlineCalendar.scrollIntoView({ behavior: "smooth", block: "start" });
+        const focusable = inlineCalendar.querySelector<HTMLElement>(
+          "[data-section-focus]",
+        );
+        focusable?.focus({ preventScroll: true });
+      });
       return;
     }
 
