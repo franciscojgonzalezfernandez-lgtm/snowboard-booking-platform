@@ -805,14 +805,20 @@
 
 ### F-047 — Student dashboard (basic)
 
-- Sprint: 2 · Estado: backlog · Prioridad: P1
+- Sprint: 2 · Estado: in-review · Prioridad: P1
 - Depende de: F-005, F-044
 - AC:
-  - [ ] `app/[locale]/dashboard/page.tsx` server-rendered, lista `Booking[]` de `session.user.id` ordenados desc por `date`
-  - [ ] Cada row: date · time · duration · instructor · status badge · total CHF · link "View details" (placeholder noop en MVP; Sprint 3 lo conecta con vista detalle + cancelar)
-  - [ ] Empty state con CTA "Book your first lesson" → `/[locale]/reservar`
-  - [ ] Personal data block (read-only): name, email, phone si existe. Phone update deferred a Sprint 3+
-- Tests: Playwright 3 locales × (empty + with-bookings + anonymous → redirect login).
+  - [x] `app/[locale]/dashboard/page.tsx` server-rendered, lista `Booking[]` de `session.user.id` ordenados desc por `date` (tie-break por `anchorTime` desc para estabilizar el orden cuando hay varias clases el mismo día)
+  - [x] Cada row: date · time · duration · instructor · status badge · total CHF · link "View details" → `/[locale]/reservar/exito/[id]` (reusa F-046 como vista detalle; Sprint 3 puede sustituirlo por un detail page propio con acción cancelar sin tocar el dashboard)
+  - [x] Empty state con CTA "Book your first lesson" → `/[locale]/reservar`
+  - [x] Personal data block (read-only): name, email, phone si existe (fallback i18n `personal_phone_missing` cuando `User.phone IS NULL`). Phone update deferred a Sprint 3+
+  - [x] Anonymous → `redirect(/{locale}/login?next=/{locale}/dashboard)` para preservar el destino tras login (mismo patrón que F-046)
+- Tests: Playwright `e2e/f-047-dashboard.spec.ts` con 10 specs — anonymous redirect × 3 locales + empty state × 3 locales + with-bookings (orden desc + badge + CHF + details link) × 3 locales + isolation cross-user. Vitest 155/155 sin tocar (sólo lectura desde Prisma, sin nueva lógica unit-testable).
+- Notas:
+  - **`View details` linkea a `/reservar/exito/[id]`**, no a una vista detalle propia. Razón: F-046 ya muestra summary completo + add-to-calendar + status condicional, y valida permiso por `bookerId === session.user.id`. Duplicar una "detail page" en `app/[locale]/dashboard/[id]` añadiría una segunda vista que renderiza la misma información, doblaría el coste de mantenerla y obligaría a re-implementar el cross-user guard. Sprint 3 puede crear `dashboard/[id]` cuando aparezca contenido específico (cancel, modificar attendees) que no encaja en exito.
+  - **Status badge labels son namespace `dashboard.status_*`**, no `reservar.exito.heading_*`. exito tiene 3 mensajes humanos ("Your lesson is booked"); dashboard necesita 8 etiquetas cortas neutras ("Confirmed", "Cancelled", "Refunded"). Vocabularios distintos → namespaces distintos.
+  - **`anchorTime` como tie-break secundario.** El `orderBy` primario es `date desc`; añadir `anchorTime desc` evita que 2 clases del mismo día crucen orden entre lecturas (Postgres no garantiza orden total sin un criterio adicional).
+  - **Email + nombre se leen de `User`** (no de `session.user`) para que el dashboard refleje cualquier update post-signup sin invalidar la sesión. Coste: una query extra; despreciable y ya batch-ed con `Promise.all` junto a la query de bookings.
 
 ### F-049 — Booking flow navigation: back stepper + minimal header (CRO fix)
 

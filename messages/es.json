@@ -259,5 +259,35 @@
       "forbidden_body": "Esta reserva pertenece a otra cuenta. Inicia sesión con el email con el que reservaste.",
       "forbidden_cta": "Iniciar sesión"
     }
+  },
+  "dashboard": {
+    "metadata_title": "Tu cuenta — Snowboard Booking Platform",
+    "eyebrow": "Tu cuenta",
+    "heading": "Reservas",
+    "sub": "Próximas y pasadas.",
+    "empty_heading": "Aún no tienes reservas",
+    "empty_body": "Reserva tu primera clase y aparecerá aquí con la fecha, el instructor y el recibo.",
+    "empty_cta": "Reserva tu primera clase",
+    "col_date": "Fecha",
+    "col_time": "Hora",
+    "col_duration": "Duración",
+    "col_instructor": "Instructor",
+    "col_status": "Estado",
+    "col_total": "Total",
+    "col_actions": "Detalles",
+    "view_details": "Ver detalles",
+    "status_pending_payment": "Pago pendiente",
+    "status_confirmed": "Confirmada",
+    "status_completed": "Realizada",
+    "status_cancelled_by_user": "Cancelada",
+    "status_cancelled_by_ops": "Cancelada por la escuela",
+    "status_cancelled_by_system": "Cancelada",
+    "status_payment_failed": "Pago fallido",
+    "status_refunded": "Reembolsada",
+    "personal_heading": "Cuenta",
+    "personal_name": "Nombre",
+    "personal_email": "Email",
+    "personal_phone": "Teléfono",
+    "personal_phone_missing": "No indicado"
   }
 }

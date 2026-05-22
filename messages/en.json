@@ -259,5 +259,35 @@
       "forbidden_body": "This booking belongs to a different account. Sign in with the email you used to book it.",
       "forbidden_cta": "Sign in"
     }
+  },
+  "dashboard": {
+    "metadata_title": "Your account — Snowboard Booking Platform",
+    "eyebrow": "Your account",
+    "heading": "Bookings",
+    "sub": "Upcoming and past lessons.",
+    "empty_heading": "No bookings yet",
+    "empty_body": "Reserve your first lesson and it'll show up here with the date, instructor and receipt.",
+    "empty_cta": "Book your first lesson",
+    "col_date": "Date",
+    "col_time": "Time",
+    "col_duration": "Duration",
+    "col_instructor": "Instructor",
+    "col_status": "Status",
+    "col_total": "Total",
+    "col_actions": "Details",
+    "view_details": "View details",
+    "status_pending_payment": "Pending payment",
+    "status_confirmed": "Confirmed",
+    "status_completed": "Completed",
+    "status_cancelled_by_user": "Cancelled",
+    "status_cancelled_by_ops": "Cancelled by school",
+    "status_cancelled_by_system": "Cancelled",
+    "status_payment_failed": "Payment failed",
+    "status_refunded": "Refunded",
+    "personal_heading": "Account",
+    "personal_name": "Name",
+    "personal_email": "Email",
+    "personal_phone": "Phone",
+    "personal_phone_missing": "Not provided"
   }
 }
