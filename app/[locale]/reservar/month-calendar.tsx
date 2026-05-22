@@ -133,10 +133,13 @@ export function MonthCalendar({ duration }: Props) {
     queryFn: () => fetchCalendar(duration, month),
   });
 
-  const days = calendarQuery.data?.days ?? [];
   const loading = calendarQuery.isFetching;
   const fetchError = calendarQuery.isError ? t("error") : null;
 
+  const days = useMemo<CalendarDay[]>(
+    () => calendarQuery.data?.days ?? [],
+    [calendarQuery.data],
+  );
   const dayMap = useMemo(
     () => new Map(days.map((d) => [d.date, d])),
     [days],
