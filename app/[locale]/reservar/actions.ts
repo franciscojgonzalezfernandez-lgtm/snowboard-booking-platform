@@ -1,8 +1,10 @@
 "use server";
 
 import { headers } from "next/headers";
+import { revalidateTag } from "next/cache";
 
 import { auth } from "@/lib/auth";
+import { AVAILABILITY_TAGS } from "@/lib/booking-engine/cache";
 import {
   createBookingDraftWith,
   type CreateDraftDeps,
@@ -22,6 +24,10 @@ import type {
  *
  * Idempotent within a 15-minute window per (bookerId, instructorId, date,
  * anchorTime): refreshing Step 5 reuses the same PaymentIntent.
+ *
+ * Cache: a successful draft locks the slot (PENDING_PAYMENT is treated as
+ * hard occupancy by the engine), so we revalidate the availability cache so
+ * any other browser session sees the updated calendar/slots immediately.
  */
 export async function createBookingDraft(
   input: CreateBookingDraftInput,
@@ -32,5 +38,13 @@ export async function createBookingDraft(
     prisma: prisma as unknown as CreateDraftDeps["prisma"],
     stripe: getStripe(),
   };
-  return createBookingDraftWith(deps, prisma, input);
+  const result = await createBookingDraftWith(deps, prisma, input);
+
+  if (result.ok && !result.reused) {
+    revalidateTag(AVAILABILITY_TAGS.root);
+    revalidateTag(AVAILABILITY_TAGS.duration(input.duration));
+    revalidateTag(AVAILABILITY_TAGS.date(input.date));
+    revalidateTag(AVAILABILITY_TAGS.month(input.date.slice(0, 7)));
+  }
+  return result;
 }

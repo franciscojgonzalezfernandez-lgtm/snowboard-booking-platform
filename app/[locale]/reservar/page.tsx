@@ -14,10 +14,9 @@ import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { prisma } from "@/lib/db";
 import {
-  computeCalendar,
-  computeSlotsForDate,
-} from "@/lib/booking-engine";
-import { loadEngineContext } from "@/lib/booking-engine/load-context";
+  getCachedCalendar,
+  getCachedSlots,
+} from "@/lib/booking-engine/cache";
 import { BookingHeader } from "./booking-header";
 import { BookingStepper } from "./booking-stepper";
 import { BookerPaymentFlow } from "./booker-payment-flow";
@@ -159,31 +158,21 @@ export default async function ReservarPage({
     await queryClient.prefetchQuery({
       queryKey: ["availability", "calendar", initialDuration, month],
       queryFn: async () => {
-        const ctx = await loadEngineContext(prisma, {
-          from: monthFrom,
-          to: monthTo,
-        });
-        const days = computeCalendar(ctx, {
-          duration: initialDuration,
-          monthFrom,
-          monthTo,
-        });
+        const days = await getCachedCalendar(
+          initialDuration,
+          monthFrom.toISOString(),
+          monthTo.toISOString(),
+        );
         return { days };
       },
     });
   }
 
   if (initialDuration && parsedDateStr) {
-    const date = new Date(`${parsedDateStr}T00:00:00.000Z`);
+    const isoDate = `${parsedDateStr}T00:00:00.000Z`;
     await queryClient.prefetchQuery({
       queryKey: ["availability", "slots", initialDuration, parsedDateStr],
-      queryFn: async () => {
-        const ctx = await loadEngineContext(prisma, { from: date, to: date });
-        return computeSlotsForDate(ctx, {
-          duration: initialDuration,
-          date,
-        });
-      },
+      queryFn: () => getCachedSlots(initialDuration, isoDate),
     });
   }
 
