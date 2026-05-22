@@ -11,7 +11,6 @@ import {
   BookingConfirmedEmail,
   getBookingConfirmedCopy,
 } from "./templates/booking-confirmed";
-import type { EmailLocale } from "./locale";
 
 const CONTACT_EMAIL = "franciscojgonzalezfernandez@gmail.com";
 const ORGANIZER_EMAIL = "booking@rideflumserberg.ch";
@@ -26,7 +25,7 @@ const DURATION_LABEL_KEYS: Record<Duration, string> = {
   FULL_DAY: "6 hours · full day",
 };
 
-const DURATION_LABELS: Record<EmailLocale, Record<Duration, string>> = {
+const DURATION_LABELS: Record<Locale, Record<Duration, string>> = {
   en: {
     ONE_HOUR: "1 hour",
     TWO_HOURS: "2 hours",
@@ -47,7 +46,7 @@ const DURATION_LABELS: Record<EmailLocale, Record<Duration, string>> = {
   },
 };
 
-const INTL_TAG: Record<EmailLocale, string> = {
+const INTL_TAG: Record<Locale, string> = {
   en: "en-CH",
   de: "de-CH",
   es: "es-CH",
@@ -128,7 +127,7 @@ export async function sendBookingConfirmedEmailWith(
     return { ok: true, sent: false, reason: "ALREADY_SENT" };
   }
 
-  const locale = (booking.language as EmailLocale) ?? "en";
+  const locale = booking.language ?? "en";
   const copy = getBookingConfirmedCopy(locale);
   const bookerName = booking.booker.name ?? booking.booker.email.split("@")[0]!;
   const instructorName =

@@ -5,9 +5,10 @@ import { APIError } from "better-auth/api";
 import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/db";
 import { sendMagicLinkEmail } from "@/lib/email/send-magic-link-email";
-import { getEmailLocaleFromRequest, type EmailLocale } from "@/lib/email/locale";
+import { getEmailLocaleFromRequest } from "@/lib/email/locale";
+import type { Locale } from "@prisma/client";
 
-const MAGIC_LINK_DELIVERY_FAILED_MESSAGE: Record<EmailLocale, string> = {
+const MAGIC_LINK_DELIVERY_FAILED_MESSAGE: Record<Locale, string> = {
   en: "Could not send the sign-in email. Please try again in a moment.",
   de: "Anmelde-E-Mail konnte nicht gesendet werden. Bitte versuche es gleich erneut.",
   es: "No se pudo enviar el correo de acceso. Inténtalo de nuevo en un momento.",

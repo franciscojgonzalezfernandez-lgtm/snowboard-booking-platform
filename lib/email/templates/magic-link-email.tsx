@@ -10,11 +10,11 @@ import {
   Section,
   Text,
 } from "@react-email/components";
-import type { EmailLocale } from "../locale";
+import type { Locale } from "@prisma/client";
 
 export type MagicLinkEmailProps = {
   url: string;
-  locale?: EmailLocale;
+  locale?: Locale;
 };
 
 type MagicLinkCopy = {
@@ -28,7 +28,7 @@ type MagicLinkCopy = {
   signoff: string;
 };
 
-const COPY: Record<EmailLocale, MagicLinkCopy> = {
+const COPY: Record<Locale, MagicLinkCopy> = {
   en: {
     subject: "Your Ride Flumserberg sign-in link",
     preview: "Open your secure sign-in link for Ride Flumserberg.",
@@ -70,7 +70,7 @@ const COPY: Record<EmailLocale, MagicLinkCopy> = {
 };
 
 export function getMagicLinkCopy(
-  locale: EmailLocale = "en",
+  locale: Locale = "en",
 ): MagicLinkCopy {
   return COPY[locale] ?? COPY.en;
 }
