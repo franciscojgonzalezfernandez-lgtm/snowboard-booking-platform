@@ -21,6 +21,7 @@ import { BookingHeader } from "./booking-header";
 import { BookingStepper } from "./booking-stepper";
 import { BookerPaymentFlow } from "./booker-payment-flow";
 import { DurationPicker } from "./duration-picker";
+import { FreezeWhileDraft } from "./freeze-while-draft";
 import { MonthCalendar } from "./month-calendar";
 import { TimeInstructor } from "./time-instructor";
 
@@ -250,73 +251,75 @@ export default async function ReservarPage({
         </header>
 
         <HydrationBoundary state={dehydratedState}>
-          <section
-            id="section-1"
-            data-testid="section-1"
-            aria-labelledby="section-1-heading"
-            className="mt-10 scroll-mt-32"
-          >
-            <h2 id="section-1-heading" className="sr-only">
-              {t("duration_label")}
-            </h2>
-            <DurationPicker initialDuration={initialDuration} />
-          </section>
-
-          {initialDuration && (
+          <FreezeWhileDraft>
             <section
-              id="section-2"
-              data-testid="section-2"
-              aria-labelledby="section-2-heading"
-              className="mt-16 scroll-mt-32"
+              id="section-1"
+              data-testid="section-1"
+              aria-labelledby="section-1-heading"
+              className="mt-10 scroll-mt-32"
             >
-              <header className="space-y-2">
-                <p className="text-xs font-bold uppercase tracking-[0.28em] text-muted-foreground">
-                  {tStep2("eyebrow")}
-                </p>
-                <h2
-                  id="section-2-heading"
-                  data-testid="step2-title"
-                  className="font-display text-3xl tracking-tight"
-                >
-                  {tStep2("heading")}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {tStep2("sub")}
-                </p>
-              </header>
-              <div className="mt-8">
-                <MonthCalendar duration={initialDuration} />
-              </div>
+              <h2 id="section-1-heading" className="sr-only">
+                {t("duration_label")}
+              </h2>
+              <DurationPicker initialDuration={initialDuration} />
             </section>
-          )}
 
-          {initialDuration && parsedDateStr && (
-            <section
-              id="section-3"
-              data-testid="section-3"
-              aria-labelledby="section-3-heading"
-              className="mt-16 scroll-mt-32"
-            >
-              <header className="space-y-2">
-                <p className="text-xs font-bold uppercase tracking-[0.28em] text-muted-foreground">
-                  {tStep3("eyebrow")}
-                </p>
-                <h2
-                  id="section-3-heading"
-                  data-testid="step3-title"
-                  className="font-display text-3xl tracking-tight"
-                >
-                  {tStep3("heading")}
-                </h2>
-              </header>
-              <div className="mt-8">
-                <TimeInstructor
-                  duration={initialDuration}
-                  date={parsedDateStr}
-                />
-              </div>
-            </section>
-          )}
+            {initialDuration && (
+              <section
+                id="section-2"
+                data-testid="section-2"
+                aria-labelledby="section-2-heading"
+                className="mt-16 scroll-mt-32"
+              >
+                <header className="space-y-2">
+                  <p className="text-xs font-bold uppercase tracking-[0.28em] text-muted-foreground">
+                    {tStep2("eyebrow")}
+                  </p>
+                  <h2
+                    id="section-2-heading"
+                    data-testid="step2-title"
+                    className="font-display text-3xl tracking-tight"
+                  >
+                    {tStep2("heading")}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {tStep2("sub")}
+                  </p>
+                </header>
+                <div className="mt-8">
+                  <MonthCalendar duration={initialDuration} />
+                </div>
+              </section>
+            )}
+
+            {initialDuration && parsedDateStr && (
+              <section
+                id="section-3"
+                data-testid="section-3"
+                aria-labelledby="section-3-heading"
+                className="mt-16 scroll-mt-32"
+              >
+                <header className="space-y-2">
+                  <p className="text-xs font-bold uppercase tracking-[0.28em] text-muted-foreground">
+                    {tStep3("eyebrow")}
+                  </p>
+                  <h2
+                    id="section-3-heading"
+                    data-testid="step3-title"
+                    className="font-display text-3xl tracking-tight"
+                  >
+                    {tStep3("heading")}
+                  </h2>
+                </header>
+                <div className="mt-8">
+                  <TimeInstructor
+                    duration={initialDuration}
+                    date={parsedDateStr}
+                  />
+                </div>
+              </section>
+            )}
+          </FreezeWhileDraft>
 
           {shouldRenderSection4 && !session?.user && (
             <section

@@ -12,6 +12,7 @@ import type {
   SlotsForDate,
   SlotInstructor,
 } from "@/lib/booking-engine/types";
+import { useDraftGuard } from "./draft-guard";
 import { useBookingUrlState } from "./use-booking-url-state";
 
 const ANYONE = "ANYONE" as const;
@@ -96,6 +97,7 @@ function pickInstructor(
 export function TimeInstructor({ duration, date }: Props) {
   const t = useTranslations("reservar.step3");
   const { state, set } = useBookingUrlState();
+  const { requestEdit } = useDraftGuard();
 
   const slotsQuery = useQuery({
     queryKey: ["availability", "slots", duration, date],
@@ -155,40 +157,48 @@ export function TimeInstructor({ duration, date }: Props) {
 
   function handleAnchorClick(time: string, available: boolean) {
     if (!available) return;
-    set({
-      time,
-      instructorId: ANYONE,
-      language: undefined,
+    requestEdit(() => {
+      set({
+        time,
+        instructorId: ANYONE,
+        language: undefined,
+      });
     });
   }
 
   function handleInstructorClick(choice: InstructorChoice) {
-    set({ instructorId: choice, language: undefined });
+    requestEdit(() => {
+      set({ instructorId: choice, language: undefined });
+    });
   }
 
   function handleLanguageClick(lang: Locale) {
-    set({ language: lang });
+    requestEdit(() => {
+      set({ language: lang });
+    });
   }
 
   function handleContinue() {
     if (!selectedTime || !assigned) return;
     const resolvedInstructor =
       instructorChoice === ANYONE ? assigned.id : instructorChoice;
-    // Ensure the URL carries the resolved instructor + language so a soft
-    // navigation into Section 4 has all keys the RSC needs to gate auth +
-    // fetch instructor name.
-    set({
-      instructorId: resolvedInstructor,
-      language: language ?? undefined,
-    });
-    requestAnimationFrame(() => {
-      const target = document.getElementById("section-4");
-      if (!target) return;
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
-      const focusable = target.querySelector<HTMLElement>(
-        "[data-section-focus]",
-      );
-      focusable?.focus({ preventScroll: true });
+    requestEdit(() => {
+      // Ensure the URL carries the resolved instructor + language so a soft
+      // navigation into Section 4 has all keys the RSC needs to gate auth +
+      // fetch instructor name.
+      set({
+        instructorId: resolvedInstructor,
+        language: language ?? undefined,
+      });
+      requestAnimationFrame(() => {
+        const target = document.getElementById("section-4");
+        if (!target) return;
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+        const focusable = target.querySelector<HTMLElement>(
+          "[data-section-focus]",
+        );
+        focusable?.focus({ preventScroll: true });
+      });
     });
   }
 

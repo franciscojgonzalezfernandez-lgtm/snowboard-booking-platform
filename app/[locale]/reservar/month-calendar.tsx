@@ -8,6 +8,7 @@ import type { Duration } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { CalendarDay, SlotsForDate } from "@/lib/booking-engine/types";
+import { useDraftGuard } from "./draft-guard";
 import { useBookingUrlState } from "./use-booking-url-state";
 
 type Props = {
@@ -107,6 +108,7 @@ export function MonthCalendar({ duration }: Props) {
   const locale = useLocale();
   const queryClient = useQueryClient();
   const { state, set } = useBookingUrlState();
+  const { requestEdit } = useDraftGuard();
 
   const initialMonth = useMemo(() => {
     if (state.date && /^\d{4}-\d{2}-\d{2}$/.test(state.date)) {
@@ -163,14 +165,16 @@ export function MonthCalendar({ duration }: Props) {
   const handleDayClick = useCallback(
     async (day: CalendarDay) => {
       if (day.hasAvailability) {
-        setNearby(null);
-        set({
-          date: day.date,
-          time: undefined,
-          instructorId: undefined,
-          language: undefined,
+        requestEdit(() => {
+          setNearby(null);
+          set({
+            date: day.date,
+            time: undefined,
+            instructorId: undefined,
+            language: undefined,
+          });
+          requestAnimationFrame(() => scrollToSection3());
         });
-        requestAnimationFrame(() => scrollToSection3());
         return;
       }
       setNearbyLoading(true);
@@ -184,21 +188,23 @@ export function MonthCalendar({ duration }: Props) {
         setNearbyLoading(false);
       }
     },
-    [duration, set, t],
+    [duration, requestEdit, set, t],
   );
 
   const handleNearbyClick = useCallback(
     (date: string) => {
-      setNearby(null);
-      set({
-        date,
-        time: undefined,
-        instructorId: undefined,
-        language: undefined,
+      requestEdit(() => {
+        setNearby(null);
+        set({
+          date,
+          time: undefined,
+          instructorId: undefined,
+          language: undefined,
+        });
+        requestAnimationFrame(() => scrollToSection3());
       });
-      requestAnimationFrame(() => scrollToSection3());
     },
-    [set],
+    [requestEdit, set],
   );
 
   // Reset month view if duration changes from outside (no-op when first mount).

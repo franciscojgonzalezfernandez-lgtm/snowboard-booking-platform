@@ -4,6 +4,7 @@ import { useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
 
 import { cn } from "@/lib/utils";
+import { useDraftGuard } from "./draft-guard";
 import { useBookingUrlState, type BookingUrlState } from "./use-booking-url-state";
 
 const STEPS = [1, 2, 3, 4, 5] as const;
@@ -35,19 +36,25 @@ function deriveCompleted(state: BookingUrlState): ReadonlySet<Step> {
 export function BookingStepper() {
   const t = useTranslations("reservar.stepper");
   const { state } = useBookingUrlState();
+  const { requestEdit } = useDraftGuard();
 
   const current = useMemo(() => deriveCurrentStep(state), [state]);
   const completed = useMemo(() => deriveCompleted(state), [state]);
 
-  const navigate = useCallback((step: Step) => {
-    const target = document.getElementById(`section-${step}`);
-    if (!target) return;
-    target.scrollIntoView({ behavior: "smooth", block: "start" });
-    const focusable = target.querySelector<HTMLElement>(
-      "[data-section-focus]",
-    );
-    focusable?.focus({ preventScroll: true });
-  }, []);
+  const navigate = useCallback(
+    (step: Step) => {
+      requestEdit(() => {
+        const target = document.getElementById(`section-${step}`);
+        if (!target) return;
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+        const focusable = target.querySelector<HTMLElement>(
+          "[data-section-focus]",
+        );
+        focusable?.focus({ preventScroll: true });
+      });
+    },
+    [requestEdit],
+  );
 
   return (
     <nav

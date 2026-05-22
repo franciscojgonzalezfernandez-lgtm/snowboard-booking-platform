@@ -17,6 +17,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
+import { useDraftGuard } from "./draft-guard";
 import { useBookingUrlState } from "./use-booking-url-state";
 
 // TODO(F-035): source durations from the backend (Season config) instead of
@@ -45,6 +46,7 @@ type Props = {
 export function DurationPicker({ initialDuration }: Props) {
   const t = useTranslations("reservar.step1");
   const { state, set } = useBookingUrlState();
+  const { requestEdit } = useDraftGuard();
   const sectionRef = useRef<HTMLDivElement | null>(null);
 
   const schema = useMemo(
@@ -81,27 +83,30 @@ export function DurationPicker({ initialDuration }: Props) {
   }, [urlDuration, form]);
 
   function onSubmit(values: FormValues) {
-    // Changing the duration invalidates every downstream selection (date /
-    // time / instructor / language are scoped to a duration). Pass `undefined`
-    // to drop the keys from the URL so the calendar / time-instructor islands
-    // rehydrate from a clean slate. Tanstack keys are duration-scoped, so the
-    // new duration auto-fetches its own data — no explicit invalidation needed.
-    set({
-      duration: values.duration,
-      date: undefined,
-      time: undefined,
-      instructorId: undefined,
-      language: undefined,
-    });
+    requestEdit(() => {
+      // Changing the duration invalidates every downstream selection (date /
+      // time / instructor / language are scoped to a duration). Pass
+      // `undefined` to drop the keys from the URL so the calendar /
+      // time-instructor islands rehydrate from a clean slate. Tanstack keys
+      // are duration-scoped, so the new duration auto-fetches its own data —
+      // no explicit invalidation needed.
+      set({
+        duration: values.duration,
+        date: undefined,
+        time: undefined,
+        instructorId: undefined,
+        language: undefined,
+      });
 
-    requestAnimationFrame(() => {
-      const inlineCalendar = document.getElementById("section-2");
-      if (!inlineCalendar) return;
-      inlineCalendar.scrollIntoView({ behavior: "smooth", block: "start" });
-      const focusable = inlineCalendar.querySelector<HTMLElement>(
-        "[data-section-focus]",
-      );
-      focusable?.focus({ preventScroll: true });
+      requestAnimationFrame(() => {
+        const inlineCalendar = document.getElementById("section-2");
+        if (!inlineCalendar) return;
+        inlineCalendar.scrollIntoView({ behavior: "smooth", block: "start" });
+        const focusable = inlineCalendar.querySelector<HTMLElement>(
+          "[data-section-focus]",
+        );
+        focusable?.focus({ preventScroll: true });
+      });
     });
   }
 

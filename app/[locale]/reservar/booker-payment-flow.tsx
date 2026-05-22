@@ -33,6 +33,8 @@ import {
 } from "@/lib/schemas/step4";
 import type { CreateBookingDraftError } from "@/lib/schemas/booking-draft";
 import { createBookingDraft } from "./actions";
+import { useDraftGuard } from "./draft-guard";
+import { FreezeWhileDraft } from "./freeze-while-draft";
 import { PaymentBlock } from "./payment-block";
 import { useBookingUrlState } from "./use-booking-url-state";
 
@@ -45,12 +47,6 @@ const LEVELS = [
   Level.ADVANCED,
   Level.EXPERT_FREESTYLE,
 ] as const;
-
-type DraftState = {
-  bookingId: string;
-  clientSecret: string;
-  totalPriceCents: number;
-};
 
 type Props = {
   locale: string;
@@ -106,13 +102,13 @@ export function BookerPaymentFlow({
   const router = useRouter();
   const queryClient = useQueryClient();
   const [pending, startTransition] = useTransition();
-  const [draft, setDraft] = useState<DraftState | null>(null);
   const [submitError, setSubmitError] = useState<{
     kind: CreateBookingDraftError | "GENERIC";
     message: string;
   } | null>(null);
-  const draftRef = useRef<DraftState | null>(null);
   const { set } = useBookingUrlState();
+  const { draft, registerDraft, clearDraft } = useDraftGuard();
+  const lastDraftIdRef = useRef<string | null>(null);
 
   const form = useForm<Step4FormValues>({
     resolver: zodResolver(step4FormSchema) as Resolver<Step4FormValues>,
@@ -154,19 +150,23 @@ export function BookerPaymentFlow({
   // the next paint so the user sees the Stripe Element + total without
   // hunting for it.
   useEffect(() => {
-    if (draft && draftRef.current?.bookingId !== draft.bookingId) {
-      draftRef.current = draft;
+    if (draft && lastDraftIdRef.current !== draft.bookingId) {
+      lastDraftIdRef.current = draft.bookingId;
       requestAnimationFrame(() => scrollToSection("section-5"));
+    } else if (!draft) {
+      lastDraftIdRef.current = null;
     }
   }, [draft]);
 
-  // Upstream change (URL state) invalidates the active draft. If the user
-  // edits Section 1/2/3 after a draft was created, drop the draft so the
-  // Payment Element does not float on a stale clientSecret.
+  // Upstream change (URL state) invalidates the active draft. The dirty-edit
+  // guard intercepts in-app mutations and runs `voidActiveDraft` before the
+  // URL state mutates; this effect is the safety net for unguarded paths
+  // (browser back/forward, soft-nav from another tab, etc.) so the Payment
+  // Element never floats on a stale clientSecret. Stripe-side cleanup of
+  // the orphan PaymentIntent happens via the cron expiry path (F-048).
   useEffect(() => {
-    setDraft(null);
-    draftRef.current = null;
-  }, [duration, date, time, instructorId, language]);
+    clearDraft();
+  }, [duration, date, time, instructorId, language, clearDraft]);
 
   function onSubmit(values: Step4FormValues) {
     setSubmitError(null);
@@ -185,7 +185,7 @@ export function BookerPaymentFlow({
       });
 
       if (result.ok) {
-        setDraft({
+        registerDraft({
           bookingId: result.bookingId,
           clientSecret: result.clientSecret,
           totalPriceCents: result.totalPriceCents,
@@ -246,12 +246,13 @@ export function BookerPaymentFlow({
 
   return (
     <>
-      <section
-        id="section-4"
-        data-testid="section-4"
-        aria-labelledby="section-4-heading"
-        className="mt-16 scroll-mt-32"
-      >
+      <FreezeWhileDraft>
+        <section
+          id="section-4"
+          data-testid="section-4"
+          aria-labelledby="section-4-heading"
+          className="mt-16 scroll-mt-32"
+        >
         <header className="space-y-2">
           <p className="text-xs font-bold uppercase tracking-[0.28em] text-muted-foreground">
             {section4.eyebrow}
@@ -582,7 +583,8 @@ export function BookerPaymentFlow({
             </Button>
           </div>
         </form>
-      </section>
+        </section>
+      </FreezeWhileDraft>
 
       {draft ? (
         <section

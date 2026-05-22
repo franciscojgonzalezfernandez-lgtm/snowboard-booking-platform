@@ -115,6 +115,19 @@
       "step5": "Zahlen",
       "mobile_summary": "Schritt {current} von {total}"
     },
+    "dirty": {
+      "title": "Zahlung verwerfen, um zu bearbeiten?",
+      "body": "Wir brechen die laufende Zahlung ab, damit du die Buchung ändern kannst. Deine Daten bleiben erhalten.",
+      "cancel": "Weiterzahlen",
+      "confirm": "Verwerfen und bearbeiten",
+      "confirm_working": "Wird abgebrochen…",
+      "error_unauthorized": "Deine Sitzung ist abgelaufen. Bitte erneut anmelden.",
+      "error_not_found": "Wir konnten die aktive Buchung nicht finden.",
+      "error_forbidden": "Diese Buchung gehört zu einem anderen Konto.",
+      "error_pi_not_cancelable": "Die Zahlung läuft bereits. Warte auf die Bestätigung oder Rückerstattung, bevor du bearbeitest.",
+      "error_stripe_error": "Zahlungsdienstleister nicht erreichbar. Bitte erneut versuchen.",
+      "error_already_cancelled": "Diese Buchung wurde bereits storniert."
+    },
     "step1": {
       "metadata_title": "Stunde buchen — Snowboard Booking Platform",
       "eyebrow": "Schritt 1 von 4 · Filter",
