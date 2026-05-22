@@ -99,6 +99,22 @@
     "validation_email_first": "Enter a valid email first"
   },
   "reservar": {
+    "shell": {
+      "service_name": "Private snowboard lessons",
+      "service_type": "Snowboard instruction"
+    },
+    "nav": {
+      "exit": "Exit"
+    },
+    "stepper": {
+      "aria_label": "Booking steps",
+      "step1": "Lesson",
+      "step2": "Date",
+      "step3": "Time",
+      "step4": "Details",
+      "step5": "Pay",
+      "mobile_summary": "Step {current} of {total}"
+    },
     "step1": {
       "metadata_title": "Reserve a lesson — Snowboard Booking Platform",
       "eyebrow": "Step 1 of 4 · Filter",

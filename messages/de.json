@@ -99,6 +99,22 @@
     "validation_email_first": "Zuerst eine gültige E-Mail eingeben"
   },
   "reservar": {
+    "shell": {
+      "service_name": "Private Snowboardstunden",
+      "service_type": "Snowboardunterricht"
+    },
+    "nav": {
+      "exit": "Schliessen"
+    },
+    "stepper": {
+      "aria_label": "Buchungsschritte",
+      "step1": "Stunde",
+      "step2": "Datum",
+      "step3": "Zeit",
+      "step4": "Details",
+      "step5": "Zahlen",
+      "mobile_summary": "Schritt {current} von {total}"
+    },
     "step1": {
       "metadata_title": "Stunde buchen — Snowboard Booking Platform",
       "eyebrow": "Schritt 1 von 4 · Filter",

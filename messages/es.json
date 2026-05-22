@@ -99,6 +99,22 @@
     "validation_email_first": "Introduce primero un e-mail válido"
   },
   "reservar": {
+    "shell": {
+      "service_name": "Clases privadas de snowboard",
+      "service_type": "Instrucción de snowboard"
+    },
+    "nav": {
+      "exit": "Salir"
+    },
+    "stepper": {
+      "aria_label": "Pasos de la reserva",
+      "step1": "Clase",
+      "step2": "Fecha",
+      "step3": "Hora",
+      "step4": "Datos",
+      "step5": "Pagar",
+      "mobile_summary": "Paso {current} de {total}"
+    },
     "step1": {
       "metadata_title": "Reservar clase — Snowboard Booking Platform",
       "eyebrow": "Paso 1 de 4 · Filtro",
