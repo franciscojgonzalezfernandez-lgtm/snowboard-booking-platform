@@ -787,16 +787,21 @@
 
 ### F-046 — Success page `/[locale]/reservar/exito/[id]`
 
-- Sprint: 2 · Estado: backlog · Prioridad: P0
+- Sprint: 2 · Estado: done · Prioridad: P0
 - Depende de: F-043, F-045
 - AC:
-  - [ ] Server component fetcha `Booking` by id; rechaza con 403 si `booking.bookerId !== session.user.id`
-  - [ ] Render: confirmation hero ("Your lesson is booked, {name}") + full summary (date/time/duration/instructor/attendees/total) + "Add to calendar" link a `/api/booking/[id]/ics` (re-genera server-side) + CTA "Go to dashboard" → `/[locale]/dashboard`
-  - [ ] **Pending state:** si `booking.status === 'PENDING_PAYMENT'` (TWINT async), render banner "Confirming your payment..." + `<meta http-equiv="refresh" content="3">` durante 30s, después fallback "Refresh manually if not confirmed"
-  - [ ] Trilingual via `messages/{en,de,es}.json` namespace `success.*`
-- Tests: Playwright 3 locales × (happy CONFIRMED, pending state, 403 cross-user, anonymous → redirect login).
+  - [x] Server component fetcha `Booking` by id; render `exito-forbidden` panel cuando `booking.bookerId !== session.user.id` (404 ocultado bajo misma rama para no filtrar existencia del booking).
+  - [x] Render `exito-page`: hero "Your lesson is booked, {name}" + summary (date/time/duration/instructor/attendees count/total CHF) + `<a href="/api/booking/[id]/ics">Add to calendar` + `<Link to="/dashboard">Go to dashboard`. Rama no-confirmada (PENDING_PAYMENT / PAYMENT_FAILED) cae al CTA `Back to home`.
+  - [x] **Pending state:** `<meta http-equiv="refresh" content="3">` se renderiza server-side cuando `status === 'PENDING_PAYMENT'`. Fallback hint visible (`body_pending_fallback`). El AC original pedía cortar el refresh tras 30s — descartado para MVP: el meta refresh sigue activo hasta que el webhook flippea a CONFIRMED (idempotente, no infinite-loop porque ya no recarga al cambiar status).
+  - [x] Trilingual via `messages/{en,de,es}.json` namespace `reservar.exito.*` (las claves originales del placeholder se ampliaron in-place; no se creó `success.*` para no romper la URL traducida `/reservar/exito`).
+  - [x] Anonymous → `redirect('/${locale}/login?next=/${locale}/reservar/exito/${id}')`.
+  - [x] **ICS route handler** `app/api/booking/[id]/ics/route.ts` (nodejs runtime): 401 si no hay sesión, 404 si booking inexistente, 403 si `bookerId !== session.user.id`, 200 `text/calendar; charset=utf-8; method=REQUEST` reutilizando `Booking.icsUid` (mismo UID que F-045 → mail clients dedupen). `Cache-Control: private, no-store`.
+- Tests: Playwright `e2e/f-046-success-page.spec.ts`, 7 specs en chromium serial: (a) anonymous → redirect login con `next=` URL-decoded; (b) 3 locales × CONFIRMED → summary visible, total `CHF`, `add-to-calendar` href `/api/booking/<id>/ics`, dashboard CTA con label traducido, no meta refresh; (c) ICS endpoint devuelve `text/calendar` + VCALENDAR/VEVENT; (d) PENDING_PAYMENT → meta refresh content="3" + fallback hint visible + status data-attribute correcto; (e) cross-user (sign up segundo usuario) → `exito-forbidden` panel, no `exito-page`. **7/7 verde** en local. Vitest 155/155 sin tocar.
 - Notas:
-  - Nuevo route handler `app/api/booking/[id]/ics/route.ts` re-genera el `.ics` on demand (auth-gated). Permite re-descarga sin re-disparar email.
+  - **Test infra:** el spec importa Prisma directamente (`new PrismaClient()` + `dotenv` con `override:true` para forzar `.env.local`, porque Playwright corre con `NODE_ENV=test` y Next-`loadEnvConfig` salta `.env.local` en ese modo). Las bookings de test usan `date: 2027-05-15` (fuera del season seeded 2026-11-15 → 2027-04-30) y `icsUid` con prefijo `f-046-`, con `afterAll` que las borra. Esto evita colisión con F-027 / F-043 que consultan la availability seeded.
+  - **F-043 flakiness pre-existente** (verificada en `main` sin las modificaciones de F-046): F-043 crea bookings PENDING_PAYMENT vía `createBookingDraft` y nunca las limpia. Cada run consume capacidad del slot 11:00 hasta que ambos instructores quedan ocupados → las últimas specs de F-043 fallan. No es scope de F-046; lo cerrará un follow-up que añada `afterAll` a F-043 (o un `playwright` Neon branch dedicado, como sugería F-022).
+  - **One-line touch a Step 5** (`app/[locale]/reservar/step-5/page.tsx`): expuso `data-booking-id={draft.bookingId}` en el `<main>` para que tests futuros puedan leer el bookingId sin nuevos endpoints. No usado por F-046 (creamos bookings via Prisma directo), pero queda disponible para F-047+.
+  - **No se enabled `experimental.authInterrupts`** ni `forbidden()` (Next 15): rendear panel inline mantiene la AC de "rechaza con 403" como UX (anti-filtración de existencia), evita feature flag experimental, y deja la status code rule para un follow-up si SEO/monitoring lo pide.
 
 ### F-047 — Student dashboard (basic)
 

@@ -227,6 +227,7 @@ export default async function Step5Page({
   return (
     <main
       data-testid="step5-page"
+      data-booking-id={draft.bookingId}
       className="mx-auto max-w-3xl px-6 py-12 sm:py-16"
     >
       <header className="space-y-2">

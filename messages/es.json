@@ -235,14 +235,29 @@
     "exito": {
       "metadata_title": "Reserva confirmada — Snowboard Booking Platform",
       "eyebrow": "Reserva",
-      "heading_confirmed": "Tu reserva está confirmada",
+      "heading_confirmed": "Tu clase está reservada, {name}",
       "heading_pending": "Estamos confirmando el pago",
       "heading_failed": "El pago no se completó",
       "body_confirmed": "Te hemos enviado los detalles y una invitación de calendario por email. Nos vemos en la montaña.",
       "body_pending": "Stripe está procesando el pago. Esta página se actualiza cuando termine.",
+      "body_pending_fallback": "Sigue procesándose. Recarga manualmente si no cambia en un minuto.",
       "body_failed": "Inténtalo otra vez o elige otro método.",
+      "summary_legend": "Detalles de la reserva",
+      "summary_date": "Fecha",
+      "summary_time": "Inicio",
+      "summary_duration": "Clase",
+      "summary_instructor": "Instructor",
+      "summary_attendees": "Riders",
+      "summary_attendees_count": "{count, plural, one {# rider} other {# riders}}",
+      "summary_total": "Total",
+      "summary_vat_note": "CHF, IVA incluido.",
       "booking_id_label": "Referencia",
-      "back_home": "Volver a inicio"
+      "add_to_calendar": "Añadir al calendario",
+      "go_to_dashboard": "Ir al panel",
+      "back_home": "Volver a inicio",
+      "forbidden_title": "Reserva no disponible",
+      "forbidden_body": "Esta reserva pertenece a otra cuenta. Inicia sesión con el email con el que reservaste.",
+      "forbidden_cta": "Iniciar sesión"
     }
   }
 }
