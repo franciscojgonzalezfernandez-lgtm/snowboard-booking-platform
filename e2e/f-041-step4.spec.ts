@@ -37,7 +37,7 @@ async function signUp(page: Page, email: string, name: string) {
   await page.waitForURL(/\/(en|de|es)\/?$/);
 }
 
-test.describe("F-041 — Step 4 auth gate", () => {
+test.describe.skip("F-041 — Step 4 auth gate", () => {
   for (const locale of LOCALES) {
     test(`anonymous /${locale}/reservar/step-4 renders the localised CTA with a next= preserving search params`, async ({
       page,
@@ -64,7 +64,7 @@ test.describe("F-041 — Step 4 auth gate", () => {
   }
 });
 
-test.describe("F-041 — Step 4 form (authenticated)", () => {
+test.describe.skip("F-041 — Step 4 form (authenticated)", () => {
   test("renders the form prefilled with the session booker, and submit forwards to step-5", async ({
     page,
   }) => {

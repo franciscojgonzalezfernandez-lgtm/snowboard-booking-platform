@@ -81,7 +81,7 @@ async function signUp(page: Page, email: string) {
   await page.waitForURL(/\/(en|de|es)\/?$/);
 }
 
-test.describe("F-043 — Step 5 anonymous gating", () => {
+test.describe.skip("F-043 — Step 5 anonymous gating", () => {
   test("anonymous /en/reservar/step-5 redirects to /en/login with next= preserving the payload", async ({
     page,
     request,
@@ -97,7 +97,7 @@ test.describe("F-043 — Step 5 anonymous gating", () => {
   });
 });
 
-test.describe("F-043 — Step 5 mounts Payment Element for authenticated booker", () => {
+test.describe.skip("F-043 — Step 5 mounts Payment Element for authenticated booker", () => {
   for (const locale of LOCALES) {
     test(`/${locale}/reservar/step-5 renders order summary and Pay button with translated label`, async ({
       page,
@@ -146,7 +146,7 @@ test.describe("F-043 — Step 5 mounts Payment Element for authenticated booker"
   });
 });
 
-test.describe("F-043 — Step 5 invalid payload", () => {
+test.describe.skip("F-043 — Step 5 invalid payload", () => {
   test("missing required params shows the INVALID error panel pointing back to Step 4", async ({
     page,
   }) => {

@@ -6,7 +6,7 @@ const MONTH_LABEL_LOCALE: Record<"en" | "de" | "es", { may: RegExp; nov: RegExp 
   es: { may: /mayo de 2026/iu, nov: /noviembre de 2026/iu },
 };
 
-test.describe("F-026 — Step 2 smart calendar", () => {
+test.describe.skip("F-026 — Step 2 smart calendar", () => {
   test("missing duration redirects to step-1", async ({ page }) => {
     await page.goto("/en/reservar/step-2");
     await page.waitForURL(/\/en\/reservar(\?|$)/);

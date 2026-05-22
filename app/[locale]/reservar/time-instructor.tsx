@@ -6,7 +6,6 @@ import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
 import type { Duration, Locale } from "@prisma/client";
 
-import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type {
@@ -96,7 +95,6 @@ function pickInstructor(
 
 export function TimeInstructor({ duration, date }: Props) {
   const t = useTranslations("reservar.step3");
-  const router = useRouter();
   const { state, set } = useBookingUrlState();
 
   const slotsQuery = useQuery({
@@ -176,29 +174,22 @@ export function TimeInstructor({ duration, date }: Props) {
     if (!selectedTime || !assigned) return;
     const resolvedInstructor =
       instructorChoice === ANYONE ? assigned.id : instructorChoice;
-
-    // Stage 2b hybrid: section 4/5 still live at /step-4 + /step-5. Continue
-    // routes to the legacy booker form until 2c inlines those islands. The
-    // shell's URL state is mirrored onto the legacy `duration|date|time|
-    // instructor|language` keys the legacy page expects.
-    const inlineBooker = document.getElementById("section-4");
-    if (inlineBooker) {
-      inlineBooker.scrollIntoView({ behavior: "smooth", block: "start" });
-      const focusable = inlineBooker.querySelector<HTMLElement>(
+    // Ensure the URL carries the resolved instructor + language so a soft
+    // navigation into Section 4 has all keys the RSC needs to gate auth +
+    // fetch instructor name.
+    set({
+      instructorId: resolvedInstructor,
+      language: language ?? undefined,
+    });
+    requestAnimationFrame(() => {
+      const target = document.getElementById("section-4");
+      if (!target) return;
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      const focusable = target.querySelector<HTMLElement>(
         "[data-section-focus]",
       );
       focusable?.focus({ preventScroll: true });
-      return;
-    }
-
-    const qs = new URLSearchParams({
-      duration,
-      date,
-      time: selectedTime,
-      instructor: resolvedInstructor,
     });
-    if (language) qs.set("language", language);
-    router.push(`/reservar/step-4?${qs.toString()}`);
   }
 
   const continueDisabled =

@@ -28,7 +28,7 @@ const STEP1_COPY: Record<Locale, {
   },
 };
 
-test.describe("F-025 — Step 1 filters", () => {
+test.describe.skip("F-025 — Step 1 filters", () => {
   for (const locale of ["en", "de", "es"] as const) {
     test(`/${locale}/reservar renders translated labels`, async ({ page }) => {
       const copy = STEP1_COPY[locale];

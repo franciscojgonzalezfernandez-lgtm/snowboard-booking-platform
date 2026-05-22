@@ -17,18 +17,6 @@ const STEP_LABEL_KEY: Record<Step, string> = {
   5: "step5",
 };
 
-// During F-049 stage 2a only section 1 lives inside the shell; steps 2-5
-// still serve from their own routes. The stepper falls back to a route push
-// for any step the shell does not own yet, so the in-page jump can be wired
-// progressively as stages 2b/2c land each section.
-const STEP_FALLBACK_ROUTE: Record<Step, string | null> = {
-  1: null,
-  2: "/reservar/step-2",
-  3: "/reservar/step-3",
-  4: "/reservar/step-4",
-  5: "/reservar/step-5",
-};
-
 function deriveCurrentStep(state: BookingUrlState): Step {
   if (!state.duration) return 1;
   if (!state.date) return 2;
@@ -44,49 +32,22 @@ function deriveCompleted(state: BookingUrlState): ReadonlySet<Step> {
   return set;
 }
 
-function buildLegacyHref(
-  fallback: string,
-  state: BookingUrlState,
-  locale: string,
-): string {
-  const qs = new URLSearchParams();
-  if (state.duration) qs.set("duration", state.duration);
-  if (state.date) qs.set("date", state.date);
-  if (state.time) qs.set("time", state.time);
-  if (state.instructorId) qs.set("instructor", state.instructorId);
-  if (state.language) qs.set("language", state.language);
-  const query = qs.toString();
-  return `/${locale}${fallback}${query ? `?${query}` : ""}`;
-}
-
-type Props = {
-  locale: string;
-};
-
-export function BookingStepper({ locale }: Props) {
+export function BookingStepper() {
   const t = useTranslations("reservar.stepper");
   const { state } = useBookingUrlState();
 
   const current = useMemo(() => deriveCurrentStep(state), [state]);
   const completed = useMemo(() => deriveCompleted(state), [state]);
 
-  const navigate = useCallback(
-    (step: Step) => {
-      const fallback = STEP_FALLBACK_ROUTE[step];
-      if (fallback) {
-        window.location.href = buildLegacyHref(fallback, state, locale);
-        return;
-      }
-      const target = document.getElementById(`section-${step}`);
-      if (!target) return;
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
-      const focusable = target.querySelector<HTMLElement>(
-        "[data-section-focus]",
-      );
-      focusable?.focus({ preventScroll: true });
-    },
-    [locale, state],
-  );
+  const navigate = useCallback((step: Step) => {
+    const target = document.getElementById(`section-${step}`);
+    if (!target) return;
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+    const focusable = target.querySelector<HTMLElement>(
+      "[data-section-focus]",
+    );
+    focusable?.focus({ preventScroll: true });
+  }, []);
 
   return (
     <nav

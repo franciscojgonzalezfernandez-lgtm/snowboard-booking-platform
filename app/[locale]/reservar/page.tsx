@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { Duration } from "@prisma/client";
+import { Duration, Locale } from "@prisma/client";
 import { z } from "zod";
 import {
   dehydrate,
@@ -8,6 +9,8 @@ import {
   QueryClient,
 } from "@tanstack/react-query";
 
+import { auth } from "@/lib/auth";
+import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { prisma } from "@/lib/db";
 import {
@@ -17,6 +20,7 @@ import {
 import { loadEngineContext } from "@/lib/booking-engine/load-context";
 import { BookingHeader } from "./booking-header";
 import { BookingStepper } from "./booking-stepper";
+import { BookerPaymentFlow } from "./booker-payment-flow";
 import { DurationPicker } from "./duration-picker";
 import { MonthCalendar } from "./month-calendar";
 import { TimeInstructor } from "./time-instructor";
@@ -35,9 +39,11 @@ type ReservarPageProps = {
 };
 
 const durationSchema = z.enum(Duration);
+const localeSchema = z.enum(Locale);
 const dateSchema = z
   .string()
   .regex(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/u);
+const timeSchema = z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/u);
 
 const DURATION_LABEL_KEY: Record<Duration, string> = {
   ONE_HOUR: "duration_1h",
@@ -89,6 +95,29 @@ function currentMonth(): string {
   return `${y}-${m}`;
 }
 
+function formatDateForLocale(isoDate: string, locale: string): string {
+  const date = new Date(`${isoDate}T00:00:00.000Z`);
+  const tag = locale === "en" ? "en-CH" : locale === "de" ? "de-CH" : "es-CH";
+  return new Intl.DateTimeFormat(tag, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+}
+
+function buildLoginNext(locale: string, sp: ReservarSearchParams): string {
+  const qs = new URLSearchParams();
+  if (sp.d) qs.set("d", sp.d);
+  if (sp.dt) qs.set("dt", sp.dt);
+  if (sp.t) qs.set("t", sp.t);
+  if (sp.i) qs.set("i", sp.i);
+  if (sp.l) qs.set("l", sp.l);
+  const query = qs.toString();
+  return `/${locale}/reservar${query ? `?${query}` : ""}`;
+}
+
 export default async function ReservarPage({
   params,
   searchParams,
@@ -104,9 +133,20 @@ export default async function ReservarPage({
 
   const parsedDateStr =
     sp.dt && dateSchema.safeParse(sp.dt).success ? sp.dt : undefined;
+  const parsedTime = sp.t && timeSchema.safeParse(sp.t).success ? sp.t : undefined;
+  const parsedInstructor =
+    sp.i && sp.i !== "ANYONE" ? sp.i : undefined;
+  const parsedLanguage = (() => {
+    const r = localeSchema.safeParse(sp.l);
+    return r.success ? r.data : undefined;
+  })();
 
   const t = await getTranslations({ locale, namespace: "reservar.step1" });
   const tShell = await getTranslations({ locale, namespace: "reservar.shell" });
+  const tStep2 = await getTranslations({ locale, namespace: "reservar.step2" });
+  const tStep3 = await getTranslations({ locale, namespace: "reservar.step3" });
+  const tStep4 = await getTranslations({ locale, namespace: "reservar.step4" });
+  const tStep5 = await getTranslations({ locale, namespace: "reservar.step5" });
 
   // Server-side prefetch into a per-request QueryClient. Dehydrated state
   // travels to the client via HydrationBoundary so the calendar + slots
@@ -149,8 +189,37 @@ export default async function ReservarPage({
 
   const dehydratedState = dehydrate(queryClient);
 
-  const tStep2 = await getTranslations({ locale, namespace: "reservar.step2" });
-  const tStep3 = await getTranslations({ locale, namespace: "reservar.step3" });
+  // Section 4 reveals only when sections 1-3 are settled. Language is
+  // optional in the URL (an instructor with a single language doesn't need
+  // ?l=); we resolve it server-side if missing by reading the instructor's
+  // first language from the slots prefetch result.
+  const shouldRenderSection4 =
+    !!initialDuration &&
+    !!parsedDateStr &&
+    !!parsedTime &&
+    !!parsedInstructor;
+
+  let session: Awaited<ReturnType<typeof auth.api.getSession>> = null;
+  let instructorName: string | null = null;
+  let resolvedLanguage: Locale | undefined = parsedLanguage;
+  let publishableKey: string | undefined;
+  if (shouldRenderSection4) {
+    session = await auth.api.getSession({ headers: await headers() });
+    publishableKey = process.env.STRIPE_PUBLISHABLE_KEY;
+    if (!publishableKey) {
+      throw new Error(
+        "STRIPE_PUBLISHABLE_KEY is not set — required for Section 5 Payment Element",
+      );
+    }
+    const inst = await prisma.instructor.findUnique({
+      where: { id: parsedInstructor },
+      select: { user: { select: { name: true } }, languages: true },
+    });
+    instructorName = inst?.user.name ?? null;
+    if (!resolvedLanguage && inst?.languages?.length) {
+      resolvedLanguage = inst.languages[0];
+    }
+  }
 
   const serviceJsonLd = {
     "@context": "https://schema.org",
@@ -172,7 +241,7 @@ export default async function ReservarPage({
   return (
     <>
       <BookingHeader />
-      <BookingStepper locale={locale} />
+      <BookingStepper />
 
       <main className="mx-auto max-w-2xl px-6 pb-24 pt-12 sm:pt-16">
         <header className="space-y-2">
@@ -259,6 +328,75 @@ export default async function ReservarPage({
               </div>
             </section>
           )}
+
+          {shouldRenderSection4 && !session?.user && (
+            <section
+              id="section-4"
+              data-testid="section-4-anonymous"
+              aria-labelledby="section-4-anonymous-heading"
+              className="mt-16 scroll-mt-32 rounded-md border border-input p-6"
+            >
+              <p
+                data-testid="step4-eyebrow"
+                className="text-xs font-bold uppercase tracking-[0.28em] text-muted-foreground"
+              >
+                {tStep4("eyebrow")}
+              </p>
+              <h2
+                id="section-4-anonymous-heading"
+                data-testid="step4-anonymous-heading"
+                className="mt-2 font-display text-3xl tracking-tight"
+              >
+                {tStep4("anonymous_heading")}
+              </h2>
+              <p className="mt-4 text-sm text-muted-foreground">
+                {tStep4("anonymous_body")}
+              </p>
+              <Link
+                href={`/login?next=${encodeURIComponent(buildLoginNext(locale, sp))}`}
+                data-testid="step4-anonymous-cta"
+                data-section-focus
+                className="mt-6 inline-flex items-center justify-center rounded-md border-2 border-foreground bg-foreground px-6 py-3 text-[13px] font-bold uppercase tracking-[0.18em] text-background transition-colors hover:bg-destructive hover:border-destructive"
+              >
+                {tStep4("anonymous_cta")}
+              </Link>
+            </section>
+          )}
+
+          {shouldRenderSection4 &&
+            session?.user &&
+            publishableKey &&
+            initialDuration &&
+            parsedDateStr &&
+            parsedTime &&
+            parsedInstructor &&
+            resolvedLanguage && (
+              <BookerPaymentFlow
+                locale={locale}
+                publishableKey={publishableKey}
+                bookerEmail={session.user.email ?? ""}
+                bookerName={session.user.name ?? ""}
+                duration={initialDuration}
+                date={parsedDateStr}
+                time={parsedTime}
+                instructorId={parsedInstructor}
+                language={resolvedLanguage}
+                durationLabel={t(DURATION_LABEL_KEY[initialDuration])}
+                instructorLabel={instructorName ?? "—"}
+                dateLabel={formatDateForLocale(parsedDateStr, locale)}
+                attendeeCountKey="summary_attendees_count"
+                section4={{
+                  eyebrow: tStep4("eyebrow"),
+                  heading: tStep4("heading"),
+                  sub: tStep4("sub"),
+                }}
+                section5={{
+                  eyebrow: tStep5("eyebrow"),
+                  heading: tStep5("heading"),
+                  sub: tStep5("sub"),
+                }}
+              />
+            )}
         </HydrationBoundary>
       </main>
 

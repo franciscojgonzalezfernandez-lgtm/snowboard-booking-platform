@@ -17,7 +17,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
-import { useRouter } from "@/i18n/navigation";
 import { useBookingUrlState } from "./use-booking-url-state";
 
 // TODO(F-035): source durations from the backend (Season config) instead of
@@ -45,7 +44,6 @@ type Props = {
 
 export function DurationPicker({ initialDuration }: Props) {
   const t = useTranslations("reservar.step1");
-  const router = useRouter();
   const { state, set } = useBookingUrlState();
   const sectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -96,23 +94,15 @@ export function DurationPicker({ initialDuration }: Props) {
       language: undefined,
     });
 
-    // Section 2 (calendar) ships inline as of stage 2b. If for some reason the
-    // section element is not in the DOM (e.g. stale 2a fallback), route to the
-    // legacy /step-2 page so the funnel still completes.
-    const inlineCalendar = document.getElementById("section-2");
-    if (inlineCalendar) {
-      requestAnimationFrame(() => {
-        inlineCalendar.scrollIntoView({ behavior: "smooth", block: "start" });
-        const focusable = inlineCalendar.querySelector<HTMLElement>(
-          "[data-section-focus]",
-        );
-        focusable?.focus({ preventScroll: true });
-      });
-      return;
-    }
-
-    const qs = new URLSearchParams({ duration: values.duration });
-    router.push(`/reservar/step-2?${qs.toString()}`);
+    requestAnimationFrame(() => {
+      const inlineCalendar = document.getElementById("section-2");
+      if (!inlineCalendar) return;
+      inlineCalendar.scrollIntoView({ behavior: "smooth", block: "start" });
+      const focusable = inlineCalendar.querySelector<HTMLElement>(
+        "[data-section-focus]",
+      );
+      focusable?.focus({ preventScroll: true });
+    });
   }
 
   const selectClass = cn(
