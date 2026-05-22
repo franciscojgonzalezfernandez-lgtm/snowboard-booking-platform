@@ -1,23 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Duration } from "@prisma/client";
 
-import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-type CalendarDay = {
-  date: string;
-  hasAvailability: boolean;
-  instructorCount: number;
-};
+import type { CalendarDay, SlotsForDate } from "@/lib/booking-engine/types";
+import { useDraftGuard } from "./draft-guard";
+import { useBookingUrlState } from "./use-booking-url-state";
 
 type Props = {
   duration: Duration;
-  initialMonth: string;
-  initialDays: CalendarDay[];
 };
 
 const WEEKDAY_KEYS = [
@@ -41,7 +36,6 @@ function daysInMonth(month: string): number {
   return new Date(Date.UTC(Number(yStr), Number(mStr), 0)).getUTCDate();
 }
 
-/** Monday=0 … Sunday=6 (Swiss convention). */
 function leadingBlanks(month: string): number {
   const [yStr, mStr] = month.split("-");
   const jsDow = new Date(
@@ -54,10 +48,6 @@ function isoDateOf(month: string, day: number): string {
   return `${month}-${String(day).padStart(2, "0")}`;
 }
 
-// Local-TZ "today" — the booker is physically in Europe/Zurich (CEST/CET) and
-// the calendar should follow their wall clock, not UTC. `toLocaleDateString`
-// with the Swedish locale conveniently emits ISO `YYYY-MM-DD` from the
-// browser's local timezone (used elsewhere in the codebase by Intl helpers).
 function todayIso(): string {
   return new Date().toLocaleDateString("sv-SE");
 }
@@ -66,48 +56,94 @@ function todayMonthIso(): string {
   return todayIso().slice(0, 7);
 }
 
-export function Step2Calendar({ duration, initialMonth, initialDays }: Props) {
+function monthBounds(month: string): { monthFrom: string; monthTo: string } {
+  const last = daysInMonth(month);
+  return {
+    monthFrom: `${month}-01`,
+    monthTo: `${month}-${String(last).padStart(2, "0")}`,
+  };
+}
+
+async function fetchCalendar(
+  duration: Duration,
+  month: string,
+): Promise<{ days: CalendarDay[] }> {
+  const { monthFrom, monthTo } = monthBounds(month);
+  const url = `/api/availability/calendar?duration=${duration}&monthFrom=${monthFrom}&monthTo=${monthTo}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("calendar_fetch_failed");
+  return res.json() as Promise<{ days: CalendarDay[] }>;
+}
+
+async function fetchNearby(
+  duration: Duration,
+  date: string,
+): Promise<{ date: string; dates: string[] }> {
+  const url = `/api/availability/nearby?duration=${duration}&date=${date}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("nearby_fetch_failed");
+  return res.json() as Promise<{ date: string; dates: string[] }>;
+}
+
+async function fetchSlots(
+  duration: Duration,
+  date: string,
+): Promise<SlotsForDate> {
+  const url = `/api/availability/slots?duration=${duration}&date=${date}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("slots_fetch_failed");
+  return res.json() as Promise<SlotsForDate>;
+}
+
+function scrollToSection3() {
+  const el = document.getElementById("section-3");
+  if (!el) return;
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
+  const focusable = el.querySelector<HTMLElement>("[data-section-focus]");
+  focusable?.focus({ preventScroll: true });
+}
+
+export function MonthCalendar({ duration }: Props) {
   const t = useTranslations("reservar.step2");
   const locale = useLocale();
-  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { state, set } = useBookingUrlState();
+  const { requestEdit } = useDraftGuard();
+
+  const initialMonth = useMemo(() => {
+    if (state.date && /^\d{4}-\d{2}-\d{2}$/.test(state.date)) {
+      return state.date.slice(0, 7);
+    }
+    return todayMonthIso();
+  }, [state.date]);
 
   const [month, setMonth] = useState(initialMonth);
-  const [days, setDays] = useState<CalendarDay[]>(initialDays);
-  const [loading, setLoading] = useState(false);
   const [nearby, setNearby] = useState<{
     date: string;
     dates: string[];
   } | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [nearbyLoading, setNearbyLoading] = useState(false);
+  const [nearbyError, setNearbyError] = useState<string | null>(null);
 
-  // `today` / `todayMonth` are captured on mount and stay stable for the life
-  // of the component. A booking session that crosses local midnight (rare —
-  // the flow takes minutes) would keep the previous day as "today" until the
-  // next mount; acceptable because the engine itself re-validates against
-  // wall-clock `now` on every API call, so a stale UI day at most disables a
-  // cell that would have flipped from "today" to "yesterday".
   const today = useMemo(() => todayIso(), []);
   const todayMonth = useMemo(() => todayMonthIso(), []);
+
+  const calendarQuery = useQuery({
+    queryKey: ["availability", "calendar", duration, month],
+    queryFn: () => fetchCalendar(duration, month),
+  });
+
+  const loading = calendarQuery.isFetching;
+  const fetchError = calendarQuery.isError ? t("error") : null;
+
+  const days = useMemo<CalendarDay[]>(
+    () => calendarQuery.data?.days ?? [],
+    [calendarQuery.data],
+  );
   const dayMap = useMemo(
     () => new Map(days.map((d) => [d.date, d])),
     [days],
   );
-
-  // We only sync the `month` query param onto the current URL so that the
-  // browser back button / bookmarks reflect the visible month. We deliberately
-  // use `window.history.replaceState` instead of `router.replace`:
-  //   * the path itself (`/[locale]/reservar/step-2`) doesn't change, so there
-  //     is no i18n middleware rewrite to worry about,
-  //   * `router.replace` would trigger a Next.js soft navigation which re-runs
-  //     the RSC pass for page.tsx and re-fetches `loadEngineContext`. That work
-  //     is redundant — the client already has the new `days` from the API
-  //     fetch above and owns the canonical state from now on.
-  function syncUrlMonth(target: string) {
-    if (typeof window === "undefined") return;
-    const url = new URL(window.location.href);
-    url.searchParams.set("month", target);
-    window.history.replaceState({}, "", url.toString());
-  }
 
   const monthLabel = useMemo(() => {
     const [y, m] = month.split("-").map(Number);
@@ -118,104 +154,84 @@ export function Step2Calendar({ duration, initialMonth, initialDays }: Props) {
     });
   }, [month, locale]);
 
-  // Single in-flight controller — any new month / nearby request aborts the
-  // previous one. Without this, fast prev/next clicks can resolve out of
-  // order and paint the calendar with stale data for the wrong month.
-  const inFlightRef = useRef<AbortController | null>(null);
+  const handlePrefetchSlots = useCallback(
+    (date: string) => {
+      queryClient.prefetchQuery({
+        queryKey: ["availability", "slots", duration, date],
+        queryFn: () => fetchSlots(duration, date),
+        staleTime: 30_000,
+      });
+    },
+    [duration, queryClient],
+  );
+
+  const handleDayClick = useCallback(
+    async (day: CalendarDay) => {
+      if (day.hasAvailability) {
+        requestEdit(() => {
+          setNearby(null);
+          set({
+            date: day.date,
+            time: undefined,
+            instructorId: undefined,
+            language: undefined,
+          });
+          requestAnimationFrame(() => scrollToSection3());
+        });
+        return;
+      }
+      setNearbyLoading(true);
+      setNearbyError(null);
+      try {
+        const data = await fetchNearby(duration, day.date);
+        setNearby({ date: day.date, dates: data.dates });
+      } catch {
+        setNearbyError(t("error"));
+      } finally {
+        setNearbyLoading(false);
+      }
+    },
+    [duration, requestEdit, set, t],
+  );
+
+  const handleNearbyClick = useCallback(
+    (date: string) => {
+      requestEdit(() => {
+        setNearby(null);
+        set({
+          date,
+          time: undefined,
+          instructorId: undefined,
+          language: undefined,
+        });
+        requestAnimationFrame(() => scrollToSection3());
+      });
+    },
+    [requestEdit, set],
+  );
+
+  // Reset month view if duration changes from outside (no-op when first mount).
   useEffect(() => {
-    return () => {
-      inFlightRef.current?.abort();
-    };
-  }, []);
+    setNearby(null);
+  }, [duration]);
 
-  const loadMonth = useCallback(
-    async (target: string) => {
-      inFlightRef.current?.abort();
-      const controller = new AbortController();
-      inFlightRef.current = controller;
-
-      setLoading(true);
-      setError(null);
-      setNearby(null);
-
-      try {
-        const last = daysInMonth(target);
-        const monthFrom = `${target}-01`;
-        const monthTo = `${target}-${String(last).padStart(2, "0")}`;
-        const url = `/api/availability/calendar?duration=${duration}&monthFrom=${monthFrom}&monthTo=${monthTo}`;
-        const res = await fetch(url, {
-          cache: "no-store",
-          signal: controller.signal,
-        });
-        if (!res.ok) throw new Error("fetch_failed");
-        const json = (await res.json()) as { days: CalendarDay[] };
-        setDays(json.days);
-        setMonth(target);
-        syncUrlMonth(target);
-      } catch (e) {
-        if ((e as Error).name === "AbortError") return;
-        setError(t("error"));
-      } finally {
-        if (inFlightRef.current === controller) {
-          setLoading(false);
-          inFlightRef.current = null;
-        }
-      }
-    },
-    [duration, t],
-  );
-
-  const fetchNearby = useCallback(
-    async (date: string) => {
-      inFlightRef.current?.abort();
-      const controller = new AbortController();
-      inFlightRef.current = controller;
-
-      setLoading(true);
-      setError(null);
-
-      try {
-        const url = `/api/availability/nearby?duration=${duration}&date=${date}`;
-        const res = await fetch(url, {
-          cache: "no-store",
-          signal: controller.signal,
-        });
-        if (!res.ok) throw new Error("fetch_failed");
-        const json = (await res.json()) as { date: string; dates: string[] };
-        setNearby({ date, dates: json.dates });
-      } catch (e) {
-        if ((e as Error).name === "AbortError") return;
-        setError(t("error"));
-      } finally {
-        if (inFlightRef.current === controller) {
-          setLoading(false);
-          inFlightRef.current = null;
-        }
-      }
-    },
-    [duration, t],
-  );
-
-  function handleDayClick(day: CalendarDay) {
-    if (day.hasAvailability) {
-      router.push(
-        `/reservar/step-3?duration=${duration}&date=${day.date}`,
-      );
-      return;
+  // Keep the visible month in sync with the URL's selected date so a
+  // deep-link / soft-nav into ?dt= in another month re-centers the grid
+  // on the right month. User-driven prev/next clicks do not write `dt`,
+  // so this effect cannot fight the user's own navigation.
+  useEffect(() => {
+    if (state.date && /^\d{4}-\d{2}-\d{2}$/.test(state.date)) {
+      const target = state.date.slice(0, 7);
+      setMonth((prev) => (prev !== target ? target : prev));
     }
-    void fetchNearby(day.date);
-  }
-
-  function gotoNearby(date: string) {
-    router.push(`/reservar/step-3?duration=${duration}&date=${date}`);
-  }
+  }, [state.date]);
 
   const total = daysInMonth(month);
   const blanks = leadingBlanks(month);
   const prevDisabled = loading || month <= todayMonth;
 
   return (
-    <section data-testid="step2-calendar" className="space-y-6">
+    <div data-testid="month-calendar" className="space-y-6">
       <header className="flex items-center justify-between">
         <Button
           type="button"
@@ -223,7 +239,7 @@ export function Step2Calendar({ duration, initialMonth, initialDays }: Props) {
           size="sm"
           data-testid="month-prev"
           disabled={prevDisabled}
-          onClick={() => loadMonth(isoMonthAdd(month, -1))}
+          onClick={() => setMonth(isoMonthAdd(month, -1))}
         >
           {t("prev_month")}
         </Button>
@@ -239,7 +255,7 @@ export function Step2Calendar({ duration, initialMonth, initialDays }: Props) {
           size="sm"
           data-testid="month-next"
           disabled={loading}
-          onClick={() => loadMonth(isoMonthAdd(month, 1))}
+          onClick={() => setMonth(isoMonthAdd(month, 1))}
         >
           {t("next_month")}
         </Button>
@@ -248,6 +264,8 @@ export function Step2Calendar({ duration, initialMonth, initialDays }: Props) {
       <div
         role="grid"
         data-testid="calendar-grid"
+        data-section-focus
+        tabIndex={-1}
         className="grid grid-cols-7 gap-2"
       >
         {WEEKDAY_KEYS.map((key) => (
@@ -267,6 +285,7 @@ export function Step2Calendar({ duration, initialMonth, initialDays }: Props) {
           const past = iso < today;
           const available = !!entry?.hasAvailability;
           const interactive = !past && !!entry && !loading;
+          const isSelected = state.date === iso;
           return (
             <button
               key={iso}
@@ -274,10 +293,17 @@ export function Step2Calendar({ duration, initialMonth, initialDays }: Props) {
               data-testid={`day-${iso}`}
               data-available={available ? "true" : "false"}
               data-past={past ? "true" : "false"}
+              data-selected={isSelected ? "true" : "false"}
               disabled={past || loading || !entry}
+              onMouseEnter={
+                available ? () => handlePrefetchSlots(iso) : undefined
+              }
+              onFocus={available ? () => handlePrefetchSlots(iso) : undefined}
               onClick={() => entry && handleDayClick(entry)}
               aria-label={
-                available ? t("day_available", { date: iso }) : t("day_full", { date: iso })
+                available
+                  ? t("day_available", { date: iso })
+                  : t("day_full", { date: iso })
               }
               className={cn(
                 "aspect-square rounded-md border text-sm transition-colors",
@@ -285,7 +311,12 @@ export function Step2Calendar({ duration, initialMonth, initialDays }: Props) {
                 past && "border-transparent text-muted-foreground/40",
                 !past &&
                   available &&
+                  !isSelected &&
                   "border-foreground bg-background font-medium hover:bg-foreground hover:text-background",
+                !past &&
+                  available &&
+                  isSelected &&
+                  "border-foreground bg-foreground font-medium text-background",
                 !past &&
                   !available &&
                   "border-input text-muted-foreground hover:border-muted-foreground",
@@ -298,18 +329,21 @@ export function Step2Calendar({ duration, initialMonth, initialDays }: Props) {
         })}
       </div>
 
-      {loading && (
+      {(loading || nearbyLoading) && (
         <p
           data-testid="step2-loading"
+          role="status"
+          aria-live="polite"
           className="text-sm text-muted-foreground"
         >
           {t("loading")}
         </p>
       )}
 
-      {nearby && !loading && (
+      {nearby && !nearbyLoading && (
         <div
           data-testid="nearby-block"
+          aria-live="polite"
           className="space-y-3 rounded-lg border border-input p-4"
         >
           <p className="text-sm">
@@ -329,7 +363,7 @@ export function Step2Calendar({ duration, initialMonth, initialDays }: Props) {
                   <button
                     type="button"
                     data-testid={`nearby-${d}`}
-                    onClick={() => gotoNearby(d)}
+                    onClick={() => handleNearbyClick(d)}
                     className="w-full rounded-md border border-foreground px-3 py-2 text-sm hover:bg-foreground hover:text-background"
                   >
                     {new Date(`${d}T00:00:00Z`).toLocaleDateString(locale, {
@@ -346,11 +380,16 @@ export function Step2Calendar({ duration, initialMonth, initialDays }: Props) {
         </div>
       )}
 
-      {error && (
-        <p data-testid="step2-error" className="text-sm text-destructive">
-          {error}
+      {(fetchError || nearbyError) && (
+        <p
+          data-testid="step2-error"
+          role="alert"
+          aria-live="assertive"
+          className="text-sm text-destructive"
+        >
+          {fetchError ?? nearbyError}
         </p>
       )}
-    </section>
+    </div>
   );
 }

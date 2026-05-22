@@ -99,6 +99,35 @@
     "validation_email_first": "Enter a valid email first"
   },
   "reservar": {
+    "shell": {
+      "service_name": "Private snowboard lessons",
+      "service_type": "Snowboard instruction"
+    },
+    "nav": {
+      "exit": "Exit"
+    },
+    "stepper": {
+      "aria_label": "Booking steps",
+      "step1": "Lesson",
+      "step2": "Date",
+      "step3": "Time",
+      "step4": "Details",
+      "step5": "Pay",
+      "mobile_summary": "Step {current} of {total}"
+    },
+    "dirty": {
+      "title": "Discard payment to edit?",
+      "body": "We'll cancel the in-flight payment so you can change the booking. Your booker details stay filled in.",
+      "cancel": "Keep paying",
+      "confirm": "Discard and edit",
+      "confirm_working": "Cancelling…",
+      "error_unauthorized": "Your session has expired. Sign in again.",
+      "error_not_found": "We could not find the active booking.",
+      "error_forbidden": "This booking is on a different account.",
+      "error_pi_not_cancelable": "Payment is already in motion. Wait for the confirmation or refund email before editing.",
+      "error_stripe_error": "Could not reach the payment provider. Try again in a moment.",
+      "error_already_cancelled": "This booking was already cancelled."
+    },
     "step1": {
       "metadata_title": "Reserve a lesson — Snowboard Booking Platform",
       "eyebrow": "Step 1 of 4 · Filter",

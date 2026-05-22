@@ -30,7 +30,7 @@ function getStripePromise(key: string): Promise<Stripe | null> {
   return cached;
 }
 
-export function Step5Payment({
+export function PaymentBlock({
   locale,
   publishableKey,
   clientSecret,

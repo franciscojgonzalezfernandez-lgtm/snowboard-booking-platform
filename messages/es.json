@@ -99,6 +99,35 @@
     "validation_email_first": "Introduce primero un e-mail válido"
   },
   "reservar": {
+    "shell": {
+      "service_name": "Clases privadas de snowboard",
+      "service_type": "Instrucción de snowboard"
+    },
+    "nav": {
+      "exit": "Salir"
+    },
+    "stepper": {
+      "aria_label": "Pasos de la reserva",
+      "step1": "Clase",
+      "step2": "Fecha",
+      "step3": "Hora",
+      "step4": "Datos",
+      "step5": "Pagar",
+      "mobile_summary": "Paso {current} de {total}"
+    },
+    "dirty": {
+      "title": "¿Descartar el pago para editar?",
+      "body": "Cancelaremos el pago en curso para que puedas cambiar la reserva. Tus datos del responsable se mantienen.",
+      "cancel": "Seguir pagando",
+      "confirm": "Descartar y editar",
+      "confirm_working": "Cancelando…",
+      "error_unauthorized": "Tu sesión ha expirado. Inicia sesión otra vez.",
+      "error_not_found": "No encontramos la reserva activa.",
+      "error_forbidden": "Esta reserva pertenece a otra cuenta.",
+      "error_pi_not_cancelable": "El pago ya está en marcha. Espera la confirmación o el reembolso antes de editar.",
+      "error_stripe_error": "No pudimos contactar al proveedor de pagos. Inténtalo de nuevo.",
+      "error_already_cancelled": "Esta reserva ya estaba cancelada."
+    },
     "step1": {
       "metadata_title": "Reservar clase — Snowboard Booking Platform",
       "eyebrow": "Paso 1 de 4 · Filtro",

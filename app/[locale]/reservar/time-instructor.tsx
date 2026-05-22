@@ -1,14 +1,37 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { useQuery } from "@tanstack/react-query";
 import type { Duration, Locale } from "@prisma/client";
 
-import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { SlotsForDate, SlotInstructor } from "@/lib/booking-engine/types";
+import type {
+  SlotsForDate,
+  SlotInstructor,
+} from "@/lib/booking-engine/types";
+import { useDraftGuard } from "./draft-guard";
+import { useBookingUrlState } from "./use-booking-url-state";
+
+const ANYONE = "ANYONE" as const;
+type InstructorChoice = typeof ANYONE | string;
+
+type Props = {
+  duration: Duration;
+  date: string;
+};
+
+async function fetchSlots(
+  duration: Duration,
+  date: string,
+): Promise<SlotsForDate> {
+  const url = `/api/availability/slots?duration=${duration}&date=${date}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("slots_fetch_failed");
+  return res.json() as Promise<SlotsForDate>;
+}
 
 function initialsFromName(name: string | null | undefined): string {
   if (!name) return "?";
@@ -62,28 +85,6 @@ function InstructorAvatar({
   );
 }
 
-type Props = {
-  duration: Duration;
-  date: string;
-  slots: SlotsForDate;
-  initialTime: string | undefined;
-  initialInstructorId: string | undefined;
-  initialLanguage: string | undefined;
-};
-
-const ANYONE = "ANYONE" as const;
-type InstructorChoice = typeof ANYONE | string;
-
-function syncUrl(params: Record<string, string | null>) {
-  if (typeof window === "undefined") return;
-  const url = new URL(window.location.href);
-  for (const [key, value] of Object.entries(params)) {
-    if (value === null) url.searchParams.delete(key);
-    else url.searchParams.set(key, value);
-  }
-  window.history.replaceState({}, "", url.toString());
-}
-
 function pickInstructor(
   choice: InstructorChoice,
   list: SlotInstructor[],
@@ -93,28 +94,20 @@ function pickInstructor(
   return list.find((i) => i.id === choice) ?? list[0] ?? null;
 }
 
-export function Step3Selection({
-  duration,
-  date,
-  slots,
-  initialTime,
-  initialInstructorId,
-  initialLanguage,
-}: Props) {
+export function TimeInstructor({ duration, date }: Props) {
   const t = useTranslations("reservar.step3");
-  const router = useRouter();
+  const { state, set } = useBookingUrlState();
+  const { requestEdit } = useDraftGuard();
 
-  const anchors = slots.anchorTimes;
-  const initialAnchor = useMemo(() => {
-    if (!initialTime) return null;
-    const match = anchors.find((a) => a.time === initialTime && a.available);
-    return match ? match.time : null;
-  }, [anchors, initialTime]);
+  const slotsQuery = useQuery({
+    queryKey: ["availability", "slots", duration, date],
+    queryFn: () => fetchSlots(duration, date),
+  });
 
-  const [selectedTime, setSelectedTime] = useState<string | null>(
-    initialAnchor,
-  );
+  const slots = slotsQuery.data;
+  const anchors = useMemo(() => slots?.anchorTimes ?? [], [slots]);
 
+  const selectedTime = state.time ?? null;
   const activeAnchor = useMemo(
     () => anchors.find((a) => a.time === selectedTime) ?? null,
     [anchors, selectedTime],
@@ -124,82 +117,131 @@ export function Step3Selection({
     [activeAnchor],
   );
 
-  const [instructor, setInstructor] = useState<InstructorChoice>(() => {
-    if (!initialAnchor) return ANYONE;
-    if (!initialInstructorId) return ANYONE;
-    if (initialInstructorId === ANYONE) return ANYONE;
-    return candidates.some((c) => c.id === initialInstructorId)
-      ? initialInstructorId
+  const instructorChoice: InstructorChoice = useMemo(() => {
+    if (!selectedTime) return ANYONE;
+    if (!state.instructorId) return ANYONE;
+    if (state.instructorId === ANYONE) return ANYONE;
+    return candidates.some((c) => c.id === state.instructorId)
+      ? state.instructorId
       : ANYONE;
-  });
+  }, [selectedTime, state.instructorId, candidates]);
 
   const assigned = useMemo(
-    () => pickInstructor(instructor, candidates),
-    [instructor, candidates],
+    () => pickInstructor(instructorChoice, candidates),
+    [instructorChoice, candidates],
   );
 
-  const [language, setLanguage] = useState<Locale | null>(() => {
+  const language = useMemo<Locale | null>(() => {
     if (!assigned) return null;
     const langs = assigned.languages;
     if (langs.length === 0) return null;
-    if (initialLanguage) {
-      const match = langs.find((l) => l === initialLanguage);
+    if (state.language) {
+      const match = langs.find((l) => l === state.language);
       if (match) return match;
     }
     return langs[0] ?? null;
-  });
+  }, [assigned, state.language]);
+
+  // Mirror the resolved language back into the URL when the engine narrows it
+  // (e.g. picking a new anchor causes the first language to win). Without this
+  // a fresh anchor pick would leave ?l= pointing at a language the new
+  // instructor does not teach.
+  useEffect(() => {
+    if (selectedTime && assigned && language && state.language !== language) {
+      set({ language });
+    }
+    if (selectedTime && assigned && !language && state.language) {
+      set({ language: undefined });
+    }
+  }, [selectedTime, assigned, language, state.language, set]);
 
   function handleAnchorClick(time: string, available: boolean) {
     if (!available) return;
-    setSelectedTime(time);
-    const next = anchors.find((a) => a.time === time);
-    const first = next?.instructors[0] ?? null;
-    setInstructor(ANYONE);
-    setLanguage(first?.languages[0] ?? null);
-    syncUrl({
-      time,
-      instructor: ANYONE,
-      language: first?.languages[0] ?? null,
+    requestEdit(() => {
+      set({
+        time,
+        instructorId: ANYONE,
+        language: undefined,
+      });
     });
   }
 
   function handleInstructorClick(choice: InstructorChoice) {
-    setInstructor(choice);
-    const next = pickInstructor(choice, candidates);
-    const nextLang = next?.languages[0] ?? null;
-    setLanguage(nextLang);
-    syncUrl({ instructor: choice, language: nextLang });
+    requestEdit(() => {
+      set({ instructorId: choice, language: undefined });
+    });
   }
 
   function handleLanguageClick(lang: Locale) {
-    setLanguage(lang);
-    syncUrl({ language: lang });
+    requestEdit(() => {
+      set({ language: lang });
+    });
   }
 
   function handleContinue() {
     if (!selectedTime || !assigned) return;
-    const target = new URLSearchParams({
-      duration,
-      date,
-      time: selectedTime,
-      instructor: instructor === ANYONE ? assigned.id : instructor,
+    const resolvedInstructor =
+      instructorChoice === ANYONE ? assigned.id : instructorChoice;
+    requestEdit(() => {
+      // Ensure the URL carries the resolved instructor + language so a soft
+      // navigation into Section 4 has all keys the RSC needs to gate auth +
+      // fetch instructor name.
+      set({
+        instructorId: resolvedInstructor,
+        language: language ?? undefined,
+      });
+      requestAnimationFrame(() => {
+        const target = document.getElementById("section-4");
+        if (!target) return;
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+        const focusable = target.querySelector<HTMLElement>(
+          "[data-section-focus]",
+        );
+        focusable?.focus({ preventScroll: true });
+      });
     });
-    if (language) target.set("language", language);
-    router.push(`/reservar/step-4?${target.toString()}`);
   }
 
   const continueDisabled =
     !selectedTime || !assigned || (assigned.languages.length > 0 && !language);
 
+  if (slotsQuery.isLoading) {
+    return (
+      <div
+        data-testid="time-instructor-loading"
+        role="status"
+        aria-live="polite"
+        className="text-sm text-muted-foreground"
+      >
+        {t("anchors_label")}…
+      </div>
+    );
+  }
+
+  if (slotsQuery.isError || !slots) {
+    return (
+      <p
+        data-testid="time-instructor-error"
+        role="alert"
+        aria-live="assertive"
+        className="text-sm text-destructive"
+      >
+        {t("anchors_label")} — {String(slotsQuery.error)}
+      </p>
+    );
+  }
+
   return (
-    <section data-testid="step3-selection" className="space-y-10">
+    <div data-testid="time-instructor" className="space-y-10">
       <div className="space-y-3">
-        <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground">
+        <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground">
           {t("anchors_label")}
-        </h2>
+        </h3>
         <ul
           role="list"
           data-testid="anchor-list"
+          data-section-focus
+          tabIndex={-1}
           className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7"
         >
           {anchors.map((anchor) => {
@@ -238,20 +280,20 @@ export function Step3Selection({
 
       {selectedTime && candidates.length > 0 && (
         <div className="space-y-4" data-testid="instructor-section">
-          <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground">
+          <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground">
             {t("instructors_label")}
-          </h2>
+          </h3>
           <ul role="list" className="space-y-3">
             <li>
               <button
                 type="button"
                 data-testid="instructor-anyone"
-                data-selected={instructor === ANYONE ? "true" : "false"}
+                data-selected={instructorChoice === ANYONE ? "true" : "false"}
                 onClick={() => handleInstructorClick(ANYONE)}
                 className={cn(
                   "flex w-full items-center gap-3 rounded-md border px-4 py-3 text-left transition-colors",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  instructor === ANYONE
+                  instructorChoice === ANYONE
                     ? "border-foreground bg-foreground text-background"
                     : "border-input hover:border-foreground",
                 )}
@@ -261,7 +303,7 @@ export function Step3Selection({
                     name={assigned.name}
                     photo={assigned.photo}
                     size={40}
-                    isSelected={instructor === ANYONE}
+                    isSelected={instructorChoice === ANYONE}
                   />
                 )}
                 <div className="min-w-0 flex-1">
@@ -269,7 +311,7 @@ export function Step3Selection({
                   <p
                     className={cn(
                       "mt-1 text-xs",
-                      instructor === ANYONE
+                      instructorChoice === ANYONE
                         ? "text-background/80"
                         : "text-muted-foreground",
                     )}
@@ -284,7 +326,7 @@ export function Step3Selection({
               </button>
             </li>
             {candidates.map((cand) => {
-              const isSelected = instructor === cand.id;
+              const isSelected = instructorChoice === cand.id;
               return (
                 <li key={cand.id}>
                   <button
@@ -348,9 +390,9 @@ export function Step3Selection({
 
       {assigned && assigned.languages.length > 1 && (
         <div className="space-y-3" data-testid="language-section">
-          <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground">
+          <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground">
             {t("language_label")}
-          </h2>
+          </h3>
           <p className="text-xs text-muted-foreground">
             {t("language_sub", {
               name: assigned.name ?? t("instructor_unnamed"),
@@ -403,6 +445,6 @@ export function Step3Selection({
           {t("continue")}
         </Button>
       </div>
-    </section>
+    </div>
   );
 }

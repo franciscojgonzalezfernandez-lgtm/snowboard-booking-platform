@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
-import { DEFAULT_WINDOW_DAYS, findNearbyDates } from "@/lib/booking-engine";
-import { addDays } from "@/lib/booking-engine/time";
-import { loadEngineContext } from "@/lib/booking-engine/load-context";
-import { prisma } from "@/lib/db";
+
+import { getCachedNearby } from "@/lib/booking-engine/cache";
 import {
   nearbyQuerySchema,
   parseSearchParams,
@@ -10,7 +8,6 @@ import {
 } from "@/lib/schemas/availability";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -20,11 +17,7 @@ export async function GET(request: Request) {
   }
 
   const { duration, date } = parsed.data;
-  const ctx = await loadEngineContext(prisma, {
-    from: addDays(date, -DEFAULT_WINDOW_DAYS),
-    to: addDays(date, DEFAULT_WINDOW_DAYS),
-  });
-  const dates = findNearbyDates(ctx, { duration, date });
+  const body = await getCachedNearby(duration, date.toISOString());
 
-  return NextResponse.json({ date: parsed.data.date.toISOString().slice(0, 10), dates }, { status: 200 });
+  return NextResponse.json(body, { status: 200 });
 }

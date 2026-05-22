@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { computeCalendar } from "@/lib/booking-engine";
-import { loadEngineContext } from "@/lib/booking-engine/load-context";
-import { prisma } from "@/lib/db";
+
+import { getCachedCalendar } from "@/lib/booking-engine/cache";
 import {
   calendarQuerySchema,
   parseSearchParams,
@@ -9,7 +8,6 @@ import {
 } from "@/lib/schemas/availability";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -19,8 +17,11 @@ export async function GET(request: Request) {
   }
 
   const { duration, monthFrom, monthTo } = parsed.data;
-  const ctx = await loadEngineContext(prisma, { from: monthFrom, to: monthTo });
-  const days = computeCalendar(ctx, { duration, monthFrom, monthTo });
+  const days = await getCachedCalendar(
+    duration,
+    monthFrom.toISOString(),
+    monthTo.toISOString(),
+  );
 
   return NextResponse.json({ days }, { status: 200 });
 }

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { computeSlotsForDate } from "@/lib/booking-engine";
-import { loadEngineContext } from "@/lib/booking-engine/load-context";
-import { prisma } from "@/lib/db";
+
+import { getCachedSlots } from "@/lib/booking-engine/cache";
 import {
   parseSearchParams,
   slotsQuerySchema,
@@ -9,7 +8,6 @@ import {
 } from "@/lib/schemas/availability";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -19,8 +17,7 @@ export async function GET(request: Request) {
   }
 
   const { duration, date } = parsed.data;
-  const ctx = await loadEngineContext(prisma, { from: date, to: date });
-  const slots = computeSlotsForDate(ctx, { duration, date });
+  const slots = await getCachedSlots(duration, date.toISOString());
 
   return NextResponse.json(slots, { status: 200 });
 }
