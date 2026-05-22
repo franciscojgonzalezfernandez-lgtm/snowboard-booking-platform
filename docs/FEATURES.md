@@ -808,17 +808,20 @@
 - Sprint: 2 · Estado: in-review · Prioridad: P1
 - Depende de: F-005, F-044
 - AC:
-  - [x] `app/[locale]/dashboard/page.tsx` server-rendered, lista `Booking[]` de `session.user.id` ordenados desc por `date` (tie-break por `anchorTime` desc para estabilizar el orden cuando hay varias clases el mismo día)
-  - [x] Cada row: date · time · duration · instructor · status badge · total CHF · link "View details" → `/[locale]/reservar/exito/[id]` (reusa F-046 como vista detalle; Sprint 3 puede sustituirlo por un detail page propio con acción cancelar sin tocar el dashboard)
-  - [x] Empty state con CTA "Book your first lesson" → `/[locale]/reservar`
-  - [x] Personal data block (read-only): name, email, phone si existe (fallback i18n `personal_phone_missing` cuando `User.phone IS NULL`). Phone update deferred a Sprint 3+
+  - [x] `app/[locale]/dashboard/page.tsx` server-rendered, lista `Booking[]` de `session.user.id` ordenados desc por `date` (tie-break por `anchorTime` desc para estabilizar el orden cuando hay varias clases el mismo día) y filtrados a `VISIBLE_STATUSES = [CONFIRMED, COMPLETED, CANCELLED_BY_USER, CANCELLED_BY_OPS, REFUNDED]`. `PENDING_PAYMENT`, `PAYMENT_FAILED` y `CANCELLED_BY_SYSTEM` quedan ocultos porque no son accionables para el booker (Stripe PaymentIntent es single-use, drafts huérfanos del Step 4 no se pueden reanudar) y sólo añaden ruido al historial.
+  - [x] Cada row: date (display largo localizado) · time + duration + instructor (línea secundaria) · status badge en eyebrow · total CHF en `font-display` · link "View details" → `/[locale]/reservar/exito/[id]` (reusa F-046 como vista detalle; Sprint 3 puede sustituirlo por un detail page propio con acción cancelar sin tocar el dashboard)
+  - [x] Empty state con copy editorial (border-left accent, no card-with-shadow) + CTA "Book your first lesson" → `/[locale]/reservar`
+  - [x] Personal data block (read-only): name, email, phone si existe (fallback i18n `personal_phone_missing` cuando `User.phone IS NULL`), tipografía `font-display` para mantener la jerarquía editorial. Phone update deferred a Sprint 3+
   - [x] Anonymous → `redirect(/{locale}/login?next=/{locale}/dashboard)` para preservar el destino tras login (mismo patrón que F-046)
-- Tests: Playwright `e2e/f-047-dashboard.spec.ts` con 10 specs — anonymous redirect × 3 locales + empty state × 3 locales + with-bookings (orden desc + badge + CHF + details link) × 3 locales + isolation cross-user. Vitest 155/155 sin tocar (sólo lectura desde Prisma, sin nueva lógica unit-testable).
+  - [x] Heading personalizado `heading_personal` ("Welcome back, {firstName}") cuando `User.name` existe; fallback a `heading` estático ("Your bookings") si no.
+- Tests: Playwright `e2e/f-047-dashboard.spec.ts` con 11 specs — anonymous redirect × 3 locales + empty state × 3 locales + with-bookings (orden desc + badge + CHF + details link) × 3 locales + hidden-statuses filter + isolation cross-user. Vitest 155/155 sin tocar (sólo lectura desde Prisma, sin nueva lógica unit-testable).
 - Notas:
+  - **Filtro de status no accionables.** `PENDING_PAYMENT` se crea por F-042 al enviar Step 4 — cada Step 4 abandonado deja un draft que no debería verse. `PAYMENT_FAILED` es callejón sin salida (el PaymentIntent es single-use; el booker ya vio el error inline en Step 5). `CANCELLED_BY_SYSTEM` cubre PaymentIntent canceled por timeout, también sin acción posible. Mostrar estos rows sólo confunde al alumno. Sprint 3 introduce secciones explícitas (Upcoming / Past / Cancelled) y el filtro se reemplaza por un agrupado UI.
   - **`View details` linkea a `/reservar/exito/[id]`**, no a una vista detalle propia. Razón: F-046 ya muestra summary completo + add-to-calendar + status condicional, y valida permiso por `bookerId === session.user.id`. Duplicar una "detail page" en `app/[locale]/dashboard/[id]` añadiría una segunda vista que renderiza la misma información, doblaría el coste de mantenerla y obligaría a re-implementar el cross-user guard. Sprint 3 puede crear `dashboard/[id]` cuando aparezca contenido específico (cancel, modificar attendees) que no encaja en exito.
   - **Status badge labels son namespace `dashboard.status_*`**, no `reservar.exito.heading_*`. exito tiene 3 mensajes humanos ("Your lesson is booked"); dashboard necesita 8 etiquetas cortas neutras ("Confirmed", "Cancelled", "Refunded"). Vocabularios distintos → namespaces distintos.
   - **`anchorTime` como tie-break secundario.** El `orderBy` primario es `date desc`; añadir `anchorTime desc` evita que 2 clases del mismo día crucen orden entre lecturas (Postgres no garantiza orden total sin un criterio adicional).
   - **Email + nombre se leen de `User`** (no de `session.user`) para que el dashboard refleje cualquier update post-signup sin invalidar la sesión. Coste: una query extra; despreciable y ya batch-ed con `Promise.all` junto a la query de bookings.
+  - **Layout editorial sin tabla.** Lista `<ol>` con divisores `border-y` + `divide-y` en lugar de `<table>`. Cada row es un grid `1fr,auto` para alinear texto a la izquierda y total/details a la derecha. Tipografía display para fecha + total (jerarquía visual al estilo Aesop/Monocle), eyebrow uppercase tracked para el badge de status. Sin shadows, sin gradients, sin glassmorphism (CLAUDE.md §Forbidden).
 
 ### F-049 — Booking flow navigation: back stepper + minimal header (CRO fix)
 
@@ -904,6 +907,14 @@ Critical path: F-039 → F-040 → F-049 → F-050 → F-041 → F-042 → F-043
   - `≥ 48h` antes del slot → emite `AccountCredit` (`USER_CANCEL`, 1 año).
   - `< 48h` → forfeit. Mismo cambio de status / liberación de slot, sin credit.
   - Copy y CTA en dashboard reflejan la ventana 48h y la opción de contactar al teléfono operativo para excepciones.
+- **Dashboard v2 — agrupado + design polish (sucesor de F-047):**
+  - Reemplazar la lista plana actual por 3 secciones explícitas: **Upcoming** (`CONFIRMED` con `date >= today`), **Past** (`COMPLETED` o `CONFIRMED` con `date < today`), **Cancelled** (`CANCELLED_BY_USER`, `CANCELLED_BY_OPS`, `REFUNDED`). Cada sección con su heading display, contador y collapse opcional.
+  - Eliminar el filtro `VISIBLE_STATUSES` hardcoded — el agrupado vuelve a hacer visibles `CANCELLED_BY_*` + `REFUNDED` con copy contextual (motivo, crédito asociado, fecha de refund).
+  - Inline action por row: **Cancel** (si elegible por la ventana 48h) + **Add to calendar** (`.ics` re-download desde F-046 ICS route). El botón Cancel abre el modal del flujo descrito arriba.
+  - Crédito visible en su propia card sticky / aside (saldo activo, expiración, link "Apply at checkout" → `/reservar?credit=…`).
+  - Visual polish: hero personal con próxima clase destacada (countdown a `startDateTime`, info del instructor, weather widget opcional Sprint 4), separación tipográfica más fuerte (display sizes XL para fechas próximas), estados vacíos por sección, dark-mode pass (todo Sprint 2 ya respeta tokens, falta auditar contraste).
+  - Detail page propia `app/[locale]/dashboard/[id]/page.tsx` si las acciones (cancel modal, edit attendees, descarga factura) no caben inline.
+  - Personal data: añadir edit de `phone` (Server Action + revalidate). Email queda read-only (Better Auth maneja el flujo de change-email aparte).
 - Server action ops-cancel (admin) — Sprint 4 monta la UI pero la **lógica del refund cash** debe quedar lista para uso programático aquí: `stripe.refunds.create({ payment_intent })` + persistencia `Booking.stripeRefundId` + branch para bookings 100% credit (re-emite credit en lugar de cash).
 - Sistema de créditos: generación, locking durante PaymentIntent, commit en webhook success.
 - UI aplicar créditos en Step 5 (toggle + breakdown).

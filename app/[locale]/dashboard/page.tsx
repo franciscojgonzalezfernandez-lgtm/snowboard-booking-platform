@@ -20,6 +20,19 @@ const DURATION_LABEL_KEY: Record<Duration, string> = {
   FULL_DAY: "duration_6h",
 };
 
+// Statuses considered actionable history for the booker. Failed payments,
+// orphan PENDING_PAYMENT drafts left by abandoned checkouts, and
+// system-cancelled rows (PaymentIntent canceled) are not surfaced because
+// the booker cannot act on them and would only be confused by them.
+// Sprint 3 will introduce explicit Upcoming / Past / Cancelled sections.
+const VISIBLE_STATUSES: BookingStatus[] = [
+  BookingStatus.CONFIRMED,
+  BookingStatus.COMPLETED,
+  BookingStatus.CANCELLED_BY_USER,
+  BookingStatus.CANCELLED_BY_OPS,
+  BookingStatus.REFUNDED,
+];
+
 const STATUS_LABEL_KEY: Record<BookingStatus, string> = {
   PENDING_PAYMENT: "status_pending_payment",
   CONFIRMED: "status_confirmed",
@@ -40,9 +53,9 @@ const INTL_TAG: Record<string, string> = {
 function formatBookingDate(date: Date, locale: string): string {
   const tag = INTL_TAG[locale] ?? "en-CH";
   return new Intl.DateTimeFormat(tag, {
-    weekday: "short",
+    weekday: "long",
     day: "numeric",
-    month: "short",
+    month: "long",
     year: "numeric",
     timeZone: "UTC",
   }).format(date);
@@ -75,7 +88,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
 
   const [bookings, account] = await Promise.all([
     prisma.booking.findMany({
-      where: { bookerId: userId },
+      where: { bookerId: userId, status: { in: VISIBLE_STATUSES } },
       orderBy: [{ date: "desc" }, { anchorTime: "desc" }],
       select: {
         id: true,
@@ -93,12 +106,14 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
     }),
   ]);
 
+  const greetingName = account?.name?.trim().split(/\s+/)[0] ?? null;
+
   return (
     <main
       data-testid="dashboard-page"
-      className="mx-auto max-w-4xl px-6 py-16"
+      className="mx-auto max-w-3xl px-6 pb-24 pt-16 sm:pt-20"
     >
-      <header className="space-y-2">
+      <header className="space-y-3 border-b border-input pb-10">
         <p
           data-testid="dashboard-eyebrow"
           className="text-xs font-bold uppercase tracking-[0.28em] text-muted-foreground"
@@ -109,134 +124,172 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
           data-testid="dashboard-heading"
           className="font-display text-4xl tracking-tight sm:text-5xl"
         >
-          {t("heading")}
+          {greetingName
+            ? t("heading_personal", { name: greetingName })
+            : t("heading")}
         </h1>
-        <p className="text-sm text-muted-foreground">{t("sub")}</p>
+        <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
+          {t("sub")}
+        </p>
       </header>
 
-      {bookings.length === 0 ? (
-        <section
-          data-testid="dashboard-empty"
-          className="mt-10 rounded-md border border-input p-8 text-center"
-        >
-          <p className="font-display text-2xl tracking-tight">
-            {t("empty_heading")}
-          </p>
-          <p className="mt-3 text-sm text-muted-foreground">
-            {t("empty_body")}
-          </p>
-          <Link
-            href="/reservar"
-            data-testid="dashboard-empty-cta"
-            className="mt-6 inline-flex items-center justify-center rounded-md border-2 border-foreground bg-foreground px-6 py-3 text-[13px] font-bold uppercase tracking-[0.18em] text-background transition-colors hover:bg-destructive hover:border-destructive"
+      <section className="mt-12">
+        <div className="flex items-baseline justify-between gap-4">
+          <h2
+            data-testid="dashboard-bookings-heading"
+            className="font-display text-2xl tracking-tight"
           >
-            {t("empty_cta")}
-          </Link>
-        </section>
-      ) : (
-        <section
-          data-testid="dashboard-bookings"
-          className="mt-10 overflow-hidden rounded-md border border-input"
-        >
-          <table className="w-full text-sm">
-            <thead className="border-b border-input bg-muted/30 text-left text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-              <tr>
-                <th scope="col" className="px-4 py-3">
-                  {t("col_date")}
-                </th>
-                <th scope="col" className="px-4 py-3">
-                  {t("col_time")}
-                </th>
-                <th scope="col" className="hidden px-4 py-3 sm:table-cell">
-                  {t("col_duration")}
-                </th>
-                <th scope="col" className="hidden px-4 py-3 md:table-cell">
-                  {t("col_instructor")}
-                </th>
-                <th scope="col" className="px-4 py-3">
-                  {t("col_status")}
-                </th>
-                <th scope="col" className="px-4 py-3 text-right">
-                  {t("col_total")}
-                </th>
-                <th scope="col" className="px-4 py-3 text-right">
-                  <span className="sr-only">{t("col_actions")}</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {bookings.map((booking) => {
-                const statusLabel = t(STATUS_LABEL_KEY[booking.status]);
-                const durationLabel = tStep1(
-                  DURATION_LABEL_KEY[booking.duration],
-                );
-                const instructorName = booking.instructor.user.name ?? "—";
-                return (
-                  <tr
-                    key={booking.id}
-                    data-testid="dashboard-booking-row"
-                    data-booking-id={booking.id}
-                    data-status={booking.status}
-                    className="border-t border-input first:border-t-0"
-                  >
-                    <td className="px-4 py-4 font-medium">
+            {t("section_bookings")}
+          </h2>
+          {bookings.length > 0 ? (
+            <Link
+              href="/reservar"
+              data-testid="dashboard-book-again"
+              className="text-xs font-bold uppercase tracking-[0.18em] underline-offset-4 hover:underline"
+            >
+              {t("book_another")}
+            </Link>
+          ) : null}
+        </div>
+
+        {bookings.length === 0 ? (
+          <div
+            data-testid="dashboard-empty"
+            className="mt-6 flex flex-col items-start gap-5 border-l-2 border-foreground/80 bg-muted/20 px-8 py-10"
+          >
+            <p
+              data-testid="dashboard-empty-heading"
+              className="font-display text-2xl tracking-tight"
+            >
+              {t("empty_heading")}
+            </p>
+            <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
+              {t("empty_body")}
+            </p>
+            <Link
+              href="/reservar"
+              data-testid="dashboard-empty-cta"
+              className="inline-flex items-center justify-center rounded-md border-2 border-foreground bg-foreground px-6 py-3 text-[13px] font-bold uppercase tracking-[0.18em] text-background transition-colors hover:bg-destructive hover:border-destructive"
+            >
+              {t("empty_cta")}
+            </Link>
+          </div>
+        ) : (
+          <ol
+            data-testid="dashboard-bookings"
+            className="mt-6 divide-y divide-input border-y border-input"
+          >
+            {bookings.map((booking) => {
+              const statusLabel = t(STATUS_LABEL_KEY[booking.status]);
+              const durationLabel = tStep1(
+                DURATION_LABEL_KEY[booking.duration],
+              );
+              const instructorName = booking.instructor.user.name ?? "—";
+              return (
+                <li
+                  key={booking.id}
+                  data-testid="dashboard-booking-row"
+                  data-booking-id={booking.id}
+                  data-status={booking.status}
+                  className="group grid gap-6 py-8 sm:grid-cols-[1fr,auto] sm:items-start"
+                >
+                  <div className="space-y-2">
+                    <p
+                      data-testid="dashboard-booking-status"
+                      className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground"
+                    >
+                      {statusLabel}
+                    </p>
+                    <p
+                      data-testid="dashboard-booking-date"
+                      className="font-display text-2xl tracking-tight sm:text-3xl"
+                    >
                       {formatBookingDate(booking.date, locale)}
-                    </td>
-                    <td className="px-4 py-4">{booking.anchorTime}</td>
-                    <td className="hidden px-4 py-4 sm:table-cell">
-                      {durationLabel}
-                    </td>
-                    <td className="hidden px-4 py-4 md:table-cell">
-                      {instructorName}
-                    </td>
-                    <td className="px-4 py-4">
-                      <span
-                        data-testid="dashboard-booking-status"
-                        className="inline-flex items-center rounded-full border border-input px-2 py-0.5 text-xs font-medium uppercase tracking-[0.1em]"
-                      >
-                        {statusLabel}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      <span data-testid="dashboard-booking-time">
+                        {booking.anchorTime}
                       </span>
-                    </td>
-                    <td className="px-4 py-4 text-right font-medium">
+                      <span aria-hidden> · </span>
+                      <span data-testid="dashboard-booking-duration">
+                        {durationLabel}
+                      </span>
+                      <span aria-hidden> · </span>
+                      <span data-testid="dashboard-booking-instructor">
+                        {instructorName}
+                      </span>
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-start gap-3 sm:items-end">
+                    <p
+                      data-testid="dashboard-booking-total"
+                      className="font-display text-2xl tracking-tight"
+                    >
                       {formatChf(booking.totalPriceCents)}
-                    </td>
-                    <td className="px-4 py-4 text-right">
-                      <Link
-                        href={`/reservar/exito/${booking.id}`}
-                        data-testid="dashboard-booking-link"
-                        className="text-xs font-bold uppercase tracking-[0.18em] underline-offset-4 hover:underline"
-                      >
-                        {t("view_details")}
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </section>
-      )}
+                    </p>
+                    <Link
+                      href={`/reservar/exito/${booking.id}`}
+                      data-testid="dashboard-booking-link"
+                      className="text-xs font-bold uppercase tracking-[0.18em] underline-offset-4 hover:underline"
+                    >
+                      {t("view_details")} →
+                    </Link>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        )}
+      </section>
 
       <section
         data-testid="dashboard-account"
-        className="mt-12 rounded-md border border-input p-5"
+        className="mt-16 border-t border-input pt-10"
       >
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
+        <h2
+          data-testid="dashboard-account-heading"
+          className="font-display text-2xl tracking-tight"
+        >
           {t("personal_heading")}
-        </p>
-        <dl className="mt-3 grid grid-cols-[max-content,1fr] gap-x-6 gap-y-2 text-sm">
-          <dt className="text-muted-foreground">{t("personal_name")}</dt>
-          <dd data-testid="dashboard-account-name" className="font-medium">
-            {account?.name ?? "—"}
-          </dd>
-          <dt className="text-muted-foreground">{t("personal_email")}</dt>
-          <dd data-testid="dashboard-account-email" className="font-medium">
-            {account?.email ?? "—"}
-          </dd>
-          <dt className="text-muted-foreground">{t("personal_phone")}</dt>
-          <dd data-testid="dashboard-account-phone" className="font-medium">
-            {account?.phone ?? t("personal_phone_missing")}
-          </dd>
+        </h2>
+        <dl className="mt-6 grid gap-x-10 gap-y-5 text-sm sm:grid-cols-2">
+          <div className="space-y-1">
+            <dt className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+              {t("personal_name")}
+            </dt>
+            <dd
+              data-testid="dashboard-account-name"
+              className="font-display text-lg tracking-tight"
+            >
+              {account?.name ?? "—"}
+            </dd>
+          </div>
+          <div className="space-y-1">
+            <dt className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+              {t("personal_email")}
+            </dt>
+            <dd
+              data-testid="dashboard-account-email"
+              className="break-all font-display text-lg tracking-tight"
+            >
+              {account?.email ?? "—"}
+            </dd>
+          </div>
+          <div className="space-y-1">
+            <dt className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+              {t("personal_phone")}
+            </dt>
+            <dd
+              data-testid="dashboard-account-phone"
+              className="font-display text-lg tracking-tight"
+            >
+              {account?.phone ?? (
+                <span className="text-muted-foreground">
+                  {t("personal_phone_missing")}
+                </span>
+              )}
+            </dd>
+          </div>
         </dl>
       </section>
     </main>

@@ -33,10 +33,14 @@ const LOCALES: Locale[] = ["en", "de", "es"];
 const BOOKING_DATE = "2027-05-16";
 const BOOKING_TIME = "10:00";
 
-const HEADING = {
-  en: "Bookings",
-  de: "Buchungen",
-  es: "Reservas",
+// `heading_personal` ICU template renders the booker's first name as a
+// greeting. Asserting the localized prefix is enough to confirm the
+// personalized heading rendered without coupling the spec to the exact
+// signup name.
+const HEADING_GREETING_PREFIX = {
+  en: "Welcome back,",
+  de: "Willkommen zurück,",
+  es: "Hola de nuevo,",
 } as const;
 
 const EMPTY_HEADING = {
@@ -70,7 +74,7 @@ function uniqueEmail(tag: string) {
 async function signUp(
   page: Page,
   email: string,
-  name = "F-047 Tester",
+  name = "F047 Tester",
 ): Promise<void> {
   await page.goto("/en/login");
   await page.getByTestId("tab-signup").click();
@@ -159,11 +163,12 @@ test.describe("F-047 — Dashboard empty state", () => {
       await page.goto(`/${locale}/dashboard`);
 
       await expect(page.getByTestId("dashboard-page")).toBeVisible();
-      await expect(page.getByTestId("dashboard-heading")).toHaveText(
-        HEADING[locale],
+      await expect(page.getByTestId("dashboard-heading")).toContainText(
+        HEADING_GREETING_PREFIX[locale],
       );
+
       await expect(page.getByTestId("dashboard-empty")).toBeVisible();
-      await expect(page.getByTestId("dashboard-empty")).toContainText(
+      await expect(page.getByTestId("dashboard-empty-heading")).toHaveText(
         EMPTY_HEADING[locale],
       );
       const cta = page.getByTestId("dashboard-empty-cta");
@@ -171,7 +176,7 @@ test.describe("F-047 — Dashboard empty state", () => {
       await expect(cta).toHaveText(EMPTY_CTA[locale]);
       await expect(cta).toHaveAttribute("href", `/${locale}/reservar`);
 
-      // Bookings table must NOT render in empty state.
+      // Bookings list must NOT render in empty state.
       await expect(page.getByTestId("dashboard-bookings")).toHaveCount(0);
 
       // Personal data block renders with the signup email + missing phone.
@@ -187,7 +192,7 @@ test.describe("F-047 — Dashboard empty state", () => {
 
 test.describe("F-047 — Dashboard with bookings", () => {
   for (const locale of LOCALES) {
-    test(`/${locale}/dashboard lists the booker's bookings ordered desc with status + total`, async ({
+    test(`/${locale}/dashboard lists the booker's visible bookings ordered desc with status + total`, async ({
       page,
     }) => {
       const email = uniqueEmail(`list-${locale}`);
@@ -232,12 +237,12 @@ test.describe("F-047 — Dashboard with bookings", () => {
       ).toHaveText(STATUS_CONFIRMED[locale]);
 
       // Total formatted as CHF.
-      await expect(rows.nth(0)).toContainText("CHF");
+      await expect(
+        rows.nth(0).getByTestId("dashboard-booking-total"),
+      ).toContainText("CHF");
 
       // Details link points to the per-booking success page.
-      const detailsLink = rows
-        .nth(0)
-        .getByTestId("dashboard-booking-link");
+      const detailsLink = rows.nth(0).getByTestId("dashboard-booking-link");
       await expect(detailsLink).toHaveAttribute(
         "href",
         `/${locale}/reservar/exito/${newerBookingId}`,
@@ -247,6 +252,51 @@ test.describe("F-047 — Dashboard with bookings", () => {
       await expect(page.getByTestId("dashboard-empty")).toHaveCount(0);
     });
   }
+});
+
+test.describe("F-047 — Dashboard hides non-actionable statuses", () => {
+  test("PENDING_PAYMENT, PAYMENT_FAILED and CANCELLED_BY_SYSTEM bookings are not surfaced", async ({
+    page,
+  }) => {
+    const email = uniqueEmail("hidden");
+    await signUp(page, email);
+    const userId = await findUserIdByEmail(email);
+    const instructorId = await pickInstructorId();
+
+    // Three non-actionable rows that must stay hidden.
+    await createBookingFor(
+      userId,
+      instructorId,
+      BookingStatus.PENDING_PAYMENT,
+      0,
+    );
+    await createBookingFor(
+      userId,
+      instructorId,
+      BookingStatus.PAYMENT_FAILED,
+      1,
+    );
+    await createBookingFor(
+      userId,
+      instructorId,
+      BookingStatus.CANCELLED_BY_SYSTEM,
+      2,
+    );
+    // One actionable row to confirm the filter is not pruning everything.
+    const confirmedId = await createBookingFor(
+      userId,
+      instructorId,
+      BookingStatus.CONFIRMED,
+      3,
+    );
+
+    await page.goto("/en/dashboard");
+
+    const rows = page.getByTestId("dashboard-booking-row");
+    await expect(rows).toHaveCount(1);
+    await expect(rows.nth(0)).toHaveAttribute("data-booking-id", confirmedId);
+    await expect(rows.nth(0)).toHaveAttribute("data-status", "CONFIRMED");
+  });
 });
 
 test.describe("F-047 — Dashboard isolation", () => {
@@ -264,7 +314,7 @@ test.describe("F-047 — Dashboard isolation", () => {
     // User B — owns zero bookings.
     await page.context().clearCookies();
     const bEmail = uniqueEmail("isolation-b");
-    await signUp(page, bEmail, "F-047 Other");
+    await signUp(page, bEmail, "F047 Other");
 
     await page.goto("/en/dashboard");
     await expect(page.getByTestId("dashboard-empty")).toBeVisible();
