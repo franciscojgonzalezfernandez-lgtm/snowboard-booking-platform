@@ -565,8 +565,9 @@ export function BookerPaymentFlow({
           {submitError ? (
             <p
               data-testid="step4-submit-error"
-              className="text-sm text-destructive"
               role="alert"
+              aria-live="assertive"
+              className="text-sm text-destructive"
             >
               {submitError.message}
             </p>

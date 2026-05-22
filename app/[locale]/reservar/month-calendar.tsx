@@ -329,6 +329,8 @@ export function MonthCalendar({ duration }: Props) {
       {(loading || nearbyLoading) && (
         <p
           data-testid="step2-loading"
+          role="status"
+          aria-live="polite"
           className="text-sm text-muted-foreground"
         >
           {t("loading")}
@@ -338,6 +340,7 @@ export function MonthCalendar({ duration }: Props) {
       {nearby && !nearbyLoading && (
         <div
           data-testid="nearby-block"
+          aria-live="polite"
           className="space-y-3 rounded-lg border border-input p-4"
         >
           <p className="text-sm">
@@ -375,7 +378,12 @@ export function MonthCalendar({ duration }: Props) {
       )}
 
       {(fetchError || nearbyError) && (
-        <p data-testid="step2-error" className="text-sm text-destructive">
+        <p
+          data-testid="step2-error"
+          role="alert"
+          aria-live="assertive"
+          className="text-sm text-destructive"
+        >
           {fetchError ?? nearbyError}
         </p>
       )}

@@ -207,7 +207,12 @@ export function TimeInstructor({ duration, date }: Props) {
 
   if (slotsQuery.isLoading) {
     return (
-      <div data-testid="time-instructor-loading" className="text-sm text-muted-foreground">
+      <div
+        data-testid="time-instructor-loading"
+        role="status"
+        aria-live="polite"
+        className="text-sm text-muted-foreground"
+      >
         {t("anchors_label")}…
       </div>
     );
@@ -217,6 +222,8 @@ export function TimeInstructor({ duration, date }: Props) {
     return (
       <p
         data-testid="time-instructor-error"
+        role="alert"
+        aria-live="assertive"
         className="text-sm text-destructive"
       >
         {t("anchors_label")} — {String(slotsQuery.error)}
