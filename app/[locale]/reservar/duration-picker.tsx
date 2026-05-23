@@ -133,8 +133,18 @@ export function DurationPicker({ initialDuration }: Props) {
                   {t("duration_label")}
                 </FormLabel>
                 <FormControl>
+                  {/*
+                    Base UI Select treats `value === undefined` as uncontrolled
+                    and any other value (including "") as controlled. RHF
+                    seeds field.value with "" so we must keep passing that
+                    empty string instead of coercing it to undefined — the
+                    previous `field.value || undefined` flipped the component
+                    from uncontrolled → controlled on first selection, which
+                    Base UI rejects (it actually stops dispatching change
+                    events, breaking the funnel before Step 2).
+                  */}
                   <Select
-                    value={field.value || undefined}
+                    value={field.value ?? ""}
                     onValueChange={(v) =>
                       field.onChange(v as FormValues["duration"])
                     }
