@@ -17,6 +17,7 @@ import { TermsModal } from "@/app/components/TermsModal";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -281,9 +282,7 @@ export function BookerPaymentFlow({
             </legend>
 
             <div className="space-y-1.5">
-              <label htmlFor="booker-name" className="text-sm font-medium">
-                {t("booker_name_label")}
-              </label>
+              <Label htmlFor="booker-name">{t("booker_name_label")}</Label>
               <Input
                 id="booker-name"
                 data-testid="booker-name"
@@ -302,9 +301,7 @@ export function BookerPaymentFlow({
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="booker-email" className="text-sm font-medium">
-                {t("booker_email_label")}
-              </label>
+              <Label htmlFor="booker-email">{t("booker_email_label")}</Label>
               <Input
                 id="booker-email"
                 data-testid="booker-email"
@@ -319,9 +316,7 @@ export function BookerPaymentFlow({
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="booker-phone" className="text-sm font-medium">
-                {t("booker_phone_label")}
-              </label>
+              <Label htmlFor="booker-phone">{t("booker_phone_label")}</Label>
               <Input
                 id="booker-phone"
                 data-testid="booker-phone"
@@ -362,25 +357,27 @@ export function BookerPaymentFlow({
                         {t("attendee_position", { position: index + 1 })}
                       </p>
                       {canRemoveAttendee ? (
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="sm"
                           data-testid={`attendee-${index}-remove`}
                           onClick={() => remove(index)}
-                          className="text-xs font-medium uppercase tracking-wider text-muted-foreground underline-offset-4 hover:text-destructive hover:underline"
+                          className="h-auto px-0 text-xs font-medium uppercase tracking-wider text-muted-foreground hover:bg-transparent hover:text-destructive hover:underline"
                         >
                           {t("attendee_remove")}
-                        </button>
+                        </Button>
                       ) : null}
                     </div>
 
                     <div className="grid gap-3 sm:grid-cols-[2fr_1fr_2fr]">
                       <div className="space-y-1">
-                        <label
+                        <Label
                           htmlFor={`attendee-${index}-name`}
-                          className="text-xs font-medium"
+                          className="text-xs"
                         >
                           {t("attendee_name_label")}
-                        </label>
+                        </Label>
                         <Input
                           id={`attendee-${index}-name`}
                           data-testid={`attendee-${index}-name`}
@@ -391,12 +388,12 @@ export function BookerPaymentFlow({
                       </div>
 
                       <div className="space-y-1">
-                        <label
+                        <Label
                           htmlFor={`attendee-${index}-age`}
-                          className="text-xs font-medium"
+                          className="text-xs"
                         >
                           {t("attendee_age_label")}
-                        </label>
+                        </Label>
                         <Input
                           id={`attendee-${index}-age`}
                           data-testid={`attendee-${index}-age`}
@@ -412,12 +409,12 @@ export function BookerPaymentFlow({
                       </div>
 
                       <div className="space-y-1">
-                        <label
+                        <Label
                           htmlFor={`attendee-${index}-level`}
-                          className="text-xs font-medium"
+                          className="text-xs"
                         >
                           {t("attendee_level_label")}
-                        </label>
+                        </Label>
                         <Controller
                           control={control}
                           name={`attendees.${index}.level`}
@@ -494,9 +491,9 @@ export function BookerPaymentFlow({
             <legend className="text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground">
               {t("notes_legend")}
             </legend>
-            <label htmlFor="notes" className="sr-only">
+            <Label htmlFor="notes" className="sr-only">
               {t("notes_label")}
-            </label>
+            </Label>
             <Textarea
               id="notes"
               data-testid="notes"
@@ -527,7 +524,7 @@ export function BookerPaymentFlow({
               control={control}
               name="acceptedTerms"
               render={({ field: termsField }) => (
-                <label className="flex items-start gap-3 text-sm">
+                <Label className="flex items-start gap-3 text-sm font-normal leading-relaxed">
                   <Checkbox
                     data-testid="terms-checkbox"
                     checked={Boolean(termsField.value)}
@@ -537,7 +534,7 @@ export function BookerPaymentFlow({
                     aria-invalid={errors.acceptedTerms ? "true" : "false"}
                     className="mt-0.5"
                   />
-                  <span className="leading-relaxed">
+                  <span>
                     {t("terms_label_prefix")}
                     <TermsModal variant="terms">
                       {t("terms_label_terms")}
@@ -548,7 +545,7 @@ export function BookerPaymentFlow({
                     </TermsModal>
                     {t("terms_label_suffix")}
                   </span>
-                </label>
+                </Label>
               )}
             />
             {errors.acceptedTerms ? (

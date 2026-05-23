@@ -16,7 +16,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useDraftGuard } from "./draft-guard";
 import { useBookingUrlState } from "./use-booking-url-state";
 
@@ -110,14 +116,6 @@ export function DurationPicker({ initialDuration }: Props) {
     });
   }
 
-  const selectClass = cn(
-    "h-10 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none",
-    "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
-    "disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50",
-    "aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20",
-    "md:text-sm",
-  );
-
   return (
     <div ref={sectionRef} data-testid="duration-picker">
       <Form {...form}>
@@ -135,24 +133,33 @@ export function DurationPicker({ initialDuration }: Props) {
                   {t("duration_label")}
                 </FormLabel>
                 <FormControl>
-                  <select
-                    {...field}
-                    id="duration-picker-select"
-                    data-testid="select-duration"
-                    data-section-focus
-                    aria-invalid={!!fieldState.error}
-                    className={selectClass}
-                    value={field.value ?? ""}
+                  <Select
+                    value={field.value || undefined}
+                    onValueChange={(v) =>
+                      field.onChange(v as FormValues["duration"])
+                    }
                   >
-                    <option value="" disabled>
-                      {t("duration_placeholder")}
-                    </option>
-                    {DURATIONS.map((d) => (
-                      <option key={d} value={d}>
-                        {t(DURATION_LABEL_KEYS[d])}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger
+                      id="duration-picker-select"
+                      data-testid="select-duration"
+                      data-section-focus
+                      aria-invalid={!!fieldState.error}
+                      className="h-11 w-full text-base md:h-10 md:text-sm"
+                    >
+                      <SelectValue placeholder={t("duration_placeholder")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DURATIONS.map((d) => (
+                        <SelectItem
+                          key={d}
+                          value={d}
+                          data-testid={`select-duration-${d}`}
+                        >
+                          {t(DURATION_LABEL_KEYS[d])}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </FormControl>
                 <FormMessage />
               </FormItem>
