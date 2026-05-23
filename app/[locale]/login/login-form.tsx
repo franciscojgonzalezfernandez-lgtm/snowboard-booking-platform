@@ -121,7 +121,9 @@ export function LoginForm({ locale, callbackURL }: LoginFormProps) {
         onValueChange={(v) => setMode(v as Mode)}
         aria-label={t("aria_tablist")}
       >
-        <TabsList className="grid w-full grid-cols-2">
+        {/* Default TabsList is h-8; bump to h-11 so triggers meet the 44px
+            mobile touch target. */}
+        <TabsList className="grid h-11 w-full grid-cols-2">
           <TabsTrigger value="signin" data-testid="tab-signin">
             {t("tab_signin")}
           </TabsTrigger>

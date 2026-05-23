@@ -1,8 +1,15 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { useDraftGuard } from "./draft-guard";
 import { useBookingUrlState, type BookingUrlState } from "./use-booking-url-state";
@@ -37,6 +44,7 @@ export function BookingStepper() {
   const t = useTranslations("reservar.stepper");
   const { state } = useBookingUrlState();
   const { requestEdit } = useDraftGuard();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const current = useMemo(() => deriveCurrentStep(state), [state]);
   const completed = useMemo(() => deriveCompleted(state), [state]);
@@ -44,6 +52,7 @@ export function BookingStepper() {
   const navigate = useCallback(
     (step: Step) => {
       requestEdit(() => {
+        setMobileOpen(false);
         const target = document.getElementById(`section-${step}`);
         if (!target) return;
         target.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -116,20 +125,100 @@ export function BookingStepper() {
         })}
       </ol>
 
-      <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-3 md:hidden">
-        <p
-          data-testid="stepper-mobile-summary"
-          className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground"
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetTrigger
+          data-testid="stepper-mobile-trigger"
+          aria-label={t("mobile_aria")}
+          className="mx-auto flex min-h-11 w-full max-w-4xl items-center justify-between gap-3 px-6 py-3 text-left transition-colors hover:bg-foreground/[0.03] md:hidden"
         >
-          {t("mobile_summary", { current, total: STEPS.length })}
-        </p>
-        <p
-          data-testid="stepper-mobile-current-label"
-          className="text-[12px] font-bold uppercase tracking-[0.18em] text-foreground"
-        >
-          {t(STEP_LABEL_KEY[current])}
-        </p>
-      </div>
+          <span
+            data-testid="stepper-mobile-summary"
+            className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground"
+          >
+            {t("mobile_summary", { current, total: STEPS.length })}
+          </span>
+          <span className="flex items-center gap-2">
+            <span
+              data-testid="stepper-mobile-current-label"
+              className="text-[12px] font-bold uppercase tracking-[0.18em] text-foreground"
+            >
+              {t(STEP_LABEL_KEY[current])}
+            </span>
+            <span aria-hidden="true" className="text-foreground/40">
+              ▾
+            </span>
+          </span>
+        </SheetTrigger>
+        <SheetContent side="bottom" className="md:hidden">
+          <SheetHeader className="text-left">
+            <SheetTitle className="font-display text-xl tracking-tight">
+              {t("mobile_jump_title")}
+            </SheetTitle>
+          </SheetHeader>
+          <ol role="list" className="mt-2 flex flex-col">
+            {STEPS.map((step) => {
+              const isCompleted = completed.has(step);
+              const isActive = step === current;
+              const isInteractive =
+                isCompleted || isActive || step <= current;
+              const label = t(STEP_LABEL_KEY[step]);
+              return (
+                <li key={step}>
+                  <button
+                    type="button"
+                    data-testid={`stepper-mobile-step-${step}`}
+                    data-state={
+                      isActive
+                        ? "active"
+                        : isCompleted
+                          ? "completed"
+                          : "pending"
+                    }
+                    aria-current={isActive ? "step" : undefined}
+                    disabled={!isInteractive}
+                    onClick={() => navigate(step)}
+                    className={cn(
+                      "flex w-full items-center gap-4 border-b border-foreground/10 px-2 py-4 text-left transition-colors",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      "disabled:cursor-not-allowed disabled:opacity-50",
+                      isInteractive && "hover:bg-foreground/[0.03]",
+                    )}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        "inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border text-sm",
+                        isActive &&
+                          "border-foreground bg-foreground text-background",
+                        isCompleted &&
+                          !isActive &&
+                          "border-foreground bg-background text-foreground",
+                        !isActive &&
+                          !isCompleted &&
+                          "border-muted-foreground/30 text-muted-foreground/60",
+                      )}
+                    >
+                      {isCompleted && !isActive ? "✓" : step}
+                    </span>
+                    <span
+                      className={cn(
+                        "text-sm font-bold uppercase tracking-[0.18em]",
+                        isActive
+                          ? "text-foreground"
+                          : isCompleted
+                            ? "text-foreground/80"
+                            : "text-muted-foreground/60",
+                      )}
+                    >
+                      {label}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        </SheetContent>
+      </Sheet>
     </nav>
   );
 }
