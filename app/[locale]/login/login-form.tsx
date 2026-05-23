@@ -121,22 +121,31 @@ export function LoginForm({ locale, callbackURL }: LoginFormProps) {
         onValueChange={(v) => setMode(v as Mode)}
         aria-label={t("aria_tablist")}
       >
-        {/* TabsList default base is h-8 with each trigger sized via
-            h-[calc(100%-1px)]. Base UI's primitive does not stretch the
-            trigger inside a grid TabsList, so we bump the height on each
-            TabsTrigger directly to clear the 44px mobile touch target. */}
-        <TabsList className="grid h-11 w-full grid-cols-2">
+        {/*
+          Editorial override: shadcn's default Tabs renders a rounded card
+          background with a "popped" active state — too SaaS-generic for
+          this brand. Use the built-in `variant="line"` (transparent bg +
+          bottom-bar accent on the active trigger) and add uppercase
+          tracking + bold weight to match the rest of the auth/booking
+          chrome. Triggers carry min-h-11 directly so they clear the
+          44px mobile touch target (Base UI doesn't stretch nested
+          triggers when the list uses grid layout).
+        */}
+        <TabsList
+          variant="line"
+          className="grid h-12 w-full grid-cols-2 border-b border-foreground/15"
+        >
           <TabsTrigger
             value="signin"
             data-testid="tab-signin"
-            className="h-full min-h-11"
+            className="h-full min-h-11 text-[11px] font-bold uppercase tracking-[0.18em]"
           >
             {t("tab_signin")}
           </TabsTrigger>
           <TabsTrigger
             value="signup"
             data-testid="tab-signup"
-            className="h-full min-h-11"
+            className="h-full min-h-11 text-[11px] font-bold uppercase tracking-[0.18em]"
           >
             {t("tab_signup")}
           </TabsTrigger>
