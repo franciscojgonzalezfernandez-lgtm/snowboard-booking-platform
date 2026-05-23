@@ -916,6 +916,25 @@
   - Ship después de F-049 para que el nuevo layout/stepper use shadcn primitives desde día 1.
   - **Workflow rule actualizada en `CLAUDE.md` Component conventions** dentro de este sprint planning — F-050 limpia el pasado, la regla evita reincidencia.
 
+### F-051 — Mobile UI audit + hamburger nav (Sheet) + text-overflow regressions
+
+- Sprint: 2 · Estado: backlog · Prioridad: P0
+- Depende de: F-032, F-040, F-047, F-050
+- Motivación: regresión actual reportada por owner — overlap de letras en mobile en algunas vistas, y la `SiteNav` desktop (logo + LanguageSwitcher + Sign in inline) no escala a viewports `<768px`. Sheet shadcn ya disponible tras F-050 (`npx shadcn@latest add sheet` standalone si F-050 slip).
+- AC:
+  - [ ] Auditar en Playwright viewports `320×568` (iPhone SE 1), `375×667` (iPhone SE 2), `390×844` (iPhone 14), `414×896` (iPhone XR), `768×1024` (iPad mini) los flows: `/`, `/login`, `/reservar` (Step 1-5 nueva SPA F-049), `/dashboard`, `/terms`, `/privacy`, `/reservar/exito/[id]`. Capturar screenshot por viewport+ruta; tabla de issues en `docs/mobile-audit.md` con repro + fix proposed
+  - [ ] `app/components/SiteNav.tsx` reescrito: desktop (`md:`) mantiene layout actual; mobile renderiza botón hamburguesa → `Sheet` shadcn (`side="right"`) con stack vertical: logo top, links (`Reservar`, `Iniciar sesión` / `Dashboard` según sesión), LanguageSwitcher. Sheet cierra con tap en backdrop, ESC, y click en cualquier link
+  - [ ] Fix root-cause de text overflow detectados (truncate vs line-clamp vs wrap vs font-size mobile vs line-height). NO band-aid `overflow: hidden` global; cada fix con justificación inline
+  - [ ] Tap targets `≥44×44px` en mobile (WCAG 2.5.5 AAA para botones primarios; AA para resto). Audit Sheet links, calendar day cells (F-026), anchor pills (F-027), Payment Element wallets (F-043)
+  - [ ] Container queries / breakpoints alineados con Tailwind v4 defaults. Eliminar magic numbers `px` en favor de tokens `rem`/`em` cuando aplique
+  - [ ] Lighthouse mobile (Moto G4 throttle) ≥90 perf + ≥95 a11y en `/`, `/login`, `/reservar` post-fix. Capturar reporte en `docs/lighthouse-mobile-post-f051.html` antes de mover a `done`
+- Tests: Playwright `e2e/f-051-mobile.spec.ts` — hamburguesa abre Sheet, links cierran Sheet, screenshot regression por viewport+ruta crítica (golden masters en `e2e/screenshots/mobile/`). Suites existentes siguen verde
+- Notas:
+  - **Depende de F-050** (Sheet primitive). Si F-050 slip, ship F-051 con `Sheet` instalado standalone (`npx shadcn@latest add sheet`) sin esperar al resto del shadcn pass
+  - F-047 dashboard rendido en mobile cubierto aquí (no esperamos al rediseño v2 de Sprint 3)
+  - **No** redesign — sólo fix regresiones + hamburguesa. Redesign mobile-first del flow booking ya cubierto por F-049 single-page architecture
+  - F-052 (phone CTA) y F-053 (hero announcement banner) consumen el nuevo Sheet mobile como host del CTA primario
+
 ### F-048 — Reminder cron 24h + post-class T+2h emails
 
 - Sprint: 2 · Estado: backlog · Prioridad: P1
@@ -939,12 +958,12 @@
 
 ```
 F-039 (prices schema) ─┐
-F-040 (T&C + modal) ───┴─ F-041 (Step 4) ─ F-042 (draft+PI) ─ F-043 (Step 5) ─ F-044 (webhook) ─ F-045 (email+ics) ─ F-046 (success) ─┬─ F-049 (single-page SPA refactor) ─ F-050 (shadcn pass)
+F-040 (T&C + modal) ───┴─ F-041 (Step 4) ─ F-042 (draft+PI) ─ F-043 (Step 5) ─ F-044 (webhook) ─ F-045 (email+ics) ─ F-046 (success) ─┬─ F-049 (single-page SPA refactor) ─ F-050 (shadcn pass) ─ F-051 (mobile audit + hamburger)
                                                                                                                                        ├─ F-047 (dashboard)
                                                                                                                                        └─ F-048 (crons)
 ```
 
-Critical path original (multi-page MVP, ya completado a través de F-046): F-039 → F-040 → F-041 → F-042 → F-043 → F-044 → F-045 → F-046. F-049 + F-050 ahora son **refactor polish** sobre ese flujo end-to-end ya verde, no chrome aditivo previo a F-041. F-047/F-048 en paralelo con F-049/F-050.
+Critical path original (multi-page MVP, ya completado a través de F-046): F-039 → F-040 → F-041 → F-042 → F-043 → F-044 → F-045 → F-046. F-049 + F-050 + F-051 ahora son **refactor polish + mobile** sobre ese flujo end-to-end ya verde, no chrome aditivo previo a F-041. F-047/F-048 en paralelo con F-049/F-050/F-051.
 
 **Why F-049/F-050 ride inside Sprint 2 (not deferred):**
 - F-049 (single-page architecture rewrite) is a CRO + performance blocker — el flujo multi-page actual hace full document loads entre pasos (TTFB + FCP × 5). Single-page con SSR shell + tanstack hydration elimina los re-renders, mantiene SEO, y permite editable-inline past sections (CRO: micro-friction baja, abandonment baja). Cheaper to refactor antes de Stripe live mode que retrofit con tráfico real.
@@ -988,6 +1007,48 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
 
 ### Sprint 5 — Landing + SEO (semanas 9-10)
 
+#### Tickets pre-definidos
+
+##### F-052 — Operational phone CTA (nav desktop + footer + mobile sheet)
+
+- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Depende de: F-051
+- Motivación: el teléfono operativo del owner (`+41 76 638 18 70`, ver seed F-021) sólo aparece en copy de cancelación (F-040 T&C). Surface global como atajo de contacto reduce fricción para casos no resueltos por el flujo digital (team building, dudas operativas, excepciones de cancelación). CRO: phone visible = signal de trust + escape hatch para usuarios indecisos
+- AC:
+  - [ ] `lib/contact/phone.ts` exporta constantes `OPERATIONAL_PHONE_DISPLAY = "+41 76 638 18 70"` + `OPERATIONAL_PHONE_TEL = "+41766381870"`. Single source of truth; T&C / Privacy / email templates consumen las mismas constantes en lugar de re-escribir
+  - [ ] `app/components/SiteNav.tsx` desktop: link `<a href="tel:+41766381870">` con icono `Phone` (lucide-react) a la izquierda del LanguageSwitcher. Tap nativo dial mobile, popup `tel:` handler en desktop
+  - [ ] `SiteNav.tsx` mobile Sheet (F-051): phone CTA destacado como primer item del sheet (variant `outline` con icono), por encima de los nav links
+  - [ ] `app/components/SiteFooter.tsx`: phone como línea independiente bajo el bloque legal (no mezclado con email). Display format con espacios (`+41 76 638 18 70`), `href` E.164 sin espacios
+  - [ ] i18n keys `nav.phone_label` (`Call us` / `Anrufen` / `Llamar`) + `footer.phone_label`. El número no se localiza — formato CH es universal
+  - [ ] Audit T&C cancellation copy (F-040) + magic-link email (F-017) + booking-confirmed email (F-045): reemplazar hardcoded number por `OPERATIONAL_PHONE_DISPLAY` import
+- Tests: Playwright `e2e/f-052-phone-cta.spec.ts` — phone link presente en nav desktop, mobile sheet (open con hamburguesa F-051) y footer × 3 locales. `href="tel:+41766381870"` exacto. Vitest unit sobre `lib/contact/phone.ts` constantes
+- Notas:
+  - Number hardcoded para MVP single-instructor. Cuando el owner contrate segundo coach o cambie número, edit en `lib/contact/phone.ts` propaga global (incluyendo emails)
+  - **No** WhatsApp link en MVP — el owner valida si conviene cuando llegue la primera lead inbound por phone. Si se añade post-launch, mismo patrón (constante en `lib/contact/whatsapp.ts`)
+  - **No** click-tracking en MVP. Sprint 6+ puede añadir `data-vercel-analytics` event si el owner quiere medir conversion del CTA
+
+##### F-053 — Hero announcement banner (i18n copy, dismissible, no admin)
+
+- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Depende de: F-032, F-051
+- Motivación: slot configurable sobre el hero para ofertas estacionales / mensajes promo (Black Friday, early-bird de temporada, días de cierre operativo, CTA team building). MVP sin admin CMS — copy editable vía `messages/*.json`; el toggle `enabled` también vive en i18n para activar/desactivar sin redeploy de código (solo translations PR)
+- AC:
+  - [ ] `app/components/HeroAnnouncement.tsx` (server component). Lee `t('hero_announcement.enabled')` (string `"true"` / `"false"`); render condicional, sin DOM si `false`
+  - [ ] Render: banda full-width sobre el hero (background `accent` token, foreground `accent-foreground`), copy + CTA opcional. Cerrable con `X` (cookie `hero_announcement_dismissed_v${VERSION}` con TTL 30 días). Botón close es client island mínimo (`'use client'` con `useTransition` + Server Action que set-cookies)
+  - [ ] Versionado vía constante `HERO_ANNOUNCEMENT_VERSION` en source. Bump al cambiar copy importante para reset dismissal global (cookie con sufijo nuevo no matchea las viejas)
+  - [ ] CTA href configurable vía i18n key `hero_announcement.cta_href`. Soporta interno `/contacto`, externo `tel:` / `mailto:` / `https://`. Validación server-side rechaza esquemas no whitelisted (XSS guard)
+  - [ ] i18n keys: `hero_announcement.{enabled, body, cta_label, cta_href}` × 3 locales
+  - [ ] Mount en `app/[locale]/page.tsx` arriba de `<section>` hero. NO en `[locale]/layout.tsx` — banner es home-only, no global (evita ruido en booking flow y dashboard)
+  - [ ] Mobile-first: banda responsive, copy truncate en `<375px` con CTA wrap below. Tap target del close ≥44px (F-051 audit aplica)
+- Tests: Playwright `e2e/f-053-hero-announcement.spec.ts` — `enabled=true` renderiza banda + CTA con href correcto × 3 locales; click X esconde + persiste cookie; segundo load no muestra banda; `enabled=false` no renderiza nada. Mock translation override para testear las dos ramas
+- Notas:
+  - Schema `Announcement` table queda fuera de MVP. Post-launch si el owner pide múltiples banners simultáneos / scheduling / segmentación por locale / A/B test, F-053b migra a DB-backed con admin editor
+  - Performance: server component zero JS extra excepto el botón close. Hero LCP no degrada (banner sirve con el mismo SSR)
+  - Default copy inicial alineado con request del owner: CTA team building → linkea a F-054 cuando aterrice (`/contacto`), fallback a `tel:` mientras tanto
+  - **No** A/B testing de copy en MVP. Owner edita `messages/*.json` directo en PR
+
+#### Bullets generales del sprint
+
 - Home editorial completa (sections, instructor teaser, narrative) — la home **minimal** ya existe desde F-032 (Sprint 0.5); aquí se expande.
 - Página de instructores + perfiles individuales.
 - Página de precios — value-prop por duración: qué incluye cada clase (nivel target, ratio instructor/alumno, equipo incluido/excluido, ubicación de meeting point, idiomas disponibles), beneficios diferenciales (p. ej. `INTENSIVE` = mejor curva de aprendizaje vs hora suelta; `FULL_DAY` = lunch break + 2 bloques). Cross-link a `/reservar` con `duration` preseleccionada. CRO: pricing page convierte cuando explica el "qué", no sólo el "cuánto". Contenido trilingüe vía `messages/{en,de,es}.json` namespace `pricing.*`.
@@ -1005,6 +1066,75 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
 - Performance audit Lighthouse > 95 mobile.
 - Security review con skill `security-review`.
 - Soft launch interno → producción.
+
+---
+
+## Post-MVP — backlog ideas
+
+> Tickets aceptados pero **fuera del scope MVP** (Sprints 0-6). Se desbloquean post soft-launch cuando el flujo core esté validado en producción y haya tráfico real para priorizar. Cada uno tiene AC borrador para no perder contexto cuando llegue su turno.
+
+### F-054 — Team-building / group inquiry form
+
+- Sprint: post-MVP · Estado: backlog · Prioridad: P2
+- Depende de: F-017, F-053
+- Motivación: bookings de grupo (team building corporativo, despedidas, escuelas, eventos) no encajan en el flow `Booking` estándar (1-4 attendees max, slot anchor fijo, instructor único). Form de captura simple → email al owner via Resend → resolución manual offline. El CTA del hero announcement (F-053) linkea aquí por defecto cuando el owner activa la oferta team building
+- AC:
+  - [ ] `app/[locale]/contacto/page.tsx` server component + `contacto-form.tsx` client (RHF + Zod). Campos: `name` (1-80), `email` (RFC 5322), `phone` (E.164 tolerante a espacios, opcional), `groupSize` (int 5-50), `preferredDate` (date ISO, opcional), `preferredDuration` (`Duration` enum, opcional), `message` (1-2000)
+  - [ ] Server action `submitGroupInquiry(input)` valida Zod, persiste fila `GroupInquiry` en DB. Modelo nuevo: `id, name, email, phone?, groupSize, preferredDate?, preferredDuration?, message, createdAt, resolvedAt?, resolvedNote?`. Migración `<date>_group_inquiry` vía `db-migrate.yml` (F-037)
+  - [ ] Email a `franciscojgonzalezfernandez@gmail.com` vía Resend con payload completo + `replyTo` del cliente para que el owner responda directo. Idempotency `idempotencyKey: inquiry-<id>`
+  - [ ] Auto-respuesta al cliente: "We received your inquiry, we'll reply within 48h" trilingual via React Email template (mismo aesthetic que booking-confirmed F-045)
+  - [ ] Rate limit por IP (3 envíos / hora). Implementación: Upstash Redis si ya provisionado para Sprint 3 credit-locking; fallback a in-memory LRU map en process (suficiente para MVP single-region)
+  - [ ] Honeypot field `website` (hidden via CSS, bot completa, server rejecta). Sin captcha visible — fricción innecesaria para inquiries genuinos
+  - [ ] CTA F-053 hero announcement default linkea aquí (`/contacto`) cuando el owner active el toggle team-building
+  - [ ] i18n keys `contacto.{title, sub, label_*, submit, success, error, ...}` × 3 locales
+- Tests: Playwright happy path × 3 locales + Zod rejections (groupSize fuera de rango, email malformado, message vacío) + honeypot triggered → 200 silencioso sin send; Vitest sobre server action (mock Resend + Prisma) — 4-5 specs
+- Notas:
+  - Form simple por diseño — full quote/booking lifecycle requeriría admin panel + status flow + integración con `Booking` polymorphism (post Sprint 6)
+  - Honeypot + rate limit suficiente para MVP. Si spam crece, añadir Turnstile / hCaptcha como segundo gate
+  - **No** schema booking polymorphism — `GroupInquiry` es tabla independiente; conversión manual (admin crea bookings individuales desde el inquiry tras coordinar fecha/instructor/precio con el cliente)
+  - Admin panel Sprint 4 puede listar `GroupInquiry` pendientes como dashboard secundario; fuera de scope de este ticket
+
+### F-055 — Lesson packs (5-class prepaid bundle, discounted)
+
+- Sprint: post-MVP · Estado: backlog · Prioridad: P1
+- Depende de: F-039, F-042, F-044, F-045, F-047
+- Motivación: monetización adicional + retention. Cliente compra pack de N clases con descuento (e.g. `5×ONE_HOUR` por CHF 500 en lugar de CHF 550 — 9% off), redime cuando quiere durante validez (default 1 año). Bate price-shopping per-lesson, locks commitment temprano, eleva LTV. Mercado CH/AT confirma que escuelas competidoras venden packs como producto principal de invierno
+- AC schema:
+  - [ ] Migración `<date>_lesson_packs`: model `LessonPack` (`id, name, durationKind: Duration, lessonCount: Int, priceCentsTotal: Int, validityDays: Int @default(365), active: Boolean @default(true), seasonId String? @relation(Season)`). Catálogo configurable por temporada; sin `seasonId` = oferta permanente
+  - [ ] Model `PackPurchase` (`id, packId, bookerId, purchasedAt, priceCentsPaid, stripePaymentIntentId @unique, lessonsRemaining: Int, expiresAt: DateTime, status: ACTIVE | EXHAUSTED | EXPIRED | REFUNDED, refundedAt?, refundAmountCents?`). Index `(bookerId, status)` + `(status, expiresAt)` para queries de expiración
+  - [ ] Model `PackRedemption` (`id, packPurchaseId, bookingId @unique, redeemedAt`). `Booking` opcional `packRedemptionId? @unique` o `stripePaymentIntentId?` — exclusivos vía check constraint o validation en server action (pago pack OR Stripe directo, nunca ambos en la misma booking)
+- AC pricing:
+  - [ ] `Season.priceCentsByDuration` (F-039) sigue siendo fuente per-lesson. Pack pricing en `LessonPack.priceCentsTotal` — no derivado del per-lesson; admin define descuento explícito (más control que "10% off automatic")
+  - [ ] `lib/pricing/get-pack-price.ts` exporta `getPackDiscountPercent(pack, season): number` para display "Save X%" en marketing copy
+- AC checkout pack:
+  - [ ] Ruta `/[locale]/packs` lista packs activos × locale; CTA "Buy pack" → `/[locale]/packs/[id]/comprar`
+  - [ ] Checkout pack 2 pasos: Step 1 booker auth + T&C (reusa F-040 + F-041 auth gating), Step 2 Stripe Payment Element (reusa F-043 pattern)
+  - [ ] `createPackPurchaseDraft` server action paralela a `createBookingDraft` (F-042); mismo idempotency pattern por bookerId+packId+ventana 15min
+  - [ ] Webhook `payment_intent.succeeded` (F-044) extendido: branch `metadata.kind === 'pack'` flippea `PackPurchase.status = ACTIVE` + calcula `expiresAt = paidAt + validityDays`; dispatch email confirmación pack
+- AC redención en booking flow:
+  - [ ] Step 4/5 (F-041/F-043 o equivalente post-F-049 SPA): si user tiene `PackPurchase.status === ACTIVE` con `lessonsRemaining > 0` y `pack.durationKind === selectedDuration`, mostrar toggle "Pay with pack ({N} lessons left, expires {date})". Activo → skip Stripe Payment Element completo; `createBookingDraft` consume `lessonsRemaining` en `$transaction`
+  - [ ] Si `pack.durationKind` ≠ duration seleccionada, el pack no se ofrece (no upgrade/downgrade en MVP; sería complicación de pricing innecesaria)
+  - [ ] Race condition: `PackRedemption` insert + `PackPurchase.lessonsRemaining` decrement en mismo `$transaction` que `Booking.create`. Constraint Postgres `CHECK (lessonsRemaining >= 0)` previene oversell incluso en concurrencia extrema
+  - [ ] Auto-transition `status = EXHAUSTED` cuando `lessonsRemaining = 0` post-decrement
+- AC emails:
+  - [ ] Template `lib/email/pack-purchased.tsx` — confirmación compra + balance inicial + fecha expiración + cómo redimir (CTA `/reservar`)
+  - [ ] Template `lib/email/pack-expiring.tsx` — cron 7 días antes de `expiresAt` si `lessonsRemaining > 0`. Infra reusa cron de F-048
+- AC dashboard:
+  - [ ] Sección "My packs" en `/dashboard` (sucesor F-047 de Sprint 3 dashboard v2): balance por pack, expiración, link "Book a lesson" con `?duration=` preseleccionada del pack
+- AC refund policy:
+  - [ ] Pack refund a discreción admin (Sprint 4 panel). Default: forfeit como bookings individuales `<48h` (alineado con F-039b)
+  - [ ] Documentar política en T&C amendment (F-040): "Lesson packs are non-refundable except at school discretion. Unused lessons expire after {validityDays} days."
+- Tests:
+  - Vitest sobre `lib/booking/create-draft.ts` extendido (pack consumption path — 6-8 specs cubriendo happy, lessonsRemaining=0 rejects, wrong duration rejects, race condition con `$transaction`)
+  - Vitest sobre `lib/pricing/get-pack-price.ts` (3 specs)
+  - Playwright happy path: compra pack → redención en booking flow → dashboard refleja balance update; expiry warning email (mocked clock)
+- Notas:
+  - **Big feature.** Estimación 2-3 sprints solo. Schema + checkout pack + webhook branch + redención en booking + emails + dashboard + admin pricing editor + refund flow. No abordable como single PR
+  - Empezar con **1 pack hardcoded** (`5×ONE_HOUR @ CHF 500`) seeded en `prisma/seed.ts`. Validar conversion 1-2 meses antes de invertir en admin CRUD de packs
+  - Pack pricing decision (descuento %, validity period) requiere **D-PRC v2** — owner define ladder definitivo antes de comenzar el sprint
+  - **No** transferibilidad entre users en MVP (pack = `bookerId` fijo). Gift packs como feature futuro (requiere flow de invite + claim por email)
+  - **No** mix-and-match duraciones en mismo pack (cada pack es single-duration). Simplificación deliberada — packs multi-duration multiplican casos edge en pricing y redención
+  - **No** auto-renewal / subscription en MVP. Pack expira, el cliente compra otro si quiere
 
 ---
 
