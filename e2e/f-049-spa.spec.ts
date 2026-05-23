@@ -55,7 +55,10 @@ test.describe("F-049 — single-page booking shell", () => {
     page,
   }) => {
     await page.goto("/en/reservar");
-    await page.getByTestId("select-duration").selectOption("ONE_HOUR");
+    // Shadcn Select (Base UI) renders a button trigger; native selectOption
+    // does not work. Open + click the matching item by its data-testid.
+    await page.getByTestId("select-duration").click();
+    await page.getByTestId("select-duration-ONE_HOUR").click();
     await page.getByTestId("submit-step1").click();
 
     await page.waitForURL(/\?.*\bd=ONE_HOUR\b/);

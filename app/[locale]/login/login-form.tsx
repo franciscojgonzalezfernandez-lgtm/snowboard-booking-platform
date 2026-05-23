@@ -121,13 +121,23 @@ export function LoginForm({ locale, callbackURL }: LoginFormProps) {
         onValueChange={(v) => setMode(v as Mode)}
         aria-label={t("aria_tablist")}
       >
-        {/* Default TabsList is h-8; bump to h-11 so triggers meet the 44px
-            mobile touch target. */}
+        {/* TabsList default base is h-8 with each trigger sized via
+            h-[calc(100%-1px)]. Base UI's primitive does not stretch the
+            trigger inside a grid TabsList, so we bump the height on each
+            TabsTrigger directly to clear the 44px mobile touch target. */}
         <TabsList className="grid h-11 w-full grid-cols-2">
-          <TabsTrigger value="signin" data-testid="tab-signin">
+          <TabsTrigger
+            value="signin"
+            data-testid="tab-signin"
+            className="h-full min-h-11"
+          >
             {t("tab_signin")}
           </TabsTrigger>
-          <TabsTrigger value="signup" data-testid="tab-signup">
+          <TabsTrigger
+            value="signup"
+            data-testid="tab-signup"
+            className="h-full min-h-11"
+          >
             {t("tab_signup")}
           </TabsTrigger>
         </TabsList>
