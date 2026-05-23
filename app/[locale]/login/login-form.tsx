@@ -17,6 +17,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authClient } from "@/lib/auth/client";
 
 type Mode = "signin" | "signup";
@@ -115,42 +116,20 @@ export function LoginForm({ locale, callbackURL }: LoginFormProps) {
 
   return (
     <div className="space-y-6">
-      <div
-        role="tablist"
+      <Tabs
+        value={mode}
+        onValueChange={(v) => setMode(v as Mode)}
         aria-label={t("aria_tablist")}
-        className="grid grid-cols-2 gap-2 border-b border-border pb-2"
       >
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === "signin"}
-          data-testid="tab-signin"
-          onClick={() => setMode("signin")}
-          className={
-            "py-1 text-sm transition " +
-            (mode === "signin"
-              ? "font-medium text-foreground"
-              : "text-muted-foreground hover:text-foreground")
-          }
-        >
-          {t("tab_signin")}
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === "signup"}
-          data-testid="tab-signup"
-          onClick={() => setMode("signup")}
-          className={
-            "py-1 text-sm transition " +
-            (mode === "signup"
-              ? "font-medium text-foreground"
-              : "text-muted-foreground hover:text-foreground")
-          }
-        >
-          {t("tab_signup")}
-        </button>
-      </div>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="signin" data-testid="tab-signin">
+            {t("tab_signin")}
+          </TabsTrigger>
+          <TabsTrigger value="signup" data-testid="tab-signup">
+            {t("tab_signup")}
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       <Form {...form}>
         <form
