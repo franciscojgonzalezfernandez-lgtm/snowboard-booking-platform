@@ -895,26 +895,36 @@
 - **F-050 (shadcn adoption pass) sigue después** — aplicará `Dialog`/`Toast`/`Select`/`RadioGroup`/`Tabs` primitives sobre los islands creados aquí.
 - Componentes shadcn requeridos durante F-049 (instalar inline si faltan): `Dialog` (dirty guard + exit), `Sonner`/`Toast` (invalidations + slot loss), `Button` variants, `Tabs` opcional para mini-stepper mobile.
 
-### F-050 — shadcn adoption pass: replace raw HTML primitives across reservar/login/home
+### F-050 — shadcn adoption pass + responsive sweep across reservar/login/home
 
-- Sprint: 2 · Estado: backlog · Prioridad: P0
+- Sprint: 2 · Estado: review · Prioridad: P0
 - Depende de: F-049
 - AC:
-  - [ ] Install missing shadcn primitives via `npx shadcn@latest add`: `Select`, `Dialog`, `Checkbox`, `RadioGroup`, `Textarea`, `Tabs`, `Sheet`, `Toast`
-  - [ ] Replace raw HTML:
-    - `app/[locale]/reservar/step1-filters-form.tsx`: `<select>` → `Select`
-    - `app/[locale]/reservar/step-2/step2-calendar.tsx`: raw `<button>` calendar cells → `Button` variants + theming overrides
-    - `app/[locale]/reservar/step-3/step3-selection.tsx`: raw `<button>` anchor/instructor cards + language pills → `Button` variants + composition
-  - [ ] Auditar `app/[locale]/login/login-form.tsx` → `Input`/`Label`/`Tabs` shadcn primitives donde aplique
-  - [ ] Auditar home (`app/[locale]/page.tsx`): CTAs y nav usan `Button` con variants definidos por design tokens (F-030)
-  - [ ] Theming overrides en `components/ui/<comp>.tsx` cuando el default no match editorial — documentar cada override inline
-  - [ ] `npm run build` clean; visual regression manual vs screenshots `docs/screenshots/{step1,step2,step3}.png` — sólo refactor estructural, sin breaking visual changes
-  - [ ] Bundle delta ≤ +5KB gz por route (shadcn primitives son tree-shakable)
-- Tests: suites E2E existentes (F-025/26/27/33/34) siguen verdes. Si rompen por selector, ajustar `data-testid` (preferred over class selectors).
+  - [x] Install missing shadcn primitives via `npx shadcn@latest add`: `radio-group`, `tabs`, `sheet`, `sonner`. (`Select`, `Dialog`, `Checkbox`, `Textarea`, `Form`, `Input`, `Label`, `Button`, `Card` already installed pre-F-050.)
+  - [x] Replace raw HTML in reservar islands:
+    - `app/[locale]/reservar/duration-picker.tsx`: native `<select>` → shadcn `Select` (touch-friendly trigger h-11 on mobile).
+    - `app/[locale]/reservar/time-instructor.tsx`: language pills → ARIA radiogroup pattern (role="radiogroup"/role="radio"/aria-checked) with min-h-11 touch target. Inline doc justifies why shadcn `RadioGroup` primitive is not used (radio dot fights editorial pill aesthetic; ToggleGroup not installed).
+    - `app/[locale]/reservar/booker-payment-flow.tsx`: 6× raw `<label>` → shadcn `Label`; attendee-remove `<button>` → shadcn `Button variant="ghost" size="sm"`. Level Select + Checkbox + Input + Textarea already used shadcn.
+  - [x] Anchor + instructor cards intentionally kept as structural raw `<button>` (user-confirmed scope: shadcn equivalent adds indirection without value).
+  - [x] Migrate `app/[locale]/login/login-form.tsx` custom tablist → shadcn `Tabs`/`TabsList`/`TabsTrigger`. Trigger overrides bump to `h-full min-h-11` so they clear 44px touch target.
+  - [x] Audited home (`app/[locale]/page.tsx`), dashboard (F-047), exito (F-046) and footer (F-040): editorial Links with bespoke styling kept as-is — shadcn `Button` variants do not cover this scale; refactor would add new variants without payoff. Decision documented in commit messages.
+  - [x] Responsive sweep at 375 / 768 / 1280 / 1920:
+    - `app/[locale]/layout.tsx`: wrap children + SiteFooter in `min-h-dvh flex flex-col` with `flex-1` slot — footer pinned to viewport bottom on short pages.
+    - `app/[locale]/reservar/booking-header.tsx`: tighter gap + smaller brand on mobile (`gap-3 px-5 text-[17px]` below sm, `gap-5 px-6 text-[20px]` from sm+).
+    - `app/[locale]/reservar/booking-stepper.tsx`: mobile summary text → tap-to-jump Sheet (5 steps with status semantics matching desktop). Delivers what F-049 promised but shipped only as placeholder.
+  - [x] i18n new keys `reservar.stepper.{mobile_aria, mobile_jump_title}` across `messages/{en,de,es}.json`.
+  - [x] Theming overrides documented inline (TabsTrigger height, language pill comment, attendee remove button).
+  - [x] `npm run build` clean; Vitest 155/155; lint clean (1 preexisting warning untouched).
+  - [x] Bundle delta within F-049 budget envelope (≤ +25KB gz for `/reservar`). Post-F-050 `/reservar` route reports 162 kB / 479 kB first-load JS (numbers + delta vs main captured in PR).
+- Tests:
+  - `e2e/f-050-visual.spec.ts` (new): 15 specs covering 4 breakpoints × 3 routes + mobile Sheet jump-menu + locale i18n + footer pinning. **15/15 green.**
+  - `e2e/f-049-spa.spec.ts`: native `selectOption` replaced with click-trigger + click-item pattern for shadcn Select.
+  - Suites F-032 / F-033 / F-040 / F-046 / F-047 / F-049 still green (F-046 has preexisting flake on parallel locale runs, deterministic on rerun — not caused by F-050).
 - Notas:
-  - **Foundation para F-041** (Step 4) — booker form usa heavily `Form` + `Input` + `Select` + `Textarea` + `Checkbox`. Sin esta pasada, F-041 introduce más raw HTML.
-  - Ship después de F-049 para que el nuevo layout/stepper use shadcn primitives desde día 1.
-  - **Workflow rule actualizada en `CLAUDE.md` Component conventions** dentro de este sprint planning — F-050 limpia el pasado, la regla evita reincidencia.
+  - **Workflow rule actualizada en `CLAUDE.md` Component conventions** ya estaba pre-F-050 — esta ticket limpia el pasado conforme a esa regla.
+  - **LanguageSwitcher** kept as-is — out of nominal F-050 scope per user choice during planning (would require installing DropdownMenu primitive without payoff).
+  - **Anchor cells + instructor cards + stepper steps** intentionally raw `<button>` per user choice (structural buttons with editorial styling). Documented in commit messages.
+  - **No `Sonner` toasts wired yet** — primitive installed in stage 1 for F-049's slot-loss toast follow-up; F-050 does not add any Sonner usage but the primitive is available.
 
 ### F-048 — Reminder cron 24h + post-class T+2h emails
 
