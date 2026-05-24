@@ -1136,6 +1136,27 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
   - **No** mix-and-match duraciones en mismo pack (cada pack es single-duration). Simplificación deliberada — packs multi-duration multiplican casos edge en pricing y redención
   - **No** auto-renewal / subscription en MVP. Pack expira, el cliente compra otro si quiere
 
+### F-056 — Better Auth account linking (Google ↔ existing magic-link/email account)
+
+- Sprint: hotfix · Estado: backlog · Prioridad: P0
+- Depende de: — (config-only, no schema change)
+- Motivación: regresión reportada por owner — login con Google devuelve `account_not_linked` cuando el usuario ya tiene cuenta creada vía magic-link o email+password con el mismo email. Better Auth por defecto rechaza el link automático cross-provider; sin esto, Google sign-in está roto para todo usuario que se haya registrado antes por otro método. Bloquea conversion: estudiantes que recibieron magic-link en Step 4 y luego intentan re-acceder por Google quedan fuera.
+- AC config:
+  - [ ] `lib/auth/index.ts`: añadir bloque `account.accountLinking = { enabled: true, trustedProviders: ["google"] }`
+  - [ ] Trust de Google es seguro: Google fuerza `email_verified=true` en el id_token; magic-link también produce cuentas con email verificado por construcción (click en link = verificación). Linkar ambas vía email es safe — no permite takeover por un tercero con Google account "de relleno"
+  - [ ] No incluir `"email-password"` ni `"magic-link"` en `trustedProviders` — esos providers no garantizan verificación previa al primer sign-in, no son fuente de truth para auto-link
+- AC verificación:
+  - [ ] Manual: crear user vía magic-link (`/en/reservar` → Step 4 → email) → cerrar sesión → `/en/login` → tab "Sign in" → "Continue with Google" con mismo email → entra a la sesión existente (no error `account_not_linked`); `Account` row con `providerId=google` aparece linkada al `userId` original
+  - [ ] Sentry: confirmar que el error `account_not_linked` deja de aparecer post-deploy
+- AC tests:
+  - [ ] Unit test sobre `auth` config: asserta presencia del bloque `account.accountLinking` para evitar regresión silenciosa si alguien refactoriza el archivo
+  - [ ] (Opcional, fuera de scope inmediato) E2E con mock OAuth — Better Auth no expone fixtures Google triviales; se aplaza a F-XXX si se vuelve necesario
+- Notas:
+  - **No requiere migración Prisma.** El `Account` model ya soporta múltiples rows por `userId` (unique key `(providerId, accountId)`); el cambio es puramente runtime
+  - **No tocar `socialProviders.google.clientId`** — credenciales OAuth ya configuradas, el bug es de config de linking, no de OAuth handshake
+  - Decisión deliberada: usar `trustedProviders` (auto-link en login) en lugar del flow "Sign in to link account" (requiere UI extra + segundo login). El owner opera con un único pool de usuarios, sin riesgo de email collision malicioso a esta escala
+  - Referencia Better Auth docs: https://www.better-auth.com/docs/concepts/users-accounts#account-linking
+
 ---
 
 ## Bloqueantes / decisiones abiertas (consolidadas)
