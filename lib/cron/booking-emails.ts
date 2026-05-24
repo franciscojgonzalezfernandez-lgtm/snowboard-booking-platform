@@ -1,7 +1,7 @@
 import type { Duration, Locale } from "@prisma/client";
 
 import { durationMinutes } from "@/lib/booking-engine/duration";
-import { addDays, setUtcTime } from "@/lib/booking-engine/time";
+import { addDays, setUtcTime, startOfUtcDay } from "@/lib/booking-engine/time";
 import type {
   SendBookingReminderDeps,
   SendBookingReminderResult,
@@ -10,11 +10,6 @@ import type {
   SendPostClassDeps,
   SendPostClassResult,
 } from "@/lib/email/send-post-class";
-
-const REMINDER_OFFSET_HOURS = 24;
-const REMINDER_WINDOW_MS = 60 * 60 * 1000;
-const POST_CLASS_OFFSET_HOURS = 2;
-const POST_CLASS_WINDOW_MS = 60 * 60 * 1000;
 
 export type CandidateRow = {
   id: string;
@@ -76,42 +71,31 @@ export async function runBookingEmailsCron(
 ): Promise<CronRunSummary> {
   const { now } = deps;
 
-  const dateLowerBound = addDays(now, -1);
-  const dateUpperBound = addDays(now, 2);
-  dateLowerBound.setUTCHours(0, 0, 0, 0);
-  dateUpperBound.setUTCHours(0, 0, 0, 0);
+  const todayStart = startOfUtcDay(now);
+  const tomorrowStart = addDays(todayStart, 1);
+  const dayAfterTomorrowStart = addDays(todayStart, 2);
+  const yesterdayStart = addDays(todayStart, -1);
 
-  const reminderEnd = new Date(
-    now.getTime() + REMINDER_OFFSET_HOURS * 60 * 60 * 1000,
-  );
-  const reminderStart = new Date(reminderEnd.getTime() - REMINDER_WINDOW_MS);
-  const postClassEnd = new Date(
-    now.getTime() - POST_CLASS_OFFSET_HOURS * 60 * 60 * 1000,
-  );
-  const postClassStart = new Date(postClassEnd.getTime() - POST_CLASS_WINDOW_MS);
-
+  // Reminder: every CONFIRMED booking happening tomorrow (UTC day) that has
+  // not yet been reminded. The cron runs daily at 17:00 UTC (≈ 18:00 local
+  // in CET / 19:00 in CEST) so this notice lands the evening before.
   const reminderCandidates = await deps.prisma.booking.findMany({
     where: {
       status: "CONFIRMED",
       reminder24hSentAt: null,
-      date: { gte: dateLowerBound, lte: dateUpperBound },
+      date: { gte: tomorrowStart, lt: dayAfterTomorrowStart },
     },
     select: CANDIDATE_SELECT,
   });
 
-  const reminderTargets = reminderCandidates.filter((b) => {
-    const startUtc = setUtcTime(b.date, b.anchorTime);
-    return startUtc > reminderStart && startUtc <= reminderEnd;
-  });
-
   const reminders: BucketSummary = {
-    considered: reminderTargets.length,
+    considered: reminderCandidates.length,
     sent: 0,
     skipped: 0,
     errors: 0,
   };
 
-  for (const candidate of reminderTargets) {
+  for (const candidate of reminderCandidates) {
     try {
       const result = await deps.sendReminder(
         { ...deps.reminderDeps, now },
@@ -128,11 +112,17 @@ export async function runBookingEmailsCron(
     }
   }
 
+  // Post-class: every CONFIRMED booking from today (UTC) whose end has
+  // already passed, plus a yesterday-fallback for late-end classes that
+  // ended after the previous run (e.g. a FULL_DAY lesson finishing past
+  // 17:00 UTC). Without the fallback those rows would never flip
+  // `postClassEmailSentAt` because the next run would already be looking
+  // at a newer day window.
   const postClassCandidates = await deps.prisma.booking.findMany({
     where: {
       status: "CONFIRMED",
       postClassEmailSentAt: null,
-      date: { gte: dateLowerBound, lte: dateUpperBound },
+      date: { gte: yesterdayStart, lt: tomorrowStart },
     },
     select: CANDIDATE_SELECT,
   });
@@ -142,7 +132,7 @@ export async function runBookingEmailsCron(
     const endUtc = new Date(
       startUtc.getTime() + durationMinutes(b.duration) * 60 * 1000,
     );
-    return endUtc > postClassStart && endUtc <= postClassEnd;
+    return endUtc <= now;
   });
 
   const postClass: BucketSummary = {

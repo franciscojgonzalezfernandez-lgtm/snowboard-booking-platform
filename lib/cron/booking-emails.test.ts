@@ -11,7 +11,12 @@ import type {
   SendPostClassResult,
 } from "@/lib/email/send-post-class";
 
-const NOW = new Date("2026-05-24T10:00:00.000Z");
+// Cron runs daily at 17:00 UTC (~18:00 CET / 19:00 CEST). Pin a winter
+// evening so test data reflects the real production cadence.
+const NOW = new Date("2026-12-15T17:00:00.000Z");
+const TOMORROW = new Date("2026-12-16T00:00:00.000Z");
+const TODAY = new Date("2026-12-15T00:00:00.000Z");
+const YESTERDAY = new Date("2026-12-14T00:00:00.000Z");
 
 function row(
   overrides: Partial<CandidateRow> & Pick<CandidateRow, "id" | "date" | "anchorTime">,
@@ -48,14 +53,19 @@ function makeDeps(opts: {
     flippedPostClass: new Set(),
   };
 
-  // findMany filters by null flag — mirror that here so idempotency works in
-  // the simulated DB even when the same fixture array is reused across calls.
+  // findMany filters by date range + null flag — mirror that here so a
+  // second invocation against the same fixture array respects the just-
+  // flipped flag set (idempotency simulation).
   const findMany = vi.fn(async (args: { where: Record<string, unknown> }) => {
     const where = args.where as {
       reminder24hSentAt?: null;
       postClassEmailSentAt?: null;
+      date?: { gte?: Date; lt?: Date };
     };
     return opts.candidates.filter((c) => {
+      const date = c.date.getTime();
+      if (where.date?.gte && date < where.date.gte.getTime()) return false;
+      if (where.date?.lt && date >= where.date.lt.getTime()) return false;
       if ("reminder24hSentAt" in where && recorded.flippedReminder.has(c.id))
         return false;
       if ("postClassEmailSentAt" in where && recorded.flippedPostClass.has(c.id))
@@ -108,67 +118,60 @@ function makeDeps(opts: {
   return { deps, recorded };
 }
 
-describe("runBookingEmailsCron — 24h reminder window", () => {
+describe("runBookingEmailsCron — reminder (tomorrow's bookings)", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(NOW);
   });
   afterEach(() => vi.useRealTimers());
 
-  test("picks up booking starting exactly 24h ahead (window upper edge included)", async () => {
+  test("picks every CONFIRMED booking dated tomorrow regardless of anchor time", async () => {
     const candidates = [
-      row({ id: "edge_top", date: new Date("2026-05-25T00:00:00.000Z"), anchorTime: "10:00" }),
+      row({ id: "early", date: TOMORROW, anchorTime: "08:00" }),
+      row({ id: "noon", date: TOMORROW, anchorTime: "12:00" }),
+      row({ id: "late", date: TOMORROW, anchorTime: "16:00" }),
     ];
     const { deps, recorded } = makeDeps({ candidates });
     const summary = await runBookingEmailsCron(deps);
-    expect(recorded.reminderCalls).toEqual(["edge_top"]);
-    expect(summary.reminders.sent).toBe(1);
+    expect(recorded.reminderCalls.sort()).toEqual(["early", "late", "noon"]);
+    expect(summary.reminders.sent).toBe(3);
   });
 
-  test("skips booking starting 24h+1min ahead (just past window)", async () => {
+  test("skips bookings dated today (already covered by previous run or too late)", async () => {
     const candidates = [
-      row({ id: "too_far", date: new Date("2026-05-25T00:00:00.000Z"), anchorTime: "10:01" }),
-    ];
-    const { deps, recorded } = makeDeps({ candidates });
-    const summary = await runBookingEmailsCron(deps);
-    expect(recorded.reminderCalls).toEqual([]);
-    expect(summary.reminders.considered).toBe(0);
-  });
-
-  test("skips booking starting 23h ahead (window lower edge excluded — caught next hour)", async () => {
-    // window is (now+23h, now+24h] = (09:00 tomorrow, 10:00 tomorrow]
-    const candidates = [
-      row({ id: "edge_bottom", date: new Date("2026-05-25T00:00:00.000Z"), anchorTime: "09:00" }),
+      row({ id: "today_class", date: TODAY, anchorTime: "10:00" }),
     ];
     const { deps, recorded } = makeDeps({ candidates });
     await runBookingEmailsCron(deps);
     expect(recorded.reminderCalls).toEqual([]);
   });
 
-  test("picks up booking 23h+1min ahead (one minute inside window)", async () => {
+  test("skips bookings dated day-after-tomorrow (next run will catch them)", async () => {
     const candidates = [
-      row({ id: "edge_bottom_plus", date: new Date("2026-05-25T00:00:00.000Z"), anchorTime: "09:01" }),
+      row({
+        id: "two_days_out",
+        date: new Date("2026-12-17T00:00:00.000Z"),
+        anchorTime: "10:00",
+      }),
     ];
     const { deps, recorded } = makeDeps({ candidates });
     await runBookingEmailsCron(deps);
-    expect(recorded.reminderCalls).toEqual(["edge_bottom_plus"]);
+    expect(recorded.reminderCalls).toEqual([]);
   });
 
-  test("does NOT re-send when reminder24hSentAt already flipped (idempotency)", async () => {
-    const candidates = [
-      row({ id: "boot1", date: new Date("2026-05-25T00:00:00.000Z"), anchorTime: "10:00" }),
-    ];
+  test("is idempotent — second invocation does not re-call sendReminder", async () => {
+    const candidates = [row({ id: "boot1", date: TOMORROW, anchorTime: "10:00" })];
     const { deps, recorded } = makeDeps({ candidates });
     await runBookingEmailsCron(deps);
     await runBookingEmailsCron(deps);
     expect(recorded.reminderCalls).toEqual(["boot1"]);
   });
 
-  test("dispatches en + de + es locales in same run", async () => {
+  test("dispatches en + de + es locales in a single run", async () => {
     const candidates = [
-      row({ id: "en_b", date: new Date("2026-05-25T00:00:00.000Z"), anchorTime: "10:00", language: Locale.en }),
-      row({ id: "de_b", date: new Date("2026-05-25T00:00:00.000Z"), anchorTime: "10:00", language: Locale.de }),
-      row({ id: "es_b", date: new Date("2026-05-25T00:00:00.000Z"), anchorTime: "10:00", language: Locale.es }),
+      row({ id: "en_b", date: TOMORROW, anchorTime: "10:00", language: Locale.en }),
+      row({ id: "de_b", date: TOMORROW, anchorTime: "10:00", language: Locale.de }),
+      row({ id: "es_b", date: TOMORROW, anchorTime: "10:00", language: Locale.es }),
     ];
     const { deps, recorded } = makeDeps({ candidates });
     await runBookingEmailsCron(deps);
@@ -176,100 +179,87 @@ describe("runBookingEmailsCron — 24h reminder window", () => {
   });
 });
 
-describe("runBookingEmailsCron — T+2h post-class window", () => {
+describe("runBookingEmailsCron — post-class (today's completed bookings)", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(NOW);
   });
   afterEach(() => vi.useRealTimers());
 
-  test("picks up booking that ended exactly 2h ago (window upper edge included)", async () => {
-    // window for end = (now-3h, now-2h] = (07:00, 08:00]
-    // 1h booking starting at 07:00 ends 08:00 — included
+  test("sends post-class for today's class that already ended", async () => {
     const candidates = [
       row({
-        id: "end_edge_top",
-        date: new Date("2026-05-24T00:00:00.000Z"),
-        anchorTime: "07:00",
-        duration: Duration.ONE_HOUR,
-      }),
-    ];
-    const { deps, recorded } = makeDeps({ candidates });
-    const summary = await runBookingEmailsCron(deps);
-    expect(recorded.postClassCalls).toEqual(["end_edge_top"]);
-    expect(summary.postClass.sent).toBe(1);
-  });
-
-  test("skips booking that ended 1h59min ago (window not reached)", async () => {
-    // 1h booking starting 06:01 ends 07:01 — older than 08:00 wait, no:
-    // Want endUtc > 08:00 (just after upper edge) to be skipped.
-    // anchorTime 07:01 + 1h = 08:01 — skipped because > postClassEnd.
-    const candidates = [
-      row({
-        id: "too_recent",
-        date: new Date("2026-05-24T00:00:00.000Z"),
-        anchorTime: "07:01",
-      }),
-    ];
-    const { deps, recorded } = makeDeps({ candidates });
-    await runBookingEmailsCron(deps);
-    expect(recorded.postClassCalls).toEqual([]);
-  });
-
-  test("skips booking that ended 3h ago (window lower edge excluded)", async () => {
-    // anchorTime 06:00 + 1h = 07:00 — equals postClassStart, excluded by `>`.
-    const candidates = [
-      row({
-        id: "end_edge_bottom",
-        date: new Date("2026-05-24T00:00:00.000Z"),
-        anchorTime: "06:00",
-      }),
-    ];
-    const { deps, recorded } = makeDeps({ candidates });
-    await runBookingEmailsCron(deps);
-    expect(recorded.postClassCalls).toEqual([]);
-  });
-
-  test("picks up booking that ended 2h+1min ago (one minute inside window)", async () => {
-    const candidates = [
-      row({
-        id: "end_inside",
-        date: new Date("2026-05-24T00:00:00.000Z"),
-        anchorTime: "06:59",
-      }),
-    ];
-    const { deps, recorded } = makeDeps({ candidates });
-    await runBookingEmailsCron(deps);
-    expect(recorded.postClassCalls).toEqual(["end_inside"]);
-  });
-
-  test("computes endUtc from duration — 2h lesson, not 1h", async () => {
-    // 2h lesson starting 06:00 ends 08:00 — at the upper edge, included.
-    const candidates = [
-      row({
-        id: "two_hour",
-        date: new Date("2026-05-24T00:00:00.000Z"),
-        anchorTime: "06:00",
+        id: "morning",
+        date: TODAY,
+        anchorTime: "10:00",
         duration: Duration.TWO_HOURS,
       }),
     ];
     const { deps, recorded } = makeDeps({ candidates });
+    const summary = await runBookingEmailsCron(deps);
+    expect(recorded.postClassCalls).toEqual(["morning"]);
+    expect(summary.postClass.sent).toBe(1);
+  });
+
+  test("does not send for today's class still in progress at cron time", async () => {
+    // FULL_DAY (6h) starting 12:00 ends 18:00 — cron at 17:00, still running.
+    const candidates = [
+      row({
+        id: "still_running",
+        date: TODAY,
+        anchorTime: "12:00",
+        duration: Duration.FULL_DAY,
+      }),
+    ];
+    const { deps, recorded } = makeDeps({ candidates });
     await runBookingEmailsCron(deps);
-    expect(recorded.postClassCalls).toEqual(["two_hour"]);
+    expect(recorded.postClassCalls).toEqual([]);
+  });
+
+  test("catches yesterday's late-end class that finished after the previous run", async () => {
+    // FULL_DAY starting 12:00 yesterday ends 18:00 UTC yesterday — that's
+    // 1h after yesterday's cron at 17:00 UTC, so it was not eligible then.
+    const candidates = [
+      row({
+        id: "late_yesterday",
+        date: YESTERDAY,
+        anchorTime: "12:00",
+        duration: Duration.FULL_DAY,
+      }),
+    ];
+    const { deps, recorded } = makeDeps({ candidates });
+    await runBookingEmailsCron(deps);
+    expect(recorded.postClassCalls).toEqual(["late_yesterday"]);
+  });
+
+  test("does not send for tomorrow's bookings", async () => {
+    const candidates = [
+      row({ id: "tomorrow_class", date: TOMORROW, anchorTime: "10:00" }),
+    ];
+    const { deps, recorded } = makeDeps({ candidates });
+    await runBookingEmailsCron(deps);
+    expect(recorded.postClassCalls).toEqual([]);
   });
 
   test("is idempotent — second invocation does not re-call sendPostClass", async () => {
     const candidates = [
-      row({
-        id: "pc_boot",
-        date: new Date("2026-05-24T00:00:00.000Z"),
-        anchorTime: "07:00",
-      }),
+      row({ id: "pc_boot", date: TODAY, anchorTime: "10:00" }),
     ];
     const { deps, recorded } = makeDeps({ candidates });
     await runBookingEmailsCron(deps);
     await runBookingEmailsCron(deps);
     expect(recorded.postClassCalls).toEqual(["pc_boot"]);
+  });
+
+  test("dispatches en + de + es locales in a single run", async () => {
+    const candidates = [
+      row({ id: "en_pc", date: TODAY, anchorTime: "10:00", language: Locale.en }),
+      row({ id: "de_pc", date: TODAY, anchorTime: "10:00", language: Locale.de }),
+      row({ id: "es_pc", date: TODAY, anchorTime: "10:00", language: Locale.es }),
+    ];
+    const { deps, recorded } = makeDeps({ candidates });
+    await runBookingEmailsCron(deps);
+    expect(recorded.postClassLocales.sort()).toEqual(["de", "en", "es"]);
   });
 });
 
@@ -282,18 +272,16 @@ describe("runBookingEmailsCron — error isolation", () => {
 
   test("one failing reminder does not block the next candidate", async () => {
     const candidates = [
-      row({ id: "fail_one", date: new Date("2026-05-25T00:00:00.000Z"), anchorTime: "10:00" }),
-      row({ id: "ok_two", date: new Date("2026-05-25T00:00:00.000Z"), anchorTime: "10:00" }),
+      row({ id: "fail_one", date: TOMORROW, anchorTime: "10:00" }),
+      row({ id: "ok_two", date: TOMORROW, anchorTime: "11:00" }),
     ];
     const { deps, recorded } = makeDeps({ candidates });
-    // Override sendReminder to fail on the first id.
     deps.sendReminder = vi.fn(async (_d, id: string) => {
       if (id === "fail_one") throw new Error("resend boom");
       recorded.reminderCalls.push(id);
       return { ok: true, sent: true, emailId: `e_${id}` };
     }) as CronDeps["sendReminder"];
 
-    // Silence the expected error log.
     const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const summary = await runBookingEmailsCron(deps);
     errSpy.mockRestore();
