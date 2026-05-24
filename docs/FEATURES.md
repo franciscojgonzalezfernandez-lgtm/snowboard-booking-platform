@@ -805,7 +805,7 @@
 
 ### F-047 — Student dashboard (basic)
 
-- Sprint: 2 · Estado: in-review · Prioridad: P1
+- Sprint: 2 · Estado: done · Prioridad: P1 · PR #64 (merged 2026-05-22)
 - Depende de: F-005, F-044
 - AC:
   - [x] `app/[locale]/dashboard/page.tsx` server-rendered, lista `Booking[]` de `session.user.id` ordenados desc por `date` (tie-break por `anchorTime` desc para estabilizar el orden cuando hay varias clases el mismo día) y filtrados a `VISIBLE_STATUSES = [CONFIRMED, COMPLETED, CANCELLED_BY_USER, CANCELLED_BY_OPS, REFUNDED]`. `PENDING_PAYMENT`, `PAYMENT_FAILED` y `CANCELLED_BY_SYSTEM` quedan ocultos porque no son accionables para el booker (Stripe PaymentIntent es single-use, drafts huérfanos del Step 4 no se pueden reanudar) y sólo añaden ruido al historial.
@@ -825,7 +825,7 @@
 
 ### F-049 — Booking flow single-page architecture (SSR shell + client islands + tanstack-query + 30-min server cache)
 
-- Sprint: 2 · Estado: backlog · Prioridad: P0
+- Sprint: 2 · Estado: done · Prioridad: P0 · PR #66 (merged 2026-05-22)
 - Depende de: F-025, F-026, F-027, F-040, F-042 (atomic slot lock en draft creation ya satisfecho — F-042 mergeado en #57)
 - Reemplaza: F-049 original ("back stepper + minimal header"). El stepper persistente sigue existiendo pero como sub-componente del nuevo shell single-page, no como capa de navegación entre rutas.
 
@@ -1138,7 +1138,7 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
 
 ### F-056 — Better Auth account linking (Google ↔ existing magic-link/email account)
 
-- Sprint: hotfix · Estado: backlog · Prioridad: P0
+- Sprint: hotfix · Estado: done · Prioridad: P0 · PR #69 (merged 2026-05-24)
 - Depende de: — (config-only, no schema change)
 - Motivación: regresión reportada por owner — login con Google devuelve `account_not_linked` cuando el usuario ya tiene cuenta creada vía magic-link o email+password con el mismo email. Better Auth por defecto rechaza el link automático cross-provider; sin esto, Google sign-in está roto para todo usuario que se haya registrado antes por otro método. Bloquea conversion: estudiantes que recibieron magic-link en Step 4 y luego intentan re-acceder por Google quedan fuera.
 - AC config:
