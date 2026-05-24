@@ -951,6 +951,11 @@
 - Notas:
   - Vercel Hobby plan: 2 crons max. Sprint 3 + Sprint 4 añadirán más (expiry crédito mensual, admin notifies). Plan upgrade probable antes de soft-launch.
   - Tip CTA degrada cuando D-PLACE null — Sprint 5 reabre el copy.
+  - Cron schedule final: `0 17 * * *` (diario, 17:00 UTC ≈ 18:00 CET / 19:00 CEST). Reminder = bookings con `date = tomorrow` (UTC). Post-class = bookings con `date ∈ [yesterday, today]` + `endUtc ≤ now` (yesterday-fallback captura clases FULL_DAY que terminan después del run anterior).
+  - **Env vars Vercel** (estado 2026-05-24):
+    - `CRON_SECRET` — ✅ generado y subido a Production + Preview con secrets distintos. Recuperar con `vercel env pull .env.local` si se necesita testear local.
+    - `GOOGLE_PLACE_ID` — ⏳ **pendiente**. Bloqueado hasta que se formalice la empresa + se registre Google Business Profile (verificación postal ~3-7 días). Mientras null, el bloque de "Leave a Google review" se omite del email automáticamente. Sprint 5 reabre el copy.
+    - `INSTRUCTOR_TIP_URL` — ⏳ **pendiente**. Bloqueado hasta que el instructor formalice empresa + abra cuenta TWINT/SumUp/Revolut. Mientras null, el bloque de tip se omite del email. Candidato preferente: TWINT (uso universal en CH).
 
 ---
 
