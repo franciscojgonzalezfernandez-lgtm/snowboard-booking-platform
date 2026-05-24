@@ -113,7 +113,9 @@
       "step3": "Zeit",
       "step4": "Details",
       "step5": "Zahlen",
-      "mobile_summary": "Schritt {current} von {total}"
+      "mobile_summary": "Schritt {current} von {total}",
+      "mobile_aria": "Schritt-Navigator öffnen",
+      "mobile_jump_title": "Zu Schritt springen"
     },
     "dirty": {
       "title": "Zahlung verwerfen, um zu bearbeiten?",

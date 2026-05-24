@@ -113,7 +113,9 @@
       "step3": "Time",
       "step4": "Details",
       "step5": "Pay",
-      "mobile_summary": "Step {current} of {total}"
+      "mobile_summary": "Step {current} of {total}",
+      "mobile_aria": "Open step navigator",
+      "mobile_jump_title": "Jump to step"
     },
     "dirty": {
       "title": "Discard payment to edit?",

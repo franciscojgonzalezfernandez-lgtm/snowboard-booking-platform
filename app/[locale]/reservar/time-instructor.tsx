@@ -388,8 +388,20 @@ export function TimeInstructor({ duration, date }: Props) {
         </div>
       )}
 
+      {/*
+        Language chips use the ARIA radiogroup pattern with role="radio"
+        on each button instead of shadcn <RadioGroup>: the primitive's
+        radio dot fights the editorial pill aesthetic, and shadcn's
+        ToggleGroup is not installed. role+aria-checked gives screen
+        readers single-select semantics and touch targets are ≥44px.
+      */}
       {assigned && assigned.languages.length > 1 && (
-        <div className="space-y-3" data-testid="language-section">
+        <div
+          className="space-y-3"
+          data-testid="language-section"
+          role="radiogroup"
+          aria-label={t("language_label")}
+        >
           <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground">
             {t("language_label")}
           </h3>
@@ -398,30 +410,31 @@ export function TimeInstructor({ duration, date }: Props) {
               name: assigned.name ?? t("instructor_unnamed"),
             })}
           </p>
-          <ul role="list" className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2">
             {assigned.languages.map((lang) => {
               const isSelected = language === lang;
               return (
-                <li key={lang}>
-                  <button
-                    type="button"
-                    data-testid={`language-${lang}`}
-                    data-selected={isSelected ? "true" : "false"}
-                    onClick={() => handleLanguageClick(lang)}
-                    className={cn(
-                      "rounded-full border px-4 py-1.5 text-xs uppercase tracking-wider transition-colors",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                      isSelected
-                        ? "border-foreground bg-foreground text-background"
-                        : "border-input hover:border-foreground",
-                    )}
-                  >
-                    {lang}
-                  </button>
-                </li>
+                <button
+                  key={lang}
+                  type="button"
+                  role="radio"
+                  aria-checked={isSelected}
+                  data-testid={`language-${lang}`}
+                  data-selected={isSelected ? "true" : "false"}
+                  onClick={() => handleLanguageClick(lang)}
+                  className={cn(
+                    "min-h-11 rounded-full border px-4 py-1.5 text-xs uppercase tracking-wider transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    isSelected
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-input hover:border-foreground",
+                  )}
+                >
+                  {lang}
+                </button>
               );
             })}
-          </ul>
+          </div>
         </div>
       )}
 

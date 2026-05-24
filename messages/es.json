@@ -113,7 +113,9 @@
       "step3": "Hora",
       "step4": "Datos",
       "step5": "Pagar",
-      "mobile_summary": "Paso {current} de {total}"
+      "mobile_summary": "Paso {current} de {total}",
+      "mobile_aria": "Abrir navegador de pasos",
+      "mobile_jump_title": "Saltar a un paso"
     },
     "dirty": {
       "title": "¿Descartar el pago para editar?",
