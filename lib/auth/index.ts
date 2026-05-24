@@ -25,6 +25,19 @@ export const auth = betterAuth({
       clientSecret: process.env.GOOGLE_SECRET!,
     },
   },
+  account: {
+    // Auto-link Google sign-ins to an existing user that matches by email.
+    // Without this, Better Auth rejects the second sign-in path with
+    // `account_not_linked` whenever the user already has a magic-link or
+    // email+password account on the same address. Google mandates a verified
+    // email on its id_token (`email_verified=true`), so trusting it for the
+    // link does not open a takeover vector — only providers that guarantee
+    // pre-verification belong in this list.
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["google"],
+    },
+  },
   plugins: [
     magicLink({
       sendMagicLink: async ({ email, url }, ctx) => {
