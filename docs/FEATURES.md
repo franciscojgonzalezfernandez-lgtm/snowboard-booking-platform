@@ -599,7 +599,7 @@
 
 ### F-039 — Schema: `Season.priceCentsByDuration` + pricing helper
 
-- Sprint: 2 · Estado: backlog · Prioridad: P0
+- Sprint: 2 · Estado: done · Prioridad: P0
 - Depende de: F-020, F-021, F-037
 - AC:
   - [ ] `Season` model añade `priceCentsByDuration Json` (NOT NULL). Migración `<date>_season_prices` aplicada vía workflow `db-migrate.yml` (Neon `dev` en PR, Neon `main` en merge)
@@ -615,7 +615,7 @@
 
 ### F-039b — Refine cancellation policy (cash on ops, credit ≥48h, forfeit <48h)
 
-- Sprint: 2 · Estado: review · Prioridad: P0
+- Sprint: 2 · Estado: done · Prioridad: P0
 - Depende de: F-011
 - Motivación: la baseline credit-only de ADR-008 dejaba el flujo de cancelación operativa como pieza legal débil (CO Art. 19 / nLPD: si la escuela no entrega, forzar credit en lugar de cash es cuestionable). La política refinada cierra ese riesgo y endurece la ventana de cancelación de cliente — de 1h a 48h — para cubrir el coste de oportunidad del instructor cuyo slot ya no se puede revender. Sin schema change; sólo docs. F-040 (T&C copy) y todo Sprint 3 consumen esta política.
 - AC:
@@ -633,7 +633,7 @@
 
 ### F-040 — T&C page + Privacy page + modal component (3 locales, real content)
 
-- Sprint: 2 · Estado: review · Prioridad: P0
+- Sprint: 2 · Estado: done · Prioridad: P0
 - Depende de: F-030, F-031, F-039b
 - AC:
   - [x] `app/[locale]/terms/page.tsx` + `app/[locale]/privacy/page.tsx` — server components con `generateStaticParams` + `generateMetadata` async, prerendered en build por locale.
@@ -654,7 +654,7 @@
 
 ### F-041 — UI Step 4 (booker + attendees + level + notes + T&C) + auth gating
 
-- Sprint: 2 · Estado: review · Prioridad: P0
+- Sprint: 2 · Estado: done · Prioridad: P0
 - Depende de: F-027, F-038, F-040, F-039b
 - AC:
   - [x] `app/[locale]/reservar/step-4/page.tsx` (server) + `step4-form.tsx` (client, RHF + Zod). El placeholder dt/dd anterior queda reemplazado por el form real; la spec F-027 que asertaba sobre el placeholder se actualiza para sólo verificar la URL + el CTA anónimo.
@@ -679,7 +679,7 @@
 
 ### F-042 — Booking draft + PaymentIntent server action
 
-- Sprint: 2 · Estado: review · Prioridad: P0
+- Sprint: 2 · Estado: done · Prioridad: P0
 - Depende de: F-018, F-039, F-041
 - AC:
   - [x] Server Action `createBookingDraft(input)` en `app/[locale]/reservar/actions.ts` ('use server'). Wrapper thin que resuelve `session = await auth.api.getSession(headers())`, instancia `getStripe()` y delega en `createBookingDraftWith(deps, enginePrisma, input)` — la lógica pura vive en `lib/booking/create-draft.ts` con sus deps explícitas (session, prisma, stripe, now, newIcsUid) para poder testear sin red.
@@ -704,7 +704,7 @@
 
 ### F-043 — UI Step 5 (Stripe Payment Element + order summary)
 
-- Sprint: 2 · Estado: review · Prioridad: P0
+- Sprint: 2 · Estado: done · Prioridad: P0
 - Depende de: F-042
 - AC:
   - [x] `app/[locale]/reservar/step-5/page.tsx` (server) lee URL params, decodifica `attendees` base64, llama `createBookingDraft` (F-042). Render por rama:
@@ -732,7 +732,7 @@
 
 ### F-044 — Webhook business logic (per-event handlers)
 
-- Sprint: 2 · Estado: review · Prioridad: P0
+- Sprint: 2 · Estado: done · Prioridad: P0
 - Depende de: F-018, F-042
 - AC:
   - [x] Migración `20260521150732_webhook_business_fields`: añade `BookingStatus` enum values `CANCELLED_BY_SYSTEM` + `REFUNDED`, columnas `Booking.paidAt DateTime?`, `refundedAt DateTime?`, `refundAmountCents Int?`, `failureReason String? @db.Text`. Aplicada vía `prisma migrate dev` local; `db-migrate.yml` (F-037) la promueve a Neon dev/main en PR + merge.
@@ -764,7 +764,7 @@
 
 ### F-045 — Confirmation email + `.ics` attachment
 
-- Sprint: 2 · Estado: review · Prioridad: P0
+- Sprint: 2 · Estado: done · Prioridad: P0
 - Depende de: F-017, F-044
 - AC:
   - [x] Migración `20260521154911_booking_confirmation_email_sent_at` añade `Booking.confirmationEmailSentAt DateTime?`. Los flags `reminder24hSentAt` + `postClassEmailSentAt` ya existían desde F-020 — F-048 los reutilizará.
@@ -897,7 +897,7 @@
 
 ### F-050 — shadcn adoption pass + responsive sweep across reservar/login/home
 
-- Sprint: 2 · Estado: review · Prioridad: P0
+- Sprint: 2 · Estado: done · Prioridad: P0
 - Depende de: F-049
 - AC:
   - [x] Install missing shadcn primitives via `npx shadcn@latest add`: `radio-group`, `tabs`, `sheet`, `sonner`. (`Select`, `Dialog`, `Checkbox`, `Textarea`, `Form`, `Input`, `Label`, `Button`, `Card` already installed pre-F-050.)
@@ -947,7 +947,7 @@
 
 ### F-048 — Reminder cron 24h + post-class T+2h emails
 
-- Sprint: 2 · Estado: backlog · Prioridad: P1
+- Sprint: 2 · Estado: done · Prioridad: P1
 - Depende de: F-045
 - AC:
   - [ ] `app/api/cron/booking-emails/route.ts` (Route Handler, Node runtime)
