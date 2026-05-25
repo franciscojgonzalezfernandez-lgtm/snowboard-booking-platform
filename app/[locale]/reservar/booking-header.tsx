@@ -15,16 +15,16 @@ export async function BookingHeader() {
       data-testid="booking-header"
       className="border-b-2 border-foreground bg-background"
     >
-      <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-5 py-4 sm:gap-5 sm:px-6">
+      <div className="mx-auto flex max-w-4xl items-center justify-between gap-2 px-4 py-4 sm:gap-5 sm:px-6">
         <Link
           href="/"
-          className="font-display text-[17px] uppercase tracking-tight sm:text-[20px]"
+          className="min-w-0 truncate font-display text-[15px] uppercase tracking-tight sm:text-[20px]"
           data-testid="booking-header-brand"
         >
           Adlerhorst<span className="text-primary">·</span>SBS
         </Link>
 
-        <div className="flex items-center gap-3 sm:gap-5">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-5">
           <LanguageSwitcher tone="light" />
           <Link
             href="/"

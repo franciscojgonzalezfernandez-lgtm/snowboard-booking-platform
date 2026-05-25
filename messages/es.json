@@ -8,7 +8,10 @@
     "instructors": "Instructores",
     "prices": "Precios",
     "journal": "Cuaderno",
+    "reservar": "Reservar clase",
     "signin": "Iniciar sesión",
+    "dashboard_cta": "Mi cuenta",
+    "open_menu": "Abrir menú",
     "switch_language_aria": "Cambiar idioma"
   },
   "home": {

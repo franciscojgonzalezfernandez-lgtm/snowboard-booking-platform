@@ -8,7 +8,10 @@
     "instructors": "Lehrer",
     "prices": "Preise",
     "journal": "Feldnotizen",
+    "reservar": "Stunde buchen",
     "signin": "Anmelden",
+    "dashboard_cta": "Mein Bereich",
+    "open_menu": "Menü öffnen",
     "switch_language_aria": "Sprache wechseln"
   },
   "home": {

@@ -40,7 +40,7 @@ export default async function HomePage({ params }: HomePageProps) {
               <span>{tHome("eyebrow")}</span>
             </div>
 
-            <h1 className="mb-6 max-w-[14ch] text-balance font-display text-[clamp(48px,9.5vw,132px)] leading-[0.9] tracking-[-0.02em] uppercase">
+            <h1 className="mb-6 max-w-[14ch] hyphens-auto break-words text-balance font-display text-[clamp(34px,9.5vw,132px)] leading-[0.9] tracking-[-0.02em] uppercase">
               {tHome("title_line1")}
               <br />
               {tHome("title_line2_pre") ? (
