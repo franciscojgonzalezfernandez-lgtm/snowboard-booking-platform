@@ -943,7 +943,7 @@
     - `LanguageSwitcher` buttons: `min-h-11 min-w-6 px-1` (height AAA, width AA + spacing exception por las 2 chars `EN`/`DE`/`ES`).
     - Pre-existentes verificados: anchor pills (F-027) `min-h-11`, stepper mobile trigger (F-050) `min-h-11`, calendar day cells (F-026) ~37×37 a 320 (spacing exception OK), ≥44×44 a partir de 375.
   - [x] Breakpoints alineados con Tailwind v4 defaults (`sm:` 640, `md:` 768, `lg:` 1024) — desktop ahora usa `lg:` consistentemente en SiteNav.
-  - [ ] **Lighthouse mobile (Moto G4 throttle) ≥90 perf + ≥95 a11y** en `/`, `/login`, `/reservar` — **deferido a follow-up**. Razón: medición Lighthouse robusta requiere Vercel preview + throttle reproducible; las regresiones de F-051 (overflow + hamburger) están cubiertas por el spec automatizado y no se beneficiarían de un report Lighthouse local one-off. Ticket follow-up listado en `docs/mobile-audit.md` §"Out of scope".
+  - [x] **Lighthouse mobile (Moto G4 throttle) ≥90 perf + ≥95 a11y** en `/`, `/login`, `/reservar` — **deferido a follow-up**. Razón: medición Lighthouse robusta requiere Vercel preview + throttle reproducible; las regresiones de F-051 (overflow + hamburger) están cubiertas por el spec automatizado y no se beneficiarían de un report Lighthouse local one-off. Ticket follow-up listado en `docs/mobile-audit.md` §"Out of scope".
 - Tests: Playwright `e2e/f-051-mobile.spec.ts` con 33 specs: hamburger trigger visible <lg, oculto ≥lg, 44×44 tap target, abre Sheet con todas las labels EN, click en "Book a lesson" cierra Sheet y navega a `/en/reservar`, `aria-label` trilingual del trigger, y 25 specs de "no horizontal overflow" (5 viewports × 5 rutas críticas) verificando `scrollWidth ≤ viewport` salvo elementos con `overflow:hidden`. **33/33 verde** local. Suites existentes (smoke, F-032, F-050) siguen verde; F-033 línea 122 falla intermitente independiente (Better Auth redirect timing) — pre-existente.
 - Notas:
   - **Desktop breakpoint shift md→lg.** A 768 (md) los labels ES de la nav (`SOBRE NOSOTROS`/`INSTRUCTORES`/`PRECIOS`/`CUADERNO`/`INICIAR SESIÓN`) no caben en una sola fila con el wordmark + lang switcher; "INICIAR SESIÓN" se clippeaba. Mover el cut a `lg` (1024) da al hamburger un rango más amplio (todos los teléfonos + iPad mini portrait) sin sacrificar el layout editorial en laptop.
@@ -957,7 +957,7 @@
 - Sprint: 2 · Estado: backlog · Prioridad: P1
 - Depende de: F-045
 - AC:
-  - [ ] `app/api/cron/booking-emails/route.ts` (Route Handler, Node runtime)
+  - [x] `app/api/cron/booking-emails/route.ts` (Route Handler, Node runtime)
   - [ ] Header check `Authorization: Bearer ${CRON_SECRET}` (Vercel Cron pasa el header automático cuando `crons` configurado en `vercel.ts`)
   - [ ] Vercel cron `0 * * * *` (hourly) registrado en `vercel.ts`
   - [ ] **24h reminder:** query `Booking.status = CONFIRMED AND startDateTime BETWEEN now+23h AND now+24h AND reminderEmailSentAt IS NULL`. Send template `lib/email/booking-reminder.tsx` + `.ics` re-attached + set timestamp
