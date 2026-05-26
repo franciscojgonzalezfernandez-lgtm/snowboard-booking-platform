@@ -1180,18 +1180,45 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
   - **No** verificación SMS / OTP. Phone field es advisory para owner; no se usa como factor auth.
   - **No** edit de `name` en este ticket. Better Auth maneja name en su propio flow (`/api/auth/update-user`). Si owner pide editable, F-XXX post-MVP.
 
+##### F-066 — Cancellation flow E2E + production smoke (Sprint 3 close)
+
+- Sprint: 3 · Estado: backlog · Prioridad: P0
+- Depende de: F-058, F-059, F-060, F-061, F-063
+- Motivación: F-063 cerró templates + dispatch con unit tests, pero el flujo end-to-end (signup → book → cancel → email recibido → credit aplicable en próximo checkout) sólo se valida de verdad cuando F-058/F-059/F-060 land. Este ticket es la última puerta del Sprint 3: verifica que la cadena completa funciona en preview y luego en producción antes de declarar el sprint cerrado.
+- AC E2E (Playwright, contra preview Vercel + Neon `dev`):
+  - [ ] `e2e/cancellation-credit.spec.ts` — happy path eligible (>48h): signup como booker test → book lección a ≥3 días vista → ir a `/dashboard` → cancelar → assert toast OK, status flip a `CANCELLED_BY_USER`, credit row visible en aside (F-059) con amount + expiry. Intercept Resend en preview vía test mode (`RESEND_API_KEY=re_test_*` + capture inbox o stub adapter).
+  - [ ] `e2e/cancellation-forfeit.spec.ts` — happy path forfeit (<48h): book a +24h (usar fixture `Season` con anchor permisivo o helper para forzar `bookingDate` cercano) → cancelar → assert toast OK, status flip, **no** credit row creada, phone CTA + política visibles en email capturado.
+  - [ ] `e2e/cancellation-credit-redeem.spec.ts` — secuencia compuesta credit→redeem: ejecutar credit spec arriba + segundo booking que consume el credit vía F-060 multi-select. Verifica end-to-end de la cadena F-058 → F-063 → F-059 → F-060.
+  - [ ] `e2e/cancellation-emails.spec.ts` — assertion del payload de email (3 variantes): para cada variant capturar el send Resend (mock o test inbox), verificar `subject` en locale del booker (matriz en/de/es × {credit, forfeit}), idempotency key shape `cancel-${bookingId}-{variant}-{recipient}`, ops notif siempre EN, ops recipient = `franciscojgonzalezfernandez@gmail.com`.
+- AC infra E2E:
+  - [ ] Helper `e2e/helpers/email-capture.ts` que abstrae el modo de captura (Resend test API si disponible / adapter local que intercepta `sendEmail`). Documentar el toggle en `e2e/README.md`.
+  - [ ] Tests skippables vía `SKIP_E2E_EMAILS=1` para CI sin credenciales de Resend.
+  - [ ] Seed o test-only API route `POST /api/test/seed-booking` (gated por `process.env.NODE_ENV !== 'production'` + `TEST_SECRET` para preview) que crea booking arbitrario sin tener que hacer flujo Stripe real. Mantenerlo OFF en producción.
+- AC smoke producción:
+  - [ ] Runbook `docs/runbooks/sprint-3-prod-smoke.md` con: (a) crear booking real con tarjeta Stripe live (booker de testing + duración mínima `ONE_HOUR` para minimizar coste), (b) cancelar desde `/dashboard`, (c) verificar 2 emails recibidos (booker credit + ops notif EN), (d) verificar credit visible en aside con amount + expiry correcta, (e) opcionalmente segundo booking aplicando el credit con `Use all` y confirmar `totalPriceCents` = 0 o reducido, (f) reembolsar manualmente el booking inicial desde Stripe dashboard si la cancellation no emitió refund automático.
+  - [ ] Checklist de smoke firmada por owner (chequea cada paso). Si algo falla, abrir hotfix ticket antes de declarar sprint cerrado.
+  - [ ] Verificar que el booker test (cuenta dedicada, ej. `test+sprint3@rideflumserberg.ch`) está creado en prod y sus emails llegan a un inbox que el owner controla.
+- Tests:
+  - Vitest: no aplica — todo el ticket es E2E + smoke manual.
+  - Playwright: 4 specs nuevos arriba. Ejecución local apuntando a `http://localhost:3000` (Neon dev) y CI apuntando a preview URL del PR de F-058 una vez merged.
+- Notas:
+  - **No** automatizar el smoke de producción — quedan pasos manuales (verificar inbox real, refund manual) que requieren juicio humano.
+  - **No** correr E2E contra Neon `main` (prod DB). Preview Vercel + Neon `dev` es el blanco.
+  - Reusa `playwright-skill` para iteración rápida de specs.
+  - Si F-058 termina enviando emails reales por accidente en preview (config Resend mal puesta), bloquear sprint hasta arreglar — owner no quiere ruido en su inbox real desde preview.
+
 #### Sequencing Sprint 3
 
 ```
 F-057 (sections) ─┐
 F-058 (cancel)   ─┤
-F-063 (emails)   ─┘─ F-059 (credit aside) ─ F-060 (checkout redemption) ─ ship
+F-063 (emails)   ─┘─ F-059 (credit aside) ─ F-060 (checkout redemption) ─ F-066 (E2E + prod smoke) ─ ship
 F-061 (expiry cron)   parallel
 F-062 (F-048 extension: COMPLETED flip) parallel (fold en cron de F-048)
 F-064 (phone edit)    parallel polish
 ```
 
-Critical path: **F-057 + F-058 + F-063 → F-059 → F-060**. F-061 / F-062 / F-064 paralelizables. F-058 ships behind F-063 templates landing (o bien stub el send + follow-up PR — owner prefiere paired).
+Critical path: **F-057 + F-058 + F-063 → F-059 → F-060 → F-066**. F-061 / F-062 / F-064 paralelizables. F-058 ships behind F-063 templates landing (o bien stub el send + follow-up PR — owner prefiere paired). F-066 es la última puerta antes de declarar el sprint cerrado.
 
 ### Sprint 4 — Vista instructor + Admin (semanas 7-8)
 
