@@ -995,28 +995,202 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
 
 ## Sprints 3-6 — Bullets gruesos (desglose al cerrar el sprint anterior)
 
-### Sprint 3 — Cancelaciones + Créditos (semana 6)
+### Sprint 3 — Cancelaciones + Créditos (semanas 6-7)
 
-> Política base en ADR-008: ops-cancel → cash refund Stripe; user-cancel `≥48h` → credit; `<48h` → forfeit; no-show → forfeit. Ver F-039b.
+> Política base ADR-008 / F-039b: user-cancel `≥48h` → credit `ACTIVE` (1 año); `<48h` → forfeit; ops-cancel → cash refund Stripe (programmatic + UI ambos en Sprint 4). Bookings 100% cubiertas por credits saltan Stripe (zero-charge path, atómico en `$transaction`). Crons consolidados en route handler de F-048 + un cron mensual nuevo (2/2 Hobby plan). Sprint 4 hereda ops-cancel + admin + instructor agenda + F-065 feedback per booking.
 
-- Flujo cancelación user desde dashboard:
-  - `≥ 48h` antes del slot → emite `AccountCredit` (`USER_CANCEL`, 1 año).
-  - `< 48h` → forfeit. Mismo cambio de status / liberación de slot, sin credit.
-  - Copy y CTA en dashboard reflejan la ventana 48h y la opción de contactar al teléfono operativo para excepciones.
-- **Dashboard v2 — agrupado + design polish (sucesor de F-047):**
-  - Reemplazar la lista plana actual por 3 secciones explícitas: **Upcoming** (`CONFIRMED` con `date >= today`), **Past** (`COMPLETED` o `CONFIRMED` con `date < today`), **Cancelled** (`CANCELLED_BY_USER`, `CANCELLED_BY_OPS`, `REFUNDED`). Cada sección con su heading display, contador y collapse opcional.
-  - Eliminar el filtro `VISIBLE_STATUSES` hardcoded — el agrupado vuelve a hacer visibles `CANCELLED_BY_*` + `REFUNDED` con copy contextual (motivo, crédito asociado, fecha de refund).
-  - Inline action por row: **Cancel** (si elegible por la ventana 48h) + **Add to calendar** (`.ics` re-download desde F-046 ICS route). El botón Cancel abre el modal del flujo descrito arriba.
-  - Crédito visible en su propia card sticky / aside (saldo activo, expiración, link "Apply at checkout" → `/reservar?credit=…`).
-  - Visual polish: hero personal con próxima clase destacada (countdown a `startDateTime`, info del instructor, weather widget opcional Sprint 4), separación tipográfica más fuerte (display sizes XL para fechas próximas), estados vacíos por sección, dark-mode pass (todo Sprint 2 ya respeta tokens, falta auditar contraste).
-  - Detail page propia `app/[locale]/dashboard/[id]/page.tsx` si las acciones (cancel modal, edit attendees, descarga factura) no caben inline.
-  - Personal data: añadir edit de `phone` (Server Action + revalidate). Email queda read-only (Better Auth maneja el flujo de change-email aparte).
-- Server action ops-cancel (admin) — Sprint 4 monta la UI pero la **lógica del refund cash** debe quedar lista para uso programático aquí: `stripe.refunds.create({ payment_intent })` + persistencia `Booking.stripeRefundId` + branch para bookings 100% credit (re-emite credit en lugar de cash).
-- Sistema de créditos: generación, locking durante PaymentIntent, commit en webhook success.
-- UI aplicar créditos en Step 5 (toggle + breakdown).
-- Cron mensual de expiración (`0 0 1 * *`).
-- Cron nightly de no-show: bookings `CONFIRMED` con `startDateTime + duration < now` que sigan sin estado terminal → marcar `CANCELLED_BY_USER` con `cancelledByUserAt = startDateTime`, sin credit.
-- Email cancelación user (variante credit / variante forfeit) + notif a instructor.
+#### Tickets
+
+##### F-057 — Dashboard v2: grouped sections + empty states + dark-mode audit
+
+- Sprint: 3 · Estado: backlog · Prioridad: P0
+- Depende de: F-047
+- Motivación: el actual `/dashboard` (F-047) muestra lista plana filtrada por `VISIBLE_STATUSES` que oculta cancelaciones y refunds. Owner pidió 3 secciones explícitas — Upcoming, Past, Cancelled — para que el booker entienda el ciclo de vida completo de sus reservas y prepare visibilidad de créditos (F-059) y cancelaciones (F-058). Sin esta refactor, F-058 (Cancel button) y F-059 (credit aside) no tienen layout donde aterrizar.
+- AC:
+  - [ ] Eliminar la constante `VISIBLE_STATUSES` en `app/[locale]/dashboard/page.tsx`. La query devuelve todas las reservas del booker; la agrupación ocurre en memoria con `Array.prototype.filter`.
+  - [ ] Tres `<section>` con heading display (font serif XL, uppercase tracking) + counter chip + lista. Orden visual: **Upcoming** (`status='CONFIRMED' AND date >= today`), **Past** (`status='COMPLETED'` OR (`status='CONFIRMED' AND date < today`)), **Cancelled** (`CANCELLED_BY_USER`, `CANCELLED_BY_OPS`, `CANCELLED_BY_SYSTEM`, `REFUNDED`, `PAYMENT_FAILED`).
+  - [ ] Empty states por sección con copy distinto: Upcoming → CTA `Book a lesson` linkando `/reservar`; Past → "No completed lessons yet"; Cancelled → "No cancellations".
+  - [ ] Cancelled rows muestran motivo contextual: status label + `cancelledByUserAt` / `cancelledByOpsAt` / `opsReason` / `refundedAt` según aplique. Si existe `AccountCredit` linkado vía `sourceBookingId`, mostrar "Credit issued: CHF X.XX, expires YYYY-MM-DD" inline.
+  - [ ] Past `COMPLETED` rows: badge "Completed" + `Add to calendar` link (re-descarga `.ics` desde route de F-046).
+  - [ ] Per-row layout: fecha display XL + anchor time + duration + instructor + status badge. **Sin** acciones inline en este ticket — el Cancel button llega en F-058 sobre el mismo JSX.
+  - [ ] Dark-mode contrast pass: validar `border`, `muted`, `accent` tokens en cada sección (Lighthouse a11y ≥95 en `/en/dashboard`).
+  - [ ] i18n keys `dashboard.section_{upcoming,past,cancelled}`, `dashboard.empty_{upcoming,past,cancelled}`, `dashboard.credit_issued` × 3 locales.
+- Tests: Playwright `e2e/f-057-dashboard-sections.spec.ts` × 3 locales — seed 1 Upcoming + 1 Past + 1 Cancelled-with-credit → asserta heading + count + status badge correcto por sección; empty state cuando el booker no tiene filas en una sección dada.
+- Notas:
+  - **No** detail page propia (`/dashboard/[id]`) en este sprint. Las acciones inline cubren el caso típico; defer a Sprint 4 si invoice download / edit attendees obliga.
+  - **No** weather widget, **no** countdown sticky, **no** hero personal con próxima clase — defer post-MVP. Sprint 5 F-053 (hero announcement banner) es la única pieza visual nueva planificada antes de soft-launch.
+  - F-058 (Cancel button) y F-059 (credit aside) montan sobre este layout sin tocar la query — sólo añaden nodos al JSX existente.
+
+##### F-058 — User-cancel flow (48h window, modal, credit emission)
+
+- Sprint: 3 · Estado: backlog · Prioridad: P0
+- Depende de: F-039b, F-057, F-063
+- Motivación: política F-039b está establecida en T&C (F-040) y emails (F-045), pero falta el camino de usuario que la ejecuta desde dashboard. Sin esto, owner debe cancelar manualmente desde Stripe/admin y emitir credits a mano — no escala. F-058 cierra el loop self-service.
+- AC server:
+  - [ ] Server action `cancelBookingByUser(bookingId: string)` en `app/[locale]/dashboard/actions.ts` (`'use server'`). Wrapper thin que resuelve `session = await auth.api.getSession(headers())` y delega en `cancelBookingByUserWith(deps, input)` en `lib/booking/cancel.ts` (lógica pura con deps explícitas — prisma, now, session — para testear sin red).
+  - [ ] Validación previa: booking pertenece a `session.user.id` (rechaza con `403 forbidden` si no), status actual ∈ `{CONFIRMED, PENDING_PAYMENT}` (rechaza con `409 conflict` para otros estados, incl. ya cancelada).
+  - [ ] Cálculo ventana: `hoursUntilStart = (startDateTime - now) / 3600s`. Branch:
+    - `hoursUntilStart >= 48` → **credit path**. `$transaction`: `Booking.update` (`status=CANCELLED_BY_USER`, `cancelledByUserAt=now`) + `AccountCredit.create` (`amountCents = booking.totalPriceCents`, `reason=USER_CANCEL`, `status=ACTIVE`, `expiresAt = now + 365d`, `sourceBookingId = bookingId`, `userId = session.user.id`).
+    - `hoursUntilStart < 48` → **forfeit path**. Sólo `Booking.update` con `status` + `cancelledByUserAt`. Sin credit.
+  - [ ] **Slot release**: ningún cambio adicional — booking engine (F-022) ya excluye `CANCELLED_BY_*` de availability queries. Test de regresión verifica que el slot vuelve a aparecer post-cancel.
+  - [ ] **Lock against double-cancel**: `Booking.update` con `where: { id, status: { in: ['CONFIRMED', 'PENDING_PAYMENT'] } }`. Si concurrent click marca primero, segundo update afecta 0 filas → throw `BookingAlreadyCancelled` con HTTP 409.
+  - [ ] Post-transaction (fuera del `$transaction` para no atrapar errores de email en la BD): dispatch emails F-063 vía Resend. Credit path → `cancellation-user-credit.tsx`. Forfeit path → `cancellation-user-forfeit.tsx`. Ambos branches → `cancellation-ops-notif.tsx` al owner. Cada send con `idempotencyKey = cancel-${bookingId}-${variant}-${recipient}`.
+- AC UI:
+  - [ ] Nuevo client component `cancel-modal.tsx` montado desde botón `Cancel` en cada Upcoming row de F-057 (shadcn `Dialog`, `useTransition`).
+  - [ ] Modal header: "Cancel this lesson?". Body branch por `hoursUntilStart`:
+    - `≥48h` → "You're cancelling more than 48 hours before the lesson. You'll receive a CHF {amount} credit valid for one year. The credit can be applied to any future booking at checkout."
+    - `<48h` → "You're cancelling less than 48 hours before the lesson. Per our policy, no refund or credit will be issued. If there's an exception (illness, family emergency), please call us before confirming: {phone}."
+  - [ ] Footer: `Cancel` (close modal) + `Confirm cancellation` (shadcn `destructive` variant). Confirm → server action → modal closes → `revalidatePath('/dashboard')` → toast `sonner` "Booking cancelled".
+  - [ ] Phone number en copy `<48h`: hardcoded `+41 76 638 18 70` en `messages/{en,de,es}.json`. F-052 (Sprint 5) extrae constante a `lib/contact/phone.ts` y reemplaza usages — este ticket no se adelanta.
+  - [ ] i18n keys `dashboard.cancel.{button, modal_title, body_credit, body_forfeit, confirm, dismiss, toast_success, error_already_cancelled}` × 3 locales. `body_credit` interpola `{amount}`. `body_forfeit` interpola `{phone}`.
+- AC schema:
+  - [ ] Añadir `Booking.cancellationEmailSentAt DateTime?` y `Booking.opsCancellationNotifSentAt DateTime?` (migración compartida con F-063 si se ordena en el mismo PR; standalone si no). Sirve para idempotency.
+- Tests:
+  - Vitest `lib/booking/cancel.test.ts` — unit sobre `cancelBookingByUserWith`. 6 specs: happy `≥48h` emite credit con `amountCents` correcto y `expiresAt` exacto; happy `<48h` sin credit; boundary `hoursUntilStart=48.0` cae en credit (`>=` no `>`); boundary `47.999` cae en forfeit; rechaza booking ajeno (`session.user.id !== booking.bookerId`); rechaza booking ya `CANCELLED_BY_USER`.
+  - Playwright `e2e/f-058-cancel-flow.spec.ts` × 1 locale (en) — seed booking `date=today+10` → click `Cancel` → asserta modal copy credit branch → confirm → row desaparece de Upcoming, aparece en Cancelled con badge "Credit issued: CHF 110.00".
+- Notas:
+  - **Forbid raw SQL** — todo vía Prisma `$transaction`.
+  - **No** UI de "Reason for cancellation" — owner no la pidió y añade fricción CRO. Si se quiere para analytics futuro, F-XXX post-MVP.
+  - Ops-cancel (programmatic + UI) queda fuera de este sprint — pero `cancelBookingByOps` (Sprint 4) reutilizará el mismo patrón de `AccountCredit.create` con `reason=OPS_CANCEL` + Stripe refund branch.
+
+##### F-059 — Credit aside in dashboard + apply-at-checkout deep link
+
+- Sprint: 3 · Estado: backlog · Prioridad: P0
+- Depende de: F-058
+- Motivación: una vez F-058 emite credits, el usuario necesita visibilidad clara del saldo + entry point al checkout que los aplica. Sin aside, los credits están "ocultos" en cancelled rows; CRO pierde recompra.
+- AC:
+  - [ ] `<CreditAside>` server component en `dashboard/page.tsx`. Layout: aside sticky `lg:` (`top-24`) sobre el grid de sections; mobile colapsa a top-of-page card.
+  - [ ] Query: `prisma.accountCredit.findMany({ where: { userId, status: 'ACTIVE', expiresAt: { gt: now } }, orderBy: { expiresAt: 'asc' } })`.
+  - [ ] Header card: `Total available: CHF X.XX` (sum amountCents formateado vía `formatChf`) + microtext "Nearest expiration: YYYY-MM-DD".
+  - [ ] Lista per credit: `amountCents` formateado + microtext "From cancellation on YYYY-MM-DD" + microtext "Expires YYYY-MM-DD" (warning amber si `expiresAt - now < 30d`).
+  - [ ] CTA primario `Apply at checkout` → link `/reservar?credit=auto` (F-060 consume el query param; `auto` = sugerir todos los credits aplicables en Step 4, oldest-first).
+  - [ ] Empty state cuando `credits.length === 0`: aside oculto en `lg:`, microtext "No credits available" debajo del header del dashboard. Decisión deliberada — mostrar aside vacío rompe el grid.
+  - [ ] i18n keys `dashboard.credits.{title, total, nearest_expiry, expires, expires_soon, source_cancellation, apply_cta, empty}` × 3 locales.
+- Tests: Playwright `e2e/f-059-credit-aside.spec.ts` × 1 locale — seed 0/1/2 credits → asserta empty state / 1 row / 2 rows + total correcto + link `/reservar?credit=auto` presente.
+- Notas:
+  - **No** "apply specific credit" deep link (`/reservar?credit=<id>`). `auto` es suficiente para CRO; F-060 selecciona oldest-first automáticamente y user puede ajustar en Step 4.
+  - `LOCKED` y `EXPIRED` credits no se muestran. `USED` tampoco — usuario ya los consumió, sin valor informativo en este aside (queda en booking detail post-MVP).
+
+##### F-060 — Checkout credit redemption (multi-select + "Use all" + zero-charge path)
+
+- Sprint: 3 · Estado: backlog · Prioridad: P0
+- Depende de: F-042, F-044, F-059
+- Motivación: credits sin redemption UI = créditos muertos. Owner pidió multi-credit selection + "Use all" button para máxima flexibilidad. Bookings 100% cubiertas por credits saltan Stripe → flow más limpio, sin fee Stripe, atomicidad garantizada vía `$transaction`.
+- AC checkout UX:
+  - [ ] En Step 4 (post-F-049 SPA, client island del booking flow): nueva sección `Apply credits` colapsable por defecto, expandida si `credits.length > 0` o si querystring `?credit=auto` presente.
+  - [ ] Lista per credit con checkbox: `amountCents` + microtext "Expires YYYY-MM-DD". Sumatorio live `Total credits applied: CHF X.XX`. Toggle "Use all" → marca todos los checkboxes hasta llegar al cap `totalPriceCents` (oldest first; deja credits residuales sin marcar y los muestra dimmed con tooltip "Lesson price already covered").
+  - [ ] Breakdown sticky en Step 5: `Lesson price: CHF X.XX − Credits: CHF Y.YY = Charge: CHF Z.ZZ`. Si `Z = 0`, microtext "Fully covered by credits — no card required" y `<PaymentElement>` se oculta. CTA cambia de `Pay CHF Z.ZZ` a `Confirm booking`.
+- AC server:
+  - [ ] `createBookingDraft(input)` (F-042) extendido: `input.creditIds?: string[]`. Validación Zod: array de cuids, length ≤ 10 (sanity cap).
+  - [ ] En `lib/booking/create-draft.ts`, dentro del `$transaction`:
+    1. `prisma.accountCredit.findMany({ where: { id: { in: creditIds }, userId: session.user.id, status: 'ACTIVE', expiresAt: { gt: now } } })`. Si `result.length !== creditIds.length` → throw `CreditNotApplicable`.
+    2. `creditsTotalCents = sum(amountCents)`. Cap aplicado: ordenar por `expiresAt asc`, recorrer acumulando hasta cubrir `totalPriceCents`. El último credit que excede el cap **se aplica completo** (todo-o-nada por credit; no partial-use, simplificación deliberada — ver notas).
+    3. `creditsAppliedCents = sum(amountCents de los credits efectivamente consumidos)`. `chargeAmountCents = max(0, totalPriceCents - creditsAppliedCents)`. **Si** `creditsAppliedCents > totalPriceCents` (overshoot por todo-o-nada), `chargeAmountCents = 0` y se documenta el overshoot en `Booking.notes` interno.
+    4. Update credits consumidos: `status='LOCKED'`, `lockedByBookingId=booking.id`. Credits no consumidos quedan `ACTIVE`.
+    5. **Branch zero-charge** (`chargeAmountCents === 0`):
+       - Booking creado con `status='CONFIRMED'` directamente, `paidAt=now`, `stripePaymentIntentId=null`, `totalPriceCents` original (no se reescribe a 0 — la price ledger debe reflejar el valor de la clase).
+       - Credits aplicados flipean `LOCKED` → `USED` en el mismo `$transaction`, `usedAt=now`, `usedOnBookingId=booking.id`.
+       - No PaymentIntent. No webhook. Dispatch confirmation email (F-045) + `.ics` directamente desde server action post-transaction.
+    6. **Branch normal** (`chargeAmountCents > 0`):
+       - PaymentIntent creado con `amount=chargeAmountCents`, metadata `{ creditsAppliedCents, lockedCreditIds: [...] }`.
+       - Booking `status='PENDING_PAYMENT'`, `stripePaymentIntentId` set.
+       - Credits quedan `LOCKED` hasta resolución del webhook.
+  - [ ] Webhook `payment_intent.succeeded` (F-044) extendido: lee `metadata.lockedCreditIds`, flipea esos credits `LOCKED` → `USED`, set `usedAt`, `usedOnBookingId`. Idempotency: `where: { status: 'LOCKED' }` en update — segunda invocación afecta 0 filas.
+  - [ ] Webhook `payment_intent.payment_failed` + draft expiry path (15min TTL F-042): flipea credits `LOCKED` → `ACTIVE`, clear `lockedByBookingId`.
+  - [ ] **Refund path (Sprint 4)**: documentar en notes que `cancelBookingByOps` deberá re-emit credit en lugar de cash si booking original tenía `creditsAppliedCents > 0`. Sprint 3 no implementa la rama; sólo deja el ledger preparado.
+- AC seguridad:
+  - [ ] Constraint Postgres no necesario — `LOCKED` status + check de status en `where` del update suficiente. Race condition double-lock cubierta por aislamiento serializable del `$transaction`.
+  - [ ] Tests de concurrencia (Vitest mock Prisma con jitter): dos `createBookingDraft` simultáneos sobre el mismo credit → uno gana, otro lanza `CreditNotApplicable`.
+- Tests:
+  - Vitest `lib/booking/create-draft.test.ts` extendido — 10 specs: happy partial, happy full (zero-charge), credit cap (3 credits que suman > price, overshoot todo-o-nada), credit excluido cuando `expiresAt < now`, credit excluido cuando `userId !== session.user.id`, credit ya `LOCKED` rechazado, credit ya `USED` rechazado, idempotency double-success webhook, refund unlocks credit, race condition double-lock.
+  - Playwright `e2e/f-060-credit-checkout.spec.ts` × 1 locale — seed 1 ACTIVE credit `amountCents=11000` → booking `ONE_HOUR` (CHF 110) → step 4 `Use all` → step 5 muestra "Fully covered" + CTA `Confirm booking` → success page renderiza booking `CONFIRMED`.
+- Notas:
+  - **Todo-o-nada per credit**: simplificación deliberada. Si user tiene credit de CHF 200 y price es CHF 110, ese credit aplica todo (sobran 90 CHF "perdidos" frente al precio) — no partial-use. Mensaje UX en checkbox para credits sobreabundantes: "This credit will be fully consumed". Alternative `amountUsed` column = post-MVP F-XXX. Owner aceptó el trade-off durante el desglose de Sprint 3 — usuario marca/desmarca a voluntad.
+  - **No** UI "Save credit for later" toggle individual — `Use all` + checkboxes per-credit cubren el caso. User desmarca los que quiera guardar.
+  - F-049 SPA: integración via tanstack-query — invalidate `['user-credits']` post-success.
+
+##### F-061 — Cron mensual: expiración de créditos
+
+- Sprint: 3 · Estado: backlog · Prioridad: P1
+- Depende de: F-058
+- Motivación: credits con `expiresAt < now` siguen `ACTIVE` en schema si nadie los flipea. Aside (F-059) ya filtra por `expiresAt > now` en query, pero el badge `status=ACTIVE` queda inconsistente y bloquea analytics futuros. Cron mensual silencioso flipea status.
+- AC:
+  - [ ] Nuevo route handler `app/api/cron/credit-expiry/route.ts` (Node runtime). Header check `Authorization: Bearer ${CRON_SECRET}` (mismo patrón F-048).
+  - [ ] Vercel cron `0 0 1 * *` (mensual, día 1 a 00:00 UTC) registrado en `vercel.ts`.
+  - [ ] Query: `prisma.accountCredit.updateMany({ where: { status: 'ACTIVE', expiresAt: { lt: now } }, data: { status: 'EXPIRED' } })`. Idempotente — re-run no afecta filas ya `EXPIRED`.
+  - [ ] **No email**. Decisión explícita — el aside ya muestra `expiresAt` con warning amber a 30d. Reduce email volume.
+  - [ ] Sentry breadcrumb con `count` de filas flippeadas para observability.
+- Tests: Vitest `lib/credit/expire.test.ts` con `vi.useFakeTimers` — seed credits con `expiresAt` ±1min de `now` → boundary `expiresAt < now` flippea, `expiresAt >= now` no flippea; segunda invocación no re-flippea.
+- Notas:
+  - Vercel Hobby crons: 2/2 con F-048 (extendido por F-062) + F-061 (este). Sin room para 3er cron sin upgrade. Sprint 4 reevalúa.
+
+##### F-062 — Extensión F-048: COMPLETED auto-flip (no-show / forgot-to-mark sweep)
+
+- Sprint: 3 · Estado: backlog · Prioridad: P1
+- Depende de: F-048
+- Motivación: bookings `CONFIRMED` cuyo `endDateTime` ya pasó quedan eternamente en "Upcoming" (F-057 agrupación) si nadie las cierra. Sin sweep automático, owner debe marcarlas a mano. Default optimista: pasar a `COMPLETED` (asumiendo que la clase ocurrió). Admin Sprint 4 puede flipear de vuelta a `CANCELLED_BY_USER` si fue no-show real (sin emitir credit, alineado con forfeit `<48h`).
+- AC:
+  - [ ] Extender `app/api/cron/booking-emails/route.ts` (existe desde F-048, schedule `0 17 * * *` UTC = post operating hours CH). Nueva sección "complete-past-classes" después de reminder + post-class branches.
+  - [ ] Estrategia query: `findMany` con `where: { status: 'CONFIRMED', date: { lte: startOfToday(UTC) } }`, calcular `endDateTime + 1h < now` en JS por booking (Prisma no expresa `endDateTime + duration` de forma nativa), luego `updateMany({ where: { id: { in: idsToFlip }, status: 'CONFIRMED' }, data: { status: 'COMPLETED', autoCompletedAt: now } })`.
+  - [ ] Schema: añadir `Booking.autoCompletedAt DateTime?` (migración `<date>_booking_auto_completed_at`). Distingue auto (cron) vs manual (Sprint 4 admin/instructor flip).
+  - [ ] Grace: 1h después de `endDateTime`. Bookings que terminan ese mismo día tarde (FULL_DAY 09:00-17:00 → endDateTime 17:00 → cron 17:00 UTC ≈ 18:00 CH winter / 19:00 CEST) → margen 1-2h. Aceptable.
+  - [ ] Idempotency: status guard `status='CONFIRMED'` en el `where` excluye bookings ya `COMPLETED` / `CANCELLED_*` / `REFUNDED`. Re-run no efecto.
+  - [ ] Sentry breadcrumb con `count` de bookings flipped.
+- Tests: Vitest extension de specs F-048 con frozen-clock — seed booking `date=yesterday`, `endDateTime=yesterday 17:00 UTC`, `status='CONFIRMED'` → cron run today 17:00 UTC → asserta `status='COMPLETED'`, `autoCompletedAt=now`; booking `date=today` con `endDateTime=now-30min` → skip (dentro de 1h grace).
+- Notas:
+  - **No feedback feature** en este ticket. Sprint 4 F-065 monta `Booking.instructorNote` + UI sobre el flag `autoCompletedAt`.
+  - **No email** post-auto-completion. El post-class email ya lo envía el branch separado de F-048.
+  - Sprint 4 admin row action: si `autoCompletedAt != null` → permitir flip a `CANCELLED_BY_USER` con `cancelledByUserAt = startDateTime` (no-show real), sin emitir credit (forfeit alineado con F-039b).
+
+##### F-063 — Cancellation emails (3 templates, trilingual)
+
+- Sprint: 3 · Estado: backlog · Prioridad: P0
+- Depende de: F-017, F-045, F-058
+- Motivación: F-058 dispatch-and-forget se queda incompleto sin templates reales. Owner pidió variantes diferenciadas: user con credit, user con forfeit, instructor notif. Reusa el aesthetic del `booking-confirmed.tsx` (F-045) para consistencia visual.
+- AC templates:
+  - [ ] `lib/email/cancellation-user-credit.tsx` (React Email). Props: `bookerName, bookingDate, bookingDuration, instructorName, creditAmountCents, creditExpiresAt, locale`. Cuerpo: header confirmando cancelación + bloque credit destacado ("We've issued a CHF X.XX credit. It expires on YYYY-MM-DD. Apply it at checkout on your next booking.") + CTA `View dashboard` → `/dashboard` + footer T&C link.
+  - [ ] `lib/email/cancellation-user-forfeit.tsx`. Props: `bookerName, bookingDate, bookingDuration, instructorName, hoursBeforeStart, locale`. Cuerpo: header cancelación + bloque política ("Per our terms, cancellations within 48 hours of the lesson are not eligible for a credit or refund. Your lesson was cancelled {N} hours before its start time.") + phone CTA ("If you cancelled due to illness or emergency, please call us at +41 76 638 18 70 — we review exceptions case by case.") + footer T&C link.
+  - [ ] `lib/email/cancellation-ops-notif.tsx`. Props: `instructorName, bookingDate, bookingDuration, anchorTime, bookerName, bookerEmail, attendeeCount, cancellationVariant: 'credit' | 'forfeit', locale`. Cuerpo: header notif ("A booking was cancelled") + detalles slot liberado + booker contact + variant indicator ("Booker received credit" / "Booker forfeited payment"). **Sin** CTA — info-only para inbox del owner.
+- AC dispatch:
+  - [ ] Locale-aware: `User.locale` del booker selecciona template para los emails al booker. Ops notif siempre en `en` (owner es bilingual EN/ES, EN es el default ops).
+  - [ ] Idempotency Resend: `idempotencyKey = cancel-${bookingId}-${variant}-${recipient}` (`variant` ∈ `{credit, forfeit, ops_notif}`).
+  - [ ] Schema: `Booking.cancellationEmailSentAt` + `Booking.opsCancellationNotifSentAt` (si no añadidos en F-058, migración compartida).
+- Tests:
+  - Vitest snapshots por locale × variant: 3 templates × 3 locales = 9 snapshots.
+  - Vitest `lib/email/cancellation-dispatch.test.ts` — mock Resend, verifica `idempotencyKey` shape + selección correcta de template por `hoursBeforeStart` branch + recipient correcto (booker vs instructor).
+- Notas:
+  - **No** A/B test de copy. Owner edita `messages/*.json` (i18n) o el TSX directamente.
+  - Reusa skeleton + design tokens de `booking-confirmed.tsx` (F-045) para consistencia visual editorial.
+
+##### F-064 — Edit phone in dashboard (personal data card)
+
+- Sprint: 3 · Estado: backlog · Prioridad: P2
+- Depende de: F-057
+- Motivación: phone es campo opcional en signup pero crítico para owner cuando hay excepción de cancelación o no-show. User debe poder añadir/editar sin re-registrar. Email queda read-only (Better Auth change-email flow es independiente, fuera de scope MVP).
+- AC:
+  - [ ] Card "Personal data" en `/dashboard`. Campos: `Name` (read-only), `Email` (read-only), `Phone` (editable).
+  - [ ] Edit inline: click "Edit" → `<Input>` con valor actual + Save / Cancel buttons. RHF + Zod schema E.164 tolerante (`/^\+?[1-9]\d{1,14}$/` + strip spaces antes de validar).
+  - [ ] Server action `updateUserPhone(phone: string | null)` en `dashboard/actions.ts`. Resuelve session, Zod validate, `prisma.user.update({ where: { id }, data: { phone } })`, `revalidatePath('/dashboard')`.
+  - [ ] Validación: empty string → `null` (remove phone). Save sin cambios → no-op (early return si `phone === user.phone`).
+  - [ ] Feedback UX: toast `sonner` "Phone updated" / "Phone removed" / error.
+  - [ ] i18n keys `dashboard.personal.{title, name_label, email_label, phone_label, phone_placeholder, edit, save, cancel, removed, updated, error_invalid}` × 3 locales.
+- Tests: Vitest schema E.164 (5 specs: válido, válido con espacios, inválido formato, empty → null, sólo `+`). Playwright happy path × 1 locale — edit phone → save → reload → valor persistido.
+- Notas:
+  - **No** verificación SMS / OTP. Phone field es advisory para owner; no se usa como factor auth.
+  - **No** edit de `name` en este ticket. Better Auth maneja name en su propio flow (`/api/auth/update-user`). Si owner pide editable, F-XXX post-MVP.
+
+#### Sequencing Sprint 3
+
+```
+F-057 (sections) ─┐
+F-058 (cancel)   ─┤
+F-063 (emails)   ─┘─ F-059 (credit aside) ─ F-060 (checkout redemption) ─ ship
+F-061 (expiry cron)   parallel
+F-062 (F-048 extension: COMPLETED flip) parallel (fold en cron de F-048)
+F-064 (phone edit)    parallel polish
+```
+
+Critical path: **F-057 + F-058 + F-063 → F-059 → F-060**. F-061 / F-062 / F-064 paralelizables. F-058 ships behind F-063 templates landing (o bien stub el send + follow-up PR — owner prefiere paired).
 
 ### Sprint 4 — Vista instructor + Admin (semanas 7-8)
 
@@ -1024,8 +1198,36 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
 - Conectar Google Calendar (OAuth offline access, encriptación ADR-007).
 - Inserción/borrado de eventos en Google Calendar.
 - Panel admin: CRUD instructores, vista de reservas, modal "Cancel day" (ops batch + preview de impacto), **editor de precios por duración** (escribe `Season.priceCentsByDuration` — schema definido en F-039).
+- Server action ops-cancel (`cancelBookingByOps`) + UI: `stripe.refunds.create({ payment_intent })`, persistencia `Booking.stripeRefundId`, branch para bookings con credits aplicados (re-emit credit en lugar de cash refund — heredado de F-060 ledger). **Deferido de Sprint 3** durante el desglose: empaquetar programmatic + UI en el mismo sprint es más coherente con el resto del admin work.
+- Row action sobre bookings con `autoCompletedAt != null` (auto-flippeadas por F-062): permitir re-flip a `CANCELLED_BY_USER` con `cancelledByUserAt = startDateTime` (no-show real, sin emitir credit).
 - Email cancelación ops en locale del booker.
+- F-065 ticket pre-definido abajo (instructor feedback per booking).
 - **Decisión pendiente:** tip split policy (afecta `Tip` table flow).
+
+#### Tickets pre-definidos
+
+##### F-065 — Instructor feedback per booking + bookerId history view
+
+- Sprint: 4 · Estado: backlog · Prioridad: P1
+- Depende de: F-062
+- Motivación: owner pidió poder dejar notas sobre cada clase completada para informar futuras clases del mismo booker (progreso, nivel real observado, preferencias, advertencias). Per-booking single note (no per-attendee), visibilidad sólo interna del instructor — el booker no las ve. Cross-booking visibility se resuelve con lookup por `bookerId` de bookings `COMPLETED` previas (sin schema de Person, sin attendee fingerprint).
+- AC schema:
+  - [ ] Migración `<date>_booking_instructor_note`: añadir `Booking.instructorNote String? @db.Text` + `Booking.instructorNoteSetAt DateTime?`.
+- AC server:
+  - [ ] Server action `setInstructorNote(bookingId, note: string | null)` en `app/instructor/actions.ts` (`'use server'`). Resolve session, verificar `session.user.roles.includes('instructor')`, verificar `booking.instructorId === session.user.instructor.id`, verificar `booking.status === 'COMPLETED'` (no-op si no, rechaza). Update + `revalidatePath('/instructor')`.
+  - [ ] Note `null` o empty string → clear (`instructorNote=null`, `instructorNoteSetAt=null`).
+- AC UI:
+  - [ ] En la agenda diaria del instructor (Sprint 4 vista principal), row de booking `COMPLETED` muestra textarea inline con valor actual + auto-save debounced (1.5s) → server action.
+  - [ ] Sidebar / panel de "Booker history": al hover/click en bookerId, mostrar lista de bookings `COMPLETED` previas de ese booker con su `instructorNote` (read-only). Orden cronológico inverso. Limit 10.
+  - [ ] **Sin visibilidad para el booker**: dashboard del booker (`/dashboard`) **no** muestra `instructorNote`. Internal-only.
+- Tests:
+  - Vitest sobre `setInstructorNote` — 5 specs: happy, rechaza role!=instructor, rechaza booking ajeno, rechaza status!=COMPLETED, clear con empty string.
+  - Playwright happy path × 1 locale (instructor view) — booking COMPLETED → escribir nota → debounce → reload → nota persistida; hover booker history → 2 bookings previos con sus notes.
+- Notas:
+  - **No** rich text editor — `<textarea>` plain. Si owner pide formato post-launch, F-XXX post-MVP.
+  - **No** attendee-level feedback. Decisión deliberada del desglose Sprint 3: per-booking + lookup por bookerId cubre el use case sin schema de Person/Attendee fingerprint.
+  - **No** email del feedback al booker. Internal-only.
+  - Booker history query: `prisma.booking.findMany({ where: { bookerId, status: 'COMPLETED', instructorNote: { not: null } }, orderBy: { date: 'desc' }, take: 10 })`. Sin índice nuevo necesario — `Booking.bookerId` ya indexado por F-020.
 
 ### Sprint 5 — Landing + SEO (semanas 9-10)
 
