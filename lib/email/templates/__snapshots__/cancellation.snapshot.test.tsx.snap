@@ -1,0 +1,1252 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`cancellation email templates — snapshots > cancellation-ops-notif · credit 1`] = `
+"<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html dir="ltr" lang="en">
+  <head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+    <meta name="x-apple-disable-message-reformatting" />
+  </head>
+  <body style="background-color:#f7f5f0;margin:0">
+    <!--$-->
+    <div
+      style="display:none;overflow:hidden;line-height:1px;opacity:0;max-height:0;max-width:0"
+      data-skip-in-text="true">
+      A booking was cancelled.
+      <div>
+         ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿
+      </div>
+    </div>
+    <table
+      border="0"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      role="presentation"
+      align="center">
+      <tbody>
+        <tr>
+          <td
+            style="background-color:#f7f5f0;color:#17130f;font-family:Archivo, -apple-system, BlinkMacSystemFont, &#x27;Segoe UI&#x27;, sans-serif;margin:0">
+            <table
+              align="center"
+              width="100%"
+              border="0"
+              cellpadding="0"
+              cellspacing="0"
+              role="presentation"
+              style="max-width:560px;background-color:#ffffff;border:1px solid #ded8ce;margin:40px auto;padding:40px">
+              <tbody>
+                <tr style="width:100%">
+                  <td>
+                    <h1
+                      style="font-family:Georgia, &#x27;Times New Roman&#x27;, serif;font-size:24px;font-weight:400;line-height:1.1;margin:0 0 24px">
+                      Ride Flumserberg · Ops
+                    </h1>
+                    <p
+                      style="font-size:16px;line-height:1.6;margin:0 0 16px;margin-top:0;margin-right:0;margin-bottom:16px;margin-left:0">
+                      A booking was cancelled. The slot is now free.
+                    </p>
+                    <table
+                      align="center"
+                      width="100%"
+                      border="0"
+                      cellpadding="0"
+                      cellspacing="0"
+                      role="presentation"
+                      style="background-color:#f7f5f0;border:1px solid #ded8ce;margin:8px 0 16px;padding:20px 24px">
+                      <tbody>
+                        <tr>
+                          <td>
+                            <p
+                              style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 12px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
+                              Released slot
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Date</span
+                              ><span style="color:#17130f"
+                                >Saturday, 5 December 2026</span
+                              >
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Start</span
+                              ><span style="color:#17130f">11:00</span>
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Length</span
+                              ><span style="color:#17130f">1 hour</span>
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Instructor</span
+                              ><span style="color:#17130f">Javi</span>
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">2 riders</span
+                              ><span style="color:#17130f"></span>
+                            </p>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <table
+                      align="center"
+                      width="100%"
+                      border="0"
+                      cellpadding="0"
+                      cellspacing="0"
+                      role="presentation"
+                      style="background-color:#f7f5f0;border:1px solid #ded8ce;margin:8px 0 16px;padding:20px 24px">
+                      <tbody>
+                        <tr>
+                          <td>
+                            <p
+                              style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 12px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
+                              Booker
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Name</span
+                              ><span style="color:#17130f">Lara Tester</span>
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Email</span
+                              ><span style="color:#17130f"
+                                >lara@example.test</span
+                              >
+                            </p>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <table
+                      align="center"
+                      width="100%"
+                      border="0"
+                      cellpadding="0"
+                      cellspacing="0"
+                      role="presentation"
+                      style="background-color:#f7f5f0;border:1px solid #ded8ce;margin:8px 0 16px;padding:20px 24px">
+                      <tbody>
+                        <tr>
+                          <td>
+                            <p
+                              style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 12px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
+                              Outcome
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;margin:0;margin-top:0;margin-bottom:0;margin-left:0;margin-right:0">
+                              Booker received credit
+                            </p>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <p
+                      style="font-size:13px;line-height:1.6;color:#5f574f;margin:24px 0 0;margin-top:24px;margin-right:0;margin-bottom:0;margin-left:0">
+                      — automated notification
+                    </p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <!--7--><!--/$-->
+  </body>
+</html>
+"
+`;
+
+exports[`cancellation email templates — snapshots > cancellation-ops-notif · forfeit 1`] = `
+"<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html dir="ltr" lang="en">
+  <head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+    <meta name="x-apple-disable-message-reformatting" />
+  </head>
+  <body style="background-color:#f7f5f0;margin:0">
+    <!--$-->
+    <div
+      style="display:none;overflow:hidden;line-height:1px;opacity:0;max-height:0;max-width:0"
+      data-skip-in-text="true">
+      A booking was cancelled.
+      <div>
+         ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿
+      </div>
+    </div>
+    <table
+      border="0"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      role="presentation"
+      align="center">
+      <tbody>
+        <tr>
+          <td
+            style="background-color:#f7f5f0;color:#17130f;font-family:Archivo, -apple-system, BlinkMacSystemFont, &#x27;Segoe UI&#x27;, sans-serif;margin:0">
+            <table
+              align="center"
+              width="100%"
+              border="0"
+              cellpadding="0"
+              cellspacing="0"
+              role="presentation"
+              style="max-width:560px;background-color:#ffffff;border:1px solid #ded8ce;margin:40px auto;padding:40px">
+              <tbody>
+                <tr style="width:100%">
+                  <td>
+                    <h1
+                      style="font-family:Georgia, &#x27;Times New Roman&#x27;, serif;font-size:24px;font-weight:400;line-height:1.1;margin:0 0 24px">
+                      Ride Flumserberg · Ops
+                    </h1>
+                    <p
+                      style="font-size:16px;line-height:1.6;margin:0 0 16px;margin-top:0;margin-right:0;margin-bottom:16px;margin-left:0">
+                      A booking was cancelled. The slot is now free.
+                    </p>
+                    <table
+                      align="center"
+                      width="100%"
+                      border="0"
+                      cellpadding="0"
+                      cellspacing="0"
+                      role="presentation"
+                      style="background-color:#f7f5f0;border:1px solid #ded8ce;margin:8px 0 16px;padding:20px 24px">
+                      <tbody>
+                        <tr>
+                          <td>
+                            <p
+                              style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 12px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
+                              Released slot
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Date</span
+                              ><span style="color:#17130f"
+                                >Saturday, 5 December 2026</span
+                              >
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Start</span
+                              ><span style="color:#17130f">11:00</span>
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Length</span
+                              ><span style="color:#17130f">1 hour</span>
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Instructor</span
+                              ><span style="color:#17130f">Javi</span>
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">2 riders</span
+                              ><span style="color:#17130f"></span>
+                            </p>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <table
+                      align="center"
+                      width="100%"
+                      border="0"
+                      cellpadding="0"
+                      cellspacing="0"
+                      role="presentation"
+                      style="background-color:#f7f5f0;border:1px solid #ded8ce;margin:8px 0 16px;padding:20px 24px">
+                      <tbody>
+                        <tr>
+                          <td>
+                            <p
+                              style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 12px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
+                              Booker
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Name</span
+                              ><span style="color:#17130f">Lara Tester</span>
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Email</span
+                              ><span style="color:#17130f"
+                                >lara@example.test</span
+                              >
+                            </p>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <table
+                      align="center"
+                      width="100%"
+                      border="0"
+                      cellpadding="0"
+                      cellspacing="0"
+                      role="presentation"
+                      style="background-color:#f7f5f0;border:1px solid #ded8ce;margin:8px 0 16px;padding:20px 24px">
+                      <tbody>
+                        <tr>
+                          <td>
+                            <p
+                              style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 12px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
+                              Outcome
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;margin:0;margin-top:0;margin-bottom:0;margin-left:0;margin-right:0">
+                              Booker forfeited payment
+                            </p>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <p
+                      style="font-size:13px;line-height:1.6;color:#5f574f;margin:24px 0 0;margin-top:24px;margin-right:0;margin-bottom:0;margin-left:0">
+                      — automated notification
+                    </p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <!--7--><!--/$-->
+  </body>
+</html>
+"
+`;
+
+exports[`cancellation email templates — snapshots > cancellation-user-credit · de 1`] = `
+"<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html dir="ltr" lang="de">
+  <head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+    <meta name="x-apple-disable-message-reformatting" />
+  </head>
+  <body style="background-color:#f7f5f0;margin:0">
+    <!--$-->
+    <div
+      style="display:none;overflow:hidden;line-height:1px;opacity:0;max-height:0;max-width:0"
+      data-skip-in-text="true">
+      Deine Stunde wurde storniert und ein Guthaben ausgestellt.
+      <div>
+         ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿
+      </div>
+    </div>
+    <table
+      border="0"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      role="presentation"
+      align="center">
+      <tbody>
+        <tr>
+          <td
+            style="background-color:#f7f5f0;color:#17130f;font-family:Archivo, -apple-system, BlinkMacSystemFont, &#x27;Segoe UI&#x27;, sans-serif;margin:0">
+            <table
+              align="center"
+              width="100%"
+              border="0"
+              cellpadding="0"
+              cellspacing="0"
+              role="presentation"
+              style="max-width:560px;background-color:#ffffff;border:1px solid #ded8ce;margin:40px auto;padding:40px">
+              <tbody>
+                <tr style="width:100%">
+                  <td>
+                    <h1
+                      style="font-family:Georgia, &#x27;Times New Roman&#x27;, serif;font-size:32px;font-weight:400;line-height:1.1;margin:0 0 24px">
+                      Ride Flumserberg
+                    </h1>
+                    <p
+                      style="font-size:16px;line-height:1.6;margin:0 0 12px;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
+                      Hallo Lara Tester,
+                    </p>
+                    <p
+                      style="font-size:16px;line-height:1.6;margin:0 0 16px;margin-top:0;margin-right:0;margin-bottom:16px;margin-left:0">
+                      Deine Stunde wurde storniert. Da du mehr als 48 Stunden im
+                      Voraus abgesagt hast, erhältst du ein Guthaben.
+                    </p>
+                    <table
+                      align="center"
+                      width="100%"
+                      border="0"
+                      cellpadding="0"
+                      cellspacing="0"
+                      role="presentation"
+                      style="background-color:#f7f5f0;border:1px solid #ded8ce;margin:16px 0 24px;padding:20px 24px">
+                      <tbody>
+                        <tr>
+                          <td>
+                            <p
+                              style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 12px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
+                              Stornierte Stunde
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Datum</span
+                              ><span style="color:#17130f"
+                                >Saturday, 5 December 2026</span
+                              >
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Dauer</span
+                              ><span style="color:#17130f">1 hour</span>
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Coach</span
+                              ><span style="color:#17130f">Javi</span>
+                            </p>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <table
+                      align="center"
+                      width="100%"
+                      border="0"
+                      cellpadding="0"
+                      cellspacing="0"
+                      role="presentation"
+                      style="background-color:#17130f;color:#f7f5f0;margin:8px 0 24px;padding:24px">
+                      <tbody>
+                        <tr>
+                          <td>
+                            <p
+                              style="font-size:12px;line-height:24px;color:#a8a097;font-weight:600;letter-spacing:0.18em;margin:0 0 8px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:8px;margin-left:0">
+                              Dein Guthaben
+                            </p>
+                            <p
+                              style="font-size:28px;line-height:1.2;color:#f7f5f0;font-family:Georgia, &#x27;Times New Roman&#x27;, serif;font-weight:400;margin:0 0 12px;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
+                              CHF 110.00
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;color:#ded8ce;margin:0;margin-top:0;margin-bottom:0;margin-left:0;margin-right:0">
+                              Wir haben dir ein Guthaben über CHF 110.00
+                              gutgeschrieben. Es ist bis Tuesday, 5 December
+                              2027 gültig. Du kannst es bei deiner nächsten
+                              Buchung im Checkout einlösen.
+                            </p>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <p
+                      style="font-size:16px;line-height:1.6;margin:0 0 16px;margin-top:0;margin-right:0;margin-bottom:16px;margin-left:0">
+                      <a
+                        href="https://rideflumserberg.ch/en/dashboard"
+                        style="color:#17130f;font-weight:600;text-decoration:underline"
+                        >Zum Dashboard</a
+                      >
+                    </p>
+                    <hr
+                      style="width:100%;border:none;border-top:1px solid #eaeaea;border-color:#ded8ce;margin:16px 0" />
+                    <p
+                      style="font-size:13px;line-height:1.6;color:#5f574f;margin:0 0 8px;margin-top:0;margin-right:0;margin-bottom:8px;margin-left:0">
+                      Vollständige Stornierungsbedingungen:<!-- -->
+                      <a
+                        href="https://rideflumserberg.ch/en/terms"
+                        style="color:#17130f;font-weight:600;text-decoration:underline"
+                        >AGB</a
+                      >.
+                    </p>
+                    <p
+                      style="font-size:13px;line-height:1.6;color:#5f574f;margin:24px 0 0;margin-top:24px;margin-right:0;margin-bottom:0;margin-left:0">
+                      — Ride Flumserberg
+                    </p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <!--7--><!--/$-->
+  </body>
+</html>
+"
+`;
+
+exports[`cancellation email templates — snapshots > cancellation-user-credit · en 1`] = `
+"<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html dir="ltr" lang="en">
+  <head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+    <meta name="x-apple-disable-message-reformatting" />
+  </head>
+  <body style="background-color:#f7f5f0;margin:0">
+    <!--$-->
+    <div
+      style="display:none;overflow:hidden;line-height:1px;opacity:0;max-height:0;max-width:0"
+      data-skip-in-text="true">
+      Your Ride Flumserberg lesson was cancelled and a credit issued.
+      <div>
+         ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿
+      </div>
+    </div>
+    <table
+      border="0"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      role="presentation"
+      align="center">
+      <tbody>
+        <tr>
+          <td
+            style="background-color:#f7f5f0;color:#17130f;font-family:Archivo, -apple-system, BlinkMacSystemFont, &#x27;Segoe UI&#x27;, sans-serif;margin:0">
+            <table
+              align="center"
+              width="100%"
+              border="0"
+              cellpadding="0"
+              cellspacing="0"
+              role="presentation"
+              style="max-width:560px;background-color:#ffffff;border:1px solid #ded8ce;margin:40px auto;padding:40px">
+              <tbody>
+                <tr style="width:100%">
+                  <td>
+                    <h1
+                      style="font-family:Georgia, &#x27;Times New Roman&#x27;, serif;font-size:32px;font-weight:400;line-height:1.1;margin:0 0 24px">
+                      Ride Flumserberg
+                    </h1>
+                    <p
+                      style="font-size:16px;line-height:1.6;margin:0 0 12px;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
+                      Hi Lara Tester,
+                    </p>
+                    <p
+                      style="font-size:16px;line-height:1.6;margin:0 0 16px;margin-top:0;margin-right:0;margin-bottom:16px;margin-left:0">
+                      Your lesson has been cancelled. Because you cancelled more
+                      than 48 hours in advance, you are eligible for a credit.
+                    </p>
+                    <table
+                      align="center"
+                      width="100%"
+                      border="0"
+                      cellpadding="0"
+                      cellspacing="0"
+                      role="presentation"
+                      style="background-color:#f7f5f0;border:1px solid #ded8ce;margin:16px 0 24px;padding:20px 24px">
+                      <tbody>
+                        <tr>
+                          <td>
+                            <p
+                              style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 12px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
+                              Cancelled lesson
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Date</span
+                              ><span style="color:#17130f"
+                                >Saturday, 5 December 2026</span
+                              >
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Length</span
+                              ><span style="color:#17130f">1 hour</span>
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Instructor</span
+                              ><span style="color:#17130f">Javi</span>
+                            </p>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <table
+                      align="center"
+                      width="100%"
+                      border="0"
+                      cellpadding="0"
+                      cellspacing="0"
+                      role="presentation"
+                      style="background-color:#17130f;color:#f7f5f0;margin:8px 0 24px;padding:24px">
+                      <tbody>
+                        <tr>
+                          <td>
+                            <p
+                              style="font-size:12px;line-height:24px;color:#a8a097;font-weight:600;letter-spacing:0.18em;margin:0 0 8px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:8px;margin-left:0">
+                              Your credit
+                            </p>
+                            <p
+                              style="font-size:28px;line-height:1.2;color:#f7f5f0;font-family:Georgia, &#x27;Times New Roman&#x27;, serif;font-weight:400;margin:0 0 12px;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
+                              CHF 110.00
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;color:#ded8ce;margin:0;margin-top:0;margin-bottom:0;margin-left:0;margin-right:0">
+                              We&#x27;ve issued a CHF 110.00 credit. It expires
+                              on Tuesday, 5 December 2027. Apply it at checkout
+                              on your next booking.
+                            </p>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <p
+                      style="font-size:16px;line-height:1.6;margin:0 0 16px;margin-top:0;margin-right:0;margin-bottom:16px;margin-left:0">
+                      <a
+                        href="https://rideflumserberg.ch/en/dashboard"
+                        style="color:#17130f;font-weight:600;text-decoration:underline"
+                        >View dashboard</a
+                      >
+                    </p>
+                    <hr
+                      style="width:100%;border:none;border-top:1px solid #eaeaea;border-color:#ded8ce;margin:16px 0" />
+                    <p
+                      style="font-size:13px;line-height:1.6;color:#5f574f;margin:0 0 8px;margin-top:0;margin-right:0;margin-bottom:8px;margin-left:0">
+                      Full cancellation policy:<!-- -->
+                      <a
+                        href="https://rideflumserberg.ch/en/terms"
+                        style="color:#17130f;font-weight:600;text-decoration:underline"
+                        >Terms &amp; conditions</a
+                      >.
+                    </p>
+                    <p
+                      style="font-size:13px;line-height:1.6;color:#5f574f;margin:24px 0 0;margin-top:24px;margin-right:0;margin-bottom:0;margin-left:0">
+                      — Ride Flumserberg
+                    </p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <!--7--><!--/$-->
+  </body>
+</html>
+"
+`;
+
+exports[`cancellation email templates — snapshots > cancellation-user-credit · es 1`] = `
+"<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html dir="ltr" lang="es">
+  <head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+    <meta name="x-apple-disable-message-reformatting" />
+  </head>
+  <body style="background-color:#f7f5f0;margin:0">
+    <!--$-->
+    <div
+      style="display:none;overflow:hidden;line-height:1px;opacity:0;max-height:0;max-width:0"
+      data-skip-in-text="true">
+      Tu clase ha sido cancelada y te hemos emitido un crédito.
+      <div>
+         ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿
+      </div>
+    </div>
+    <table
+      border="0"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      role="presentation"
+      align="center">
+      <tbody>
+        <tr>
+          <td
+            style="background-color:#f7f5f0;color:#17130f;font-family:Archivo, -apple-system, BlinkMacSystemFont, &#x27;Segoe UI&#x27;, sans-serif;margin:0">
+            <table
+              align="center"
+              width="100%"
+              border="0"
+              cellpadding="0"
+              cellspacing="0"
+              role="presentation"
+              style="max-width:560px;background-color:#ffffff;border:1px solid #ded8ce;margin:40px auto;padding:40px">
+              <tbody>
+                <tr style="width:100%">
+                  <td>
+                    <h1
+                      style="font-family:Georgia, &#x27;Times New Roman&#x27;, serif;font-size:32px;font-weight:400;line-height:1.1;margin:0 0 24px">
+                      Ride Flumserberg
+                    </h1>
+                    <p
+                      style="font-size:16px;line-height:1.6;margin:0 0 12px;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
+                      Hola Lara Tester,
+                    </p>
+                    <p
+                      style="font-size:16px;line-height:1.6;margin:0 0 16px;margin-top:0;margin-right:0;margin-bottom:16px;margin-left:0">
+                      Tu clase ha sido cancelada. Al cancelar con más de 48
+                      horas de antelación, te corresponde un crédito.
+                    </p>
+                    <table
+                      align="center"
+                      width="100%"
+                      border="0"
+                      cellpadding="0"
+                      cellspacing="0"
+                      role="presentation"
+                      style="background-color:#f7f5f0;border:1px solid #ded8ce;margin:16px 0 24px;padding:20px 24px">
+                      <tbody>
+                        <tr>
+                          <td>
+                            <p
+                              style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 12px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
+                              Clase cancelada
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Fecha</span
+                              ><span style="color:#17130f"
+                                >Saturday, 5 December 2026</span
+                              >
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Duración</span
+                              ><span style="color:#17130f">1 hour</span>
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Instructor</span
+                              ><span style="color:#17130f">Javi</span>
+                            </p>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <table
+                      align="center"
+                      width="100%"
+                      border="0"
+                      cellpadding="0"
+                      cellspacing="0"
+                      role="presentation"
+                      style="background-color:#17130f;color:#f7f5f0;margin:8px 0 24px;padding:24px">
+                      <tbody>
+                        <tr>
+                          <td>
+                            <p
+                              style="font-size:12px;line-height:24px;color:#a8a097;font-weight:600;letter-spacing:0.18em;margin:0 0 8px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:8px;margin-left:0">
+                              Tu crédito
+                            </p>
+                            <p
+                              style="font-size:28px;line-height:1.2;color:#f7f5f0;font-family:Georgia, &#x27;Times New Roman&#x27;, serif;font-weight:400;margin:0 0 12px;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
+                              CHF 110.00
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;color:#ded8ce;margin:0;margin-top:0;margin-bottom:0;margin-left:0;margin-right:0">
+                              Hemos emitido un crédito de CHF 110.00. Caduca el
+                              Tuesday, 5 December 2027. Aplícalo en el checkout
+                              de tu próxima reserva.
+                            </p>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <p
+                      style="font-size:16px;line-height:1.6;margin:0 0 16px;margin-top:0;margin-right:0;margin-bottom:16px;margin-left:0">
+                      <a
+                        href="https://rideflumserberg.ch/en/dashboard"
+                        style="color:#17130f;font-weight:600;text-decoration:underline"
+                        >Ir al panel</a
+                      >
+                    </p>
+                    <hr
+                      style="width:100%;border:none;border-top:1px solid #eaeaea;border-color:#ded8ce;margin:16px 0" />
+                    <p
+                      style="font-size:13px;line-height:1.6;color:#5f574f;margin:0 0 8px;margin-top:0;margin-right:0;margin-bottom:8px;margin-left:0">
+                      Política completa de cancelación:<!-- -->
+                      <a
+                        href="https://rideflumserberg.ch/en/terms"
+                        style="color:#17130f;font-weight:600;text-decoration:underline"
+                        >Términos y condiciones</a
+                      >.
+                    </p>
+                    <p
+                      style="font-size:13px;line-height:1.6;color:#5f574f;margin:24px 0 0;margin-top:24px;margin-right:0;margin-bottom:0;margin-left:0">
+                      — Ride Flumserberg
+                    </p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <!--7--><!--/$-->
+  </body>
+</html>
+"
+`;
+
+exports[`cancellation email templates — snapshots > cancellation-user-forfeit · de 1`] = `
+"<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html dir="ltr" lang="de">
+  <head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+    <meta name="x-apple-disable-message-reformatting" />
+  </head>
+  <body style="background-color:#f7f5f0;margin:0">
+    <!--$-->
+    <div
+      style="display:none;overflow:hidden;line-height:1px;opacity:0;max-height:0;max-width:0"
+      data-skip-in-text="true">
+      Deine Stunde wurde innerhalb der 48-Stunden-Frist storniert.
+      <div>
+         ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿
+      </div>
+    </div>
+    <table
+      border="0"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      role="presentation"
+      align="center">
+      <tbody>
+        <tr>
+          <td
+            style="background-color:#f7f5f0;color:#17130f;font-family:Archivo, -apple-system, BlinkMacSystemFont, &#x27;Segoe UI&#x27;, sans-serif;margin:0">
+            <table
+              align="center"
+              width="100%"
+              border="0"
+              cellpadding="0"
+              cellspacing="0"
+              role="presentation"
+              style="max-width:560px;background-color:#ffffff;border:1px solid #ded8ce;margin:40px auto;padding:40px">
+              <tbody>
+                <tr style="width:100%">
+                  <td>
+                    <h1
+                      style="font-family:Georgia, &#x27;Times New Roman&#x27;, serif;font-size:32px;font-weight:400;line-height:1.1;margin:0 0 24px">
+                      Ride Flumserberg
+                    </h1>
+                    <p
+                      style="font-size:16px;line-height:1.6;margin:0 0 12px;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
+                      Hallo Lara Tester,
+                    </p>
+                    <p
+                      style="font-size:16px;line-height:1.6;margin:0 0 16px;margin-top:0;margin-right:0;margin-bottom:16px;margin-left:0">
+                      Deine Stunde wurde storniert.
+                    </p>
+                    <table
+                      align="center"
+                      width="100%"
+                      border="0"
+                      cellpadding="0"
+                      cellspacing="0"
+                      role="presentation"
+                      style="background-color:#f7f5f0;border:1px solid #ded8ce;margin:16px 0 24px;padding:20px 24px">
+                      <tbody>
+                        <tr>
+                          <td>
+                            <p
+                              style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 12px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
+                              Stornierte Stunde
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Datum</span
+                              ><span style="color:#17130f"
+                                >Saturday, 5 December 2026</span
+                              >
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Dauer</span
+                              ><span style="color:#17130f">1 hour</span>
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Coach</span
+                              ><span style="color:#17130f">Javi</span>
+                            </p>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <table
+                      align="center"
+                      width="100%"
+                      border="0"
+                      cellpadding="0"
+                      cellspacing="0"
+                      role="presentation"
+                      style="background-color:#f7f5f0;border:1px solid #ded8ce;margin:8px 0 24px;padding:20px 24px">
+                      <tbody>
+                        <tr>
+                          <td>
+                            <p
+                              style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 8px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:8px;margin-left:0">
+                              Stornierungsbedingungen
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;margin:0;margin-top:0;margin-bottom:0;margin-left:0;margin-right:0">
+                              Gemäss unseren AGB sind Stornierungen innerhalb
+                              von 48 Stunden vor der Stunde nicht
+                              erstattungsfähig. Deine Stunde wurde 12 Stunden
+                              vor Beginn storniert.
+                            </p>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <p
+                      style="font-size:16px;line-height:1.6;margin:0 0 16px;margin-top:0;margin-right:0;margin-bottom:16px;margin-left:0">
+                      Falls du wegen Krankheit oder eines Notfalls absagen
+                      musstest, ruf uns bitte an:<!-- -->
+                      <a
+                        href="tel:+41766381870"
+                        style="color:#17130f;font-weight:600;text-decoration:underline"
+                        >+41 76 638 18 70</a
+                      >
+                      — wir prüfen Ausnahmen im Einzelfall.
+                    </p>
+                    <hr
+                      style="width:100%;border:none;border-top:1px solid #eaeaea;border-color:#ded8ce;margin:16px 0" />
+                    <p
+                      style="font-size:13px;line-height:1.6;color:#5f574f;margin:0 0 8px;margin-top:0;margin-right:0;margin-bottom:8px;margin-left:0">
+                      Vollständige Stornierungsbedingungen:<!-- -->
+                      <a
+                        href="https://rideflumserberg.ch/en/terms"
+                        style="color:#17130f;font-weight:600;text-decoration:underline"
+                        >AGB</a
+                      >.
+                    </p>
+                    <p
+                      style="font-size:13px;line-height:1.6;color:#5f574f;margin:24px 0 0;margin-top:24px;margin-right:0;margin-bottom:0;margin-left:0">
+                      — Ride Flumserberg
+                    </p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <!--7--><!--/$-->
+  </body>
+</html>
+"
+`;
+
+exports[`cancellation email templates — snapshots > cancellation-user-forfeit · en 1`] = `
+"<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html dir="ltr" lang="en">
+  <head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+    <meta name="x-apple-disable-message-reformatting" />
+  </head>
+  <body style="background-color:#f7f5f0;margin:0">
+    <!--$-->
+    <div
+      style="display:none;overflow:hidden;line-height:1px;opacity:0;max-height:0;max-width:0"
+      data-skip-in-text="true">
+      Your lesson was cancelled within the 48-hour window.
+      <div>
+         ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿
+      </div>
+    </div>
+    <table
+      border="0"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      role="presentation"
+      align="center">
+      <tbody>
+        <tr>
+          <td
+            style="background-color:#f7f5f0;color:#17130f;font-family:Archivo, -apple-system, BlinkMacSystemFont, &#x27;Segoe UI&#x27;, sans-serif;margin:0">
+            <table
+              align="center"
+              width="100%"
+              border="0"
+              cellpadding="0"
+              cellspacing="0"
+              role="presentation"
+              style="max-width:560px;background-color:#ffffff;border:1px solid #ded8ce;margin:40px auto;padding:40px">
+              <tbody>
+                <tr style="width:100%">
+                  <td>
+                    <h1
+                      style="font-family:Georgia, &#x27;Times New Roman&#x27;, serif;font-size:32px;font-weight:400;line-height:1.1;margin:0 0 24px">
+                      Ride Flumserberg
+                    </h1>
+                    <p
+                      style="font-size:16px;line-height:1.6;margin:0 0 12px;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
+                      Hi Lara Tester,
+                    </p>
+                    <p
+                      style="font-size:16px;line-height:1.6;margin:0 0 16px;margin-top:0;margin-right:0;margin-bottom:16px;margin-left:0">
+                      Your lesson has been cancelled.
+                    </p>
+                    <table
+                      align="center"
+                      width="100%"
+                      border="0"
+                      cellpadding="0"
+                      cellspacing="0"
+                      role="presentation"
+                      style="background-color:#f7f5f0;border:1px solid #ded8ce;margin:16px 0 24px;padding:20px 24px">
+                      <tbody>
+                        <tr>
+                          <td>
+                            <p
+                              style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 12px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
+                              Cancelled lesson
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Date</span
+                              ><span style="color:#17130f"
+                                >Saturday, 5 December 2026</span
+                              >
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Length</span
+                              ><span style="color:#17130f">1 hour</span>
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Instructor</span
+                              ><span style="color:#17130f">Javi</span>
+                            </p>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <table
+                      align="center"
+                      width="100%"
+                      border="0"
+                      cellpadding="0"
+                      cellspacing="0"
+                      role="presentation"
+                      style="background-color:#f7f5f0;border:1px solid #ded8ce;margin:8px 0 24px;padding:20px 24px">
+                      <tbody>
+                        <tr>
+                          <td>
+                            <p
+                              style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 8px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:8px;margin-left:0">
+                              Cancellation policy
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;margin:0;margin-top:0;margin-bottom:0;margin-left:0;margin-right:0">
+                              Per our terms, cancellations within 48 hours of
+                              the lesson are not eligible for a credit or
+                              refund. Your lesson was cancelled 12 hours before
+                              its start time.
+                            </p>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <p
+                      style="font-size:16px;line-height:1.6;margin:0 0 16px;margin-top:0;margin-right:0;margin-bottom:16px;margin-left:0">
+                      If you cancelled due to illness or emergency, please call
+                      us at<!-- -->
+                      <a
+                        href="tel:+41766381870"
+                        style="color:#17130f;font-weight:600;text-decoration:underline"
+                        >+41 76 638 18 70</a
+                      >
+                      — we review exceptions case by case.
+                    </p>
+                    <hr
+                      style="width:100%;border:none;border-top:1px solid #eaeaea;border-color:#ded8ce;margin:16px 0" />
+                    <p
+                      style="font-size:13px;line-height:1.6;color:#5f574f;margin:0 0 8px;margin-top:0;margin-right:0;margin-bottom:8px;margin-left:0">
+                      Full cancellation policy:<!-- -->
+                      <a
+                        href="https://rideflumserberg.ch/en/terms"
+                        style="color:#17130f;font-weight:600;text-decoration:underline"
+                        >Terms &amp; conditions</a
+                      >.
+                    </p>
+                    <p
+                      style="font-size:13px;line-height:1.6;color:#5f574f;margin:24px 0 0;margin-top:24px;margin-right:0;margin-bottom:0;margin-left:0">
+                      — Ride Flumserberg
+                    </p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <!--7--><!--/$-->
+  </body>
+</html>
+"
+`;
+
+exports[`cancellation email templates — snapshots > cancellation-user-forfeit · es 1`] = `
+"<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html dir="ltr" lang="es">
+  <head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+    <meta name="x-apple-disable-message-reformatting" />
+  </head>
+  <body style="background-color:#f7f5f0;margin:0">
+    <!--$-->
+    <div
+      style="display:none;overflow:hidden;line-height:1px;opacity:0;max-height:0;max-width:0"
+      data-skip-in-text="true">
+      Tu clase ha sido cancelada dentro de las 48 horas previas.
+      <div>
+         ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿
+      </div>
+    </div>
+    <table
+      border="0"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      role="presentation"
+      align="center">
+      <tbody>
+        <tr>
+          <td
+            style="background-color:#f7f5f0;color:#17130f;font-family:Archivo, -apple-system, BlinkMacSystemFont, &#x27;Segoe UI&#x27;, sans-serif;margin:0">
+            <table
+              align="center"
+              width="100%"
+              border="0"
+              cellpadding="0"
+              cellspacing="0"
+              role="presentation"
+              style="max-width:560px;background-color:#ffffff;border:1px solid #ded8ce;margin:40px auto;padding:40px">
+              <tbody>
+                <tr style="width:100%">
+                  <td>
+                    <h1
+                      style="font-family:Georgia, &#x27;Times New Roman&#x27;, serif;font-size:32px;font-weight:400;line-height:1.1;margin:0 0 24px">
+                      Ride Flumserberg
+                    </h1>
+                    <p
+                      style="font-size:16px;line-height:1.6;margin:0 0 12px;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
+                      Hola Lara Tester,
+                    </p>
+                    <p
+                      style="font-size:16px;line-height:1.6;margin:0 0 16px;margin-top:0;margin-right:0;margin-bottom:16px;margin-left:0">
+                      Tu clase ha sido cancelada.
+                    </p>
+                    <table
+                      align="center"
+                      width="100%"
+                      border="0"
+                      cellpadding="0"
+                      cellspacing="0"
+                      role="presentation"
+                      style="background-color:#f7f5f0;border:1px solid #ded8ce;margin:16px 0 24px;padding:20px 24px">
+                      <tbody>
+                        <tr>
+                          <td>
+                            <p
+                              style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 12px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
+                              Clase cancelada
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Fecha</span
+                              ><span style="color:#17130f"
+                                >Saturday, 5 December 2026</span
+                              >
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Duración</span
+                              ><span style="color:#17130f">1 hour</span>
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
+                              <span style="color:#5f574f">Instructor</span
+                              ><span style="color:#17130f">Javi</span>
+                            </p>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <table
+                      align="center"
+                      width="100%"
+                      border="0"
+                      cellpadding="0"
+                      cellspacing="0"
+                      role="presentation"
+                      style="background-color:#f7f5f0;border:1px solid #ded8ce;margin:8px 0 24px;padding:20px 24px">
+                      <tbody>
+                        <tr>
+                          <td>
+                            <p
+                              style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 8px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:8px;margin-left:0">
+                              Política de cancelación
+                            </p>
+                            <p
+                              style="font-size:14px;line-height:1.6;margin:0;margin-top:0;margin-bottom:0;margin-left:0;margin-right:0">
+                              Según nuestros términos, las cancelaciones dentro
+                              de las 48 horas previas a la clase no dan derecho
+                              a crédito ni reembolso. Tu clase fue cancelada 12
+                              horas antes de su inicio.
+                            </p>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <p
+                      style="font-size:16px;line-height:1.6;margin:0 0 16px;margin-top:0;margin-right:0;margin-bottom:16px;margin-left:0">
+                      Si has cancelado por enfermedad o emergencia, llámanos al<!-- -->
+                      <a
+                        href="tel:+41766381870"
+                        style="color:#17130f;font-weight:600;text-decoration:underline"
+                        >+41 76 638 18 70</a
+                      >
+                      — revisamos cada excepción caso a caso.
+                    </p>
+                    <hr
+                      style="width:100%;border:none;border-top:1px solid #eaeaea;border-color:#ded8ce;margin:16px 0" />
+                    <p
+                      style="font-size:13px;line-height:1.6;color:#5f574f;margin:0 0 8px;margin-top:0;margin-right:0;margin-bottom:8px;margin-left:0">
+                      Política completa de cancelación:<!-- -->
+                      <a
+                        href="https://rideflumserberg.ch/en/terms"
+                        style="color:#17130f;font-weight:600;text-decoration:underline"
+                        >Términos y condiciones</a
+                      >.
+                    </p>
+                    <p
+                      style="font-size:13px;line-height:1.6;color:#5f574f;margin:24px 0 0;margin-top:24px;margin-right:0;margin-bottom:0;margin-left:0">
+                      — Ride Flumserberg
+                    </p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <!--7--><!--/$-->
+  </body>
+</html>
+"
+`;

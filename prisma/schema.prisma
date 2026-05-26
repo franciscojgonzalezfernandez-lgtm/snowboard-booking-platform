@@ -216,6 +216,8 @@ model Booking {
   confirmationEmailSentAt DateTime?
   reminder24hSentAt       DateTime?
   postClassEmailSentAt    DateTime?
+  cancellationEmailSentAt    DateTime?
+  opsCancellationNotifSentAt DateTime?
   createdAt               DateTime      @default(now())
 
   booker          User            @relation(fields: [bookerId], references: [id], onDelete: Restrict)

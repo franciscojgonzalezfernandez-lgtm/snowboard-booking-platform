@@ -1144,23 +1144,24 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
 
 ##### F-063 — Cancellation emails (3 templates, trilingual)
 
-- Sprint: 3 · Estado: backlog · Prioridad: P0
+- Sprint: 3 · Estado: done · Prioridad: P0
 - Depende de: F-017, F-045, F-058
 - Motivación: F-058 dispatch-and-forget se queda incompleto sin templates reales. Owner pidió variantes diferenciadas: user con credit, user con forfeit, instructor notif. Reusa el aesthetic del `booking-confirmed.tsx` (F-045) para consistencia visual.
 - AC templates:
-  - [ ] `lib/email/cancellation-user-credit.tsx` (React Email). Props: `bookerName, bookingDate, bookingDuration, instructorName, creditAmountCents, creditExpiresAt, locale`. Cuerpo: header confirmando cancelación + bloque credit destacado ("We've issued a CHF X.XX credit. It expires on YYYY-MM-DD. Apply it at checkout on your next booking.") + CTA `View dashboard` → `/dashboard` + footer T&C link.
-  - [ ] `lib/email/cancellation-user-forfeit.tsx`. Props: `bookerName, bookingDate, bookingDuration, instructorName, hoursBeforeStart, locale`. Cuerpo: header cancelación + bloque política ("Per our terms, cancellations within 48 hours of the lesson are not eligible for a credit or refund. Your lesson was cancelled {N} hours before its start time.") + phone CTA ("If you cancelled due to illness or emergency, please call us at +41 76 638 18 70 — we review exceptions case by case.") + footer T&C link.
-  - [ ] `lib/email/cancellation-ops-notif.tsx`. Props: `instructorName, bookingDate, bookingDuration, anchorTime, bookerName, bookerEmail, attendeeCount, cancellationVariant: 'credit' | 'forfeit', locale`. Cuerpo: header notif ("A booking was cancelled") + detalles slot liberado + booker contact + variant indicator ("Booker received credit" / "Booker forfeited payment"). **Sin** CTA — info-only para inbox del owner.
+  - [x] `lib/email/templates/cancellation-user-credit.tsx` (React Email). Props: `bookerName, bookingDateLabel, bookingDurationLabel, instructorName, creditAmountLabel, creditExpiresAtLabel, manageBookingUrl, termsUrl, locale`. Cuerpo: header confirmando cancelación + bloque credit destacado ("We've issued a CHF X.XX credit. It expires on YYYY-MM-DD. Apply it at checkout on your next booking.") + CTA `View dashboard` → `/dashboard` + footer T&C link. Date/amount/expiry se reciben ya formateados desde el dispatch (mismo patrón que `booking-confirmed.tsx`).
+  - [x] `lib/email/templates/cancellation-user-forfeit.tsx`. Props: `bookerName, bookingDateLabel, bookingDurationLabel, instructorName, hoursBeforeStart, contactPhone, termsUrl, locale`. Cuerpo: header cancelación + bloque política ("Per our terms, cancellations within 48 hours of the lesson are not eligible for a credit or refund. Your lesson was cancelled {N} hours before its start time.") + phone CTA con `tel:` link ("If you cancelled due to illness or emergency, please call us at +41 76 638 18 70 — we review exceptions case by case.") + footer T&C link.
+  - [x] `lib/email/templates/cancellation-ops-notif.tsx`. Props: `instructorName, bookingDateLabel, bookingDurationLabel, anchorTime, bookerName, bookerEmail, attendeeCount, cancellationVariant: 'credit' | 'forfeit', locale`. Cuerpo: header notif ("A booking was cancelled") + detalles slot liberado + booker contact + variant indicator ("Booker received credit" / "Booker forfeited payment"). **Sin** CTA — info-only para inbox del owner. `locale` queda en la prop pero el copy es siempre EN (ops notif locale-pinned).
 - AC dispatch:
-  - [ ] Locale-aware: `User.locale` del booker selecciona template para los emails al booker. Ops notif siempre en `en` (owner es bilingual EN/ES, EN es el default ops).
-  - [ ] Idempotency Resend: `idempotencyKey = cancel-${bookingId}-${variant}-${recipient}` (`variant` ∈ `{credit, forfeit, ops_notif}`).
-  - [ ] Schema: `Booking.cancellationEmailSentAt` + `Booking.opsCancellationNotifSentAt` (si no añadidos en F-058, migración compartida).
+  - [x] `lib/email/send-cancellation.ts` — `sendCancellationEmailsWith(deps, args)` con `args: { bookingId, variant: 'credit'|'forfeit', hoursBeforeStart, [creditAmountCents, creditExpiresAt] }`. F-058 lo invoca post-`$transaction`. Locale-aware: `Booking.language` del booker selecciona template booker. Ops notif siempre en `en`.
+  - [x] Idempotency Resend: `cancel-${bookingId}-credit-booker` / `cancel-${bookingId}-forfeit-booker` / `cancel-${bookingId}-ops_notif-ops` (match spec `variant ∈ {credit, forfeit, ops_notif}` × `recipient ∈ {booker, ops}`). Extra app-level guard: `cancellationEmailSentAt` / `opsCancellationNotifSentAt` cortocircuitan antes de llamar a Resend.
+  - [x] Schema: `Booking.cancellationEmailSentAt` + `Booking.opsCancellationNotifSentAt` (migración `20260526100000_booking_cancellation_email_sent_at`). Si F-058 agrupa en su PR se desduplica; standalone aquí porque F-063 cierra antes que F-058.
 - Tests:
-  - Vitest snapshots por locale × variant: 3 templates × 3 locales = 9 snapshots.
-  - Vitest `lib/email/cancellation-dispatch.test.ts` — mock Resend, verifica `idempotencyKey` shape + selección correcta de template por `hoursBeforeStart` branch + recipient correcto (booker vs instructor).
+  - [x] Vitest snapshots `lib/email/templates/cancellation.snapshot.test.tsx` → 8 snapshots: credit × 3 locales + forfeit × 3 locales + ops × 2 variantes (ops siempre EN; no aporta variar locale en el snapshot porque el copy es locale-pinned).
+  - [x] Vitest `lib/email/send-cancellation.test.ts` — mock Resend (10 tests): credit happy path, forfeit happy path, ops always EN, idempotency keys correctos por recipient × variant, ALREADY_SENT booker/ops/both, BOOKING_NOT_FOUND, locale routing de subject (de).
 - Notas:
-  - **No** A/B test de copy. Owner edita `messages/*.json` (i18n) o el TSX directamente.
-  - Reusa skeleton + design tokens de `booking-confirmed.tsx` (F-045) para consistencia visual editorial.
+  - **No** A/B test de copy. Owner edita el TSX directamente (copy embebido por locale en cada template, sin `messages/*.json` para emails — mismo patrón que `booking-confirmed.tsx`).
+  - Reusa skeleton + design tokens de `booking-confirmed.tsx` (F-045): `#f7f5f0` background, `#17130f` foreground, Georgia serif heading, summary box con border `#ded8ce`. Credit block invierte la paleta (dark on light) para destacar el amount.
+  - F-058 todavía no consume este dispatch — cuando F-058 land, importará `sendCancellationEmails` y lo invocará post-`$transaction`.
 
 ##### F-064 — Edit phone in dashboard (personal data card)
 
