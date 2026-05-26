@@ -43,7 +43,7 @@ export function LanguageSwitcher({ className, tone = "dark" }: LanguageSwitcherP
             aria-current={target === locale ? "true" : undefined}
             data-testid={`lang-${target}`}
             className={
-              "cursor-pointer transition-colors " +
+              "inline-flex min-h-11 min-w-6 cursor-pointer items-center justify-center px-1 transition-colors " +
               (target === locale ? activeColor : inactiveColor)
             }
           >

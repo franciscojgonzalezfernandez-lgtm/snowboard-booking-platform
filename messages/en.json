@@ -8,7 +8,10 @@
     "instructors": "Instructors",
     "prices": "Prices",
     "journal": "Field notes",
+    "reservar": "Book a lesson",
     "signin": "Sign in",
+    "dashboard_cta": "My account",
+    "open_menu": "Open menu",
     "switch_language_aria": "Switch language"
   },
   "home": {
