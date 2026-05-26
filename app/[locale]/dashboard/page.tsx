@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { BookingStatus, type Duration } from "@prisma/client";
+import {
+  BookingStatus,
+  CreditStatus,
+  type Duration,
+  type Locale as DbLocale,
+} from "@prisma/client";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
@@ -13,25 +18,14 @@ type DashboardPageProps = {
   params: Promise<{ locale: string }>;
 };
 
+type SectionKind = "upcoming" | "past" | "cancelled";
+
 const DURATION_LABEL_KEY: Record<Duration, string> = {
   ONE_HOUR: "duration_1h",
   TWO_HOURS: "duration_2h",
   INTENSIVE: "duration_4h",
   FULL_DAY: "duration_6h",
 };
-
-// Statuses considered actionable history for the booker. Failed payments,
-// orphan PENDING_PAYMENT drafts left by abandoned checkouts, and
-// system-cancelled rows (PaymentIntent canceled) are not surfaced because
-// the booker cannot act on them and would only be confused by them.
-// Sprint 3 will introduce explicit Upcoming / Past / Cancelled sections.
-const VISIBLE_STATUSES: BookingStatus[] = [
-  BookingStatus.CONFIRMED,
-  BookingStatus.COMPLETED,
-  BookingStatus.CANCELLED_BY_USER,
-  BookingStatus.CANCELLED_BY_OPS,
-  BookingStatus.REFUNDED,
-];
 
 const STATUS_LABEL_KEY: Record<BookingStatus, string> = {
   PENDING_PAYMENT: "status_pending_payment",
@@ -61,6 +55,70 @@ function formatBookingDate(date: Date, locale: string): string {
   }).format(date);
 }
 
+function formatShortDate(date: Date, locale: string): string {
+  const tag = INTL_TAG[locale] ?? "en-CH";
+  return new Intl.DateTimeFormat(tag, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+}
+
+// `Booking.date` is `@db.Date` (UTC midnight). "Today" must be the UTC date
+// midnight so date-only comparisons stay consistent regardless of server TZ.
+function utcStartOfToday(): Date {
+  const now = new Date();
+  return new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
+}
+
+function classifyBooking(
+  status: BookingStatus,
+  date: Date,
+  today: Date,
+): SectionKind | null {
+  switch (status) {
+    case BookingStatus.CONFIRMED:
+      return date.getTime() >= today.getTime() ? "upcoming" : "past";
+    case BookingStatus.COMPLETED:
+      return "past";
+    case BookingStatus.CANCELLED_BY_USER:
+    case BookingStatus.CANCELLED_BY_OPS:
+    case BookingStatus.CANCELLED_BY_SYSTEM:
+    case BookingStatus.REFUNDED:
+    case BookingStatus.PAYMENT_FAILED:
+      return "cancelled";
+    case BookingStatus.PENDING_PAYMENT:
+      return null;
+  }
+}
+
+type BookingRow = {
+  id: string;
+  date: Date;
+  anchorTime: string;
+  duration: Duration;
+  language: DbLocale;
+  status: BookingStatus;
+  totalPriceCents: number;
+  cancelledByUserAt: Date | null;
+  cancelledByOpsAt: Date | null;
+  opsReason: string | null;
+  refundedAt: Date | null;
+  refundAmountCents: number | null;
+  instructor: { user: { name: string | null } };
+};
+
+type CreditRow = {
+  id: string;
+  amountCents: number;
+  sourceBookingId: string;
+  expiresAt: Date;
+  status: CreditStatus;
+};
+
 export async function generateMetadata({
   params,
 }: DashboardPageProps): Promise<Metadata> {
@@ -86,18 +144,34 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
 
   const userId = session.user.id;
 
-  const [bookings, account] = await Promise.all([
+  const [bookings, credits, account] = await Promise.all([
     prisma.booking.findMany({
-      where: { bookerId: userId, status: { in: VISIBLE_STATUSES } },
+      where: { bookerId: userId, status: { not: BookingStatus.PENDING_PAYMENT } },
       orderBy: [{ date: "desc" }, { anchorTime: "desc" }],
       select: {
         id: true,
         date: true,
         anchorTime: true,
         duration: true,
+        language: true,
         status: true,
         totalPriceCents: true,
+        cancelledByUserAt: true,
+        cancelledByOpsAt: true,
+        opsReason: true,
+        refundedAt: true,
+        refundAmountCents: true,
         instructor: { select: { user: { select: { name: true } } } },
+      },
+    }),
+    prisma.accountCredit.findMany({
+      where: { userId, sourceBooking: { bookerId: userId } },
+      select: {
+        id: true,
+        amountCents: true,
+        sourceBookingId: true,
+        expiresAt: true,
+        status: true,
       },
     }),
     prisma.user.findUnique({
@@ -105,6 +179,25 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
       select: { name: true, email: true, phone: true },
     }),
   ]);
+
+  const today = utcStartOfToday();
+  const creditsBySource = new Map<string, CreditRow>();
+  for (const credit of credits) {
+    creditsBySource.set(credit.sourceBookingId, credit);
+  }
+
+  const groups: Record<SectionKind, BookingRow[]> = {
+    upcoming: [],
+    past: [],
+    cancelled: [],
+  };
+  for (const booking of bookings) {
+    const kind = classifyBooking(booking.status, booking.date, today);
+    if (kind) groups[kind].push(booking);
+  }
+  // Upcoming reads better ascending (nearest first); past + cancelled stay
+  // descending (most recent first).
+  groups.upcoming.reverse();
 
   const greetingName = account?.name?.trim().split(/\s+/)[0] ?? null;
 
@@ -133,114 +226,30 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
         </p>
       </header>
 
-      <section className="mt-12">
-        <div className="flex items-baseline justify-between gap-4">
-          <h2
-            data-testid="dashboard-bookings-heading"
-            className="font-display text-2xl tracking-tight"
-          >
-            {t("section_bookings")}
-          </h2>
-          {bookings.length > 0 ? (
-            <Link
-              href="/reservar"
-              data-testid="dashboard-book-again"
-              className="text-xs font-bold uppercase tracking-[0.18em] underline-offset-4 hover:underline"
-            >
-              {t("book_another")}
-            </Link>
-          ) : null}
-        </div>
-
-        {bookings.length === 0 ? (
-          <div
-            data-testid="dashboard-empty"
-            className="mt-6 flex flex-col items-start gap-5 border-l-2 border-foreground/80 bg-muted/20 px-8 py-10"
-          >
-            <p
-              data-testid="dashboard-empty-heading"
-              className="font-display text-2xl tracking-tight"
-            >
-              {t("empty_heading")}
-            </p>
-            <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
-              {t("empty_body")}
-            </p>
-            <Link
-              href="/reservar"
-              data-testid="dashboard-empty-cta"
-              className="inline-flex items-center justify-center rounded-md border-2 border-foreground bg-foreground px-6 py-3 text-[13px] font-bold uppercase tracking-[0.18em] text-background transition-colors hover:bg-destructive hover:border-destructive"
-            >
-              {t("empty_cta")}
-            </Link>
-          </div>
-        ) : (
-          <ol
-            data-testid="dashboard-bookings"
-            className="mt-6 divide-y divide-input border-y border-input"
-          >
-            {bookings.map((booking) => {
-              const statusLabel = t(STATUS_LABEL_KEY[booking.status]);
-              const durationLabel = tStep1(
-                DURATION_LABEL_KEY[booking.duration],
-              );
-              const instructorName = booking.instructor.user.name ?? "—";
-              return (
-                <li
-                  key={booking.id}
-                  data-testid="dashboard-booking-row"
-                  data-booking-id={booking.id}
-                  data-status={booking.status}
-                  className="group grid gap-6 py-8 sm:grid-cols-[1fr,auto] sm:items-start"
-                >
-                  <div className="space-y-2">
-                    <p
-                      data-testid="dashboard-booking-status"
-                      className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground"
-                    >
-                      {statusLabel}
-                    </p>
-                    <p
-                      data-testid="dashboard-booking-date"
-                      className="font-display text-2xl tracking-tight sm:text-3xl"
-                    >
-                      {formatBookingDate(booking.date, locale)}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      <span data-testid="dashboard-booking-time">
-                        {booking.anchorTime}
-                      </span>
-                      <span aria-hidden> · </span>
-                      <span data-testid="dashboard-booking-duration">
-                        {durationLabel}
-                      </span>
-                      <span aria-hidden> · </span>
-                      <span data-testid="dashboard-booking-instructor">
-                        {instructorName}
-                      </span>
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-start gap-3 sm:items-end">
-                    <p
-                      data-testid="dashboard-booking-total"
-                      className="font-display text-2xl tracking-tight"
-                    >
-                      {formatChf(booking.totalPriceCents)}
-                    </p>
-                    <Link
-                      href={`/reservar/exito/${booking.id}`}
-                      data-testid="dashboard-booking-link"
-                      className="text-xs font-bold uppercase tracking-[0.18em] underline-offset-4 hover:underline"
-                    >
-                      {t("view_details")} →
-                    </Link>
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
-        )}
-      </section>
+      <DashboardSection
+        kind="upcoming"
+        bookings={groups.upcoming}
+        creditsBySource={creditsBySource}
+        locale={locale}
+        t={t}
+        tStep1={tStep1}
+      />
+      <DashboardSection
+        kind="past"
+        bookings={groups.past}
+        creditsBySource={creditsBySource}
+        locale={locale}
+        t={t}
+        tStep1={tStep1}
+      />
+      <DashboardSection
+        kind="cancelled"
+        bookings={groups.cancelled}
+        creditsBySource={creditsBySource}
+        locale={locale}
+        t={t}
+        tStep1={tStep1}
+      />
 
       <section
         data-testid="dashboard-account"
@@ -293,5 +302,226 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
         </dl>
       </section>
     </main>
+  );
+}
+
+type SectionProps = {
+  kind: SectionKind;
+  bookings: BookingRow[];
+  creditsBySource: Map<string, CreditRow>;
+  locale: string;
+  t: Awaited<ReturnType<typeof getTranslations<"dashboard">>>;
+  tStep1: Awaited<ReturnType<typeof getTranslations<"reservar.step1">>>;
+};
+
+function DashboardSection({
+  kind,
+  bookings,
+  creditsBySource,
+  locale,
+  t,
+  tStep1,
+}: SectionProps) {
+  const count = bookings.length;
+  return (
+    <section
+      data-testid={`dashboard-section-${kind}`}
+      data-section-count={count}
+      className="mt-14"
+    >
+      <div className="flex items-baseline justify-between gap-4 border-b border-input pb-3">
+        <h2
+          data-testid={`dashboard-section-heading-${kind}`}
+          className="font-display text-2xl tracking-tight"
+        >
+          {t(`section_${kind}`)}
+        </h2>
+        <span
+          data-testid={`dashboard-section-count-${kind}`}
+          className="text-xs font-bold uppercase tracking-[0.22em] text-muted-foreground"
+        >
+          {count}
+        </span>
+      </div>
+
+      {count === 0 ? (
+        <SectionEmpty kind={kind} t={t} />
+      ) : (
+        <ol
+          data-testid={`dashboard-bookings-${kind}`}
+          className="divide-y divide-input"
+        >
+          {bookings.map((booking) => (
+            <BookingRowItem
+              key={booking.id}
+              booking={booking}
+              credit={creditsBySource.get(booking.id) ?? null}
+              kind={kind}
+              locale={locale}
+              t={t}
+              tStep1={tStep1}
+            />
+          ))}
+        </ol>
+      )}
+    </section>
+  );
+}
+
+function SectionEmpty({
+  kind,
+  t,
+}: {
+  kind: SectionKind;
+  t: Awaited<ReturnType<typeof getTranslations<"dashboard">>>;
+}) {
+  return (
+    <div
+      data-testid={`dashboard-empty-${kind}`}
+      className="mt-6 flex flex-col items-start gap-4 border-l-2 border-foreground/60 bg-muted/20 px-6 py-8"
+    >
+      <p className="text-sm leading-relaxed text-muted-foreground">
+        {t(`empty_${kind}`)}
+      </p>
+      {kind === "upcoming" ? (
+        <Link
+          href="/reservar"
+          data-testid="dashboard-empty-upcoming-cta"
+          className="inline-flex items-center justify-center rounded-md border-2 border-foreground bg-foreground px-6 py-3 text-[13px] font-bold uppercase tracking-[0.18em] text-background transition-colors hover:bg-destructive hover:border-destructive"
+        >
+          {t("empty_upcoming_cta")}
+        </Link>
+      ) : null}
+      {/* Empty-state CTA on `/${locale}/dashboard` lives in `upcoming`; past
+          and cancelled empty states are intentionally informational only. */}
+    </div>
+  );
+}
+
+function BookingRowItem({
+  booking,
+  credit,
+  kind,
+  locale,
+  t,
+  tStep1,
+}: {
+  booking: BookingRow;
+  credit: CreditRow | null;
+  kind: SectionKind;
+  locale: string;
+  t: Awaited<ReturnType<typeof getTranslations<"dashboard">>>;
+  tStep1: Awaited<ReturnType<typeof getTranslations<"reservar.step1">>>;
+}) {
+  const statusLabel = t(STATUS_LABEL_KEY[booking.status]);
+  const durationLabel = tStep1(DURATION_LABEL_KEY[booking.duration]);
+  const instructorName = booking.instructor.user.name ?? "—";
+
+  return (
+    <li
+      data-testid="dashboard-booking-row"
+      data-booking-id={booking.id}
+      data-status={booking.status}
+      className="group grid gap-6 py-8 sm:grid-cols-[1fr,auto] sm:items-start"
+    >
+      <div className="space-y-2">
+        <p
+          data-testid="dashboard-booking-status"
+          className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground"
+        >
+          {statusLabel}
+        </p>
+        <p
+          data-testid="dashboard-booking-date"
+          className="font-display text-2xl tracking-tight sm:text-3xl"
+        >
+          {formatBookingDate(booking.date, locale)}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          <span data-testid="dashboard-booking-time">{booking.anchorTime}</span>
+          <span aria-hidden> · </span>
+          <span data-testid="dashboard-booking-duration">{durationLabel}</span>
+          <span aria-hidden> · </span>
+          <span data-testid="dashboard-booking-instructor">
+            {instructorName}
+          </span>
+        </p>
+        {kind === "cancelled" ? (
+          <CancelledMeta booking={booking} credit={credit} locale={locale} t={t} />
+        ) : null}
+      </div>
+      <div className="flex flex-col items-start gap-3 sm:items-end">
+        <p
+          data-testid="dashboard-booking-total"
+          className="font-display text-2xl tracking-tight"
+        >
+          {formatChf(booking.totalPriceCents)}
+        </p>
+        {kind === "past" && booking.status === BookingStatus.COMPLETED ? (
+          <a
+            href={`/api/booking/${booking.id}/ics`}
+            data-testid="dashboard-booking-ics"
+            className="text-xs font-bold uppercase tracking-[0.18em] underline-offset-4 hover:underline"
+          >
+            {t("add_to_calendar")} ↓
+          </a>
+        ) : null}
+        <Link
+          href={`/reservar/exito/${booking.id}`}
+          data-testid="dashboard-booking-link"
+          className="text-xs font-bold uppercase tracking-[0.18em] underline-offset-4 hover:underline"
+        >
+          {t("view_details")} →
+        </Link>
+      </div>
+    </li>
+  );
+}
+
+function CancelledMeta({
+  booking,
+  credit,
+  locale,
+  t,
+}: {
+  booking: BookingRow;
+  credit: CreditRow | null;
+  locale: string;
+  t: Awaited<ReturnType<typeof getTranslations<"dashboard">>>;
+}) {
+  const cancelledAt = booking.cancelledByUserAt ?? booking.cancelledByOpsAt;
+  return (
+    <div
+      data-testid="dashboard-booking-cancelled-meta"
+      className="space-y-1 pt-2 text-xs text-muted-foreground"
+    >
+      {cancelledAt ? (
+        <p data-testid="dashboard-booking-cancelled-at">
+          {t("cancelled_on", { date: formatShortDate(cancelledAt, locale) })}
+        </p>
+      ) : null}
+      {booking.status === BookingStatus.REFUNDED && booking.refundedAt ? (
+        <p data-testid="dashboard-booking-refunded-meta">
+          {t("refunded_on", {
+            date: formatShortDate(booking.refundedAt, locale),
+            amount: formatChf(booking.refundAmountCents ?? booking.totalPriceCents),
+          })}
+        </p>
+      ) : null}
+      {booking.status === BookingStatus.CANCELLED_BY_OPS && booking.opsReason ? (
+        <p data-testid="dashboard-booking-ops-reason">{booking.opsReason}</p>
+      ) : null}
+      {credit ? (
+        <p
+          data-testid="dashboard-booking-credit-issued"
+          className="text-foreground"
+        >
+          {t("credit_issued", {
+            amount: formatChf(credit.amountCents),
+            expires: formatShortDate(credit.expiresAt, locale),
+          })}
+        </p>
+      ) : null}
+    </div>
   );
 }
