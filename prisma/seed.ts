@@ -373,7 +373,42 @@ async function reseedBookings(
   return { created: plan.length, confirmed, pendingPayment };
 }
 
+// Production-seed guard (added after the main branch was seeded by accident).
+// This seed is destructive: it deleteMany's AvailabilityBlock/Booking rows and
+// overwrites the owner/instructor profiles. It must NEVER hit the Neon `main`
+// branch (production, https://rideflumserberg.ch) unless the operator opts in
+// explicitly with ALLOW_PRODUCTION_SEED=true. Local/dev work targets the Neon
+// `dev` branch.
+const PRODUCTION_DB_HOST_FRAGMENT = "ep-twilight-night-aj1cbb6k";
+
+function assertNotProduction(): void {
+  const url = process.env.DATABASE_URL ?? "";
+  let host = "";
+  try {
+    host = new URL(url).host;
+  } catch {
+    host = "";
+  }
+
+  const targetsProduction = host.includes(PRODUCTION_DB_HOST_FRAGMENT);
+  if (targetsProduction && process.env.ALLOW_PRODUCTION_SEED !== "true") {
+    throw new Error(
+      [
+        "Refusing to seed: DATABASE_URL points at PRODUCTION (Neon `main`).",
+        `  host: ${host || "<unparseable DATABASE_URL>"}`,
+        "",
+        "This seed wipes availability + bookings and overwrites instructor profiles.",
+        "If you truly intend to seed production, re-run with ALLOW_PRODUCTION_SEED=true.",
+        "For local/dev work, point DATABASE_URL at the Neon `dev` endpoint",
+        "(ep-proud-block-ajbk5wz5) before seeding.",
+      ].join("\n"),
+    );
+  }
+}
+
 async function main() {
+  assertNotProduction();
+
   const owner = await upsertOwner();
   const javi = await upsertOwnerInstructor(owner.id);
   const laraUser = await upsertLaraUser();
