@@ -203,6 +203,10 @@ function InfoRow({
   value: string;
   bold?: boolean;
 }) {
+  // Stacked layout (label on top, value below). Gmail and Outlook both strip
+  // CSS flex/grid, which collapsed the previous side-by-side row into
+  // "Label:Value" with no whitespace. Stacking dodges that class of bug for
+  // good and reads more editorial — small tracked caps over a larger value.
   return (
     <table
       role="presentation"
@@ -214,21 +218,17 @@ function InfoRow({
     >
       <tbody>
         <tr>
-          <td
-            style={{
-              ...rowLabelCell,
-              fontWeight: bold ? 600 : 400,
-            }}
-          >
-            {label}
-          </td>
-          <td
-            style={{
-              ...rowValueCell,
-              fontWeight: bold ? 600 : 400,
-            }}
-          >
-            {value}
+          <td style={rowCell}>
+            <div style={rowLabel}>{label}</div>
+            <div
+              style={{
+                ...rowValue,
+                fontSize: bold ? "18px" : "16px",
+                fontWeight: bold ? 600 : 400,
+              }}
+            >
+              {value}
+            </div>
           </td>
         </tr>
       </tbody>
@@ -290,24 +290,27 @@ const summaryTitle = {
 const rowTable = {
   width: "100%",
   borderCollapse: "collapse" as const,
-  margin: "0 0 8px",
+  margin: "0 0 14px",
 };
 
-const rowLabelCell = {
-  color: "#5f574f",
-  fontSize: "14px",
-  lineHeight: "1.6",
-  padding: "0 18px 0 0",
-  verticalAlign: "top" as const,
-  whiteSpace: "nowrap" as const,
+const rowCell = {
+  padding: "0",
 };
 
-const rowValueCell = {
+const rowLabel = {
+  color: "#8a7f74",
+  fontSize: "11px",
+  fontWeight: 600,
+  letterSpacing: "0.16em",
+  lineHeight: "1.4",
+  margin: "0 0 4px",
+  textTransform: "uppercase" as const,
+};
+
+const rowValue = {
   color: "#17130f",
-  fontSize: "14px",
-  lineHeight: "1.6",
-  textAlign: "right" as const,
-  verticalAlign: "top" as const,
+  lineHeight: "1.4",
+  margin: "0",
 };
 
 const hr = {
