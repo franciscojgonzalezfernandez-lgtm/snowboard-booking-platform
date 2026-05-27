@@ -218,6 +218,7 @@ model Booking {
   postClassEmailSentAt    DateTime?
   cancellationEmailSentAt    DateTime?
   opsCancellationNotifSentAt DateTime?
+  autoCompletedAt            DateTime?
   createdAt               DateTime      @default(now())
 
   booker          User            @relation(fields: [bookerId], references: [id], onDelete: Restrict)

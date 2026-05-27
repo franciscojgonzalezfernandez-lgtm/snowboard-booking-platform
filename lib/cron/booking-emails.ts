@@ -28,6 +28,10 @@ export type CronDeps = {
         where: Record<string, unknown>;
         select: Record<string, unknown>;
       }): Promise<CandidateRow[]>;
+      updateMany(args: {
+        where: Record<string, unknown>;
+        data: Record<string, unknown>;
+      }): Promise<{ count: number }>;
     };
   };
   sendReminder: (
@@ -50,10 +54,20 @@ export type BucketSummary = {
   errors: number;
 };
 
+// Completion sweep does not send anything — it flips stale CONFIRMED rows to
+// COMPLETED. `considered` counts rows past their grace window; `flipped` is the
+// updateMany count (≤ considered once the status guard excludes any already
+// transitioned by a concurrent run).
+export type CompleteSummary = {
+  considered: number;
+  flipped: number;
+};
+
 export type CronRunSummary = {
   now: string;
   reminders: BucketSummary;
   postClass: BucketSummary;
+  completed: CompleteSummary;
 };
 
 export const CANDIDATE_SELECT = {
@@ -159,5 +173,49 @@ export async function runBookingEmailsCron(
     }
   }
 
-  return { now: now.toISOString(), reminders, postClass };
+  // Complete past classes: any CONFIRMED booking whose end (plus a 1h grace)
+  // has passed is optimistically flipped to COMPLETED, assuming the lesson
+  // took place. Without this sweep such rows live forever in the dashboard's
+  // "Upcoming" group (F-057) until the owner closes them by hand. The grace
+  // absorbs late-ending same-day classes (a FULL_DAY ending 17:00 UTC at the
+  // 17:00 cron) so they flip on the next run rather than prematurely.
+  // `autoCompletedAt` marks the transition as automatic so a Sprint 4 admin
+  // can re-flip a genuine no-show to CANCELLED_BY_USER (no credit emitted).
+  const COMPLETION_GRACE_MS = 60 * 60 * 1000;
+
+  const completionCandidates = await deps.prisma.booking.findMany({
+    where: {
+      status: "CONFIRMED",
+      date: { lte: todayStart },
+    },
+    select: CANDIDATE_SELECT,
+  });
+
+  const idsToComplete = completionCandidates
+    .filter((b) => {
+      const startUtc = setUtcTime(b.date, b.anchorTime);
+      const endUtc = new Date(
+        startUtc.getTime() + durationMinutes(b.duration) * 60 * 1000,
+      );
+      return endUtc.getTime() + COMPLETION_GRACE_MS <= now.getTime();
+    })
+    .map((b) => b.id);
+
+  const completed: CompleteSummary = {
+    considered: idsToComplete.length,
+    flipped: 0,
+  };
+
+  if (idsToComplete.length > 0) {
+    // Status guard keeps the sweep idempotent and safe under concurrency: rows
+    // already COMPLETED / CANCELLED_* / REFUNDED are excluded, so a re-run is a
+    // no-op and a racing transition (e.g. a user cancellation) is not clobbered.
+    const result = await deps.prisma.booking.updateMany({
+      where: { id: { in: idsToComplete }, status: "CONFIRMED" },
+      data: { status: "COMPLETED", autoCompletedAt: now },
+    });
+    completed.flipped = result.count;
+  }
+
+  return { now: now.toISOString(), reminders, postClass, completed };
 }
