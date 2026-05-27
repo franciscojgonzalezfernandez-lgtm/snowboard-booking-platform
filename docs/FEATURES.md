@@ -671,7 +671,7 @@
 - Tests: Playwright `e2e/f-041-step4.spec.ts` con 6 specs: (a) anónimo × 3 locales → CTA visible con `next=` URL-decoded preservando los 5 params de Step 1-3; (b) autenticado → form prefilled (name + email readonly), submit disabled hasta T&C, submit habilita con T&C → step-5 con URL completa (incluye `bookerPhone=+41766381870` y `attendees=<base64>`); (c) Add/Remove enforcement 1-4; (d) T&C → modal abre. Spec F-027 ajustada para no asertar sobre el placeholder antiguo (ahora valida CTA anónimo). Vitest 126/126 (Zod schema no rompe ningún test existente). Suite Playwright completa: **82/83** (todos los de Step 4 verdes; el smoke restante no afecta a F-041).
 - Notas:
   - **F-049 + F-050 son soft deps.** El AC original las listaba como bloqueantes pero F-041 ship sin esperarlas. F-049 fue reescopeado (2026-05-22) de "back-stepper chrome" a **single-page architecture refactor** (RSC shell + client islands + tanstack-query + 30-min server cache); ahora es un refactor sobre el flujo end-to-end ya verde a través de F-046, no un prerequisito de F-041. F-050 (shadcn pass) sigue siendo polish visual. Dependencia explícita reducida a F-027, F-038, F-040, F-039b.
-  - **Phone no se persiste al `User` model en MVP.** Sprint 3+ podría añadir toggle "save phone to profile" desde el dashboard.
+  - **Phone no se persiste al `User` model en F-041.** Cerrado por F-064 (Sprint 3): auto-backfill silencioso en primera reserva (cuando `User.phone IS NULL`) + edit manual en `/dashboard`.
   - **Email immutable** evita confusión (booking ligado a `session.user.id`); cambiar email = logout + relogin.
   - **`shouldFocus: false` en append.** Sin este flag, RHF mueve foco al input del nuevo attendee. El blur del foco anterior dispara la validación `onTouched` (resolver async); si el cliente clica Add otra vez antes de que el resolver resuelva, el segundo append queda pisado por el setState del resolver. Bug confirmado en local con clicks rápidos. Documentado para que F-042 mantenga el flag si reusa el patrón.
   - **`sanitizeNext`** restringe `next` a paths con prefijo `/en/`, `/de/`, `/es/` (o las raíces exactas). Rechaza protocol-relative, schemes y rutas fuera de los locales; fallback a `/[locale]`. Cubre el escenario abierto de open-redirect en la PR de F-005 + F-033.
@@ -1163,22 +1163,32 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
   - Reusa skeleton + design tokens de `booking-confirmed.tsx` (F-045): `#f7f5f0` background, `#17130f` foreground, Georgia serif heading, summary box con border `#ded8ce`. Credit block invierte la paleta (dark on light) para destacar el amount.
   - F-058 todavía no consume este dispatch — cuando F-058 land, importará `sendCancellationEmails` y lo invocará post-`$transaction`.
 
-##### F-064 — Edit phone in dashboard (personal data card)
+##### F-064 — Persist + edit phone on user account (booking auto-save + dashboard card)
 
 - Sprint: 3 · Estado: backlog · Prioridad: P2
 - Depende de: F-057
-- Motivación: phone es campo opcional en signup pero crítico para owner cuando hay excepción de cancelación o no-show. User debe poder añadir/editar sin re-registrar. Email queda read-only (Better Auth change-email flow es independiente, fuera de scope MVP).
+- Motivación: phone es campo opcional en signup pero crítico para owner cuando hay excepción de cancelación o no-show. Hoy `bookerPhone` se valida en Step 4 (F-041) y se pasa al PaymentIntent pero **nunca se persiste a `User.phone`** (ver caveat F-041 línea ~674), por lo que el owner no tiene forma de contactar al cliente desde admin/dashboard salvo recuperándolo manualmente del Stripe Customer. Este ticket cierra el gap por dos vías: (a) auto-backfill silencioso al confirmar la primera reserva del usuario, (b) edit manual desde `/dashboard` para corrección/remoción posterior. Email queda read-only (Better Auth change-email flow es independiente, fuera de scope MVP).
 - AC:
-  - [ ] Card "Personal data" en `/dashboard`. Campos: `Name` (read-only), `Email` (read-only), `Phone` (editable).
-  - [ ] Edit inline: click "Edit" → `<Input>` con valor actual + Save / Cancel buttons. RHF + Zod schema E.164 tolerante (`/^\+?[1-9]\d{1,14}$/` + strip spaces antes de validar).
-  - [ ] Server action `updateUserPhone(phone: string | null)` en `dashboard/actions.ts`. Resuelve session, Zod validate, `prisma.user.update({ where: { id }, data: { phone } })`, `revalidatePath('/dashboard')`.
-  - [ ] Validación: empty string → `null` (remove phone). Save sin cambios → no-op (early return si `phone === user.phone`).
-  - [ ] Feedback UX: toast `sonner` "Phone updated" / "Phone removed" / error.
-  - [ ] i18n keys `dashboard.personal.{title, name_label, email_label, phone_label, phone_placeholder, edit, save, cancel, removed, updated, error_invalid}` × 3 locales.
-- Tests: Vitest schema E.164 (5 specs: válido, válido con espacios, inválido formato, empty → null, sólo `+`). Playwright happy path × 1 locale — edit phone → save → reload → valor persistido.
+  - **(a) Auto-persist en primera reserva (server-side, silencioso):**
+    - [ ] En `lib/booking/create-draft.ts`, dentro del `$transaction` que crea `Booking` + `Attendee`, añadir `tx.user.update({ where: { id: session.user.id }, data: { phone: data.bookerPhone } })` **únicamente cuando `session.user.phone == null`**. Si el user ya tiene phone (incluso distinto al `bookerPhone` del form), no sobreescribir — la edición manual desde dashboard es el canal canónico para sobrescribir.
+    - [ ] Lectura de `user.phone` actual: `select: { phone: true }` previo a la transacción (mismo round-trip que la lectura existente del booker), o `prisma.user.update` con `where: { id, phone: null }` para mantener atomicidad en una sola query (preferido — evita race condition entre dos requests concurrentes del mismo usuario; el update falla silenciosamente si la condición no matchea).
+    - [ ] No exponer toggle "save phone to profile" en Step 4 — el comportamiento es implícito y silencioso (CRO: cero fricción extra en el form ya largo). El user puede borrar el phone luego desde el dashboard si lo desea.
+    - [ ] No toast / feedback UI al user — el form sigue al flujo de pago sin cambios visibles. La acción es invisible para el cliente, visible sólo para el owner en admin/dashboard.
+  - **(b) Edit manual desde dashboard:**
+    - [ ] Card "Personal data" en `/dashboard`. Campos: `Name` (read-only), `Email` (read-only), `Phone` (editable).
+    - [ ] Edit inline: click "Edit" → `<Input>` con valor actual + Save / Cancel buttons. RHF + Zod schema E.164 tolerante (`/^\+?[1-9]\d{1,14}$/` + strip spaces antes de validar).
+    - [ ] Server action `updateUserPhone(phone: string | null)` en `dashboard/actions.ts`. Resuelve session, Zod validate, `prisma.user.update({ where: { id }, data: { phone } })`, `revalidatePath('/dashboard')`.
+    - [ ] Validación: empty string → `null` (remove phone). Save sin cambios → no-op (early return si `phone === user.phone`).
+    - [ ] Feedback UX: toast `sonner` "Phone updated" / "Phone removed" / error.
+    - [ ] i18n keys `dashboard.personal.{title, name_label, email_label, phone_label, phone_placeholder, edit, save, cancel, removed, updated, error_invalid}` × 3 locales.
+- Tests:
+  - **Auto-persist:** Vitest `lib/booking/create-draft.test.ts` — 3 specs nuevos: (1) user con `phone: null` + booking confirmado → `prisma.user.update` llamado con `bookerPhone` normalizado (sin espacios); (2) user con `phone` existente + booking con `bookerPhone` distinto → `User.phone` permanece intacto (no sobrescritura); (3) update falla / condition no matchea → transacción NO rollback (el persist es best-effort, no debe tumbar la reserva).
+  - **Dashboard edit:** Vitest schema E.164 (5 specs: válido, válido con espacios, inválido formato, empty → null, sólo `+`). Playwright happy path × 1 locale — edit phone → save → reload → valor persistido.
+  - **E2E integration:** Playwright spec — user sin phone hace primera reserva con `bookerPhone="+41 76 111 22 33"` → tras pago confirmado, navega a `/dashboard` → personal card muestra `+41761112233`.
 - Notas:
   - **No** verificación SMS / OTP. Phone field es advisory para owner; no se usa como factor auth.
   - **No** edit de `name` en este ticket. Better Auth maneja name en su propio flow (`/api/auth/update-user`). Si owner pide editable, F-XXX post-MVP.
+  - **Política de sobrescritura:** primera reserva sin phone previo → persist. Reservas subsiguientes → ignorar (el user es soberano de su perfil; si quiere cambiar, lo hace en dashboard). Decision: backfill, no sync.
 
 ##### F-066 — Cancellation flow E2E + production smoke (Sprint 3 close)
 
