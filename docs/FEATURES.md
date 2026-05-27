@@ -1220,17 +1220,17 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
 
 ##### F-062 — Extensión F-048: COMPLETED auto-flip (no-show / forgot-to-mark sweep)
 
-- Sprint: 3 · Estado: backlog · Prioridad: P1
+- Sprint: 3 · Estado: done · Prioridad: P1
 - Depende de: F-048
 - Motivación: bookings `CONFIRMED` cuyo `endDateTime` ya pasó quedan eternamente en "Upcoming" (F-057 agrupación) si nadie las cierra. Sin sweep automático, owner debe marcarlas a mano. Default optimista: pasar a `COMPLETED` (asumiendo que la clase ocurrió). Admin Sprint 4 puede flipear de vuelta a `CANCELLED_BY_USER` si fue no-show real (sin emitir credit, alineado con forfeit `<48h`).
 - AC:
-  - [ ] Extender `app/api/cron/booking-emails/route.ts` (existe desde F-048, schedule `0 17 * * *` UTC = post operating hours CH). Nueva sección "complete-past-classes" después de reminder + post-class branches.
-  - [ ] Estrategia query: `findMany` con `where: { status: 'CONFIRMED', date: { lte: startOfToday(UTC) } }`, calcular `endDateTime + 1h < now` en JS por booking (Prisma no expresa `endDateTime + duration` de forma nativa), luego `updateMany({ where: { id: { in: idsToFlip }, status: 'CONFIRMED' }, data: { status: 'COMPLETED', autoCompletedAt: now } })`.
-  - [ ] Schema: añadir `Booking.autoCompletedAt DateTime?` (migración `<date>_booking_auto_completed_at`). Distingue auto (cron) vs manual (Sprint 4 admin/instructor flip).
-  - [ ] Grace: 1h después de `endDateTime`. Bookings que terminan ese mismo día tarde (FULL_DAY 09:00-17:00 → endDateTime 17:00 → cron 17:00 UTC ≈ 18:00 CH winter / 19:00 CEST) → margen 1-2h. Aceptable.
-  - [ ] Idempotency: status guard `status='CONFIRMED'` en el `where` excluye bookings ya `COMPLETED` / `CANCELLED_*` / `REFUNDED`. Re-run no efecto.
-  - [ ] Sentry breadcrumb con `count` de bookings flipped.
-- Tests: Vitest extension de specs F-048 con frozen-clock — seed booking `date=yesterday`, `endDateTime=yesterday 17:00 UTC`, `status='CONFIRMED'` → cron run today 17:00 UTC → asserta `status='COMPLETED'`, `autoCompletedAt=now`; booking `date=today` con `endDateTime=now-30min` → skip (dentro de 1h grace).
+  - [x] Extender `app/api/cron/booking-emails/route.ts` (existe desde F-048, schedule `0 17 * * *` UTC = post operating hours CH). Nueva sección "complete-past-classes" después de reminder + post-class branches. (lógica en `lib/cron/booking-emails.ts`.)
+  - [x] Estrategia query: `findMany` con `where: { status: 'CONFIRMED', date: { lte: startOfToday(UTC) } }`, calcular `endDateTime + 1h <= now` en JS por booking (Prisma no expresa `endDateTime + duration` de forma nativa), luego `updateMany({ where: { id: { in: idsToFlip }, status: 'CONFIRMED' }, data: { status: 'COMPLETED', autoCompletedAt: now } })`.
+  - [x] Schema: añadir `Booking.autoCompletedAt DateTime?` (migración `20260527120000_booking_auto_completed_at`). Distingue auto (cron) vs manual (Sprint 4 admin/instructor flip).
+  - [x] Grace: 1h después de `endDateTime`. Bookings que terminan ese mismo día tarde (FULL_DAY 09:00-17:00 → endDateTime 17:00 → cron 17:00 UTC ≈ 18:00 CH winter / 19:00 CEST) → margen 1-2h. Aceptable.
+  - [x] Idempotency: status guard `status='CONFIRMED'` en el `where` excluye bookings ya `COMPLETED` / `CANCELLED_*` / `REFUNDED`. Re-run no efecto.
+  - [x] Sentry breadcrumb con `count` de bookings flipped (route-level, sólo cuando `flipped > 0`).
+- Tests: [x] Vitest extension de specs F-048 con frozen-clock (`lib/cron/booking-emails.test.ts`, +6 specs) — seed booking `date=yesterday`, `endDateTime=yesterday 11:00 UTC`, `status='CONFIRMED'` → cron run today 17:00 UTC → asserta `status='COMPLETED'`, `autoCompletedAt=now`; booking `date=today` con `endDateTime=now-30min` → skip (dentro de 1h grace); boundary `end+1h===now` → flip; future → skip; status guard excluye no-CONFIRMED; idempotencia.
 - Notas:
   - **No feedback feature** en este ticket. Sprint 4 F-065 monta `Booking.instructorNote` + UI sobre el flag `autoCompletedAt`.
   - **No email** post-auto-completion. El post-class email ya lo envía el branch separado de F-048.

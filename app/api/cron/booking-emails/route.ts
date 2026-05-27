@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 
 import { prisma } from "@/lib/db";
 import { runBookingEmailsCron, type CronDeps } from "@/lib/cron/booking-emails";
@@ -46,6 +47,18 @@ export async function GET(request: Request): Promise<Response> {
     },
     now: new Date(),
   });
+
+  if (summary.completed.flipped > 0) {
+    Sentry.addBreadcrumb({
+      category: "cron.booking-emails",
+      level: "info",
+      message: `auto-completed ${summary.completed.flipped} past booking(s)`,
+      data: {
+        flipped: summary.completed.flipped,
+        considered: summary.completed.considered,
+      },
+    });
+  }
 
   return NextResponse.json({ ok: true, ...summary });
 }
