@@ -36,7 +36,8 @@ type BookingConfirmedCopy = {
   timeLabel: string;
   durationLabel: string;
   instructorLabel: string;
-  attendeesLabel: (count: number) => string;
+  attendeesLabel: string;
+  attendeesValue: (count: number) => string;
   totalLabel: string;
   vatNote: string;
   calendarNote: string;
@@ -48,8 +49,7 @@ type BookingConfirmedCopy = {
 
 const COPY: Record<Locale, BookingConfirmedCopy> = {
   en: {
-    subject: (name: string) =>
-      `Your snowboard lesson is booked, ${name}`,
+    subject: (name: string) => `Your snowboard lesson is booked, ${name}`,
     preview: "Your Ride Flumserberg booking is confirmed.",
     greeting: (name: string) => `Hi ${name},`,
     body: "Your lesson is confirmed. See you on the mountain. Below is everything you need.",
@@ -58,7 +58,8 @@ const COPY: Record<Locale, BookingConfirmedCopy> = {
     timeLabel: "Start",
     durationLabel: "Length",
     instructorLabel: "Instructor",
-    attendeesLabel: (count: number) =>
+    attendeesLabel: "Attendees",
+    attendeesValue: (count: number) =>
       count === 1 ? "1 rider" : `${count} riders`,
     totalLabel: "Total",
     vatNote: "CHF, VAT included.",
@@ -71,8 +72,7 @@ const COPY: Record<Locale, BookingConfirmedCopy> = {
     signoff: "— Ride Flumserberg",
   },
   de: {
-    subject: (name: string) =>
-      `Deine Snowboard-Stunde ist gebucht, ${name}`,
+    subject: (name: string) => `Deine Snowboard-Stunde ist gebucht, ${name}`,
     preview: "Deine Buchung bei Ride Flumserberg ist bestätigt.",
     greeting: (name: string) => `Hallo ${name},`,
     body: "Deine Stunde ist bestätigt. Bis auf dem Berg. Alle Details unten.",
@@ -81,7 +81,8 @@ const COPY: Record<Locale, BookingConfirmedCopy> = {
     timeLabel: "Beginn",
     durationLabel: "Dauer",
     instructorLabel: "Coach",
-    attendeesLabel: (count: number) =>
+    attendeesLabel: "Teilnehmende",
+    attendeesValue: (count: number) =>
       count === 1 ? "1 Fahrer:in" : `${count} Fahrer:innen`,
     totalLabel: "Gesamt",
     vatNote: "CHF, inkl. MwSt.",
@@ -94,8 +95,7 @@ const COPY: Record<Locale, BookingConfirmedCopy> = {
     signoff: "— Ride Flumserberg",
   },
   es: {
-    subject: (name: string) =>
-      `Tu clase de snowboard está reservada, ${name}`,
+    subject: (name: string) => `Tu clase de snowboard está reservada, ${name}`,
     preview: "Tu reserva en Ride Flumserberg está confirmada.",
     greeting: (name: string) => `Hola ${name},`,
     body: "Tu clase está confirmada. Nos vemos en la montaña. Abajo tienes todos los detalles.",
@@ -104,7 +104,8 @@ const COPY: Record<Locale, BookingConfirmedCopy> = {
     timeLabel: "Inicio",
     durationLabel: "Duración",
     instructorLabel: "Instructor",
-    attendeesLabel: (count: number) =>
+    attendeesLabel: "Participantes",
+    attendeesValue: (count: number) =>
       count === 1 ? "1 rider" : `${count} riders`,
     totalLabel: "Total",
     vatNote: "CHF, IVA incluido.",
@@ -145,18 +146,25 @@ export function BookingConfirmedEmail({
       <Body style={body}>
         <Container style={container}>
           <Heading style={heading}>Ride Flumserberg</Heading>
+
           <Text style={greeting}>{t.greeting(bookerName)}</Text>
           <Text style={copy}>{t.body}</Text>
 
           <Section style={summary}>
             <Text style={summaryTitle}>{t.summaryTitle}</Text>
-            <Row label={t.dateLabel} value={dateLabel} />
-            <Row label={t.timeLabel} value={timeLabel} />
-            <Row label={t.durationLabel} value={durationLabel} />
-            <Row label={t.instructorLabel} value={instructorName} />
-            <Row label={t.attendeesLabel(attendeesCount)} value="" />
+
+            <InfoRow label={t.dateLabel} value={dateLabel} />
+            <InfoRow label={t.timeLabel} value={timeLabel} />
+            <InfoRow label={t.durationLabel} value={durationLabel} />
+            <InfoRow label={t.instructorLabel} value={instructorName} />
+            <InfoRow
+              label={t.attendeesLabel}
+              value={t.attendeesValue(attendeesCount)}
+            />
+
             <Hr style={hr} />
-            <Row label={t.totalLabel} value={totalLabel} bold />
+
+            <InfoRow label={t.totalLabel} value={totalLabel} bold />
             <Text style={vatNote}>{t.vatNote}</Text>
           </Section>
 
@@ -186,7 +194,7 @@ export function BookingConfirmedEmail({
   );
 }
 
-function Row({
+function InfoRow({
   label,
   value,
   bold,
@@ -195,11 +203,36 @@ function Row({
   value: string;
   bold?: boolean;
 }) {
+  // Stacked layout (label on top, value below). Gmail and Outlook both strip
+  // CSS flex/grid, which collapsed the previous side-by-side row into
+  // "Label:Value" with no whitespace. Stacking dodges that class of bug for
+  // good and reads more editorial — small tracked caps over a larger value.
   return (
-    <Text style={{ ...row, fontWeight: bold ? 600 : 400 }}>
-      <span style={rowLabel}>{label}</span>
-      <span style={rowValue}>{value}</span>
-    </Text>
+    <table
+      role="presentation"
+      width="100%"
+      cellPadding="0"
+      cellSpacing="0"
+      border={0}
+      style={rowTable}
+    >
+      <tbody>
+        <tr>
+          <td style={rowCell}>
+            <div style={rowLabel}>{label}</div>
+            <div
+              style={{
+                ...rowValue,
+                fontSize: bold ? "18px" : "16px",
+                fontWeight: bold ? 600 : 400,
+              }}
+            >
+              {value}
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   );
 }
 
@@ -250,24 +283,34 @@ const summaryTitle = {
   fontSize: "12px",
   fontWeight: 600,
   letterSpacing: "0.18em",
-  margin: "0 0 12px",
+  margin: "0 0 14px",
   textTransform: "uppercase" as const,
 };
 
-const row = {
-  display: "flex" as const,
-  fontSize: "14px",
-  justifyContent: "space-between" as const,
-  lineHeight: "1.6",
-  margin: "0 0 4px",
+const rowTable = {
+  width: "100%",
+  borderCollapse: "collapse" as const,
+  margin: "0 0 14px",
+};
+
+const rowCell = {
+  padding: "0",
 };
 
 const rowLabel = {
-  color: "#5f574f",
+  color: "#8a7f74",
+  fontSize: "11px",
+  fontWeight: 600,
+  letterSpacing: "0.16em",
+  lineHeight: "1.4",
+  margin: "0 0 4px",
+  textTransform: "uppercase" as const,
 };
 
 const rowValue = {
   color: "#17130f",
+  lineHeight: "1.4",
+  margin: "0",
 };
 
 const hr = {
