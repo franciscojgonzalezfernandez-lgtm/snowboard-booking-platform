@@ -1001,25 +1001,84 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
 
 #### Tickets
 
-##### F-057 — Dashboard v2: grouped sections + empty states + dark-mode audit
+##### F-057 — Dashboard v2: grouped sections (Pending / Upcoming / Past / Cancelled) + lifecycle sweep
 
 - Sprint: 3 · Estado: backlog · Prioridad: P0
-- Depende de: F-047
-- Motivación: el actual `/dashboard` (F-047) muestra lista plana filtrada por `VISIBLE_STATUSES` que oculta cancelaciones y refunds. Owner pidió 3 secciones explícitas — Upcoming, Past, Cancelled — para que el booker entienda el ciclo de vida completo de sus reservas y prepare visibilidad de créditos (F-059) y cancelaciones (F-058). Sin esta refactor, F-058 (Cancel button) y F-059 (credit aside) no tienen layout donde aterrizar.
-- AC:
-  - [ ] Eliminar la constante `VISIBLE_STATUSES` en `app/[locale]/dashboard/page.tsx`. La query devuelve todas las reservas del booker; la agrupación ocurre en memoria con `Array.prototype.filter`.
-  - [ ] Tres `<section>` con heading display (font serif XL, uppercase tracking) + counter chip + lista. Orden visual: **Upcoming** (`status='CONFIRMED' AND date >= today`), **Past** (`status='COMPLETED'` OR (`status='CONFIRMED' AND date < today`)), **Cancelled** (`CANCELLED_BY_USER`, `CANCELLED_BY_OPS`, `CANCELLED_BY_SYSTEM`, `REFUNDED`, `PAYMENT_FAILED`).
-  - [ ] Empty states por sección con copy distinto: Upcoming → CTA `Book a lesson` linkando `/reservar`; Past → "No completed lessons yet"; Cancelled → "No cancellations".
-  - [ ] Cancelled rows muestran motivo contextual: status label + `cancelledByUserAt` / `cancelledByOpsAt` / `opsReason` / `refundedAt` según aplique. Si existe `AccountCredit` linkado vía `sourceBookingId`, mostrar "Credit issued: CHF X.XX, expires YYYY-MM-DD" inline.
-  - [ ] Past `COMPLETED` rows: badge "Completed" + `Add to calendar` link (re-descarga `.ics` desde route de F-046).
-  - [ ] Per-row layout: fecha display XL + anchor time + duration + instructor + status badge. **Sin** acciones inline en este ticket — el Cancel button llega en F-058 sobre el mismo JSX.
+- Depende de: F-047, F-048
+- Motivación: el actual `/dashboard` (F-047) muestra lista plana filtrada por `VISIBLE_STATUSES` que oculta cancelaciones, refunds y — crítico — los `PENDING_PAYMENT` que el booker abandonó mid-checkout y que jamás encuentran su camino de vuelta al pago. Owner pidió secciones explícitas + surface de drafts pagables. Sin esta refactor, F-058 (Cancel button) y F-059 (credit aside) no tienen layout donde aterrizar y se pierden ventas por drafts huérfanos.
+- AC dashboard:
+  - [ ] Eliminar la constante `VISIBLE_STATUSES` en `app/[locale]/dashboard/page.tsx`. La query devuelve toda la cartera del booker; agrupación en memoria via helper `groupBookings()` en `app/[locale]/dashboard/_lib/group.ts`.
+  - [ ] **Cuatro** kinds de sección: `pending`, `upcoming`, `past`, `cancelled`. Reglas en `classifyBooking`:
+    - `pending` → `status='PENDING_PAYMENT' AND createdAt > now - 15min` (matches `IDEMPOTENCY_WINDOW_MS` de F-042). Drafts más antiguos quedan ocultos hasta que el cron los flippea a `PAYMENT_FAILED`.
+    - `upcoming` → `status='CONFIRMED' AND date >= today (UTC)`.
+    - `past` → `status='COMPLETED'` OR (`status='CONFIRMED' AND date < today`).
+    - `cancelled` → `CANCELLED_BY_USER` OR `CANCELLED_BY_OPS` (cancelaciones reales accionables para el booker).
+    - **Hidden** (returns `null` desde `classifyBooking`): `CANCELLED_BY_SYSTEM`, `REFUNDED`, `PAYMENT_FAILED`, y los `PENDING_PAYMENT` fuera de ventana. No-actionables → no surface al booker. Admin tooling (Sprint 4) los visibiliza donde corresponde.
+  - [ ] Render order: `Pending Payment` solo si `count > 0` (sección excepcional, ocultar cuando vacía evita ruido permanente). Resto siempre renderiza con empty state.
+  - [ ] **Pending row CTA**: link `Complete payment` → `/[locale]/reservar/pago/[bookingId]` (resume page de F-067).
+  - [ ] Cancelled rows: status label + `cancelledByUserAt` / `cancelledByOpsAt` + `opsReason` si `CANCELLED_BY_OPS`. Si existe `AccountCredit` linkado vía `sourceBookingId`, mostrar `Credit issued: CHF X.XX · expires YYYY-MM-DD`.
+  - [ ] Past `COMPLETED` rows: `Add to calendar` link → `/api/booking/[id]/ics` (route de F-046).
+  - [ ] Per-row layout: fecha display XL + anchor time + duration + instructor + status badge. **Sin** acciones inline más allá de las arriba en este ticket — Cancel button llega en F-058 sobre el mismo JSX.
+  - [ ] **Refactor**: componentes extraídos de `page.tsx` a:
+    - `_components/dashboard-section.tsx` — section shell (heading + counter + list/empty branch).
+    - `_components/section-empty.tsx` — empty state + Upcoming CTA.
+    - `_components/booking-row.tsx` — row layout + per-kind CTAs.
+    - `_components/cancelled-meta.tsx` — cancelled-on / ops-reason / credit-issued block.
+    - `_lib/group.ts` — `BookingRow`, `CreditRow`, `SectionKind`, `groupBookings`, `classifyBooking`, `PENDING_PAYMENT_WINDOW_MS`.
+    - `_lib/format.ts` — `formatBookingDate`, `formatShortDate`, label key maps, `INTL_TAG`.
   - [ ] Dark-mode contrast pass: validar `border`, `muted`, `accent` tokens en cada sección (Lighthouse a11y ≥95 en `/en/dashboard`).
-  - [ ] i18n keys `dashboard.section_{upcoming,past,cancelled}`, `dashboard.empty_{upcoming,past,cancelled}`, `dashboard.credit_issued` × 3 locales.
-- Tests: Playwright `e2e/f-057-dashboard-sections.spec.ts` × 3 locales — seed 1 Upcoming + 1 Past + 1 Cancelled-with-credit → asserta heading + count + status badge correcto por sección; empty state cuando el booker no tiene filas en una sección dada.
+  - [ ] i18n keys `dashboard.section_{pending,upcoming,past,cancelled}`, `dashboard.empty_{pending,upcoming,past,cancelled}`, `dashboard.empty_upcoming_cta`, `dashboard.resume_payment`, `dashboard.add_to_calendar`, `dashboard.cancelled_on`, `dashboard.credit_issued` × 3 locales.
+- AC lifecycle sweep (extiende F-048 cron route handler):
+  - [ ] `lib/cron/booking-emails.ts` añade bucket `pendingExpiry`. Query `prisma.booking.updateMany({ where: { status: 'PENDING_PAYMENT', createdAt: { lt: now - 15min } }, data: { status: 'PAYMENT_FAILED' } })`. Idempotente — re-run no afecta filas ya `PAYMENT_FAILED`.
+  - [ ] Constante `PENDING_PAYMENT_EXPIRY_MS = 15 * 60 * 1000` (mismo source-of-truth que `IDEMPOTENCY_WINDOW_MS` de `lib/booking/create-draft.ts`).
+  - [ ] Summary del cron añade `pendingExpiry: { flipped: number }` para observability + Sentry breadcrumb.
+  - [ ] **Nota cron count**: F-048 ya consume 1/2 Hobby slot. Esta extensión vive en el mismo route handler — no consume otro slot. F-061 (monthly credit expiry) sigue siendo el segundo cron.
+- Tests:
+  - Playwright `e2e/f-057-dashboard-sections.spec.ts`:
+    - Grouped sections happy path × 3 locales (Upcoming + Past + Cancelled-with-credit).
+    - Empty states + CTA only en Upcoming.
+    - PENDING_PAYMENT stale (createdAt > 15min) oculto.
+    - PAYMENT_FAILED + CANCELLED_BY_SYSTEM + REFUNDED no surface a ninguna sección.
+    - CANCELLED_BY_USER + CANCELLED_BY_OPS aparecen en Cancelled.
+    - Fresh PENDING_PAYMENT surface en Pending section con `dashboard-booking-resume` link a `/reservar/pago/[id]`.
+    - Stale PENDING_PAYMENT: row + sección Pending ausentes.
+  - Vitest `lib/cron/booking-emails.test.ts` extendido: bucket `pendingExpiry` con boundary 15min exacto + idempotency en segunda invocación.
 - Notas:
   - **No** detail page propia (`/dashboard/[id]`) en este sprint. Las acciones inline cubren el caso típico; defer a Sprint 4 si invoice download / edit attendees obliga.
-  - **No** weather widget, **no** countdown sticky, **no** hero personal con próxima clase — defer post-MVP. Sprint 5 F-053 (hero announcement banner) es la única pieza visual nueva planificada antes de soft-launch.
+  - **No** weather widget, **no** countdown sticky, **no** hero personal con próxima clase — defer post-MVP.
+  - **No** detail visible al booker para refunds o system-cancellations en este ticket. Si owner quiere un panel "history completo" post-MVP, F-XXX.
   - F-058 (Cancel button) y F-059 (credit aside) montan sobre este layout sin tocar la query — sólo añaden nodos al JSX existente.
+  - F-067 (resume payment page) consume el deep link `/reservar/pago/[id]` desde el CTA de Pending. F-057 y F-067 ship juntos en el mismo PR para evitar CTAs muertos.
+
+##### F-067 — Resume payment page (`/[locale]/reservar/pago/[bookingId]`)
+
+- Sprint: 3 · Estado: backlog · Prioridad: P0 (revenue recovery — emparejado con F-057)
+- Depende de: F-042, F-043, F-057
+- Motivación: cuando el booker abandona el checkout entre Step 4 y Step 5, su `Booking` queda en `PENDING_PAYMENT` con un `stripePaymentIntentId` cuya `client_secret` sigue siendo válida durante 15 minutos (ventana de idempotency de F-042). F-057 visibiliza esa row en la dashboard con un CTA `Complete payment`. Sin esta página, ese CTA queda muerto y la venta se pierde. Además, si Stripe canceló la PI (timeout interno), re-creamos una nueva silenciosamente para que el booker no necesite empezar de cero.
+- AC server logic (`lib/booking/resume-payment.ts`):
+  - [ ] Function pura `resumePaymentWith(deps, bookingId)` con `deps = { prisma, stripe, bookerId, now }`. Devuelve discriminated union `{ ok: true, clientSecret, totalPriceCents, bookingId } | { ok: false, error }`.
+  - [ ] Errors: `NOT_FOUND` (booking inexistente), `FORBIDDEN` (caller ≠ bookerId), `ALREADY_CONFIRMED` (status `CONFIRMED`/`COMPLETED` o PI ya `succeeded`), `NOT_RESUMABLE` (cualquier otro status), `EXPIRED` (`createdAt + 15min <= now`), `STRIPE_BAD_STATE` (Stripe creó PI sin `client_secret` — defensive).
+  - [ ] Validation order: booking exists → ownership → `ALREADY_CONFIRMED` shortcut → `NOT_RESUMABLE` reject → `EXPIRED` check (flippea `status='PAYMENT_FAILED'` antes de retornar `EXPIRED`).
+  - [ ] PI reuse vs recreate:
+    - Retrieve existing PI; si `status` ∈ `{requires_payment_method, requires_confirmation, requires_action, processing}` y `client_secret != null` → reuse.
+    - Si `status === 'succeeded'` → `ALREADY_CONFIRMED`.
+    - Si `status === 'canceled'` o cualquier otro estado terminal sin `client_secret` → recreate path: `paymentIntents.create({ amount: booking.totalPriceCents, currency: 'chf', metadata: { bookingId, bookerId, instructorId, startDateTime, endDateTime, resumed: 'true' } }, { idempotencyKey: \`booking-\${bookingId}-resume-\${createdAt.getTime()}\` })`. Update `Booking.stripePaymentIntentId` con el nuevo id.
+  - [ ] Constante `RESUME_WINDOW_MS = 15 * 60 * 1000` — single source of truth con F-042 + F-048 cron.
+- AC page:
+  - [ ] Server component `app/[locale]/reservar/pago/[bookingId]/page.tsx` (`force-dynamic`). Session check → redirect a `/login?next=...` si anonymous.
+  - [ ] Llama `resumePaymentWith(...)`. Branch por result:
+    - `ok` → mount `<PaymentBlock>` (reuse del componente cliente de F-043 / `app/[locale]/reservar/payment-block.tsx`) con `clientSecret`, `bookingId`, total formateado.
+    - `ALREADY_CONFIRMED` → `redirect('/[locale]/reservar/exito/[id]')`.
+    - `NOT_FOUND` / `FORBIDDEN` / `NOT_RESUMABLE` / `EXPIRED` / `STRIPE_BAD_STATE` → `redirect('/[locale]/dashboard')`.
+  - [ ] i18n namespace `reservar.resume`: `metadata_title`, `eyebrow`, `heading`, `sub`, `total` (con `{amount}`), `vat_note` × 3 locales.
+- Tests:
+  - Vitest `lib/booking/resume-payment.test.ts` — 11 specs: NOT_FOUND, FORBIDDEN, ALREADY_CONFIRMED (status CONFIRMED), NOT_RESUMABLE (CANCELLED_BY_USER), EXPIRED + flip a PAYMENT_FAILED, boundary `createdAt = now - 15min` exacto (treated as EXPIRED, `>=`), reuse cuando PI is `requires_payment_method`, recreate cuando PI is `canceled` (Stripe `create` con idempotencyKey de la forma `booking-<id>-resume-<ts>`), ALREADY_CONFIRMED cuando PI `succeeded`, recreate cuando `stripePaymentIntentId` es null, STRIPE_BAD_STATE cuando recreate devuelve PI sin client_secret.
+  - **No** Playwright E2E del Payment Element en este ticket — Stripe en CI no tiene flow de "abandonar checkout" reproducible. La cobertura de la página es composición sobre `PaymentBlock` (testeado en F-043) + `resumePaymentWith` (unit).
+- Notas:
+  - **Auto-recreate silencioso** decidido durante el desglose Sprint 3: si Stripe cancela la PI, el booker no nota nada — la página re-crea la PI con misma metadata y mismo amount, sin avisar. UX óptimo para revenue recovery.
+  - **No** lógica anti-fraude adicional. El idempotency key `booking-<id>-resume-<ts>` evita doble cobro accidental por reruns simultáneos del recreate path; Stripe a su vez deduplica por la metadata `bookingId`.
+  - **No** modificamos la lógica del webhook de F-044 — si la nueva PI llega a `succeeded` el webhook flippea `Booking.status` a `CONFIRMED` igual que con la PI original. La página depende del webhook, no le adelanta el trabajo.
+  - F-057 + F-067 envían juntos. Sin F-067 el CTA `Complete payment` de la dashboard queda apuntando a un 404; sin F-057 la página existe pero nadie la encuentra.
 
 ##### F-058 — User-cancel flow (48h window, modal, credit emission)
 
@@ -1210,15 +1269,15 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
 #### Sequencing Sprint 3
 
 ```
-F-057 (sections) ─┐
-F-058 (cancel)   ─┤
+F-057 (sections + lifecycle sweep) ──┬─ F-067 (resume payment page) ─┐
+F-058 (cancel)   ─┐                  │                                │
 F-063 (emails)   ─┘─ F-059 (credit aside) ─ F-060 (checkout redemption) ─ F-066 (E2E + prod smoke) ─ ship
 F-061 (expiry cron)   parallel
 F-062 (F-048 extension: COMPLETED flip) parallel (fold en cron de F-048)
 F-064 (phone edit)    parallel polish
 ```
 
-Critical path: **F-057 + F-058 + F-063 → F-059 → F-060 → F-066**. F-061 / F-062 / F-064 paralelizables. F-058 ships behind F-063 templates landing (o bien stub el send + follow-up PR — owner prefiere paired). F-066 es la última puerta antes de declarar el sprint cerrado.
+Critical path: **F-057 + F-067 (paired PR) → F-058 + F-063 → F-059 → F-060 → F-066**. F-061 / F-062 / F-064 paralelizables. F-057 + F-067 envían en el mismo PR — F-057 muestra los `PENDING_PAYMENT` rows con un CTA `Complete payment` que requiere la ruta `/reservar/pago/[id]` de F-067. F-058 ships behind F-063 templates landing (o bien stub el send + follow-up PR — owner prefiere paired). F-066 es la última puerta antes de declarar el sprint cerrado.
 
 ### Sprint 4 — Vista instructor + Admin (semanas 7-8)
 

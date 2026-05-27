@@ -96,6 +96,9 @@ type SeedBooking = {
   tag: string;
   cancelledByUserAt?: Date;
   withCredit?: boolean;
+  /** Override Booking.createdAt — used to push PENDING_PAYMENT rows in/out of
+   * the 15-minute resume window without waiting in real time. */
+  createdAt?: Date;
 };
 
 async function seedBooking(
@@ -116,6 +119,7 @@ async function seedBooking(
       totalPriceCents: 11000,
       icsUid: uid,
       cancelledByUserAt: spec.cancelledByUserAt ?? null,
+      ...(spec.createdAt ? { createdAt: spec.createdAt } : {}),
       attendees: {
         create: [
           {
@@ -293,8 +297,8 @@ test.describe("F-057 — Dashboard empty states per section", () => {
   });
 });
 
-test.describe("F-057 — Dashboard hides PENDING_PAYMENT drafts", () => {
-  test("PENDING_PAYMENT bookings are excluded from every section", async ({
+test.describe("F-057 — Dashboard hides stale PENDING_PAYMENT drafts", () => {
+  test("PENDING_PAYMENT older than 15 minutes does not surface alongside other rows", async ({
     page,
   }) => {
     const email = uniqueEmail("pending");
@@ -302,10 +306,11 @@ test.describe("F-057 — Dashboard hides PENDING_PAYMENT drafts", () => {
     const userId = await findUserIdByEmail(email);
     const instructorId = await pickInstructorId();
 
-    await seedBooking(userId, instructorId, {
+    const stale = await seedBooking(userId, instructorId, {
       status: BookingStatus.PENDING_PAYMENT,
       date: FUTURE_UPCOMING_DATE,
       tag: "pending",
+      createdAt: new Date(Date.now() - 30 * 60_000),
     });
     const confirmed = await seedBooking(userId, instructorId, {
       status: BookingStatus.CONFIRMED,
@@ -321,14 +326,17 @@ test.describe("F-057 — Dashboard hides PENDING_PAYMENT drafts", () => {
       "data-booking-id",
       confirmed.bookingId,
     );
+    await expect(
+      page.locator(`[data-booking-id="${stale.bookingId}"]`),
+    ).toHaveCount(0);
   });
 });
 
-test.describe("F-057 — Dashboard surfaces PAYMENT_FAILED + CANCELLED_BY_SYSTEM in cancelled", () => {
-  test("non-PENDING_PAYMENT failure/system rows land in the Cancelled section", async ({
+test.describe("F-057 — Dashboard hides PAYMENT_FAILED + CANCELLED_BY_SYSTEM + REFUNDED", () => {
+  test("non-actionable terminal states never surface to the booker", async ({
     page,
   }) => {
-    const email = uniqueEmail("failed");
+    const email = uniqueEmail("hidden");
     await signUp(page, email);
     const userId = await findUserIdByEmail(email);
     const instructorId = await pickInstructorId();
@@ -343,17 +351,105 @@ test.describe("F-057 — Dashboard surfaces PAYMENT_FAILED + CANCELLED_BY_SYSTEM
       date: FUTURE_UPCOMING_DATE,
       tag: "syscx",
     });
+    const refunded = await seedBooking(userId, instructorId, {
+      status: BookingStatus.REFUNDED,
+      date: FUTURE_UPCOMING_DATE,
+      tag: "refund",
+    });
+
+    await page.goto("/en/dashboard");
+
+    for (const id of [failed.bookingId, systemCancelled.bookingId, refunded.bookingId]) {
+      await expect(page.locator(`[data-booking-id="${id}"]`)).toHaveCount(0);
+    }
+  });
+});
+
+test.describe("F-057 — Dashboard surfaces only user/ops cancellations in Cancelled", () => {
+  test("CANCELLED_BY_USER + CANCELLED_BY_OPS appear in Cancelled section", async ({
+    page,
+  }) => {
+    const email = uniqueEmail("cxonly");
+    await signUp(page, email);
+    const userId = await findUserIdByEmail(email);
+    const instructorId = await pickInstructorId();
+
+    const byUser = await seedBooking(userId, instructorId, {
+      status: BookingStatus.CANCELLED_BY_USER,
+      date: FUTURE_UPCOMING_DATE,
+      tag: "by-user",
+      cancelledByUserAt: new Date("2026-05-20T10:00:00.000Z"),
+    });
+    const byOps = await seedBooking(userId, instructorId, {
+      status: BookingStatus.CANCELLED_BY_OPS,
+      date: FUTURE_UPCOMING_DATE,
+      tag: "by-ops",
+    });
 
     await page.goto("/en/dashboard");
 
     const cancelledList = page.getByTestId("dashboard-bookings-cancelled");
     await expect(
-      cancelledList.locator(`[data-booking-id="${failed.bookingId}"]`),
+      cancelledList.locator(`[data-booking-id="${byUser.bookingId}"]`),
     ).toBeVisible();
     await expect(
-      cancelledList.locator(
-        `[data-booking-id="${systemCancelled.bookingId}"]`,
-      ),
+      cancelledList.locator(`[data-booking-id="${byOps.bookingId}"]`),
     ).toBeVisible();
+  });
+});
+
+test.describe("F-057 — Pending Payment section (15-minute window)", () => {
+  test("fresh PENDING_PAYMENT (under 15 minutes old) surfaces with a resume CTA", async ({
+    page,
+  }) => {
+    const email = uniqueEmail("pending-fresh");
+    await signUp(page, email);
+    const userId = await findUserIdByEmail(email);
+    const instructorId = await pickInstructorId();
+
+    const fresh = await seedBooking(userId, instructorId, {
+      status: BookingStatus.PENDING_PAYMENT,
+      date: FUTURE_UPCOMING_DATE,
+      tag: "fresh",
+      // Default createdAt = now() at DB → well within the 15-minute window.
+    });
+
+    await page.goto("/en/dashboard");
+
+    const pendingList = page.getByTestId("dashboard-bookings-pending");
+    await expect(pendingList).toBeVisible();
+    const row = pendingList.locator(`[data-booking-id="${fresh.bookingId}"]`);
+    await expect(row).toBeVisible();
+
+    const resume = row.getByTestId("dashboard-booking-resume");
+    await expect(resume).toBeVisible();
+    await expect(resume).toHaveAttribute(
+      "href",
+      `/en/reservar/pago/${fresh.bookingId}`,
+    );
+  });
+
+  test("PENDING_PAYMENT older than 15 minutes is hidden (no row, section absent)", async ({
+    page,
+  }) => {
+    const email = uniqueEmail("pending-stale");
+    await signUp(page, email);
+    const userId = await findUserIdByEmail(email);
+    const instructorId = await pickInstructorId();
+
+    const stale = await seedBooking(userId, instructorId, {
+      status: BookingStatus.PENDING_PAYMENT,
+      date: FUTURE_UPCOMING_DATE,
+      tag: "stale",
+      createdAt: new Date(Date.now() - 30 * 60_000),
+    });
+
+    await page.goto("/en/dashboard");
+
+    await expect(
+      page.locator(`[data-booking-id="${stale.bookingId}"]`),
+    ).toHaveCount(0);
+    // No fresh pending = section hidden entirely (less visual noise).
+    await expect(page.getByTestId("dashboard-section-pending")).toHaveCount(0);
   });
 });

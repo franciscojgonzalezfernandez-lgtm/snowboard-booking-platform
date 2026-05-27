@@ -37,10 +37,20 @@ type Recorded = {
   postClassLocales: Locale[];
   flippedReminder: Set<string>;
   flippedPostClass: Set<string>;
+  pendingExpiryCalls: Array<{
+    cutoff: Date;
+    matched: string[];
+  }>;
+};
+
+type PendingFixtureRow = {
+  id: string;
+  createdAt: Date;
 };
 
 function makeDeps(opts: {
   candidates: CandidateRow[];
+  pendingFixtures?: PendingFixtureRow[];
   now?: Date;
   recorded?: Recorded;
 }): { deps: CronDeps; recorded: Recorded } {
@@ -51,6 +61,7 @@ function makeDeps(opts: {
     postClassLocales: [],
     flippedReminder: new Set(),
     flippedPostClass: new Set(),
+    pendingExpiryCalls: [],
   };
 
   // findMany filters by date range + null flag — mirror that here so a
@@ -100,8 +111,35 @@ function makeDeps(opts: {
     },
   );
 
+  const pendingFixtures = opts.pendingFixtures ?? [];
+  const updateMany = vi.fn(async (args: { where: Record<string, unknown> }) => {
+    const where = args.where as {
+      status?: string;
+      createdAt?: { lt?: Date };
+    };
+    if (where.status !== "PENDING_PAYMENT") return { count: 0 };
+    const cutoff = where.createdAt?.lt ?? new Date(0);
+    const matched: string[] = [];
+    for (const row of pendingFixtures) {
+      if (row.createdAt.getTime() < cutoff.getTime()) matched.push(row.id);
+    }
+    recorded.pendingExpiryCalls.push({ cutoff, matched: [...matched] });
+    // Remove matched rows from the fixture array so a second invocation is a
+    // no-op (mirrors the status guard in the production updateMany).
+    for (const id of matched) {
+      const idx = pendingFixtures.findIndex((r) => r.id === id);
+      if (idx >= 0) pendingFixtures.splice(idx, 1);
+    }
+    return { count: matched.length };
+  });
+
   const deps: CronDeps = {
-    prisma: { booking: { findMany: findMany as unknown as CronDeps["prisma"]["booking"]["findMany"] } },
+    prisma: {
+      booking: {
+        findMany: findMany as unknown as CronDeps["prisma"]["booking"]["findMany"],
+        updateMany: updateMany as unknown as CronDeps["prisma"]["booking"]["updateMany"],
+      },
+    },
     sendReminder,
     sendPostClass,
     reminderDeps: {
@@ -260,6 +298,58 @@ describe("runBookingEmailsCron — post-class (today's completed bookings)", () 
     const { deps, recorded } = makeDeps({ candidates });
     await runBookingEmailsCron(deps);
     expect(recorded.postClassLocales.sort()).toEqual(["de", "en", "es"]);
+  });
+});
+
+describe("runBookingEmailsCron — pending-payment expiry sweep", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+  });
+  afterEach(() => vi.useRealTimers());
+
+  test("flips PENDING_PAYMENT rows older than 15 minutes to PAYMENT_FAILED", async () => {
+    const pendingFixtures: PendingFixtureRow[] = [
+      { id: "stale_30m", createdAt: new Date(NOW.getTime() - 30 * 60_000) },
+      { id: "stale_20m", createdAt: new Date(NOW.getTime() - 20 * 60_000) },
+      { id: "fresh_5m", createdAt: new Date(NOW.getTime() - 5 * 60_000) },
+    ];
+    const { deps, recorded } = makeDeps({ candidates: [], pendingFixtures });
+    const summary = await runBookingEmailsCron(deps);
+
+    expect(summary.pendingExpiry.flipped).toBe(2);
+    expect(recorded.pendingExpiryCalls.length).toBe(1);
+    expect(recorded.pendingExpiryCalls[0]!.matched.sort()).toEqual([
+      "stale_20m",
+      "stale_30m",
+    ]);
+  });
+
+  test("uses now - 15m as the cutoff exactly (boundary at the minute)", async () => {
+    const { deps, recorded } = makeDeps({ candidates: [] });
+    await runBookingEmailsCron(deps);
+    const cutoff = recorded.pendingExpiryCalls[0]!.cutoff;
+    expect(cutoff.getTime()).toBe(NOW.getTime() - 15 * 60_000);
+  });
+
+  test("boundary: createdAt exactly 15m ago is NOT flipped (strictly older)", async () => {
+    const pendingFixtures: PendingFixtureRow[] = [
+      { id: "exact_boundary", createdAt: new Date(NOW.getTime() - 15 * 60_000) },
+    ];
+    const { deps } = makeDeps({ candidates: [], pendingFixtures });
+    const summary = await runBookingEmailsCron(deps);
+    expect(summary.pendingExpiry.flipped).toBe(0);
+  });
+
+  test("idempotent: second invocation finds nothing to flip", async () => {
+    const pendingFixtures: PendingFixtureRow[] = [
+      { id: "stale", createdAt: new Date(NOW.getTime() - 30 * 60_000) },
+    ];
+    const { deps } = makeDeps({ candidates: [], pendingFixtures });
+    const first = await runBookingEmailsCron(deps);
+    const second = await runBookingEmailsCron(deps);
+    expect(first.pendingExpiry.flipped).toBe(1);
+    expect(second.pendingExpiry.flipped).toBe(0);
   });
 });
 
