@@ -1082,6 +1082,39 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
   - **No** modificamos la lógica del webhook de F-044 — si la nueva PI llega a `succeeded` el webhook flippea `Booking.status` a `CONFIRMED` igual que con la PI original. La página depende del webhook, no le adelanta el trabajo.
   - F-057 + F-067 envían juntos. Sin F-067 el CTA `Complete payment` de la dashboard queda apuntando a un 404; sin F-057 la página existe pero nadie la encuentra.
 
+##### F-068 — Route-group refactor + global SiteNav (auth-aware) en chrome no-funnel
+
+- Sprint: 3 · Estado: backlog · Prioridad: P0
+- Depende de: F-005, F-031, F-032, F-051
+- Motivación: hoy `SiteNav` sólo se monta en `app/[locale]/page.tsx` (home). `/dashboard`, `/login`, `/terms`, `/privacy` quedan sin chrome global — el booker no tiene forma de salir del dashboard salvo escribiendo la URL. `CLAUDE.md §Routing conventions` ya prescribe route groups `(marketing)`, `(booking)`, `(auth)` + `dashboard/` con sus propios layouts; el código nunca aplicó el patrón. Este ticket alinea estructura con la convención y arregla el bug UX.
+- AC routing:
+  - [ ] Mover `app/[locale]/page.tsx` (home) → `app/[locale]/(marketing)/page.tsx`. URLs no cambian (route groups no participan en path).
+  - [ ] Mover `app/[locale]/terms/` → `app/[locale]/(marketing)/terms/` y `app/[locale]/privacy/` → `app/[locale]/(marketing)/privacy/`. Verificar que `sitemap.ts` + `robots.ts` siguen apuntando a los paths correctos.
+  - [ ] Mover `app/[locale]/login/` → `app/[locale]/(auth)/login/`. Verificar redirects en `lib/auth/index.ts` + middleware + `next=` query param de `/dashboard`.
+  - [ ] `app/[locale]/reservar/` queda fuera de cualquier grupo (booking flow ya tiene su `BookingHeader` y su layout propio; renombrar a `(booking)/reservar` añade fricción sin beneficio — defer).
+  - [ ] `app/[locale]/dashboard/` queda en su propio path (autenticado). Layout propio en este ticket.
+- AC layouts:
+  - [ ] `app/[locale]/(marketing)/layout.tsx` — server component, `setRequestLocale`, monta `<SiteNav>` arriba de `{children}`. Pasa props de utility copy del namespace `home` o nuevo `nav`.
+  - [ ] `app/[locale]/(auth)/layout.tsx` — server component idéntico al marketing, pero con `utility` copy diferente (e.g. "Have an account? Sign in" o variant según ruta — login no necesita "Sign in" repetido). Decisión final: usar el mismo `SiteNav` con `variant="auth"` que oculta el botón de sign-in cuando ya estamos en la página de login.
+  - [ ] `app/[locale]/dashboard/layout.tsx` — server component, monta `<SiteNav>` y pasa `{children}`. Para usuarios autenticados (middleware ya redirige anonymous), el componente muestra el variant logged-in.
+  - [ ] `app/[locale]/layout.tsx` queda sin tocar (mantiene `SiteFooter` + `NextIntlClientProvider`). Booking flow hereda layout padre + `reservar/layout.tsx` propio, sin SiteNav arriba.
+- AC SiteNav auth-aware:
+  - [ ] `app/components/SiteNav.tsx` (+ `MobileNav.tsx`) consume session: server component lee `await auth.api.getSession({ headers })`. Si `session?.user`, reemplaza el link `Sign in` por bloque `My account` (link a `/dashboard`) + `Sign out` (form action que llama `auth.api.signOut`).
+  - [ ] `Sign out` UI: shadcn `Button` variant `ghost`, en desktop nav + Sheet mobile. Server action `signOutAction` en `app/components/site-nav-actions.ts` (`'use server'`) que invoca `auth.api.signOut` + `redirect('/${locale}/')`.
+  - [ ] El bloque `LanguageSwitcher` no cambia.
+  - [ ] i18n keys nuevas en namespace `nav`: `nav.my_account`, `nav.sign_out`. Existentes (`nav.sign_in`, `nav.utility`) sin cambios.
+- AC tests:
+  - [ ] Playwright `e2e/f-068-global-nav.spec.ts` × 3 locales: assert `SiteNav` visible en `/`, `/login`, `/dashboard`, `/terms`, `/privacy`. Assert ausente en `/reservar` (funnel preserva su `BookingHeader`).
+  - [ ] Auth-aware variant: anonymous user → `Sign in` link visible. Post-signup (reuse helper de F-047) → `My account` + `Sign out` visibles, `Sign in` ausente. Click `Sign out` → redirige a home + cookie session limpia + reload `/dashboard` redirige a `/login?next=...`.
+  - [ ] Update specs existentes que asertan ausencia de nav en `/dashboard` o `/terms` (ninguno hoy según audit) — si aparecen, expand assertion.
+  - [ ] CLAUDE.md `§Routing conventions` actualizado si el árbol final difiere de lo prescrito (e.g. `reservar` no entró en `(booking)`).
+- Notas:
+  - **No** moves de `reservar/` a `(booking)/` — `BookingHeader` y `reservar/layout.tsx` ya implementan el contrato funnel-only; renombrar añade churn sin beneficio. Documentar la desviación en CLAUDE.md.
+  - **No** server-side conditional render de SiteNav según pathname en `app/[locale]/layout.tsx` (anti-pattern). Route groups + layouts dedicados son la herramienta nativa.
+  - F-052 (Sprint 5, phone CTA en nav) consume este ticket — espera a que `SiteNav` sea global antes de añadir el link `tel:`.
+  - F-053 (Sprint 5, hero banner) sigue siendo home-only — F-068 no toca su mount point.
+  - Riesgo: mover archivos de routes invalida hot-reload + caches de tests. Esperar a que F-057 + F-067 merged antes de abrir el worktree de F-068 para reducir conflict surface.
+
 ##### F-058 — User-cancel flow (48h window, modal, credit emission)
 
 - Sprint: 3 · Estado: backlog · Prioridad: P0
@@ -1277,9 +1310,10 @@ F-063 (emails)   ─┘─ F-059 (credit aside) ─ F-060 (checkout redemption) 
 F-061 (expiry cron)   parallel
 F-062 (F-048 extension: COMPLETED flip) parallel (fold en cron de F-048)
 F-064 (phone edit)    parallel polish
+F-068 (route groups + global SiteNav)  parallel chrome (después de F-057 merged)
 ```
 
-Critical path: **F-057 + F-067 (paired PR) → F-058 + F-063 → F-059 → F-060 → F-066**. F-061 / F-062 / F-064 paralelizables. F-057 + F-067 envían en el mismo PR — F-057 muestra los `PENDING_PAYMENT` rows con un CTA `Complete payment` que requiere la ruta `/reservar/pago/[id]` de F-067. F-058 ships behind F-063 templates landing (o bien stub el send + follow-up PR — owner prefiere paired). F-066 es la última puerta antes de declarar el sprint cerrado.
+Critical path: **F-057 + F-067 (paired PR) → F-058 + F-063 → F-059 → F-060 → F-066**. F-061 / F-062 / F-064 / F-068 paralelizables. F-057 + F-067 envían en el mismo PR — F-057 muestra los `PENDING_PAYMENT` rows con un CTA `Complete payment` que requiere la ruta `/reservar/pago/[id]` de F-067. F-068 (route groups + nav global auth-aware) abre worktree propio post-F-057 merge para reducir conflict surface. F-058 ships behind F-063 templates landing. F-066 es la última puerta antes de declarar el sprint cerrado.
 
 ### Sprint 4 — Vista instructor + Admin (semanas 7-8)
 
