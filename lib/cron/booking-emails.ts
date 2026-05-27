@@ -28,10 +28,6 @@ export type CronDeps = {
         where: Record<string, unknown>;
         select: Record<string, unknown>;
       }): Promise<CandidateRow[]>;
-      updateMany(args: {
-        where: Record<string, unknown>;
-        data: Record<string, unknown>;
-      }): Promise<{ count: number }>;
     };
   };
   sendReminder: (
@@ -47,15 +43,6 @@ export type CronDeps = {
   now: Date;
 };
 
-// Matches `IDEMPOTENCY_WINDOW_MS` in lib/booking/create-draft.ts. After this
-// window the PaymentIntent created for the draft is effectively dead — we flip
-// the booking to PAYMENT_FAILED so it stops showing up as "still owed" and the
-// dashboard's pending-payment section no longer surfaces it. The Stripe
-// webhook can still flip PAYMENT_FAILED → CONFIRMED if the customer manages to
-// pay through some out-of-band path Stripe retains; that branch lives in
-// lib/stripe/handle-webhook.ts and remains the source of truth.
-export const PENDING_PAYMENT_EXPIRY_MS = 15 * 60 * 1000;
-
 export type BucketSummary = {
   considered: number;
   sent: number;
@@ -63,15 +50,10 @@ export type BucketSummary = {
   errors: number;
 };
 
-export type PendingExpirySummary = {
-  flipped: number;
-};
-
 export type CronRunSummary = {
   now: string;
   reminders: BucketSummary;
   postClass: BucketSummary;
-  pendingExpiry: PendingExpirySummary;
 };
 
 export const CANDIDATE_SELECT = {
@@ -177,25 +159,5 @@ export async function runBookingEmailsCron(
     }
   }
 
-  // Pending-payment sweep: any booking that has been sitting in
-  // PENDING_PAYMENT for longer than the 15-minute idempotency window has a
-  // PaymentIntent Stripe has effectively given up on. Flip to PAYMENT_FAILED
-  // so dashboards / analytics / customer-facing surfaces stop treating it as
-  // still-payable. The dashboard already hides these rows from the booker via
-  // a `createdAt > now - 15m` filter, so DB drift is acceptable between cron
-  // runs — this sweep is the eventual-consistency leg.
-  const pendingCutoff = new Date(now.getTime() - PENDING_PAYMENT_EXPIRY_MS);
-  const pendingExpiryResult = await deps.prisma.booking.updateMany({
-    where: {
-      status: "PENDING_PAYMENT",
-      createdAt: { lt: pendingCutoff },
-    },
-    data: { status: "PAYMENT_FAILED" },
-  });
-
-  const pendingExpiry: PendingExpirySummary = {
-    flipped: pendingExpiryResult.count,
-  };
-
-  return { now: now.toISOString(), reminders, postClass, pendingExpiry };
+  return { now: now.toISOString(), reminders, postClass };
 }

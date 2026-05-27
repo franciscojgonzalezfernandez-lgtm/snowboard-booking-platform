@@ -1028,11 +1028,13 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
     - `_lib/format.ts` — `formatBookingDate`, `formatShortDate`, label key maps, `INTL_TAG`.
   - [ ] Dark-mode contrast pass: validar `border`, `muted`, `accent` tokens en cada sección (Lighthouse a11y ≥95 en `/en/dashboard`).
   - [ ] i18n keys `dashboard.section_{pending,upcoming,past,cancelled}`, `dashboard.empty_{pending,upcoming,past,cancelled}`, `dashboard.empty_upcoming_cta`, `dashboard.resume_payment`, `dashboard.add_to_calendar`, `dashboard.cancelled_on`, `dashboard.credit_issued` × 3 locales.
-- AC lifecycle sweep (extiende F-048 cron route handler):
-  - [ ] `lib/cron/booking-emails.ts` añade bucket `pendingExpiry`. Query `prisma.booking.updateMany({ where: { status: 'PENDING_PAYMENT', createdAt: { lt: now - 15min } }, data: { status: 'PAYMENT_FAILED' } })`. Idempotente — re-run no afecta filas ya `PAYMENT_FAILED`.
+- AC lifecycle sweep (cron dedicado `/api/cron/expire-pending`):
+  - [ ] Nuevo route handler `app/api/cron/expire-pending/route.ts` (Node runtime). Header check `Authorization: Bearer ${CRON_SECRET}` (mismo patrón F-048).
+  - [ ] Schedule `*/15 * * * *` en `vercel.json`. Cadencia 15min, no diaria — la dashboard filter es band-aid, pero admin views, analytics y webhook reconciliation también leen `BookingStatus` y necesitan que el flip a `PAYMENT_FAILED` ocurra cerca del minuto 16 después del abandono.
+  - [ ] `lib/cron/expire-pending.ts` exporta `runExpirePendingCron({ prisma, now })`. Query `prisma.booking.updateMany({ where: { status: 'PENDING_PAYMENT', createdAt: { lt: now - 15min } }, data: { status: 'PAYMENT_FAILED' } })`. Idempotente — re-run cada 15min sobre filas ya flippeadas afecta 0 rows.
   - [ ] Constante `PENDING_PAYMENT_EXPIRY_MS = 15 * 60 * 1000` (mismo source-of-truth que `IDEMPOTENCY_WINDOW_MS` de `lib/booking/create-draft.ts`).
-  - [ ] Summary del cron añade `pendingExpiry: { flipped: number }` para observability + Sentry breadcrumb.
-  - [ ] **Nota cron count**: F-048 ya consume 1/2 Hobby slot. Esta extensión vive en el mismo route handler — no consume otro slot. F-061 (monthly credit expiry) sigue siendo el segundo cron.
+  - [ ] Summary `{ now, flipped }` para observability + Sentry breadcrumb.
+  - [ ] **Cron count**: F-048 (daily emails) + F-067 (15min pending) = 2/2 Hobby slots consumidos. F-061 (monthly credit expiry) tendrá que folddearse en uno de estos handlers (gating por `now.getUTCDate() === 1`) o forzar upgrade a Pro antes de cerrar Sprint 3.
 - Tests:
   - Playwright `e2e/f-057-dashboard-sections.spec.ts`:
     - Grouped sections happy path × 3 locales (Upcoming + Past + Cancelled-with-credit).
@@ -1174,14 +1176,14 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
 - Depende de: F-058
 - Motivación: credits con `expiresAt < now` siguen `ACTIVE` en schema si nadie los flipea. Aside (F-059) ya filtra por `expiresAt > now` en query, pero el badge `status=ACTIVE` queda inconsistente y bloquea analytics futuros. Cron mensual silencioso flipea status.
 - AC:
-  - [ ] Nuevo route handler `app/api/cron/credit-expiry/route.ts` (Node runtime). Header check `Authorization: Bearer ${CRON_SECRET}` (mismo patrón F-048).
-  - [ ] Vercel cron `0 0 1 * *` (mensual, día 1 a 00:00 UTC) registrado en `vercel.ts`.
+  - [ ] **Fold en cron existente, no slot nuevo**: F-048 (daily emails) y F-067 (15min pending sweep) ya consumen los 2/2 slots Hobby. Esta función vive dentro de `lib/cron/expire-pending.ts` como branch adicional gateada por `now.getUTCDate() === 1 && now.getUTCHours() === 0` (primera ejecución del mes a las 00:00 UTC), o alternativamente en `booking-emails.ts` con la misma guard. Decisión final al implementar.
   - [ ] Query: `prisma.accountCredit.updateMany({ where: { status: 'ACTIVE', expiresAt: { lt: now } }, data: { status: 'EXPIRED' } })`. Idempotente — re-run no afecta filas ya `EXPIRED`.
+  - [ ] Sin re-ejecución mensual el problema es: durante el primer mes la query corre ~96 veces/día (gated dentro del cron de 15min). Coste despreciable, idempotente, no escala mal — tabla `AccountCredit` es pequeña en MVP.
   - [ ] **No email**. Decisión explícita — el aside ya muestra `expiresAt` con warning amber a 30d. Reduce email volume.
   - [ ] Sentry breadcrumb con `count` de filas flippeadas para observability.
 - Tests: Vitest `lib/credit/expire.test.ts` con `vi.useFakeTimers` — seed credits con `expiresAt` ±1min de `now` → boundary `expiresAt < now` flippea, `expiresAt >= now` no flippea; segunda invocación no re-flippea.
 - Notas:
-  - Vercel Hobby crons: 2/2 con F-048 (extendido por F-062) + F-061 (este). Sin room para 3er cron sin upgrade. Sprint 4 reevalúa.
+  - Vercel Hobby crons: 2/2 con F-048 + F-067. Si el owner upgradea a Pro antes de cerrar Sprint 3, F-061 puede ir a su propio handler con schedule `0 0 1 * *` como originalmente planificado.
 
 ##### F-062 — Extensión F-048: COMPLETED auto-flip (no-show / forgot-to-mark sweep)
 
