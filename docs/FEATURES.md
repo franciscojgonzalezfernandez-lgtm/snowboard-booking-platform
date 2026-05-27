@@ -1003,7 +1003,7 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
 
 ##### F-057 — Dashboard v2: grouped sections (Pending / Upcoming / Past / Cancelled) + lifecycle sweep
 
-- Sprint: 3 · Estado: backlog · Prioridad: P0
+- Sprint: 3 · Estado: done · Prioridad: P0 · PR #77 + commit `6c1230b` (sweep split)
 - Depende de: F-047, F-048
 - Motivación: el actual `/dashboard` (F-047) muestra lista plana filtrada por `VISIBLE_STATUSES` que oculta cancelaciones, refunds y — crítico — los `PENDING_PAYMENT` que el booker abandonó mid-checkout y que jamás encuentran su camino de vuelta al pago. Owner pidió secciones explícitas + surface de drafts pagables. Sin esta refactor, F-058 (Cancel button) y F-059 (credit aside) no tienen layout donde aterrizar y se pierden ventas por drafts huérfanos.
 - AC dashboard:
@@ -1054,7 +1054,7 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
 
 ##### F-067 — Resume payment page (`/[locale]/reservar/pago/[bookingId]`)
 
-- Sprint: 3 · Estado: backlog · Prioridad: P0 (revenue recovery — emparejado con F-057)
+- Sprint: 3 · Estado: done · Prioridad: P0 (revenue recovery — emparejado con F-057) · shipped junto a F-057 en commit `da3645c`
 - Depende de: F-042, F-043, F-057
 - Motivación: cuando el booker abandona el checkout entre Step 4 y Step 5, su `Booking` queda en `PENDING_PAYMENT` con un `stripePaymentIntentId` cuya `client_secret` sigue siendo válida durante 15 minutos (ventana de idempotency de F-042). F-057 visibiliza esa row en la dashboard con un CTA `Complete payment`. Sin esta página, ese CTA queda muerto y la venta se pierde. Además, si Stripe canceló la PI (timeout interno), re-creamos una nueva silenciosamente para que el booker no necesite empezar de cero.
 - AC server logic (`lib/booking/resume-payment.ts`):
@@ -1114,6 +1114,30 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
   - F-052 (Sprint 5, phone CTA en nav) consume este ticket — espera a que `SiteNav` sea global antes de añadir el link `tel:`.
   - F-053 (Sprint 5, hero banner) sigue siendo home-only — F-068 no toca su mount point.
   - Riesgo: mover archivos de routes invalida hot-reload + caches de tests. Esperar a que F-057 + F-067 merged antes de abrir el worktree de F-068 para reducir conflict surface.
+
+##### F-069 — Dashboard tabs (shadcn `Tabs` sobre secciones F-057 + counter chips + URL state)
+
+- Sprint: 3 · Estado: backlog · Prioridad: P1
+- Depende de: F-057
+- Motivación: F-057 entrega 4 secciones (Pending / Upcoming / Past / Cancelled) como long-scroll. Cuando el booker tiene historial real (>3 reservas mezcladas en cancelled + past), la vista se vuelve densa y obliga a scrollear para encontrar la próxima clase. Tabs reduce cognitive load + colapsa la vista a 1 sección visible + permite deep-link `?tab=past`. Aesthetic editorial — counter chips por tab dan signal de volumen sin entrar.
+- AC UI:
+  - [ ] `app/[locale]/dashboard/_components/dashboard-tabs.tsx` (client island). Envuelve los 4 `<DashboardSection>` con shadcn `Tabs` + `TabsList` + `TabsTrigger` + `TabsContent`.
+  - [ ] Default tab: `upcoming` cuando hay rows, `pending` cuando hay pending + no upcoming, `past` como último fallback (cuando el booker es histórico sin upcoming/pending).
+  - [ ] **URL state**: query param `?tab=upcoming|past|cancelled|pending` controla tab activa. `router.replace` on change (`scroll: false`). Deep-link desde `/dashboard?tab=cancelled` (e.g. desde email de cancelación con CTA "View cancellations") restaura tab correcta.
+  - [ ] Counter chip por trigger: `Upcoming 3`, `Past 12`, etc. Chip vacío cuando count=0 (sin número, sólo label dimmed `text-muted-foreground`).
+  - [ ] Tabs ordenados: Upcoming → Pending (cuando exista) → Past → Cancelled. Pending sigue siendo conditional (sólo si `pending.length > 0`).
+  - [ ] **Mobile**: tabs full-width con scroll horizontal si overflow. Tap targets ≥44px (F-051 audit aplica).
+  - [ ] **A11y**: shadcn `Tabs` ya provee `role="tablist"` + `aria-selected`. Verificar que el counter chip no rompe el accessible name del trigger (usar `aria-label` explícito con label + count).
+- AC i18n:
+  - [ ] Reusa keys existentes `dashboard.section_{pending,upcoming,past,cancelled}` para labels de tab. Nuevas keys: `dashboard.tab_count_label` (interpola `{label}` + `{count}` para accessible name).
+- AC tests:
+  - [ ] Playwright `e2e/f-069-dashboard-tabs.spec.ts` × 1 locale (en): seed 1 upcoming + 2 cancelled-with-credit → asserta default tab = upcoming visible, click Cancelled tab → secciones upcoming/past ocultas + cancelled visible; counter chips correctos; `?tab=cancelled` deep-link aterriza directo en esa tab; reload preserva tab activa.
+- Notas:
+  - **No** integración con F-068 SiteNav — F-069 es scope local del dashboard, no toca chrome global.
+  - **No** persistir tab en cookie / localStorage — URL es source of truth; deep-link siempre gana.
+  - **Defer** badges de "new since last visit" (e.g. notificación si nueva cancelación llegó desde la última sesión). Post-MVP — requiere `User.lastDashboardVisitAt` schema + tracking.
+  - F-058 (Cancel button) seguirá funcionando sin cambios: el botón vive dentro de cada `<BookingRow>`, que se renderiza dentro del `<TabsContent>` activo. Click cancel → server action → `revalidatePath('/dashboard')` → tab Upcoming queda sin esa row, tab Cancelled ahora la incluye con el credit badge. UX: toast confirma + opcional `router.push('?tab=cancelled')` para mostrar el resultado inmediato.
+  - F-059 credit aside: vive **fuera** del `<Tabs>` (sidebar / top section), siempre visible. No-op para este ticket.
 
 ##### F-058 — User-cancel flow (48h window, modal, credit emission)
 
@@ -1321,9 +1345,10 @@ F-061 (expiry cron)   parallel
 F-062 (F-048 extension: COMPLETED flip) parallel (fold en cron de F-048)
 F-064 (phone edit)    parallel polish
 F-068 (route groups + global SiteNav)  parallel chrome (después de F-057 merged)
+F-069 (dashboard tabs)  parallel polish (después de F-057 merged)
 ```
 
-Critical path: **F-057 + F-067 (paired PR) → F-058 + F-063 → F-059 → F-060 → F-066**. F-061 / F-062 / F-064 / F-068 paralelizables. F-057 + F-067 envían en el mismo PR — F-057 muestra los `PENDING_PAYMENT` rows con un CTA `Complete payment` que requiere la ruta `/reservar/pago/[id]` de F-067. F-068 (route groups + nav global auth-aware) abre worktree propio post-F-057 merge para reducir conflict surface. F-058 ships behind F-063 templates landing. F-066 es la última puerta antes de declarar el sprint cerrado.
+Critical path: **F-057 + F-067 (paired PR) → F-058 + F-063 → F-059 → F-060 → F-066**. F-061 / F-062 / F-064 / F-068 / F-069 paralelizables. F-057 + F-067 envían en el mismo PR — F-057 muestra los `PENDING_PAYMENT` rows con un CTA `Complete payment` que requiere la ruta `/reservar/pago/[id]` de F-067. F-068 (route groups + nav global auth-aware) abre worktree propio post-F-057 merge para reducir conflict surface. F-058 ships behind F-063 templates landing. F-066 es la última puerta antes de declarar el sprint cerrado.
 
 ### Sprint 4 — Vista instructor + Admin (semanas 7-8)
 
