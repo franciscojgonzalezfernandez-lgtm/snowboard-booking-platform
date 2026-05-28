@@ -1084,7 +1084,7 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
 
 ##### F-068 — Route-group refactor + global SiteNav (auth-aware) en chrome no-funnel
 
-- Sprint: 3 · Estado: review · Prioridad: P0
+- Sprint: 3 · Estado: done · Prioridad: P0 · PR #85 (merged 2026-05-28)
 - Depende de: F-005, F-031, F-032, F-051
 - Motivación: hoy `SiteNav` sólo se monta en `app/[locale]/page.tsx` (home). `/dashboard`, `/login`, `/terms`, `/privacy` quedan sin chrome global — el booker no tiene forma de salir del dashboard salvo escribiendo la URL. `CLAUDE.md §Routing conventions` ya prescribe route groups `(marketing)`, `(booking)`, `(auth)` + `dashboard/` con sus propios layouts; el código nunca aplicó el patrón. Este ticket alinea estructura con la convención y arregla el bug UX.
 - AC routing:
