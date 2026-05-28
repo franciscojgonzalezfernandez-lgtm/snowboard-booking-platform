@@ -334,6 +334,13 @@
     "personal_name": "Name",
     "personal_email": "E-Mail",
     "personal_phone": "Telefon",
-    "personal_phone_missing": "Nicht angegeben"
+    "personal_phone_missing": "Nicht angegeben",
+    "personal_phone_placeholder": "+41 76 123 45 67",
+    "personal_edit": "Bearbeiten",
+    "personal_save": "Speichern",
+    "personal_cancel": "Abbrechen",
+    "personal_phone_updated": "Telefonnummer aktualisiert",
+    "personal_phone_removed": "Telefonnummer entfernt",
+    "personal_error_invalid": "Gib eine gültige Telefonnummer ein"
   }
 }

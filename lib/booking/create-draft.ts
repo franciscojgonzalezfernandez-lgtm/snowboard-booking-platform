@@ -98,6 +98,12 @@ type PrismaTransactionSurface = {
       }>;
     }): Promise<{ count: number }>;
   };
+  user: {
+    update(args: {
+      where: { id: string; phone: null };
+      data: { phone: string };
+    }): Promise<{ id: string }>;
+  };
 };
 
 type StripeSurface = {
@@ -269,6 +275,23 @@ export async function createBookingDraftWith(
         isBooker: row.isBooker,
       })),
     });
+
+    // F-064(a): silently backfill the booker's phone the first time they book.
+    // `data.bookerPhone` is already E.164-normalised by the draft schema. The
+    // `phone: null` guard makes this a no-op once a number is on file, so a
+    // second booking never overwrites a value the user set in the dashboard —
+    // and the atomic predicate avoids a read/write race between concurrent
+    // requests. Best-effort: a no-match (P2025) or transient failure must never
+    // roll back the booking, so we swallow it inside the transaction callback.
+    try {
+      await tx.user.update({
+        where: { id: session.user.id, phone: null },
+        data: { phone: data.bookerPhone },
+      });
+    } catch {
+      // phone already set, or transient write error — leave the profile as-is.
+    }
+
     return created;
   });
 

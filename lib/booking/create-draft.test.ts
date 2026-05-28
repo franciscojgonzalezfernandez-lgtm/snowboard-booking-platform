@@ -1,7 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
 import {
   AvailabilityKind,
-  BookingStatus,
   Duration,
   Level,
   Locale,
@@ -83,10 +82,15 @@ function makeDeps(overrides?: {
   priceCentsByDuration?: Record<Duration, number> | unknown;
   stripeCreateError?: Error;
   retrieveSecret?: string;
+  /** Simulate a booker who already has a phone on file (guard won't match). */
+  userHasPhone?: boolean;
+  /** Force the phone backfill update to throw a transient error. */
+  userUpdateError?: Error;
 }) {
   const created: Array<{ id: string; data: unknown }> = [];
   const updates: Array<{ id: string; stripePaymentIntentId: string }> = [];
   const attendeesCreated: unknown[] = [];
+  const userUpdates: Array<{ id: string; phone: string }> = [];
 
   const bookingCreate = vi.fn(async (args: { data: unknown }) => {
     const id = `book_${created.length + 1}`;
@@ -122,6 +126,21 @@ function makeDeps(overrides?: {
       } satisfies Record<Duration, number>),
   }));
 
+  const userUpdate = vi.fn(
+    async (args: { where: { id: string; phone: null }; data: { phone: string } }) => {
+      if (overrides?.userUpdateError) throw overrides.userUpdateError;
+      if (overrides?.userHasPhone) {
+        // Mirror Prisma: `where: { phone: null }` matches no row when a phone
+        // is already set, so update throws P2025 (record-not-found).
+        throw Object.assign(new Error("Record to update not found."), {
+          code: "P2025",
+        });
+      }
+      userUpdates.push({ id: args.where.id, phone: args.data.phone });
+      return { id: args.where.id };
+    },
+  );
+
   const prisma = {
     season: { findFirst: seasonFindFirst },
     booking: {
@@ -132,6 +151,7 @@ function makeDeps(overrides?: {
       cb({
         booking: { create: bookingCreate },
         attendee: { createMany: attendeeCreateMany },
+        user: { update: userUpdate },
       }),
     ),
   } as unknown as CreateDraftDeps["prisma"];
@@ -175,6 +195,7 @@ function makeDeps(overrides?: {
     created,
     updates,
     attendeesCreated,
+    userUpdates,
     spies: {
       bookingCreate,
       attendeeCreateMany,
@@ -183,6 +204,7 @@ function makeDeps(overrides?: {
       seasonFindFirst,
       paymentIntentCreate,
       paymentIntentRetrieve,
+      userUpdate,
     },
   };
 }
@@ -399,5 +421,54 @@ describe("createBookingDraftWith — attendee isBooker flag", () => {
         (a) => a.isBooker === false,
       ),
     ).toBe(true);
+  });
+});
+
+describe("createBookingDraftWith — phone auto-backfill (F-064a)", () => {
+  test("persists the normalised bookerPhone when the user has no phone on file", async () => {
+    const { deps, enginePrisma, spies, userUpdates } = makeDeps();
+
+    const result = await createBookingDraftWith(deps, enginePrisma, {
+      ...VALID_INPUT,
+      // Spaces must be stripped before the value reaches User.phone.
+      bookerPhone: "+41 76 111 22 33",
+    });
+
+    expect(result.ok).toBe(true);
+    expect(spies.userUpdate).toHaveBeenCalledTimes(1);
+    const call = spies.userUpdate.mock.calls[0]![0];
+    expect(call.where).toEqual({ id: "user_javi", phone: null });
+    expect(userUpdates).toEqual([{ id: "user_javi", phone: "+41761112233" }]);
+  });
+
+  test("does not overwrite an existing phone (guard matches no row)", async () => {
+    const { deps, enginePrisma, spies, userUpdates } = makeDeps({
+      userHasPhone: true,
+    });
+
+    const result = await createBookingDraftWith(deps, enginePrisma, {
+      ...VALID_INPUT,
+      bookerPhone: "+41760000000",
+    });
+
+    // The booking still succeeds; the no-match update was swallowed.
+    expect(result.ok).toBe(true);
+    expect(spies.bookingCreate).toHaveBeenCalledTimes(1);
+    expect(spies.userUpdate).toHaveBeenCalledTimes(1);
+    expect(userUpdates).toEqual([]);
+  });
+
+  test("a failing backfill never rolls back the booking (best-effort)", async () => {
+    const { deps, enginePrisma, spies } = makeDeps({
+      userUpdateError: new Error("connection reset"),
+    });
+
+    const result = await createBookingDraftWith(deps, enginePrisma, VALID_INPUT);
+
+    // Transaction completed and the Stripe PaymentIntent was still created.
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.clientSecret).toBe("pi_test_123_secret_abc");
+    expect(spies.bookingCreate).toHaveBeenCalledTimes(1);
+    expect(spies.paymentIntentCreate).toHaveBeenCalledTimes(1);
   });
 });
