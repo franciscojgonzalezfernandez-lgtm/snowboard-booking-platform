@@ -2,12 +2,13 @@
 // (F-058) carry `expiresAt = now + 365d` and stay `ACTIVE` until consumed. The
 // dashboard aside (F-059) already filters by `expiresAt > now`, so an expired
 // credit is never offered at checkout — but the row keeps `status = ACTIVE`,
-// which is misleading for admin tooling and future analytics. This monthly
-// sweep flips lapsed credits to `EXPIRED` so the stored status matches reality.
+// which is misleading for admin tooling and future analytics. This sweep flips
+// lapsed credits to `EXPIRED` so the stored status matches reality.
 //
-// Runs as its own cron (`0 0 1 * *`, first of the month at 00:00 UTC) now that
-// the project is on Vercel Pro — the Hobby 2-cron cap that would have forced
-// folding this into an existing handler no longer applies.
+// Runs daily as its own cron (`0 1 * * *`, 01:00 UTC). Daily (not monthly)
+// keeps the status lag under 24h and means a single missed run can never strand
+// a credit as ACTIVE for ~a month. The sweep is idempotent, so the extra runs
+// cost nothing.
 
 export type ExpireCreditsDeps = {
   prisma: {

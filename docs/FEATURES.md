@@ -1233,20 +1233,22 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
   - **No** UI "Save credit for later" toggle individual — `Use all` + checkboxes per-credit cubren el caso. User desmarca los que quiera guardar.
   - F-049 SPA: integración via tanstack-query — invalidate `['user-credits']` post-success.
 
-##### F-061 — Cron mensual: expiración de créditos
+##### F-061 — Cron diario: expiración de créditos
 
 - Sprint: 3 · Estado: done · Prioridad: P1
 - Depende de: F-058
-- Motivación: credits con `expiresAt < now` siguen `ACTIVE` en schema si nadie los flipea. Aside (F-059) ya filtra por `expiresAt > now` en query, pero el badge `status=ACTIVE` queda inconsistente y bloquea analytics futuros. Cron mensual silencioso flipea status.
+- Motivación: credits con `expiresAt < now` siguen `ACTIVE` en schema si nadie los flipea. Aside (F-059) ya filtra por `expiresAt > now` en query, pero el badge `status=ACTIVE` queda inconsistente y bloquea analytics futuros. Cron silencioso flipea el status.
 - AC:
-  - [x] ~~Fold en cron existente~~ → **Handler standalone** `app/api/cron/expire-credits/route.ts` con schedule `0 0 1 * *` (primero de mes, 00:00 UTC). **Desviación:** el owner upgradeó a Vercel Pro, así que el cap de 2 crons Hobby ya no aplica y vamos al handler propio "como originalmente planificado" (ver Notas). Auth `Authorization: Bearer ${CRON_SECRET}` igual que F-048/expire-pending.
-  - [x] Query: `prisma.accountCredit.updateMany({ where: { status: 'ACTIVE', expiresAt: { lt: now } }, data: { status: 'EXPIRED' } })` en `lib/credit/expire.ts` (`runExpireCreditsCron`). Idempotente — el status guard `ACTIVE` hace que el re-run no afecte filas ya `EXPIRED`.
-  - [x] ~~Re-ejecución ~96×/día~~ ya no aplica — handler mensual dedicado corre 1×/mes. Coste trivial.
+  - [x] **Handler standalone** `app/api/cron/expire-credits/route.ts` (Node runtime, `force-dynamic`), cron propio en `vercel.json` con schedule `0 1 * * *` (diario, 01:00 UTC). Diario y no mensual: mantiene el lag de status <24h y un run perdido nunca deja un credit `ACTIVE` ~1 mes. El barrido es idempotente, así que las corridas extra no cuestan nada.
+  - [x] Lógica pura en `lib/credit/expire.ts` (`runExpireCreditsCron({ prisma, now })`): `prisma.accountCredit.updateMany({ where: { status: 'ACTIVE', expiresAt: { lt: now } }, data: { status: 'EXPIRED' } })`. Idempotente — el status guard `ACTIVE` hace que el re-run no afecte filas ya `EXPIRED`. Devuelve `{ now, expired }`.
+  - [x] **Auth** `Authorization: Bearer ${CRON_SECRET}` con comparación constant-time (`crypto.timingSafeEqual`) para no filtrar el secret por timing. Si `CRON_SECRET` no está seteado → `Sentry.captureMessage` (warning) + 401 (no falla en silencio).
+  - [x] **Error handling**: el `runExpireCreditsCron` va en `try/catch`; un fallo de DB hace `Sentry.captureException` + responde `500 { ok:false, error:'EXPIRE_CREDITS_FAILED' }` en vez de un 500 sin capturar.
   - [x] **No email**. El aside ya muestra `expiresAt` con warning amber a 30d.
   - [x] Sentry breadcrumb con `expired` count (sólo cuando `expired > 0`).
-- Tests: [x] Vitest `lib/credit/expire.test.ts` con `vi.useFakeTimers` — boundary `expiresAt < now` flippea, `expiresAt === now` no (strictly older), segunda invocación no re-flippea, ISO timestamp. 5/5.
+- Tests: [x] Vitest `lib/credit/expire.test.ts` con `vi.useFakeTimers` — `expiresAt < now` flippea, `expiresAt === now` no (strictly older), idempotencia en segunda invocación, cutoff = `now`, ISO timestamp. 5/5.
 - Notas:
-  - **Standalone handler en Vercel Pro** (decisión de implementación): 3 crons ahora (booking-emails diario, expire-pending 15min, expire-credits mensual). El path de "fold con guard `getUTCDate()===1`" descrito en el AC original era el plan Hobby; descartado al estar en Pro.
+  - **Cron propio (3 en total)**: booking-emails (`0 17 * * *`), expire-pending (`*/15 * * * *`), expire-credits (`0 1 * * *`). Posible gracias a Vercel Pro (el plan Hobby capa a 2 crons).
+  - **Auth constant-time sólo en este handler** por ahora — los demás crons usan `===`. Candidato a unificar en un helper compartido si se endurecen todos.
 
 ##### F-062 — Extensión F-048: COMPLETED auto-flip (no-show / forgot-to-mark sweep)
 
