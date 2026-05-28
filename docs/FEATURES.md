@@ -1366,15 +1366,237 @@ Critical path: **F-057 + F-067 (paired PR) → F-058 + F-063 → F-059 → F-060
 
 ### Sprint 4 — Vista instructor + Admin (semanas 7-8)
 
-- Vista instructor: agenda diaria, gestión de `availabilityBlock`, perfil.
-- Conectar Google Calendar (OAuth offline access, encriptación ADR-007).
-- Inserción/borrado de eventos en Google Calendar.
-- Panel admin: CRUD instructores, vista de reservas, modal "Cancel day" (ops batch + preview de impacto), **editor de precios por duración** (escribe `Season.priceCentsByDuration` — schema definido en F-039).
-- Server action ops-cancel (`cancelBookingByOps`) + UI: `stripe.refunds.create({ payment_intent })`, persistencia `Booking.stripeRefundId`, branch para bookings con credits aplicados (re-emit credit en lugar de cash refund — heredado de F-060 ledger). **Deferido de Sprint 3** durante el desglose: empaquetar programmatic + UI en el mismo sprint es más coherente con el resto del admin work.
-- Row action sobre bookings con `autoCompletedAt != null` (auto-flippeadas por F-062): permitir re-flip a `CANCELLED_BY_USER` con `cancelledByUserAt = startDateTime` (no-show real, sin emitir credit).
-- Email cancelación ops en locale del booker.
-- F-065 ticket pre-definido abajo (instructor feedback per booking).
-- **Decisión pendiente:** tip split policy (afecta `Tip` table flow).
+> Sprint más grande del MVP: self-service del instructor + panel ops/admin. `/instructor` y `/admin` viven **fuera de `[locale]`** (EN-only, ver Routing conventions). 3 tickets **blocked-in-progress** (⛔ F-074 / F-075 GCal, F-082 Tip) dependen de setup externo del owner (env + OAuth consent + TWINT) — AC escrito, no mergeable hasta provisionar el blocker. Buildable-now core (10): F-071, F-072, F-073, F-065, F-076, F-077, F-078, F-079, F-080, F-081. Si desborda 2 semanas, split en **4a** (instructor + admin core) / **4b** (GCal + Tip al desbloquearse).
+>
+> **D-TIP resuelto (desglose 2026-05-29):** instructor recibe el **100%** de las propinas en MVP (sin split escuela). Revisable cuando entre un segundo coach.
+
+#### Sequencing Sprint 4
+
+```
+Instructor:  F-071 ─┬─ F-072 (availability CRUD)
+                    ├─ F-073 (profile + Blob photo) ── F-074 ⛔ ── F-075 ⛔
+                    └─ F-065 (feedback)
+Admin:       F-076 ─┬─ F-077 (bookings view) ── F-078 (ops-cancel) ── F-079 (cancel day)
+                    └─ F-080 (pricing editor)
+             F-081 (no-show re-flip; después de F-077 + F-071)
+Tip:         F-082 ⛔ (paralelo, blocked tail)
+```
+
+Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel). La cadena instructor **F-071 → F-073 → F-074 → F-075** corre en paralelo (tail blocked). ⛔ = blocked-in-progress.
+
+#### Tickets
+
+##### F-071 — Instructor agenda diaria (vista principal)
+
+- Sprint: 4 · Estado: backlog · Prioridad: P0
+- Depende de: F-020 (schema Booking/Instructor), F-068 (nav patterns)
+- Motivación: vista operativa diaria del instructor — qué clases tiene hoy/próximos días, attendees, estado. Punto de entrada del tree `/instructor`. Single-instructor MVP: el owner la usa cada mañana de pista.
+- AC routing/auth:
+  - [ ] `app/instructor/layout.tsx` + `app/instructor/page.tsx`. EN-only, fuera de `[locale]`.
+  - [ ] Gating server-side en el layout: `auth()` → `session.user.roles.includes('instructor')`, else `redirect('/login')` / 403. Nunca confiar en rol client-side.
+  - [ ] Resolver `instructorId` vía `session.user` → `Instructor.userId`.
+- AC UI:
+  - [ ] Agenda agrupada por día (default: hoy + próximos 7 días). Cada row: time + duration, attendees (count + nombres), language, status badge, total CHF.
+  - [ ] Solo bookings `CONFIRMED` / `COMPLETED` / `PENDING_PAYMENT` del instructor; ocultar `CANCELLED_*` por defecto (toggle "show cancelled" opcional).
+  - [ ] Empty state por día sin clases (editorial, no genérico).
+  - [ ] Navegación de fecha: prev/next semana + "today".
+- Tests:
+  - Vitest: helper `getInstructorAgenda(instructorId, from, to)` — agrupado correcto, filtra status, ordena por `startDateTime`.
+  - Playwright: login instructor → agenda renderiza bookings seed del día; visitante anónimo → redirect login; user sin rol instructor → 403.
+- Notas:
+  - Read-only en este ticket. Acciones inline (feedback F-065, no-show re-flip F-081) montan sobre esta vista en sus propios tickets.
+
+##### F-072 — Instructor availability block management (CRUD)
+
+- Sprint: 4 · Estado: backlog · Prioridad: P0
+- Depende de: F-071, F-019 (AvailabilityBlock schema)
+- Motivación: el instructor define cuándo está disponible. Hoy `AvailabilityBlock` se siembra; el owner necesita crear/borrar ventanas sin tocar DB.
+- AC server:
+  - [ ] Server actions en `app/instructor/actions.ts`: `createAvailabilityBlock(input)`, `deleteAvailabilityBlock(id)`. Zod (start < end, sin solape con bloque existente del mismo instructor, dentro de `Season` activa).
+  - [ ] Verificar rol + ownership (`block.instructorId === session.user.instructor.id`).
+  - [ ] Rechazar delete si el bloque contiene bookings `CONFIRMED`/`PENDING_PAYMENT` (error i18n).
+  - [ ] `revalidatePath('/instructor')` + `/instructor/availability`.
+- AC UI:
+  - [ ] `app/instructor/availability/page.tsx`: lista de bloques futuros + form crear (date + start/end time, shadcn RHF + Zod) + delete inline (confirm dialog).
+- Tests:
+  - Vitest: solape rechazado, end<=start rechazado, delete con booking activo rechazado, happy create/delete.
+  - Playwright: crear bloque → aparece en lista; delete → desaparece.
+- Notas:
+  - Recurrencia (weekly recurring availability) fuera de scope MVP — single blocks. Recurring = F-XXX post-MVP si el owner lo pide.
+
+##### F-073 — Instructor profile edit + photo upload (Vercel Blob)
+
+- Sprint: 4 · Estado: backlog · Prioridad: P1
+- Depende de: F-071
+- Motivación: el instructor edita bio/specialties/languages/foto que alimentan Step 3 (F-022) + página de instructores (Sprint 5). Hoy la foto es estática (`/instructors/javi.png`, F-021); migrar a Vercel Blob para self-service.
+- AC server:
+  - [ ] `updateInstructorProfile(input)` en `app/instructor/actions.ts`: Zod (bio ≤2000, specialties `string[]`, languages `Locale[]` subset, active boolean). Rol + ownership.
+  - [ ] Photo upload vía Vercel Blob (`@vercel/blob` `put`): `uploadInstructorPhoto(file)` server action, valida mime (jpeg/png/webp) + size ≤5MB, persiste URL pública en `Instructor.photo`, borra blob anterior si existe.
+  - [ ] `revalidatePath('/instructor/profile')` + revalidar Step 3 / instructores.
+- AC infra:
+  - [ ] `BLOB_READ_WRITE_TOKEN` env documentado (Vercel auto-provee en deploy; local vía `vercel env pull`).
+- AC UI:
+  - [ ] `app/instructor/profile/page.tsx`: form bio + specialties (tag input) + languages (multi-select) + foto (preview + replace). shadcn.
+- Tests:
+  - Vitest: validación Zod, mime/size rechazo.
+  - Playwright: editar bio → persiste; upload foto → preview + URL Blob en DB.
+- Notas:
+  - Primer uso de Vercel Blob en el proyecto. Si el token no está provisionado, photo upload queda blocked-in-progress (el resto del profile edit funciona sin él).
+
+##### F-074 — Google Calendar OAuth connect + token encryption (ADR-007) ⛔
+
+- Sprint: 4 · Estado: backlog (blocked-in-progress) · Prioridad: P1
+- Depende de: F-073
+- Bloqueado por: `ENCRYPTION_KEY` env (32-byte base64) + Google OAuth consent screen → Production + scope `calendar.events` con offline access. Los `GOOGLE_ID/SECRET` actuales son login-only (Better Auth), sin scope de calendar.
+- Motivación: sincronizar bookings con el Google Calendar del instructor para que vea sus clases en su calendario personal y se bloquee el slot externamente (futuro buffer, ver F-023 nota).
+- AC crypto:
+  - [ ] `lib/calendar/crypto.ts`: `encryptToken(plain): string` / `decryptToken(cipher): string` AES-256-GCM con `ENCRYPTION_KEY`. IV aleatorio por cifrado, authTag concatenado. Unit-tested round-trip.
+  - [ ] `lib/calendar/README.md`: formato + proceso de rotación de key (ADR-007).
+- AC OAuth:
+  - [ ] Route handler `app/instructor/calendar/connect/route.ts` → Google OAuth consent con `access_type=offline` + `prompt=consent` (fuerza refresh_token), scope `https://www.googleapis.com/auth/calendar.events`.
+  - [ ] Callback `app/instructor/calendar/callback/route.ts`: intercambia code → refresh_token, lo **encripta** y persiste en `Instructor.googleRefreshToken`, set `calendarConnected = true`. State param anti-CSRF.
+  - [ ] `disconnectCalendar()` server action → borra `googleRefreshToken`, `calendarConnected = false`.
+- AC UI:
+  - [ ] Sección en `/instructor/profile` (o `/instructor/calendar`): estado conectado/desconectado + botón connect/disconnect.
+- Tests:
+  - Vitest: crypto round-trip + tamper authTag → throw.
+  - Playwright: skip si no hay credenciales (gated por env); happy path manual en runbook.
+- Notas:
+  - ⛔ No mergeable hasta provisionar env + consent. El código + crypto se pueden escribir y unit-testear; el OAuth E2E queda manual.
+  - Refresh token nunca en plain text ni en logs (security checklist).
+
+##### F-075 — Google Calendar event sync (insert/delete) ⛔
+
+- Sprint: 4 · Estado: backlog (blocked-in-progress) · Prioridad: P1
+- Depende de: F-074
+- Bloqueado por: hereda F-074.
+- Motivación: cuando un booking pasa a `CONFIRMED`, crear evento en el calendar del instructor; al cancelar, borrarlo. `Booking.googleEventId` ya en schema.
+- AC:
+  - [ ] `lib/calendar/sync.ts`: `insertEvent(booking)` → crea evento (summary, attendees, start/end en `Europe/Zurich`), persiste `Booking.googleEventId`. `deleteEvent(booking)` → borra por `googleEventId`, nullifica.
+  - [ ] Hook en F-044 (booking CONFIRMED post-webhook) → `insertEvent` best-effort (try/catch, `onError` stage `gcal_insert`, no rollback del booking).
+  - [ ] Hook en cancel flows (F-058 user-cancel, F-078 ops-cancel) → `deleteEvent` best-effort.
+  - [ ] Refresca access_token desde refresh_token (decrypt) en cada llamada; maneja `invalid_grant` → marca `calendarConnected=false` + `onError`.
+- Tests:
+  - Vitest: sync helpers con Google client mockeado — insert persiste id, delete nullifica, invalid_grant desconecta.
+  - Playwright: manual (cuenta Google real), en runbook.
+- Notas:
+  - ⛔ hereda blocker de F-074. Best-effort siempre: fallo de GCal nunca rompe booking/cancel.
+
+##### F-076 — Admin panel shell + instructor CRUD
+
+- Sprint: 4 · Estado: backlog · Prioridad: P0
+- Depende de: F-068 (nav patterns)
+- Motivación: panel ops del owner. CRUD de instructores para expansión multi-instructor (MVP: 1, pero el panel lo soporta).
+- AC routing/auth:
+  - [ ] `app/admin/layout.tsx` + `page.tsx`. EN-only, fuera de `[locale]`. Gating `session.user.roles.includes('admin')`, else 403/redirect.
+- AC CRUD:
+  - [ ] `app/admin/instructors/`: lista + crear (crea `User` con rol `instructor` + `Instructor` row en `$transaction`) + editar (active toggle, bio, languages) + soft-deactivate (`active=false`, nunca hard-delete).
+  - [ ] Server actions en `app/admin/actions.ts`, Zod, rol-gated.
+- Tests:
+  - Vitest: create instructor (transacción user+instructor), deactivate, rol rechazado.
+  - Playwright: admin crea instructor → aparece en lista; non-admin → 403.
+- Notas:
+  - Hard-delete prohibido — bookings/availability FK. Solo `active=false`.
+
+##### F-077 — Admin bookings view (all bookings, filtros)
+
+- Sprint: 4 · Estado: backlog · Prioridad: P0
+- Depende de: F-076
+- Motivación: el owner necesita ver TODAS las reservas (no solo su agenda como instructor) para soporte, ops-cancel, auditoría.
+- AC:
+  - [ ] `app/admin/bookings/page.tsx`: tabla paginada, filtros por status, rango de fecha, instructor, búsqueda por email/nombre booker.
+  - [ ] Cada row: booker, instructor, date/time, duration, status, total CHF, credits aplicados, link a detalle.
+  - [ ] Detalle `app/admin/bookings/[id]/page.tsx`: full info + attendees + payment + acciones (ops-cancel F-078, no-show re-flip F-081 montan aquí).
+- Tests:
+  - Vitest: query con filtros combinados + paginación.
+  - Playwright: filtrar por status → subset correcto; abrir detalle.
+- Notas:
+  - Read + navegación aquí; mutaciones en F-078/F-081.
+
+##### F-078 — Ops-cancel: cancelBookingByOps + Stripe refund + credit re-emit
+
+- Sprint: 4 · Estado: backlog · Prioridad: P0
+- Depende de: F-077, F-060 (ledger credits aplicados), F-044 (webhook/PI), ADR-008
+- Motivación: cuando la escuela falla (clima, instructor enfermo, fuerza mayor) → `CANCELLED_BY_OPS` con **cash refund** vía Stripe (ADR-008). Deferido de Sprint 3. Si el booking original usó credits, re-emitir credit en lugar de cash (hereda ledger F-060).
+- AC schema:
+  - [ ] Migración `<date>_booking_stripe_refund_id`: añadir `Booking.stripeRefundId String? @unique`.
+- AC server:
+  - [ ] `cancelBookingByOps(bookingId, reason?)` en `app/admin/actions.ts`. Rol admin. `$transaction`:
+    - Status → `CANCELLED_BY_OPS`.
+    - Si pagada con credit (`creditsAppliedCents > 0`): re-emitir `AccountCredit` (`reason=OPS_CANCEL`, mismo amount, expiry 1 año). No-op Stripe.
+    - Si pagada cash (`stripePaymentIntentId`): `stripe.refunds.create({ payment_intent })`, persistir `stripeRefundId`. Idempotente (Stripe rechaza double-refund mismo PI).
+    - Mixto: refund cash de la parte cobrada + re-emit credit de la parte credit.
+  - [ ] Dispatch email ops-cancel (booker locale) best-effort: referencia refund id o credit re-emitido (template ADR-008). `onError` stage `dispatch_ops_cancel_email`, no rollback.
+  - [ ] Hook `deleteEvent` (F-075) best-effort si calendar conectado.
+- AC UI:
+  - [ ] Botón "Cancel (ops refund)" en `app/admin/bookings/[id]` con confirm dialog que muestra el refund cash / credit re-emit antes de confirmar.
+- Tests:
+  - Vitest sobre `cancelBookingByOps` — 6 specs: cash refund happy, credit re-emit happy, mixto, idempotencia (re-cancel sin double-refund), rol rechazado, booking ya cancelada rechazada.
+  - Playwright: admin ops-cancel cash booking → status flip + refund id; credit-paid booking → credit row re-emitida.
+- Notas:
+  - `CreditReason.OPS_CANCEL` ya en enum (ADR-008, antes sin emisores) — ahora lo usa.
+  - Idempotencia vía `WebhookEvent` o el propio PI (ADR-006).
+
+##### F-079 — "Cancel day" batch modal + impact preview
+
+- Sprint: 4 · Estado: backlog · Prioridad: P1
+- Depende de: F-078
+- Motivación: cierre operativo (clima/avalancha) afecta TODAS las clases de un día. Cancelar una a una es lento y propenso a error. Batch con preview del impacto antes de ejecutar.
+- AC:
+  - [ ] Modal/page (selector de fecha + instructor opcional) → preview: lista de bookings afectadas, total cash refund, total credit re-emit, nº attendees.
+  - [ ] Confirmar → ejecuta `cancelBookingByOps` por cada booking (el refund Stripe es por-PI, no cabe en un solo `$transaction` DB). Reporta resultado por booking (success/fail), sin abortar el resto ante fallo parcial.
+  - [ ] Rol admin. Idempotente (re-run salta las ya canceladas).
+- Tests:
+  - Vitest: preview agrega correctamente; batch ejecuta N cancels, reporta fallos parciales.
+  - Playwright: cancel day con 2 bookings seed → preview muestra 2 → confirma → ambas `CANCELLED_BY_OPS`.
+- Notas:
+  - Fallos parciales tolerados — el owner reintenta los que fallaron (idempotente).
+
+##### F-080 — Pricing editor (Season.priceCentsByDuration)
+
+- Sprint: 4 · Estado: backlog · Prioridad: P1
+- Depende de: F-076, F-039 (schema priceCentsByDuration)
+- Motivación: el owner ajusta precios por duración sin tocar DB/seed. Escribe el JSON `Season.priceCentsByDuration` (D-PRC).
+- AC:
+  - [ ] `app/admin/pricing/page.tsx`: form con 4 inputs (ONE_HOUR, TWO_HOURS, INTENSIVE, FULL_DAY) en CHF (display) → cents (store). Lee Season activa.
+  - [ ] `updateSeasonPricing(input)` server action: Zod (int >0, cents), rol admin, escribe `Season.priceCentsByDuration`. Revalida Step 1 + pricing page.
+  - [ ] Mostrar valores actuales + preview formateado `Intl.NumberFormat('de-CH', { currency: 'CHF' })`.
+- Tests:
+  - Vitest: validación (negativo/float rechazado), persiste cents correctos.
+  - Playwright: editar precio → Step 1 refleja nuevo precio.
+- Notas:
+  - Sin tabla nueva — edita el JSON existente (F-039). Money siempre en cents server-side.
+
+##### F-081 — No-show re-flip (autoCompletedAt → CANCELLED_BY_USER)
+
+- Sprint: 4 · Estado: backlog · Prioridad: P2
+- Depende de: F-062 (autoCompletedAt), F-077 / F-071
+- Motivación: F-062 auto-flippea bookings pasadas a `COMPLETED` (optimista). Si fue no-show real, el owner re-flippea a `CANCELLED_BY_USER` con `cancelledByUserAt = startDateTime`, **sin emitir credit** (forfeit alineado F-039b).
+- AC:
+  - [ ] Row action (admin bookings F-077 + agenda instructor F-071) visible solo si `autoCompletedAt != null`.
+  - [ ] `markNoShow(bookingId)` server action: rol admin/instructor + ownership, status → `CANCELLED_BY_USER`, `cancelledByUserAt = startDateTime`, sin `AccountCredit`. Revalida.
+- Tests:
+  - Vitest: re-flip solo si `autoCompletedAt != null`, no emite credit, rol rechazado.
+  - Playwright: booking auto-completada → row action no-show → status flip, sin credit.
+- Notas:
+  - Inverso del optimismo de F-062. No email al booker (decisión interna).
+
+##### F-082 — Tip flow (post-class tip, instructor keeps 100%) ⛔
+
+- Sprint: 4 · Estado: backlog (blocked-in-progress) · Prioridad: P2
+- Depende de: F-062 (COMPLETED), F-045 (email infra)
+- Bloqueado por: `INSTRUCTOR_TIP_URL` env (TWINT / formalización empresa). **D-TIP resuelto: instructor 100%** (sin split escuela en MVP) — elimina el blocker de política; queda el de env/medio de pago.
+- Motivación: permitir propina post-clase. Email tras `COMPLETED` con CTA de tip; pago → `Tip` row. El instructor recibe el 100%.
+- AC:
+  - [ ] Template `lib/email/tip-request.tsx`: post-COMPLETED, CTA al flujo de tip (Stripe Payment Element o `INSTRUCTOR_TIP_URL` TWINT externo — decidir al desbloquear).
+  - [ ] Si Stripe: `createTipIntent(bookingId, amountCents)` → PI con `metadata.kind=tip`; webhook F-044 branch `kind=tip` → crea `Tip` row (`amountCents`, `stripePaymentIntentId`, `paidAt`, `instructorId`, `requestEmailSentAt`). Instructor 100% (sin fee escuela).
+  - [ ] Dispatch tip-request email vía cron post-COMPLETED (fold en cron F-048; Vercel Pro = sin cap de crons).
+- Tests:
+  - Vitest: webhook branch crea Tip, idempotente; instructor recibe el full amount.
+  - Playwright: manual (requiere Stripe + tip URL).
+- Notas:
+  - ⛔ No mergeable hasta `INSTRUCTOR_TIP_URL` + decisión Stripe-vs-TWINT.
+  - Si el owner prefiere TWINT externo (no Stripe), el `Tip` model (Stripe-PI-based) necesitaría revisión — confirmar al desbloquear.
 
 #### Tickets pre-definidos
 
@@ -1575,7 +1797,7 @@ Critical path: **F-057 + F-067 (paired PR) → F-058 + F-063 → F-059 → F-060
 | Ref     | Decisión                           | Bloquea                           | Acción                               |
 | ------- | ---------------------------------- | --------------------------------- | ------------------------------------ |
 | D-PRC   | Precios por duración               | ✅ Resuelto (planning 2026-05-19): valores iniciales `{ONE_HOUR:11000, TWO_HOURS:20000, INTENSIVE:38500, FULL_DAY:50000}` CHF cents VAT-inclusive en `Season.priceCentsByDuration` (F-039). Admin editor en Sprint 4. | — |
-| D-TIP   | Tip split policy                   | Sprint 4 (flujo `Tip`)            | Owner define antes de Sprint 4       |
+| D-TIP   | Tip split policy                   | ✅ Resuelto (desglose 2026-05-29): instructor recibe el **100%** en MVP (sin split escuela). Flujo `Tip` en F-082, blocked-in-progress por `INSTRUCTOR_TIP_URL`. Revisable con segundo coach. | — |
 | D-LEG   | Legal review general T&C + privacy + cancelación split (ADR-008) | Producción (no Sprint 1-3) | Contratar bufete antes de Sprint 5. Política de cancelación ya **no** es el bloqueante específico — pasó a cash/credit/forfeit en F-039b. |
 | D-LOGO  | Logo + hero photography            | Sprint 5 (landing)                | Owner produce antes de Sprint 5      |
 | D-PLACE | Google Place ID                    | Sprint 5 (email post-clase CTA)   | Confirmar perfil escuela en Sprint 5 |
