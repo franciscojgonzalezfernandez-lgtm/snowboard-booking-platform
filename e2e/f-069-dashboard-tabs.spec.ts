@@ -254,5 +254,12 @@ test.describe("F-069 — Dashboard tabs", () => {
         .getByTestId("dashboard-bookings-upcoming")
         .getByTestId("dashboard-booking-link"),
     ).toHaveCount(1);
+
+    // Upcoming keeps Add to calendar (ICS) — only Past drops it.
+    await expect(
+      page
+        .getByTestId("dashboard-bookings-upcoming")
+        .getByTestId("dashboard-booking-ics"),
+    ).toHaveCount(1);
   });
 });

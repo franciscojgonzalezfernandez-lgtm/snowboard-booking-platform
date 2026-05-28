@@ -100,6 +100,15 @@ export function BookingRowItem({
             {t("resume_payment")}
           </Link>
         ) : null}
+        {kind === "upcoming" ? (
+          <a
+            href={`/api/booking/${booking.id}/ics`}
+            data-testid="dashboard-booking-ics"
+            className="text-xs font-bold uppercase tracking-[0.18em] underline-offset-4 hover:underline"
+          >
+            {t("add_to_calendar")} ↓
+          </a>
+        ) : null}
         {kind === "upcoming" || kind === "past" ? (
           <Link
             href={`/reservar/exito/${booking.id}`}
