@@ -1145,34 +1145,34 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
 
 ##### F-058 — User-cancel flow (48h window, modal, credit emission)
 
-- Sprint: 3 · Estado: backlog · Prioridad: P0
+- Sprint: 3 · Estado: done · Prioridad: P0
 - Depende de: F-039b, F-057, F-063
 - Motivación: política F-039b está establecida en T&C (F-040) y emails (F-045), pero falta el camino de usuario que la ejecuta desde dashboard. Sin esto, owner debe cancelar manualmente desde Stripe/admin y emitir credits a mano — no escala. F-058 cierra el loop self-service.
 - AC server:
-  - [ ] Server action `cancelBookingByUser(bookingId: string)` en `app/[locale]/dashboard/actions.ts` (`'use server'`). Wrapper thin que resuelve `session = await auth.api.getSession(headers())` y delega en `cancelBookingByUserWith(deps, input)` en `lib/booking/cancel.ts` (lógica pura con deps explícitas — prisma, now, session — para testear sin red).
-  - [ ] Validación previa: booking pertenece a `session.user.id` (rechaza con `403 forbidden` si no), status actual ∈ `{CONFIRMED, PENDING_PAYMENT}` (rechaza con `409 conflict` para otros estados, incl. ya cancelada).
-  - [ ] Cálculo ventana: `hoursUntilStart = (startDateTime - now) / 3600s`. Branch:
-    - `hoursUntilStart >= 48` → **credit path**. `$transaction`: `Booking.update` (`status=CANCELLED_BY_USER`, `cancelledByUserAt=now`) + `AccountCredit.create` (`amountCents = booking.totalPriceCents`, `reason=USER_CANCEL`, `status=ACTIVE`, `expiresAt = now + 365d`, `sourceBookingId = bookingId`, `userId = session.user.id`).
-    - `hoursUntilStart < 48` → **forfeit path**. Sólo `Booking.update` con `status` + `cancelledByUserAt`. Sin credit.
-  - [ ] **Slot release**: ningún cambio adicional — booking engine (F-022) ya excluye `CANCELLED_BY_*` de availability queries. Test de regresión verifica que el slot vuelve a aparecer post-cancel.
-  - [ ] **Lock against double-cancel**: `Booking.update` con `where: { id, status: { in: ['CONFIRMED', 'PENDING_PAYMENT'] } }`. Si concurrent click marca primero, segundo update afecta 0 filas → throw `BookingAlreadyCancelled` con HTTP 409.
-  - [ ] Post-transaction (fuera del `$transaction` para no atrapar errores de email en la BD): dispatch emails F-063 vía Resend. Credit path → `cancellation-user-credit.tsx`. Forfeit path → `cancellation-user-forfeit.tsx`. Ambos branches → `cancellation-ops-notif.tsx` al owner. Cada send con `idempotencyKey = cancel-${bookingId}-${variant}-${recipient}`.
+  - [x] Server action `cancelBookingByUser(bookingId: string)` en `app/[locale]/dashboard/actions.ts` (`'use server'`). Wrapper thin que resuelve `session = await auth.api.getSession(headers())` y delega en `cancelBookingByUserWith(deps, input)` en `lib/booking/cancel.ts` (lógica pura con deps explícitas — prisma, now, session — para testear sin red).
+  - [x] Validación previa: booking pertenece a `session.user.id` (rechaza con `FORBIDDEN` si no), status actual ∈ `{CONFIRMED, PENDING_PAYMENT}` (rechaza con `ALREADY_CANCELLED` para otros estados, incl. ya cancelada). Errores como union de strings en el result (la action no lanza HTTP — la UI mapea a toast).
+  - [x] Cálculo ventana: `hoursUntilStart = (startDateTime - now) / 3600s`. Branch:
+    - `hoursUntilStart >= 48` **y** booking `CONFIRMED` (pagada) → **credit path**. `$transaction`: `Booking.updateMany` (`status=CANCELLED_BY_USER`, `cancelledByUserAt=now`) + `AccountCredit.create` (`amountCents = booking.totalPriceCents`, `reason=USER_CANCEL`, `status=ACTIVE`, `expiresAt = now + 365d`, `sourceBookingId = bookingId`, `userId = booking.bookerId`).
+    - resto (incl. `<48h` o booking `PENDING_PAYMENT`) → **forfeit path**. Sólo `Booking.updateMany` con `status` + `cancelledByUserAt`. Sin credit.
+  - [x] **Slot release**: el engine (F-022) ya excluye `CANCELLED_BY_*`; la action busta los tags `availability:*` (root + duration + date + month) para que el slot reaparezca sin esperar revalidación natural.
+  - [x] **Lock against double-cancel**: `Booking.updateMany` con `where: { id, status: { in: ['CONFIRMED', 'PENDING_PAYMENT'] } }`. Si concurrent click marca primero, segundo writer matchea 0 filas → `ALREADY_CANCELLED` (en el credit path la `$transaction` aborta antes de mintear el credit).
+  - [x] Post-transaction (fuera del `$transaction`): dispatch emails F-063 vía `sendCancellationEmails`. Credit path → `cancellation-user-credit.tsx`. Forfeit path → `cancellation-user-forfeit.tsx`. Ambos → `cancellation-ops-notif.tsx`. Idempotency keys gestionadas por F-063. Fallo de email se reporta a Sentry y **no** revierte la cancelación.
 - AC UI:
-  - [ ] Nuevo client component `cancel-modal.tsx` montado desde botón `Cancel` en cada Upcoming row de F-057 (shadcn `Dialog`, `useTransition`).
-  - [ ] Modal header: "Cancel this lesson?". Body branch por `hoursUntilStart`:
-    - `≥48h` → "You're cancelling more than 48 hours before the lesson. You'll receive a CHF {amount} credit valid for one year. The credit can be applied to any future booking at checkout."
-    - `<48h` → "You're cancelling less than 48 hours before the lesson. Per our policy, no refund or credit will be issued. If there's an exception (illness, family emergency), please call us before confirming: {phone}."
-  - [ ] Footer: `Cancel` (close modal) + `Confirm cancellation` (shadcn `destructive` variant). Confirm → server action → modal closes → `revalidatePath('/dashboard')` → toast `sonner` "Booking cancelled".
-  - [ ] Phone number en copy `<48h`: hardcoded `+41 76 638 18 70` en `messages/{en,de,es}.json`. F-052 (Sprint 5) extrae constante a `lib/contact/phone.ts` y reemplaza usages — este ticket no se adelanta.
-  - [ ] i18n keys `dashboard.cancel.{button, modal_title, body_credit, body_forfeit, confirm, dismiss, toast_success, error_already_cancelled}` × 3 locales. `body_credit` interpola `{amount}`. `body_forfeit` interpola `{phone}`.
+  - [x] Nuevo client component `cancel-modal.tsx`. Montado vía menú de acciones (shadcn `DropdownMenu`, decisión de scope: three-dot por-row, deja sitio a reschedule/contact en futuro) sólo en filas Upcoming. `Dialog` + `useTransition` + toast `sonner`.
+  - [x] Modal header `modal_title`. Body branch por `earnsCredit` (calculado server-side en `booking-row.tsx`): credit vs forfeit copy.
+  - [x] Footer: `dismiss` (cierra) + `confirm` (variant `destructive`). Confirm → server action → cierra modal → `router.refresh()` (+ la action hace `revalidatePath('/[locale]/dashboard','page')`) → toast `toast_success`.
+  - [x] Phone number en copy `<48h`: `+41 76 638 18 70`. Vive como constante en `cancel-modal.tsx` (locale-independiente, DRY) e interpola en `body_forfeit`; F-052 (Sprint 5) la centraliza en `lib/contact/phone.ts`. (Desviación menor del spec, que decía meterla en `messages/*.json` — la constante única es preferible a triplicarla.)
+  - [x] i18n keys `dashboard.cancel.{button, modal_title, body_credit, body_forfeit, confirm, dismiss, toast_success, error_already_cancelled}` × 3 locales + extras `actions_label` (aria del three-dot) y `error_generic` (toast fallback). `body_credit` interpola `{amount}` (ya formateado con CHF), `body_forfeit` interpola `{phone}`.
 - AC schema:
-  - [ ] Añadir `Booking.cancellationEmailSentAt DateTime?` y `Booking.opsCancellationNotifSentAt DateTime?` (migración compartida con F-063 si se ordena en el mismo PR; standalone si no). Sirve para idempotency.
+  - [x] `Booking.cancellationEmailSentAt` + `Booking.opsCancellationNotifSentAt` ya aterrizaron con F-063 (migración `20260526100000_booking_cancellation_email_sent_at`). F-058 no añade migración.
 - Tests:
-  - Vitest `lib/booking/cancel.test.ts` — unit sobre `cancelBookingByUserWith`. 6 specs: happy `≥48h` emite credit con `amountCents` correcto y `expiresAt` exacto; happy `<48h` sin credit; boundary `hoursUntilStart=48.0` cae en credit (`>=` no `>`); boundary `47.999` cae en forfeit; rechaza booking ajeno (`session.user.id !== booking.bookerId`); rechaza booking ya `CANCELLED_BY_USER`.
-  - Playwright `e2e/f-058-cancel-flow.spec.ts` × 1 locale (en) — seed booking `date=today+10` → click `Cancel` → asserta modal copy credit branch → confirm → row desaparece de Upcoming, aparece en Cancelled con badge "Credit issued: CHF 110.00".
+  - [x] Vitest `lib/booking/cancel.test.ts` — 7 specs sobre `cancelBookingByUserWith`: happy `≥48h` emite credit con `amountCents` correcto y `expiresAt` exacto; happy `<48h` sin credit; boundary `48.0h` cae en credit (`>=`); boundary `47.999h` cae en forfeit; rechaza booking ajeno (FORBIDDEN); rechaza booking ya `CANCELLED_BY_USER`; **+1 extra**: `PENDING_PAYMENT` nunca emite credit aunque esté ≥48h (guard antifraude).
+  - [x] Playwright `e2e/f-058-cancel-flow.spec.ts` × 1 locale (en) — seed booking `2027-01-15` → menú acciones → Cancel → asserta modal copy credit branch → confirm → row sale de Upcoming, entra a Cancelled con badge "Credit issued"; verifica DB (`CANCELLED_BY_USER` + `AccountCredit` ACTIVE). **No ejecutado localmente** (el único `DATABASE_URL` local apunta a Neon main/prod; correrlo escribiría en prod + mandaría un ops email real). Corre seguro en preview/CI contra la branch Neon dev.
 - Notas:
-  - **Forbid raw SQL** — todo vía Prisma `$transaction`.
+  - **Forbid raw SQL** — todo vía Prisma `$transaction` / `updateMany`.
+  - **Desviación antifraude (importante):** el spec ramificaba sólo por la ventana 48h, pero emitir credit por una `PENDING_PAYMENT` (nunca pagada) acuñaría CHF gratis vía llamada directa a la server action. El credit ahora exige `status === CONFIRMED`. La UI sólo muestra Cancel en filas Upcoming (CONFIRMED), así que el guard es red de seguridad server-side.
   - **No** UI de "Reason for cancellation" — owner no la pidió y añade fricción CRO. Si se quiere para analytics futuro, F-XXX post-MVP.
+  - Toaster `sonner` montado por primera vez en `app/layout.tsx` (estaba el componente pero sin montar) — habilita toasts globales para toda la app.
   - Ops-cancel (programmatic + UI) queda fuera de este sprint — pero `cancelBookingByOps` (Sprint 4) reutilizará el mismo patrón de `AccountCredit.create` con `reason=OPS_CANCEL` + Stripe refund branch.
 
 ##### F-059 — Credit aside in dashboard + apply-at-checkout deep link

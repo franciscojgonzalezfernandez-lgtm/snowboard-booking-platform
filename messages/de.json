@@ -341,6 +341,18 @@
     "personal_cancel": "Abbrechen",
     "personal_phone_updated": "Telefonnummer aktualisiert",
     "personal_phone_removed": "Telefonnummer entfernt",
-    "personal_error_invalid": "Gib eine gültige Telefonnummer ein"
+    "personal_error_invalid": "Gib eine gültige Telefonnummer ein",
+    "cancel": {
+      "actions_label": "Buchungsaktionen",
+      "button": "Stunde stornieren",
+      "modal_title": "Diese Stunde stornieren?",
+      "body_credit": "Du stornierst mehr als 48 Stunden vor der Stunde. Du erhältst ein Guthaben über {amount}, das ein Jahr gültig ist. Das Guthaben kannst du bei jeder zukünftigen Buchung im Checkout einlösen.",
+      "body_forfeit": "Du stornierst weniger als 48 Stunden vor der Stunde. Gemäss unseren Bedingungen wird kein Guthaben oder keine Rückerstattung gewährt. Bei einer Ausnahme (Krankheit, familiärer Notfall) ruf uns bitte vor dem Bestätigen an: {phone}.",
+      "confirm": "Stornierung bestätigen",
+      "dismiss": "Stunde behalten",
+      "toast_success": "Buchung storniert",
+      "error_already_cancelled": "Diese Buchung wurde bereits storniert.",
+      "error_generic": "Etwas ist schiefgelaufen. Bitte versuche es erneut."
+    }
   }
 }
