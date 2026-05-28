@@ -1235,18 +1235,18 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
 
 ##### F-061 — Cron mensual: expiración de créditos
 
-- Sprint: 3 · Estado: backlog · Prioridad: P1
+- Sprint: 3 · Estado: done · Prioridad: P1
 - Depende de: F-058
 - Motivación: credits con `expiresAt < now` siguen `ACTIVE` en schema si nadie los flipea. Aside (F-059) ya filtra por `expiresAt > now` en query, pero el badge `status=ACTIVE` queda inconsistente y bloquea analytics futuros. Cron mensual silencioso flipea status.
 - AC:
-  - [ ] **Fold en cron existente, no slot nuevo**: F-048 (daily emails) y F-067 (15min pending sweep) ya consumen los 2/2 slots Hobby. Esta función vive dentro de `lib/cron/expire-pending.ts` como branch adicional gateada por `now.getUTCDate() === 1 && now.getUTCHours() === 0` (primera ejecución del mes a las 00:00 UTC), o alternativamente en `booking-emails.ts` con la misma guard. Decisión final al implementar.
-  - [ ] Query: `prisma.accountCredit.updateMany({ where: { status: 'ACTIVE', expiresAt: { lt: now } }, data: { status: 'EXPIRED' } })`. Idempotente — re-run no afecta filas ya `EXPIRED`.
-  - [ ] Sin re-ejecución mensual el problema es: durante el primer mes la query corre ~96 veces/día (gated dentro del cron de 15min). Coste despreciable, idempotente, no escala mal — tabla `AccountCredit` es pequeña en MVP.
-  - [ ] **No email**. Decisión explícita — el aside ya muestra `expiresAt` con warning amber a 30d. Reduce email volume.
-  - [ ] Sentry breadcrumb con `count` de filas flippeadas para observability.
-- Tests: Vitest `lib/credit/expire.test.ts` con `vi.useFakeTimers` — seed credits con `expiresAt` ±1min de `now` → boundary `expiresAt < now` flippea, `expiresAt >= now` no flippea; segunda invocación no re-flippea.
+  - [x] ~~Fold en cron existente~~ → **Handler standalone** `app/api/cron/expire-credits/route.ts` con schedule `0 0 1 * *` (primero de mes, 00:00 UTC). **Desviación:** el owner upgradeó a Vercel Pro, así que el cap de 2 crons Hobby ya no aplica y vamos al handler propio "como originalmente planificado" (ver Notas). Auth `Authorization: Bearer ${CRON_SECRET}` igual que F-048/expire-pending.
+  - [x] Query: `prisma.accountCredit.updateMany({ where: { status: 'ACTIVE', expiresAt: { lt: now } }, data: { status: 'EXPIRED' } })` en `lib/credit/expire.ts` (`runExpireCreditsCron`). Idempotente — el status guard `ACTIVE` hace que el re-run no afecte filas ya `EXPIRED`.
+  - [x] ~~Re-ejecución ~96×/día~~ ya no aplica — handler mensual dedicado corre 1×/mes. Coste trivial.
+  - [x] **No email**. El aside ya muestra `expiresAt` con warning amber a 30d.
+  - [x] Sentry breadcrumb con `expired` count (sólo cuando `expired > 0`).
+- Tests: [x] Vitest `lib/credit/expire.test.ts` con `vi.useFakeTimers` — boundary `expiresAt < now` flippea, `expiresAt === now` no (strictly older), segunda invocación no re-flippea, ISO timestamp. 5/5.
 - Notas:
-  - Vercel Hobby crons: 2/2 con F-048 + F-067. Si el owner upgradea a Pro antes de cerrar Sprint 3, F-061 puede ir a su propio handler con schedule `0 0 1 * *` como originalmente planificado.
+  - **Standalone handler en Vercel Pro** (decisión de implementación): 3 crons ahora (booking-emails diario, expire-pending 15min, expire-credits mensual). El path de "fold con guard `getUTCDate()===1`" descrito en el AC original era el plan Hobby; descartado al estar en Pro.
 
 ##### F-062 — Extensión F-048: COMPLETED auto-flip (no-show / forgot-to-mark sweep)
 
