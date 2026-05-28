@@ -353,6 +353,16 @@
       "toast_success": "Booking cancelled",
       "error_already_cancelled": "This booking was already cancelled.",
       "error_generic": "Something went wrong. Please try again."
+    },
+    "credits": {
+      "title": "Your credits",
+      "total": "Total available: {amount}",
+      "nearest_expiry": "Nearest expiration: {date}",
+      "expires": "Expires {date}",
+      "expires_soon": "Expires {date} — use it soon",
+      "source_cancellation": "From cancellation on {date}",
+      "apply_cta": "Apply at checkout",
+      "empty": "No credits available"
     }
   }
 }

@@ -1177,21 +1177,23 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
 
 ##### F-059 — Credit aside in dashboard + apply-at-checkout deep link
 
-- Sprint: 3 · Estado: backlog · Prioridad: P0
+- Sprint: 3 · Estado: done · Prioridad: P0
 - Depende de: F-058
 - Motivación: una vez F-058 emite credits, el usuario necesita visibilidad clara del saldo + entry point al checkout que los aplica. Sin aside, los credits están "ocultos" en cancelled rows; CRO pierde recompra.
 - AC:
-  - [ ] `<CreditAside>` server component en `dashboard/page.tsx`. Layout: aside sticky `lg:` (`top-24`) sobre el grid de sections; mobile colapsa a top-of-page card.
-  - [ ] Query: `prisma.accountCredit.findMany({ where: { userId, status: 'ACTIVE', expiresAt: { gt: now } }, orderBy: { expiresAt: 'asc' } })`.
-  - [ ] Header card: `Total available: CHF X.XX` (sum amountCents formateado vía `formatChf`) + microtext "Nearest expiration: YYYY-MM-DD".
-  - [ ] Lista per credit: `amountCents` formateado + microtext "From cancellation on YYYY-MM-DD" + microtext "Expires YYYY-MM-DD" (warning amber si `expiresAt - now < 30d`).
-  - [ ] CTA primario `Apply at checkout` → link `/reservar?credit=auto` (F-060 consume el query param; `auto` = sugerir todos los credits aplicables en Step 4, oldest-first).
-  - [ ] Empty state cuando `credits.length === 0`: aside oculto en `lg:`, microtext "No credits available" debajo del header del dashboard. Decisión deliberada — mostrar aside vacío rompe el grid.
-  - [ ] i18n keys `dashboard.credits.{title, total, nearest_expiry, expires, expires_soon, source_cancellation, apply_cta, empty}` × 3 locales.
-- Tests: Playwright `e2e/f-059-credit-aside.spec.ts` × 1 locale — seed 0/1/2 credits → asserta empty state / 1 row / 2 rows + total correcto + link `/reservar?credit=auto` presente.
+  - [x] `<CreditAside>` server component en `dashboard/_components/credit-aside.tsx`, montado en `dashboard/page.tsx`. Layout: aside sticky `lg:top-24` en la 2ª columna de un grid `lg:grid-cols-[minmax(0,1fr)_18rem]`; mobile colapsa a top-of-page card (aside primero en DOM, reordenado a la derecha vía `lg:order-2`).
+  - [x] Query: `prisma.accountCredit.findMany({ where: { userId, status: 'ACTIVE', expiresAt: { gt: now } }, orderBy: { expiresAt: 'asc' }, select: { id, amountCents, expiresAt, createdAt } })` — query dedicada en el `Promise.all` existente (separada de la query keyed-by-source que alimenta `cancelled-meta`).
+  - [x] Header card: `Total available: CHF X.XX` (sum amountCents formateado vía `formatChf`) + microtext "Nearest expiration: YYYY-MM-DD" (= primer credit, ya ordenado asc).
+  - [x] Lista per credit: `amountCents` formateado + microtext "From cancellation on YYYY-MM-DD" (= `credit.createdAt`, que coincide con el momento de cancelación que acuña el credit) + microtext "Expires YYYY-MM-DD" (warning amber `text-amber-600` si `expiresAt - now < 30d`).
+  - [x] CTA primario `Apply at checkout` → `<Link href="/reservar?credit=auto">` (i18n-aware, prefija locale). F-060 consume el query param.
+  - [x] Empty state cuando `activeCredits.length === 0`: no se renderiza el grid (single column, evita gutter vacío), microtext "No credits available" (`data-testid=dashboard-credits-empty`) debajo del header.
+  - [x] i18n keys `dashboard.credits.{title, total, nearest_expiry, expires, expires_soon, source_cancellation, apply_cta, empty}` × 3 locales.
+- Tests: [x] Playwright `e2e/f-059-credit-aside.spec.ts` × 1 locale (en) — seed 0/1/2 credits → asserta empty state / 1 row / 2 rows + total correcto + link `/reservar?credit=auto` presente. **Ejecutado local contra Neon dev** (dev server en :3000 con `BETTER_AUTH_URL` alineado; 3/3 verde). Verificación visual desktop+mobile vía screenshot (aside derecha / top-card, amber "use it soon" OK).
 - Notas:
   - **No** "apply specific credit" deep link (`/reservar?credit=<id>`). `auto` es suficiente para CRO; F-060 selecciona oldest-first automáticamente y user puede ajustar en Step 4.
   - `LOCKED` y `EXPIRED` credits no se muestran. `USED` tampoco — usuario ya los consumió, sin valor informativo en este aside (queda en booking detail post-MVP).
+  - **Desviación menor:** "From cancellation on" usa `credit.createdAt` en vez de joinar el source booking — el credit se acuña en la misma transacción que la cancelación (F-058), así que la fecha coincide y evita un join extra.
+  - **Desviación menor:** `dashboard/page.tsx` pasó de single-column `max-w-3xl` a `lg:max-w-5xl` con grid sólo cuando hay credits; sin credits mantiene `max-w-3xl` para no ensanchar el layout innecesariamente. Sections + account se extrajeron a una const `content` reutilizada en ambas ramas.
 
 ##### F-060 — Checkout credit redemption (multi-select + "Use all" + zero-charge path)
 
