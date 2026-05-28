@@ -336,6 +336,25 @@
     "personal_name": "Name",
     "personal_email": "Email",
     "personal_phone": "Phone",
-    "personal_phone_missing": "Not provided"
+    "personal_phone_missing": "Not provided",
+    "personal_phone_placeholder": "+41 76 123 45 67",
+    "personal_edit": "Edit",
+    "personal_save": "Save",
+    "personal_cancel": "Cancel",
+    "personal_phone_updated": "Phone updated",
+    "personal_phone_removed": "Phone removed",
+    "personal_error_invalid": "Enter a valid phone number",
+    "cancel": {
+      "actions_label": "Booking actions",
+      "button": "Cancel lesson",
+      "modal_title": "Cancel this lesson?",
+      "body_credit": "You're cancelling more than 48 hours before the lesson. You'll receive a {amount} credit valid for one year. The credit can be applied to any future booking at checkout.",
+      "body_forfeit": "You're cancelling less than 48 hours before the lesson. Per our policy, no refund or credit will be issued. If there's an exception (illness, family emergency), please call us before confirming: {phone}.",
+      "confirm": "Confirm cancellation",
+      "dismiss": "Keep lesson",
+      "toast_success": "Booking cancelled",
+      "error_already_cancelled": "This booking was already cancelled.",
+      "error_generic": "Something went wrong. Please try again."
+    }
   }
 }

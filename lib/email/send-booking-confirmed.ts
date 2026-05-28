@@ -242,7 +242,7 @@ function buildPlainText(args: {
     `${copy.timeLabel}: ${args.timeLabel}`,
     `${copy.durationLabel}: ${args.durationLabel}`,
     `${copy.instructorLabel}: ${args.instructorName}`,
-    copy.attendeesLabel(args.attendeesCount),
+    `${copy.attendeesLabel}: ${copy.attendeesValue(args.attendeesCount)}`,
     `${copy.totalLabel}: ${args.totalLabel} (${copy.vatNote})`,
     "",
     copy.calendarNote,

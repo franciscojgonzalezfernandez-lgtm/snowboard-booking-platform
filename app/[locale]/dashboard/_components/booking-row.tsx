@@ -2,6 +2,8 @@ import { BookingStatus } from "@prisma/client";
 import { getTranslations } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
+import { CREDIT_WINDOW_HOURS } from "@/lib/booking/cancel";
+import { setUtcTime, startOfUtcDay } from "@/lib/booking-engine/time";
 import { formatChf } from "@/lib/pricing/format";
 
 import {
@@ -11,6 +13,7 @@ import {
 } from "../_lib/format";
 import type { BookingRow as BookingRowData, CreditRow, SectionKind } from "../_lib/group";
 import { CancelledMeta } from "./cancelled-meta";
+import { CancelModal } from "./cancel-modal";
 
 type Props = {
   booking: BookingRowData;
@@ -32,6 +35,15 @@ export function BookingRowItem({
   const statusLabel = t(STATUS_LABEL_KEY[booking.status]);
   const durationLabel = tStep1(DURATION_LABEL_KEY[booking.duration]);
   const instructorName = booking.instructor.user.name ?? "—";
+
+  // Upcoming rows are always CONFIRMED (paid), so the credit branch is driven
+  // purely by the 48h window. The server action re-checks both; this only
+  // chooses the modal copy.
+  const canCancel = kind === "upcoming";
+  const startDateTime = setUtcTime(startOfUtcDay(booking.date), booking.anchorTime);
+  const hoursBeforeStart =
+    (startDateTime.getTime() - Date.now()) / (60 * 60 * 1000);
+  const earnsCredit = hoursBeforeStart >= CREDIT_WINDOW_HOURS;
 
   return (
     <li
@@ -67,6 +79,13 @@ export function BookingRowItem({
         ) : null}
       </div>
       <div className="flex flex-col items-start gap-3 sm:items-end">
+        {canCancel ? (
+          <CancelModal
+            bookingId={booking.id}
+            earnsCredit={earnsCredit}
+            creditAmountLabel={formatChf(booking.totalPriceCents)}
+          />
+        ) : null}
         <p
           data-testid="dashboard-booking-total"
           className="font-display text-2xl tracking-tight"

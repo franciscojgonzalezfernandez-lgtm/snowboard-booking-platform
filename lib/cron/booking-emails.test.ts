@@ -1,7 +1,12 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { Duration, Locale } from "@prisma/client";
+import { BookingStatus, Duration, Locale } from "@prisma/client";
 
 import { runBookingEmailsCron, type CandidateRow, type CronDeps } from "./booking-emails";
+
+// CandidateRow has no `status` (every cron query already filters CONFIRMED),
+// but the completion sweep's status guard needs exercising — so the fixtures
+// carry an optional status the mock honors, defaulting to CONFIRMED.
+type TestRow = CandidateRow & { status?: BookingStatus };
 import type {
   SendBookingReminderDeps,
   SendBookingReminderResult,
@@ -19,8 +24,8 @@ const TODAY = new Date("2026-12-15T00:00:00.000Z");
 const YESTERDAY = new Date("2026-12-14T00:00:00.000Z");
 
 function row(
-  overrides: Partial<CandidateRow> & Pick<CandidateRow, "id" | "date" | "anchorTime">,
-): CandidateRow {
+  overrides: Partial<TestRow> & Pick<TestRow, "id" | "date" | "anchorTime">,
+): TestRow {
   return {
     duration: Duration.ONE_HOUR,
     language: Locale.en,
@@ -37,10 +42,12 @@ type Recorded = {
   postClassLocales: Locale[];
   flippedReminder: Set<string>;
   flippedPostClass: Set<string>;
+  flippedCompleted: Set<string>;
+  completedData: Map<string, Record<string, unknown>>;
 };
 
 function makeDeps(opts: {
-  candidates: CandidateRow[];
+  candidates: TestRow[];
   now?: Date;
   recorded?: Recorded;
 }): { deps: CronDeps; recorded: Recorded } {
@@ -51,28 +58,61 @@ function makeDeps(opts: {
     postClassLocales: [],
     flippedReminder: new Set(),
     flippedPostClass: new Set(),
+    flippedCompleted: new Set(),
+    completedData: new Map(),
   };
+
+  const statusOf = (c: TestRow): BookingStatus =>
+    c.status ?? BookingStatus.CONFIRMED;
 
   // findMany filters by date range + null flag — mirror that here so a
   // second invocation against the same fixture array respects the just-
   // flipped flag set (idempotency simulation).
   const findMany = vi.fn(async (args: { where: Record<string, unknown> }) => {
     const where = args.where as {
+      status?: BookingStatus;
       reminder24hSentAt?: null;
       postClassEmailSentAt?: null;
-      date?: { gte?: Date; lt?: Date };
+      date?: { gte?: Date; lt?: Date; lte?: Date };
     };
+    // The completion query is the only one keyed by `date.lte` and without a
+    // *SentAt flag — use that to apply the COMPLETED-flip exclusion (mirrors
+    // the status guard removing already-flipped rows on a re-run).
+    const isCompletionQuery = where.date?.lte !== undefined;
     return opts.candidates.filter((c) => {
       const date = c.date.getTime();
+      if (where.status && statusOf(c) !== where.status) return false;
       if (where.date?.gte && date < where.date.gte.getTime()) return false;
       if (where.date?.lt && date >= where.date.lt.getTime()) return false;
+      if (where.date?.lte && date > where.date.lte.getTime()) return false;
       if ("reminder24hSentAt" in where && recorded.flippedReminder.has(c.id))
         return false;
       if ("postClassEmailSentAt" in where && recorded.flippedPostClass.has(c.id))
         return false;
+      if (isCompletionQuery && recorded.flippedCompleted.has(c.id)) return false;
       return true;
     });
   });
+
+  const updateMany = vi.fn(
+    async (args: { where: Record<string, unknown>; data: Record<string, unknown> }) => {
+      const where = args.where as { id?: { in?: string[] }; status?: BookingStatus };
+      const ids = where.id?.in ?? [];
+      let count = 0;
+      for (const id of ids) {
+        const candidate = opts.candidates.find((c) => c.id === id);
+        // Status guard: skip rows that are no longer CONFIRMED, and never
+        // double-count a row already flipped by a prior run.
+        if (candidate && where.status && statusOf(candidate) !== where.status)
+          continue;
+        if (recorded.flippedCompleted.has(id)) continue;
+        recorded.flippedCompleted.add(id);
+        recorded.completedData.set(id, args.data);
+        count += 1;
+      }
+      return { count };
+    },
+  );
 
   const sendReminder = vi.fn(
     async (
@@ -101,7 +141,13 @@ function makeDeps(opts: {
   );
 
   const deps: CronDeps = {
-    prisma: { booking: { findMany: findMany as unknown as CronDeps["prisma"]["booking"]["findMany"] } },
+    prisma: {
+      booking: {
+        findMany: findMany as unknown as CronDeps["prisma"]["booking"]["findMany"],
+        updateMany:
+          updateMany as unknown as CronDeps["prisma"]["booking"]["updateMany"],
+      },
+    },
     sendReminder,
     sendPostClass,
     reminderDeps: {
@@ -289,5 +335,92 @@ describe("runBookingEmailsCron — error isolation", () => {
     expect(recorded.reminderCalls).toEqual(["ok_two"]);
     expect(summary.reminders.sent).toBe(1);
     expect(summary.reminders.errors).toBe(1);
+  });
+});
+
+describe("runBookingEmailsCron — complete past classes (auto-flip)", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+  });
+  afterEach(() => vi.useRealTimers());
+
+  test("flips a stale CONFIRMED class to COMPLETED with autoCompletedAt", async () => {
+    // Yesterday 10:00 ONE_HOUR → ended 11:00 UTC, well past the 1h grace.
+    const candidates = [
+      row({ id: "stale", date: YESTERDAY, anchorTime: "10:00" }),
+    ];
+    const { deps, recorded } = makeDeps({ candidates });
+    const summary = await runBookingEmailsCron(deps);
+
+    expect(summary.completed).toEqual({ considered: 1, flipped: 1 });
+    expect(recorded.completedData.get("stale")).toEqual({
+      status: BookingStatus.COMPLETED,
+      autoCompletedAt: NOW,
+    });
+  });
+
+  test("does not flip a class still inside the 1h grace window", async () => {
+    // Today 15:30 ONE_HOUR → ended 16:30; grace pushes eligibility to 17:30,
+    // but the cron runs at 17:00 — still inside the window.
+    const candidates = [
+      row({ id: "just_ended", date: TODAY, anchorTime: "15:30" }),
+    ];
+    const { deps, recorded } = makeDeps({ candidates });
+    const summary = await runBookingEmailsCron(deps);
+
+    expect(summary.completed).toEqual({ considered: 0, flipped: 0 });
+    expect(recorded.flippedCompleted.size).toBe(0);
+  });
+
+  test("flips a class exactly at the grace boundary (end + 1h === now)", async () => {
+    // Today 15:00 ONE_HOUR → ended 16:00; end + 1h grace === 17:00 === now.
+    const candidates = [
+      row({ id: "boundary", date: TODAY, anchorTime: "15:00" }),
+    ];
+    const { deps } = makeDeps({ candidates });
+    const summary = await runBookingEmailsCron(deps);
+
+    expect(summary.completed.flipped).toBe(1);
+  });
+
+  test("does not flip future CONFIRMED bookings", async () => {
+    const candidates = [
+      row({ id: "tomorrow_class", date: TOMORROW, anchorTime: "10:00" }),
+    ];
+    const { deps, recorded } = makeDeps({ candidates });
+    const summary = await runBookingEmailsCron(deps);
+
+    expect(summary.completed).toEqual({ considered: 0, flipped: 0 });
+    expect(recorded.flippedCompleted.size).toBe(0);
+  });
+
+  test("status guard leaves non-CONFIRMED past bookings untouched", async () => {
+    const candidates = [
+      row({ id: "confirmed_past", date: YESTERDAY, anchorTime: "10:00" }),
+      row({
+        id: "already_cancelled",
+        date: YESTERDAY,
+        anchorTime: "10:00",
+        status: BookingStatus.CANCELLED_BY_USER,
+      }),
+    ];
+    const { deps, recorded } = makeDeps({ candidates });
+    const summary = await runBookingEmailsCron(deps);
+
+    expect(summary.completed).toEqual({ considered: 1, flipped: 1 });
+    expect([...recorded.flippedCompleted]).toEqual(["confirmed_past"]);
+  });
+
+  test("is idempotent — second invocation does not re-flip", async () => {
+    const candidates = [
+      row({ id: "once", date: YESTERDAY, anchorTime: "10:00" }),
+    ];
+    const { deps } = makeDeps({ candidates });
+    const first = await runBookingEmailsCron(deps);
+    const second = await runBookingEmailsCron(deps);
+
+    expect(first.completed.flipped).toBe(1);
+    expect(second.completed).toEqual({ considered: 0, flipped: 0 });
   });
 });

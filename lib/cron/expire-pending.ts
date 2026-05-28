@@ -37,7 +37,10 @@ export async function runExpirePendingCron(
       status: "PENDING_PAYMENT",
       createdAt: { lt: cutoff },
     },
-    data: { status: "PAYMENT_FAILED" },
+    // `notes` flags expiry as the cause so admin queries can tell apart rows
+    // that timed out from rows flipped by a real Stripe `payment_failed` event
+    // (those carry a `failureReason` populated from `last_payment_error`).
+    data: { status: "PAYMENT_FAILED", notes: "expired time" },
   });
   return {
     now: deps.now.toISOString(),

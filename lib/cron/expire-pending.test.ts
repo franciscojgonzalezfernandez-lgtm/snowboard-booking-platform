@@ -18,29 +18,42 @@ function makeDeps(opts: {
   now?: Date;
 }): {
   deps: ExpirePendingDeps;
-  calls: Array<{ cutoff: Date; matched: string[] }>;
+  calls: Array<{
+    cutoff: Date;
+    matched: string[];
+    data: Record<string, unknown>;
+  }>;
 } {
-  const calls: Array<{ cutoff: Date; matched: string[] }> = [];
+  const calls: Array<{
+    cutoff: Date;
+    matched: string[];
+    data: Record<string, unknown>;
+  }> = [];
   const fixtures = [...opts.pendingFixtures];
 
-  const updateMany = vi.fn(async (args: { where: Record<string, unknown> }) => {
-    const where = args.where as {
-      status?: string;
-      createdAt?: { lt?: Date };
-    };
-    if (where.status !== "PENDING_PAYMENT") return { count: 0 };
-    const cutoff = where.createdAt?.lt ?? new Date(0);
-    const matched: string[] = [];
-    for (const row of fixtures) {
-      if (row.createdAt.getTime() < cutoff.getTime()) matched.push(row.id);
-    }
-    calls.push({ cutoff, matched: [...matched] });
-    for (const id of matched) {
-      const idx = fixtures.findIndex((r) => r.id === id);
-      if (idx >= 0) fixtures.splice(idx, 1);
-    }
-    return { count: matched.length };
-  });
+  const updateMany = vi.fn(
+    async (args: {
+      where: Record<string, unknown>;
+      data: Record<string, unknown>;
+    }) => {
+      const where = args.where as {
+        status?: string;
+        createdAt?: { lt?: Date };
+      };
+      if (where.status !== "PENDING_PAYMENT") return { count: 0 };
+      const cutoff = where.createdAt?.lt ?? new Date(0);
+      const matched: string[] = [];
+      for (const row of fixtures) {
+        if (row.createdAt.getTime() < cutoff.getTime()) matched.push(row.id);
+      }
+      calls.push({ cutoff, matched: [...matched], data: args.data });
+      for (const id of matched) {
+        const idx = fixtures.findIndex((r) => r.id === id);
+        if (idx >= 0) fixtures.splice(idx, 1);
+      }
+      return { count: matched.length };
+    },
+  );
 
   return {
     deps: {
@@ -103,6 +116,19 @@ describe("runExpirePendingCron", () => {
     const second = await runExpirePendingCron(deps);
     expect(first.flipped).toBe(1);
     expect(second.flipped).toBe(0);
+  });
+
+  test("stamps notes='expired time' so admin can distinguish cron-expiry from a Stripe payment_failed", async () => {
+    const { deps, calls } = makeDeps({
+      pendingFixtures: [
+        { id: "stale", createdAt: new Date(NOW.getTime() - 30 * 60_000) },
+      ],
+    });
+    await runExpirePendingCron(deps);
+    expect(calls[0]!.data).toMatchObject({
+      status: "PAYMENT_FAILED",
+      notes: "expired time",
+    });
   });
 
   test("summary surfaces an ISO timestamp for observability", async () => {

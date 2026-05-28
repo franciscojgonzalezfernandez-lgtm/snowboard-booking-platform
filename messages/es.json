@@ -336,6 +336,25 @@
     "personal_name": "Nombre",
     "personal_email": "Email",
     "personal_phone": "Teléfono",
-    "personal_phone_missing": "No indicado"
+    "personal_phone_missing": "No indicado",
+    "personal_phone_placeholder": "+41 76 123 45 67",
+    "personal_edit": "Editar",
+    "personal_save": "Guardar",
+    "personal_cancel": "Cancelar",
+    "personal_phone_updated": "Teléfono actualizado",
+    "personal_phone_removed": "Teléfono eliminado",
+    "personal_error_invalid": "Introduce un número de teléfono válido",
+    "cancel": {
+      "actions_label": "Acciones de la reserva",
+      "button": "Cancelar clase",
+      "modal_title": "¿Cancelar esta clase?",
+      "body_credit": "Estás cancelando con más de 48 horas de antelación. Recibirás un crédito de {amount} válido durante un año. Podrás aplicarlo en el checkout de cualquier reserva futura.",
+      "body_forfeit": "Estás cancelando con menos de 48 horas de antelación. Según nuestra política, no se emitirá reembolso ni crédito. Si se trata de una excepción (enfermedad, emergencia familiar), llámanos antes de confirmar: {phone}.",
+      "confirm": "Confirmar cancelación",
+      "dismiss": "Mantener clase",
+      "toast_success": "Reserva cancelada",
+      "error_already_cancelled": "Esta reserva ya estaba cancelada.",
+      "error_generic": "Algo salió mal. Inténtalo de nuevo."
+    }
   }
 }
