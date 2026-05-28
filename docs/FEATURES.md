@@ -1233,20 +1233,22 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
   - **No** UI "Save credit for later" toggle individual — `Use all` + checkboxes per-credit cubren el caso. User desmarca los que quiera guardar.
   - F-049 SPA: integración via tanstack-query — invalidate `['user-credits']` post-success.
 
-##### F-061 — Cron mensual: expiración de créditos
+##### F-061 — Cron diario: expiración de créditos
 
-- Sprint: 3 · Estado: backlog · Prioridad: P1
+- Sprint: 3 · Estado: done · Prioridad: P1
 - Depende de: F-058
-- Motivación: credits con `expiresAt < now` siguen `ACTIVE` en schema si nadie los flipea. Aside (F-059) ya filtra por `expiresAt > now` en query, pero el badge `status=ACTIVE` queda inconsistente y bloquea analytics futuros. Cron mensual silencioso flipea status.
+- Motivación: credits con `expiresAt < now` siguen `ACTIVE` en schema si nadie los flipea. Aside (F-059) ya filtra por `expiresAt > now` en query, pero el badge `status=ACTIVE` queda inconsistente y bloquea analytics futuros. Cron silencioso flipea el status.
 - AC:
-  - [ ] **Fold en cron existente, no slot nuevo**: F-048 (daily emails) y F-067 (15min pending sweep) ya consumen los 2/2 slots Hobby. Esta función vive dentro de `lib/cron/expire-pending.ts` como branch adicional gateada por `now.getUTCDate() === 1 && now.getUTCHours() === 0` (primera ejecución del mes a las 00:00 UTC), o alternativamente en `booking-emails.ts` con la misma guard. Decisión final al implementar.
-  - [ ] Query: `prisma.accountCredit.updateMany({ where: { status: 'ACTIVE', expiresAt: { lt: now } }, data: { status: 'EXPIRED' } })`. Idempotente — re-run no afecta filas ya `EXPIRED`.
-  - [ ] Sin re-ejecución mensual el problema es: durante el primer mes la query corre ~96 veces/día (gated dentro del cron de 15min). Coste despreciable, idempotente, no escala mal — tabla `AccountCredit` es pequeña en MVP.
-  - [ ] **No email**. Decisión explícita — el aside ya muestra `expiresAt` con warning amber a 30d. Reduce email volume.
-  - [ ] Sentry breadcrumb con `count` de filas flippeadas para observability.
-- Tests: Vitest `lib/credit/expire.test.ts` con `vi.useFakeTimers` — seed credits con `expiresAt` ±1min de `now` → boundary `expiresAt < now` flippea, `expiresAt >= now` no flippea; segunda invocación no re-flippea.
+  - [x] **Handler standalone** `app/api/cron/expire-credits/route.ts` (Node runtime, `force-dynamic`), cron propio en `vercel.json` con schedule `0 1 * * *` (diario, 01:00 UTC). Diario y no mensual: mantiene el lag de status <24h y un run perdido nunca deja un credit `ACTIVE` ~1 mes. El barrido es idempotente, así que las corridas extra no cuestan nada.
+  - [x] Lógica pura en `lib/credit/expire.ts` (`runExpireCreditsCron({ prisma, now })`): `prisma.accountCredit.updateMany({ where: { status: 'ACTIVE', expiresAt: { lt: now } }, data: { status: 'EXPIRED' } })`. Idempotente — el status guard `ACTIVE` hace que el re-run no afecte filas ya `EXPIRED`. Devuelve `{ now, expired }`.
+  - [x] **Auth** `Authorization: Bearer ${CRON_SECRET}` con comparación constant-time (`crypto.timingSafeEqual`) para no filtrar el secret por timing. Si `CRON_SECRET` no está seteado → `Sentry.captureMessage` (warning) + 401 (no falla en silencio).
+  - [x] **Error handling**: el `runExpireCreditsCron` va en `try/catch`; un fallo de DB hace `Sentry.captureException` + responde `500 { ok:false, error:'EXPIRE_CREDITS_FAILED' }` en vez de un 500 sin capturar.
+  - [x] **No email**. El aside ya muestra `expiresAt` con warning amber a 30d.
+  - [x] Sentry breadcrumb con `expired` count (sólo cuando `expired > 0`).
+- Tests: [x] Vitest `lib/credit/expire.test.ts` con `vi.useFakeTimers` — `expiresAt < now` flippea, `expiresAt === now` no (strictly older), idempotencia en segunda invocación, cutoff = `now`, ISO timestamp. 5/5.
 - Notas:
-  - Vercel Hobby crons: 2/2 con F-048 + F-067. Si el owner upgradea a Pro antes de cerrar Sprint 3, F-061 puede ir a su propio handler con schedule `0 0 1 * *` como originalmente planificado.
+  - **Cron propio (3 en total)**: booking-emails (`0 17 * * *`), expire-pending (`*/15 * * * *`), expire-credits (`0 1 * * *`). Posible gracias a Vercel Pro (el plan Hobby capa a 2 crons).
+  - **Auth constant-time sólo en este handler** por ahora — los demás crons usan `===`. Candidato a unificar en un helper compartido si se endurecen todos.
 
 ##### F-062 — Extensión F-048: COMPLETED auto-flip (no-show / forgot-to-mark sweep)
 
