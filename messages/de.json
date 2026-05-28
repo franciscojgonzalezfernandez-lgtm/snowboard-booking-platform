@@ -314,6 +314,7 @@
     "section_upcoming": "Anstehend",
     "section_past": "Vergangen",
     "section_cancelled": "Storniert",
+    "tab_count_label": "{label}, {count, plural, =0 {keine Buchungen} one {# Buchung} other {# Buchungen}}",
     "empty_pending": "Keine offenen Zahlungen. Buchungen erscheinen hier nur in den 15 Minuten nach dem Checkout, falls die Zahlung nicht abgeschlossen wurde.",
     "empty_upcoming": "Keine anstehenden Lektionen. Reserviere einen Slot und er erscheint hier mit Datum, Instruktor und Beleg.",
     "empty_upcoming_cta": "Lektion buchen",

@@ -12,6 +12,7 @@ import {
   type ActiveCreditRow,
 } from "./_components/credit-aside";
 import { DashboardSection } from "./_components/dashboard-section";
+import { DashboardTabs, type DashboardTab } from "./_components/dashboard-tabs";
 import { PersonalPhoneField } from "./_components/personal-phone-field";
 import {
   type BookingRow,
@@ -105,25 +106,27 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
 
   const greetingName = account?.name?.trim().split(/\s+/)[0] ?? null;
 
-  // Pending payment is exceptional — only render the section when at least one
-  // PENDING_PAYMENT row falls inside the 15-minute window. Otherwise the
-  // empty-state copy would be permanently visible noise (95% of bookers never
-  // abandon checkout). The other three sections always render to give the
-  // booker a stable mental model of their account.
-  const SECTION_ORDER: SectionKind[] = [
-    ...(groups.pending.length > 0 ? (["pending"] as const) : []),
+  // Tab order: Upcoming → Pending → Past → Cancelled. Pending is exceptional —
+  // only offered when at least one PENDING_PAYMENT row falls inside the
+  // 15-minute resume window; otherwise the tab would be permanent noise (95% of
+  // bookers never abandon checkout).
+  const tabKinds: SectionKind[] = [
     "upcoming",
+    ...(groups.pending.length > 0 ? (["pending"] as const) : []),
     "past",
     "cancelled",
   ];
 
-  const hasCredits = activeCredits.length > 0;
-
-  const content = (
-    <>
-      {SECTION_ORDER.map((kind) => (
+  const tabs: DashboardTab[] = tabKinds.map((kind) => {
+    const count = groups[kind].length;
+    const label = t(`section_${kind}`);
+    return {
+      kind,
+      label,
+      count,
+      ariaLabel: t("tab_count_label", { label, count }),
+      content: (
         <DashboardSection
-          key={kind}
           kind={kind}
           bookings={groups[kind]}
           creditsBySource={creditsBySource}
@@ -131,7 +134,28 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
           t={t}
           tStep1={tStep1}
         />
-      ))}
+      ),
+    };
+  });
+
+  // Land on the most actionable view: the next class if any, else a resumable
+  // draft, else (for a historical booker with no future activity) their Past
+  // history. A brand-new account with nothing falls back to Upcoming so the
+  // "Book a lesson" CTA stays in front of them. URL `?tab=` overrides this.
+  const defaultTab: SectionKind =
+    groups.upcoming.length > 0
+      ? "upcoming"
+      : groups.pending.length > 0
+        ? "pending"
+        : groups.past.length > 0
+          ? "past"
+          : "upcoming";
+
+  const hasCredits = activeCredits.length > 0;
+
+  const content = (
+    <>
+      <DashboardTabs tabs={tabs} defaultTab={defaultTab} />
 
       <section
         data-testid="dashboard-account"

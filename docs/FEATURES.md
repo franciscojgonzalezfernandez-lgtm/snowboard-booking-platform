@@ -1117,7 +1117,13 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
 
 ##### F-069 — Dashboard tabs (shadcn `Tabs` sobre secciones F-057 + counter chips + URL state)
 
-- Sprint: 3 · Estado: backlog · Prioridad: P1
+- Sprint: 3 · Estado: done · Prioridad: P1
+- Desviaciones de implementación:
+  - **Default tab para cuenta vacía = `upcoming`** (no `past`). El AC literal usa `past` como último fallback, pero una cuenta sin ninguna reserva debe aterrizar en Upcoming para mantener el CTA "Book a lesson" a la vista (CRO). `past` sólo gana cuando hay histórico real sin upcoming/pending.
+  - **Panels con `keepMounted`** (Base UI `Tabs.Panel`): las secciones inactivas quedan en el DOM ocultas en vez de desmontarse, para que `revalidatePath` + los asserts de conteo cross-sección sigan estables.
+  - **ICS "Add to calendar" eliminado por completo** de las rows (sólo vivía en Past). La key i18n `dashboard.add_to_calendar` se conserva por si Upcoming lo recupera más adelante.
+  - **Drive-by fix:** F-058 (commit `7a60f2d`) había añadido un segundo `<Toaster />` global en `app/layout.tsx` mientras `dashboard/layout.tsx` ya montaba el suyo → toasts duplicados en el dashboard. Se elimina el global (el toaster es dashboard-scoped por diseño). Sin esto el e2e de F-058 fallaba por strict-mode (2 toasts "Booking cancelled").
+  - Specs `f-057` + `f-058` migrados a la UI con tabs (seleccionar tab antes de asertar visibilidad de secciones no activas).
 - Depende de: F-057
 - Motivación: F-057 entrega 4 secciones (Pending / Upcoming / Past / Cancelled) como long-scroll. Cuando el booker tiene historial real (>3 reservas mezcladas en cancelled + past), la vista se vuelve densa y obliga a scrollear para encontrar la próxima clase. Tabs reduce cognitive load + colapsa la vista a 1 sección visible + permite deep-link `?tab=past`. Aesthetic editorial — counter chips por tab dan signal de volumen sin entrar.
 - AC UI:

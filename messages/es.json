@@ -314,6 +314,7 @@
     "section_upcoming": "Próximas",
     "section_past": "Pasadas",
     "section_cancelled": "Canceladas",
+    "tab_count_label": "{label}, {count, plural, =0 {sin reservas} one {# reserva} other {# reservas}}",
     "empty_pending": "Sin pagos pendientes. Las reservas solo aparecen aquí durante los 15 minutos siguientes al checkout si el pago no se completó.",
     "empty_upcoming": "No tienes clases próximas. Reserva una y aparecerá aquí con la fecha, el instructor y el recibo.",
     "empty_upcoming_cta": "Reservar una clase",
