@@ -5,7 +5,12 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { cn } from "@/lib/utils";
 
+import {
+  CreditAside,
+  type ActiveCreditRow,
+} from "./_components/credit-aside";
 import { DashboardSection } from "./_components/dashboard-section";
 import { PersonalPhoneField } from "./_components/personal-phone-field";
 import {
@@ -43,8 +48,9 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
   });
 
   const userId = session.user.id;
+  const now = new Date();
 
-  const [bookings, credits, account] = await Promise.all([
+  const [bookings, credits, activeCredits, account] = await Promise.all([
     prisma.booking.findMany({
       where: { bookerId: userId },
       orderBy: [{ date: "desc" }, { anchorTime: "desc" }],
@@ -75,6 +81,16 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
         status: true,
       },
     }) as Promise<CreditRow[]>,
+    prisma.accountCredit.findMany({
+      where: { userId, status: "ACTIVE", expiresAt: { gt: now } },
+      orderBy: { expiresAt: "asc" },
+      select: {
+        id: true,
+        amountCents: true,
+        expiresAt: true,
+        createdAt: true,
+      },
+    }) as Promise<ActiveCreditRow[]>,
     prisma.user.findUnique({
       where: { id: userId },
       select: { name: true, email: true, phone: true },
@@ -101,31 +117,10 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
     "cancelled",
   ];
 
-  return (
-    <main
-      data-testid="dashboard-page"
-      className="mx-auto max-w-3xl px-6 pb-24 pt-16 sm:pt-20"
-    >
-      <header className="space-y-3 border-b border-input pb-10">
-        <p
-          data-testid="dashboard-eyebrow"
-          className="text-xs font-bold uppercase tracking-[0.28em] text-muted-foreground"
-        >
-          {t("eyebrow")}
-        </p>
-        <h1
-          data-testid="dashboard-heading"
-          className="font-display text-4xl tracking-tight sm:text-5xl"
-        >
-          {greetingName
-            ? t("heading_personal", { name: greetingName })
-            : t("heading")}
-        </h1>
-        <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
-          {t("sub")}
-        </p>
-      </header>
+  const hasCredits = activeCredits.length > 0;
 
+  const content = (
+    <>
       {SECTION_ORDER.map((kind) => (
         <DashboardSection
           key={kind}
@@ -179,6 +174,58 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
           </div>
         </dl>
       </section>
+    </>
+  );
+
+  return (
+    <main
+      data-testid="dashboard-page"
+      className={cn(
+        "mx-auto px-6 pb-24 pt-16 sm:pt-20",
+        hasCredits ? "max-w-3xl lg:max-w-5xl" : "max-w-3xl",
+      )}
+    >
+      <header className="space-y-3 border-b border-input pb-10">
+        <p
+          data-testid="dashboard-eyebrow"
+          className="text-xs font-bold uppercase tracking-[0.28em] text-muted-foreground"
+        >
+          {t("eyebrow")}
+        </p>
+        <h1
+          data-testid="dashboard-heading"
+          className="font-display text-4xl tracking-tight sm:text-5xl"
+        >
+          {greetingName
+            ? t("heading_personal", { name: greetingName })
+            : t("heading")}
+        </h1>
+        <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
+          {t("sub")}
+        </p>
+      </header>
+
+      {hasCredits ? (
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start lg:gap-12">
+          <CreditAside
+            credits={activeCredits}
+            locale={locale}
+            t={t}
+            className="mb-10 lg:order-2 lg:mb-0 lg:sticky lg:top-24"
+          />
+          <div className="lg:order-1">{content}</div>
+        </div>
+      ) : (
+        <>
+          <p
+            data-testid="dashboard-credits-empty"
+            className="mt-4 text-sm text-muted-foreground"
+          >
+            {t("credits.empty")}
+          </p>
+          {content}
+        </>
+      )}
     </main>
   );
 }

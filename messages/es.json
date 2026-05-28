@@ -355,6 +355,16 @@
       "toast_success": "Reserva cancelada",
       "error_already_cancelled": "Esta reserva ya estaba cancelada.",
       "error_generic": "Algo salió mal. Inténtalo de nuevo."
+    },
+    "credits": {
+      "title": "Tu saldo",
+      "total": "Total disponible: {amount}",
+      "nearest_expiry": "Próximo vencimiento: {date}",
+      "expires": "Vence el {date}",
+      "expires_soon": "Vence el {date} — úsalo pronto",
+      "source_cancellation": "De una cancelación del {date}",
+      "apply_cta": "Aplicar al pagar",
+      "empty": "Sin saldo disponible"
     }
   }
 }
