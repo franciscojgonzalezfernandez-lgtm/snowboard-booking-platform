@@ -51,7 +51,7 @@ export function DashboardTabs({ tabs, defaultTab }: Props) {
       <TabsList
         data-testid="dashboard-tabs"
         variant="line"
-        className="h-auto w-full justify-start gap-1 overflow-x-auto rounded-none border-b border-input p-0"
+        className="w-full justify-start gap-1 overflow-x-auto overflow-y-hidden rounded-none border-b border-input p-0 group-data-horizontal/tabs:h-auto"
       >
         {tabs.map((tab) => (
           <TabsTrigger

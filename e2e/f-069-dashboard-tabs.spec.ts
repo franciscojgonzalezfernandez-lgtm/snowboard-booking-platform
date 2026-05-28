@@ -262,4 +262,20 @@ test.describe("F-069 — Dashboard tabs", () => {
         .getByTestId("dashboard-booking-ics"),
     ).toHaveCount(1);
   });
+
+  test("tab strip is not a vertical scroll container", async ({ page }) => {
+    await seedPortfolio(page);
+    await page.goto("/en/dashboard");
+    await page.getByTestId("dashboard-tabs").waitFor();
+
+    // `overflow-x-auto` (needed for the horizontal scroll on narrow viewports)
+    // forces `overflow-y` to compute to `auto` unless pinned. Combined with the
+    // line-variant active underline (`after:bottom-[-5px]`) and the 44px
+    // triggers, that produced a stray vertical scrollbar inside the strip. The
+    // height override + `overflow-y-hidden` must keep the y-axis non-scrollable.
+    const overflowY = await page
+      .getByTestId("dashboard-tabs")
+      .evaluate((el) => getComputedStyle(el).overflowY);
+    expect(overflowY).toBe("hidden");
+  });
 });
