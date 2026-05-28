@@ -7,6 +7,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 import { DashboardSection } from "./_components/dashboard-section";
+import { PersonalPhoneField } from "./_components/personal-phone-field";
 import {
   type BookingRow,
   type CreditRow,
@@ -174,16 +175,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
             <dt className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
               {t("personal_phone")}
             </dt>
-            <dd
-              data-testid="dashboard-account-phone"
-              className="font-display text-lg tracking-tight"
-            >
-              {account?.phone ?? (
-                <span className="text-muted-foreground">
-                  {t("personal_phone_missing")}
-                </span>
-              )}
-            </dd>
+            <PersonalPhoneField initialPhone={account?.phone ?? null} />
           </div>
         </dl>
       </section>

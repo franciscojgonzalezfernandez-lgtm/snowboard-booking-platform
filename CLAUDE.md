@@ -142,10 +142,14 @@ app/
 
 **Worktrees por defecto.** Cada ticket vive en su propio worktree hermano del repo (`../booking-platform.f-XXX`), cortado desde `origin/main`. No hacer `checkout` que cambie la branch del repo principal salvo edits triviales a meta-docs.
 
+**Usa el helper** `scripts/new-worktree.sh` — crea el worktree desde `origin/main` **y** copia los env gitignored (`.env`, `.env.local`) desde el worktree primario. Sin esto el worktree nace sin `DATABASE_URL`/`DIRECT_URL` (apuntan a la branch Neon `dev` en `.env.local`) y dev local + Playwright fallan, o peor: caen al `.env` que apunta a Neon `main` (prod).
+
 ```
-git fetch origin
-git worktree add -b f-XXX-kebab-slug ../booking-platform.f-XXX origin/main
+scripts/new-worktree.sh f-XXX-kebab-slug
+# equivale a: git fetch origin + git worktree add -b f-XXX-kebab-slug ../booking-platform.f-XXX origin/main + cp .env .env.local
 ```
+
+Si se crea un worktree a mano (`git worktree add ...`), copiar los env después: `cp ../booking-platform/.env{,.local} ../booking-platform.f-XXX/`.
 
 Tras merge: `git worktree remove ../booking-platform.f-XXX && git branch -d f-XXX-kebab-slug`.
 

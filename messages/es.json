@@ -335,6 +335,13 @@
     "personal_email": "Email",
     "personal_phone": "Teléfono",
     "personal_phone_missing": "No indicado",
+    "personal_phone_placeholder": "+41 76 123 45 67",
+    "personal_edit": "Editar",
+    "personal_save": "Guardar",
+    "personal_cancel": "Cancelar",
+    "personal_phone_updated": "Teléfono actualizado",
+    "personal_phone_removed": "Teléfono eliminado",
+    "personal_error_invalid": "Introduce un número de teléfono válido",
     "cancel": {
       "actions_label": "Acciones de la reserva",
       "button": "Cancelar clase",
