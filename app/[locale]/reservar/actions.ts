@@ -13,6 +13,7 @@ import {
 } from "@/lib/booking/create-draft";
 import { prisma } from "@/lib/db";
 import { getStripe } from "@/lib/stripe/server";
+import { sendBookingConfirmedEmail } from "@/lib/email/send-booking-confirmed";
 import type {
   CreateBookingDraftInput,
   CreateBookingDraftResult,
@@ -59,6 +60,19 @@ export async function createBookingDraft(
     session: session?.user ? { user: { id: session.user.id } } : null,
     prisma: prisma as unknown as CreateDraftDeps["prisma"],
     stripe: getStripe(),
+    // F-060 zero-charge path: a fully-credit-covered booking is created
+    // CONFIRMED with no PaymentIntent, so no webhook will send the confirmation.
+    // Dispatch it here; failures are logged but never fail the booking.
+    dispatchBookingConfirmedEmail: async (bookingId: string) => {
+      try {
+        await sendBookingConfirmedEmail({ bookingId });
+      } catch (err) {
+        Sentry.captureException(err, {
+          tags: { source: "create-draft-zero-charge-email" },
+          extra: { bookingId },
+        });
+      }
+    },
   };
   const result = await createBookingDraftWith(deps, prisma, input);
 

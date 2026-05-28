@@ -26,6 +26,10 @@ export type DraftSnapshot = {
   bookingId: string;
   clientSecret: string;
   totalPriceCents: number;
+  /** F-060: amount actually charged to the card = total − credits applied. */
+  chargeAmountCents: number;
+  /** F-060: sum of credits consumed by this draft (0 when none selected). */
+  creditsAppliedCents: number;
 };
 
 type GuardContextValue = {

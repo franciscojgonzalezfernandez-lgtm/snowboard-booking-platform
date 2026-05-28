@@ -58,13 +58,11 @@ type PrismaSurface = {
         totalPriceCents: true;
       };
     }): Promise<BookingRowForCancel | null>;
-    updateMany(args: {
-      where: { id: string; status: { in: readonly BookingStatus[] } };
-      data: { status: BookingStatus; cancelledByUserAt: Date };
-    }): Promise<{ count: number }>;
   };
   $transaction<T>(cb: (tx: TransactionSurface) => Promise<T>): Promise<T>;
 };
+
+type RestoredCreditRow = { id: string; amountCents: number; expiresAt: Date };
 
 type TransactionSurface = {
   booking: {
@@ -74,6 +72,18 @@ type TransactionSurface = {
     }): Promise<{ count: number }>;
   };
   accountCredit: {
+    findMany(args: {
+      where: { usedOnBookingId: string; status: CreditStatus };
+      select: { id: true; amountCents: true; expiresAt: true };
+    }): Promise<RestoredCreditRow[]>;
+    updateMany(args: {
+      where:
+        | { id: { in: string[] }; status: CreditStatus }
+        | { lockedByBookingId: string; status: CreditStatus };
+      data:
+        | { status: CreditStatus; usedAt: null; usedOnBookingId: null }
+        | { status: CreditStatus; lockedByBookingId: null };
+    }): Promise<{ count: number }>;
     create(args: {
       data: {
         userId: string;
@@ -177,8 +187,13 @@ export async function cancelBookingByUserWith(
 
   if (earnsCredit) {
     const creditExpiresAt = new Date(now.getTime() + CREDIT_VALIDITY_MS);
+    let restore: {
+      restoredCents: number;
+      freshCreditCents: number;
+      restoredMaxExpiry: Date | null;
+    };
     try {
-      await prisma.$transaction(async (tx) => {
+      restore = await prisma.$transaction(async (tx) => {
         const flipped = await tx.booking.updateMany({
           where: { id: booking.id, status: { in: CANCELABLE_STATUSES } },
           data: {
@@ -189,16 +204,52 @@ export async function cancelBookingByUserWith(
         if (flipped.count === 0) {
           throw new AlreadyCancelledError();
         }
-        await tx.accountCredit.create({
-          data: {
-            userId: booking.bookerId,
-            amountCents: booking.totalPriceCents,
-            sourceBookingId: booking.id,
-            reason: CreditReason.USER_CANCEL,
-            status: CreditStatus.ACTIVE,
-            expiresAt: creditExpiresAt,
-          },
+
+        // F-060: restore the credits that funded this booking, preserving their
+        // ORIGINAL expiry. This is what closes the expiry-refresh loophole —
+        // spending a near-expiry credit and cancelling cannot mint a fresh
+        // 1-year credit for that value. Cash actually paid is credited fresh.
+        const used = await tx.accountCredit.findMany({
+          where: { usedOnBookingId: booking.id, status: CreditStatus.USED },
+          select: { id: true, amountCents: true, expiresAt: true },
         });
+        const restoredCents = used.reduce((sum, c) => sum + c.amountCents, 0);
+        if (used.length > 0) {
+          await tx.accountCredit.updateMany({
+            where: { id: { in: used.map((c) => c.id) }, status: CreditStatus.USED },
+            data: {
+              status: CreditStatus.ACTIVE,
+              usedAt: null,
+              usedOnBookingId: null,
+            },
+          });
+        }
+
+        // Fresh 1-year credit only for the cash portion (total minus what the
+        // restored credits already cover). A 100%-cash booking restores nothing
+        // and mints one credit of the full price — the original F-058 behaviour.
+        const freshCreditCents = Math.max(
+          0,
+          booking.totalPriceCents - restoredCents,
+        );
+        if (freshCreditCents > 0) {
+          await tx.accountCredit.create({
+            data: {
+              userId: booking.bookerId,
+              amountCents: freshCreditCents,
+              sourceBookingId: booking.id,
+              reason: CreditReason.USER_CANCEL,
+              status: CreditStatus.ACTIVE,
+              expiresAt: creditExpiresAt,
+            },
+          });
+        }
+
+        const restoredMaxExpiry = used.reduce<Date | null>(
+          (max, c) => (max === null || c.expiresAt > max ? c.expiresAt : max),
+          null,
+        );
+        return { restoredCents, freshCreditCents, restoredMaxExpiry };
       });
     } catch (err) {
       if (err instanceof AlreadyCancelledError) {
@@ -206,25 +257,49 @@ export async function cancelBookingByUserWith(
       }
       throw err;
     }
+
+    // Total value returned to the booker: restored credits + the fresh cash
+    // credit. The reported expiry is the fresh credit's (1y) when there is one,
+    // otherwise the furthest-out restored credit — the cancellation email
+    // summarises potentially-multiple expiries to a single date.
+    const creditAmountCents = restore.restoredCents + restore.freshCreditCents;
+    const reportedExpiresAt =
+      restore.freshCreditCents > 0
+        ? creditExpiresAt
+        : (restore.restoredMaxExpiry ?? creditExpiresAt);
+
     return {
       ok: true,
       outcome: "credit",
       hoursBeforeStart,
-      creditAmountCents: booking.totalPriceCents,
-      creditExpiresAt,
+      creditAmountCents,
+      creditExpiresAt: reportedExpiresAt,
       duration: booking.duration,
       date: booking.date,
     };
   }
 
-  const flipped = await prisma.booking.updateMany({
-    where: { id: booking.id, status: { in: CANCELABLE_STATUSES } },
-    data: {
-      status: BookingStatus.CANCELLED_BY_USER,
-      cancelledByUserAt: now,
-    },
+  // Forfeit path (<48h, or a never-paid PENDING_PAYMENT draft). Credits already
+  // USED on a paid booking are forfeited per the 48h policy. Credits merely
+  // LOCKED by an unpaid draft were never spent, so release them back to ACTIVE.
+  const flippedCount = await prisma.$transaction(async (tx) => {
+    const flipped = await tx.booking.updateMany({
+      where: { id: booking.id, status: { in: CANCELABLE_STATUSES } },
+      data: {
+        status: BookingStatus.CANCELLED_BY_USER,
+        cancelledByUserAt: now,
+      },
+    });
+    if (flipped.count === 0) {
+      return 0;
+    }
+    await tx.accountCredit.updateMany({
+      where: { lockedByBookingId: booking.id, status: CreditStatus.LOCKED },
+      data: { status: CreditStatus.ACTIVE, lockedByBookingId: null },
+    });
+    return flipped.count;
   });
-  if (flipped.count === 0) {
+  if (flippedCount === 0) {
     return { ok: false, error: "ALREADY_CANCELLED" };
   }
   return {

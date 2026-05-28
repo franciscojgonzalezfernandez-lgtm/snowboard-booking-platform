@@ -29,6 +29,12 @@ export const createBookingDraftSchema = z.object({
   attendees: z.array(draftAttendeeSchema).min(1).max(4),
   notes: z.string().trim().max(500).optional().default(""),
   acceptedTerms: z.literal(true),
+  // F-060: account credits the booker chose to apply at checkout. Sanity cap of
+  // 10 — a booker with more than 10 active credits is pathological and the cap
+  // bounds the IN-clause + the lock loop. Server re-validates ownership, ACTIVE
+  // status and expiry; the array order is irrelevant (oldest-first cap is
+  // applied server-side).
+  creditIds: z.array(z.string().min(1)).max(10).optional(),
 });
 
 export type CreateBookingDraftInput = z.infer<typeof createBookingDraftSchema>;
@@ -39,14 +45,26 @@ export type CreateBookingDraftError =
   | "INVALID_INPUT"
   | "NO_ACTIVE_SEASON"
   | "PRICING_MISSING"
-  | "SLOT_TAKEN";
+  | "SLOT_TAKEN"
+  | "CREDIT_NOT_APPLICABLE";
 
 export type CreateBookingDraftResult =
   | {
       ok: true;
       bookingId: string;
-      clientSecret: string;
+      /**
+       * Stripe client secret for the Payment Element. `null` on the zero-charge
+       * path (F-060): credits fully cover the lesson, the booking is created
+       * CONFIRMED with no PaymentIntent, and the client redirects straight to
+       * the success page.
+       */
+      clientSecret: string | null;
+      /** Full lesson price (ledger value), independent of credits applied. */
       totalPriceCents: number;
+      /** Amount actually charged to the card = max(0, total - creditsApplied). */
+      chargeAmountCents: number;
+      /** Sum of the credits effectively consumed (may exceed total on overshoot). */
+      creditsAppliedCents: number;
       reused: boolean;
     }
   | {

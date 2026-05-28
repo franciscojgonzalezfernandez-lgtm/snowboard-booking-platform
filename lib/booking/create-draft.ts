@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 
-import { BookingStatus, type Duration } from "@prisma/client";
+import { BookingStatus, CreditStatus, type Duration } from "@prisma/client";
 import type Stripe from "stripe";
 
 import { durationMinutes } from "@/lib/booking-engine/duration";
@@ -29,7 +29,19 @@ export type CreateDraftDeps = {
   now?: Date;
   /** Override the ICS UID generator so test snapshots stay stable. */
   newIcsUid?: () => string;
+  /**
+   * F-060 zero-charge path: a booking fully covered by credits is created
+   * CONFIRMED here (no PaymentIntent, so the Stripe webhook never fires), so
+   * the confirmation email + .ics must be dispatched from this action instead.
+   * Defaults to a no-op; the real wrapper injects `sendBookingConfirmedEmail`.
+   * Failures are swallowed (booking is already CONFIRMED) — wrap with Sentry in
+   * the caller.
+   */
+  dispatchBookingConfirmedEmail?: (bookingId: string) => Promise<void>;
 };
+
+/** A credit row as loaded for redemption selection. */
+type CreditRow = { id: string; amountCents: number; expiresAt: Date };
 
 type PrismaSurface = {
   season: {
@@ -64,6 +76,17 @@ type PrismaSurface = {
       data: { stripePaymentIntentId: string };
     }): Promise<{ id: string }>;
   };
+  accountCredit: {
+    findMany(args: {
+      where: {
+        id: { in: string[] };
+        userId: string;
+        status: CreditStatus;
+        expiresAt: { gt: Date };
+      };
+      select: { id: true; amountCents: true; expiresAt: true };
+    }): Promise<CreditRow[]>;
+  };
   $transaction<T>(
     cb: (tx: PrismaTransactionSurface) => Promise<T>,
   ): Promise<T>;
@@ -83,6 +106,7 @@ type PrismaTransactionSurface = {
         totalPriceCents: number;
         icsUid: string;
         notes: string | null;
+        paidAt?: Date;
       };
       select: { id: true };
     }): Promise<{ id: string }>;
@@ -104,6 +128,19 @@ type PrismaTransactionSurface = {
       data: { phone: string };
     }): Promise<{ id: string }>;
   };
+  accountCredit: {
+    updateMany(args: {
+      where: {
+        id: { in: string[] };
+        userId: string;
+        status: CreditStatus;
+        expiresAt: { gt: Date };
+      };
+      data:
+        | { status: CreditStatus; lockedByBookingId: string }
+        | { status: CreditStatus; usedAt: Date; usedOnBookingId: string };
+    }): Promise<{ count: number }>;
+  };
 };
 
 type StripeSurface = {
@@ -114,7 +151,9 @@ type StripeSurface = {
     ): Promise<Pick<Stripe.PaymentIntent, "id" | "client_secret">>;
     retrieve(
       id: string,
-    ): Promise<Pick<Stripe.PaymentIntent, "id" | "client_secret">>;
+    ): Promise<
+      Pick<Stripe.PaymentIntent, "id" | "client_secret" | "amount" | "metadata">
+    >;
   };
 };
 
@@ -153,6 +192,39 @@ function buildAttendeeRows(
       isBooker: matchesBooker,
     };
   });
+}
+
+/** Raised inside the draft transaction when a guarded credit lock/use write
+ * matches fewer rows than expected — a concurrent draft grabbed one of the
+ * selected credits between the read and the write. Rolls back the booking. */
+class CreditConflictError extends Error {
+  constructor() {
+    super("CREDIT_NOT_APPLICABLE");
+    this.name = "CreditConflictError";
+  }
+}
+
+/**
+ * Oldest-first cap (F-060). Consume credits in expiry-ascending order until the
+ * lesson price is covered; the credit that crosses the threshold is consumed in
+ * full (all-or-nothing per credit — no partial use). Any selected credits past
+ * the coverage point are left untouched (returned as ACTIVE).
+ */
+function selectCreditsToApply(
+  credits: CreditRow[],
+  totalPriceCents: number,
+): { consumedIds: string[]; creditsAppliedCents: number } {
+  const sorted = [...credits].sort(
+    (a, b) => a.expiresAt.getTime() - b.expiresAt.getTime(),
+  );
+  const consumedIds: string[] = [];
+  let creditsAppliedCents = 0;
+  for (const credit of sorted) {
+    if (creditsAppliedCents >= totalPriceCents) break;
+    consumedIds.push(credit.id);
+    creditsAppliedCents += credit.amountCents;
+  }
+  return { consumedIds, creditsAppliedCents };
 }
 
 export async function createBookingDraftWith(
@@ -219,6 +291,10 @@ export async function createBookingDraftWith(
     throw err;
   }
 
+  // Reuse an in-flight draft BEFORE re-resolving credits: on a resubmit the
+  // chosen credits are already LOCKED by the first attempt, so a fresh ACTIVE
+  // lookup would (correctly) reject them. The existing PaymentIntent already
+  // encodes the charge + locked credits, so short-circuit to it here.
   const existing = await prisma.booking.findFirst({
     where: {
       bookerId: session.user.id,
@@ -237,67 +313,177 @@ export async function createBookingDraftWith(
       existing.stripePaymentIntentId,
     );
     if (pi.client_secret) {
+      // Reflect the charge + credits locked on the first submit, not the
+      // (possibly changed) current selection. Changing credits requires
+      // voiding the draft first.
+      const reusedCredits = Number(pi.metadata?.creditsAppliedCents ?? 0);
       return {
         ok: true,
         bookingId: existing.id,
         clientSecret: pi.client_secret,
         totalPriceCents: existing.totalPriceCents,
+        chargeAmountCents: pi.amount,
+        creditsAppliedCents: Number.isFinite(reusedCredits) ? reusedCredits : 0,
         reused: true,
       };
     }
   }
 
+  // F-060: resolve which of the chosen credits actually apply (owned, ACTIVE,
+  // unexpired) and how much they cover. The guarded write inside the transaction
+  // is what protects against concurrent double-spend; this read drives the
+  // charge amount + the zero-charge vs normal branch.
+  const selectedCreditIds = data.creditIds ?? [];
+  let consumedIds: string[] = [];
+  let creditsAppliedCents = 0;
+  if (selectedCreditIds.length > 0) {
+    const credits = await prisma.accountCredit.findMany({
+      where: {
+        id: { in: selectedCreditIds },
+        userId: session.user.id,
+        status: CreditStatus.ACTIVE,
+        expiresAt: { gt: now },
+      },
+      select: { id: true, amountCents: true, expiresAt: true },
+    });
+    // Any selected credit that is not owned / not ACTIVE / expired drops out of
+    // the result set — reject the whole request rather than silently applying a
+    // subset the booker did not expect.
+    if (credits.length !== selectedCreditIds.length) {
+      return { ok: false, error: "CREDIT_NOT_APPLICABLE" };
+    }
+    ({ consumedIds, creditsAppliedCents } = selectCreditsToApply(
+      credits,
+      totalPriceCents,
+    ));
+  }
+
+  const chargeAmountCents = Math.max(0, totalPriceCents - creditsAppliedCents);
+  const isZeroCharge = chargeAmountCents === 0 && consumedIds.length > 0;
+  const overshootCents = Math.max(0, creditsAppliedCents - totalPriceCents);
+
   const attendeeRows = buildAttendeeRows(data.attendees, data.bookerName, now);
   const icsUid = newIcsUid();
+  const noteParts: string[] = [];
+  if (data.notes) noteParts.push(data.notes);
+  if (overshootCents > 0) {
+    noteParts.push(
+      `[F-060 credit overshoot: applied ${creditsAppliedCents} cents vs price ${totalPriceCents} cents]`,
+    );
+  }
+  const notes = noteParts.length > 0 ? noteParts.join("\n") : null;
 
-  const booking = await prisma.$transaction(async (tx) => {
-    const created = await tx.booking.create({
-      data: {
-        bookerId: session.user.id,
-        instructorId: data.instructorId,
-        date: dayUtc,
-        anchorTime: data.time,
-        duration: data.duration,
-        language: data.language,
-        status: BookingStatus.PENDING_PAYMENT,
-        totalPriceCents,
-        icsUid,
-        notes: data.notes ? data.notes : null,
-      },
-      select: { id: true },
-    });
-    await tx.attendee.createMany({
-      data: attendeeRows.map((row) => ({
-        bookingId: created.id,
-        name: row.name,
-        birthDate: row.birthDate,
-        level: row.level,
-        isBooker: row.isBooker,
-      })),
-    });
-
-    // F-064(a): silently backfill the booker's phone the first time they book.
-    // `data.bookerPhone` is already E.164-normalised by the draft schema. The
-    // `phone: null` guard makes this a no-op once a number is on file, so a
-    // second booking never overwrites a value the user set in the dashboard —
-    // and the atomic predicate avoids a read/write race between concurrent
-    // requests. Best-effort: a no-match (P2025) or transient failure must never
-    // roll back the booking, so we swallow it inside the transaction callback.
-    try {
-      await tx.user.update({
-        where: { id: session.user.id, phone: null },
-        data: { phone: data.bookerPhone },
+  let booking: { id: string };
+  try {
+    booking = await prisma.$transaction(async (tx) => {
+      const created = await tx.booking.create({
+        data: {
+          bookerId: session.user.id,
+          instructorId: data.instructorId,
+          date: dayUtc,
+          anchorTime: data.time,
+          duration: data.duration,
+          language: data.language,
+          status: isZeroCharge
+            ? BookingStatus.CONFIRMED
+            : BookingStatus.PENDING_PAYMENT,
+          totalPriceCents,
+          icsUid,
+          notes,
+          ...(isZeroCharge ? { paidAt: now } : {}),
+        },
+        select: { id: true },
       });
-    } catch {
-      // phone already set, or transient write error — leave the profile as-is.
-    }
+      await tx.attendee.createMany({
+        data: attendeeRows.map((row) => ({
+          bookingId: created.id,
+          name: row.name,
+          birthDate: row.birthDate,
+          level: row.level,
+          isBooker: row.isBooker,
+        })),
+      });
 
-    return created;
-  });
+      // F-064(a): silently backfill the booker's phone the first time they book.
+      // `data.bookerPhone` is already E.164-normalised by the draft schema. The
+      // `phone: null` guard makes this a no-op once a number is on file, so a
+      // second booking never overwrites a value the user set in the dashboard —
+      // and the atomic predicate avoids a read/write race between concurrent
+      // requests. Best-effort: a no-match (P2025) or transient failure must never
+      // roll back the booking, so we swallow it inside the transaction callback.
+      try {
+        await tx.user.update({
+          where: { id: session.user.id, phone: null },
+          data: { phone: data.bookerPhone },
+        });
+      } catch {
+        // phone already set, or transient write error — leave the profile as-is.
+      }
+
+      // F-060 credit consumption. The `status: ACTIVE` + `expiresAt > now` guard
+      // is the double-spend lock: if a concurrent draft already moved one of
+      // these credits out of ACTIVE, the count mismatches and we roll back.
+      // Zero-charge bookings consume credits outright (ACTIVE → USED) since
+      // there is no payment to wait on; normal bookings lock them (ACTIVE →
+      // LOCKED) until the webhook confirms or fails the payment.
+      if (consumedIds.length > 0) {
+        const result = await tx.accountCredit.updateMany({
+          where: {
+            id: { in: consumedIds },
+            userId: session.user.id,
+            status: CreditStatus.ACTIVE,
+            expiresAt: { gt: now },
+          },
+          data: isZeroCharge
+            ? {
+                status: CreditStatus.USED,
+                usedAt: now,
+                usedOnBookingId: created.id,
+              }
+            : {
+                status: CreditStatus.LOCKED,
+                lockedByBookingId: created.id,
+              },
+        });
+        if (result.count !== consumedIds.length) {
+          throw new CreditConflictError();
+        }
+      }
+
+      return created;
+    });
+  } catch (err) {
+    if (err instanceof CreditConflictError) {
+      return { ok: false, error: "CREDIT_NOT_APPLICABLE" };
+    }
+    throw err;
+  }
+
+  // Zero-charge: the booking is already CONFIRMED and no PaymentIntent exists,
+  // so the Stripe webhook will never fire. Dispatch the confirmation email +
+  // .ics here instead. Email failure must not fail the booking.
+  if (isZeroCharge) {
+    if (deps.dispatchBookingConfirmedEmail) {
+      try {
+        await deps.dispatchBookingConfirmedEmail(booking.id);
+      } catch {
+        // booking is CONFIRMED; the email is reissuable from the admin panel.
+      }
+    }
+    return {
+      ok: true,
+      bookingId: booking.id,
+      clientSecret: null,
+      totalPriceCents,
+      chargeAmountCents: 0,
+      creditsAppliedCents,
+      reused: false,
+    };
+  }
 
   const intent = await stripe.paymentIntents.create(
     {
-      amount: totalPriceCents,
+      amount: chargeAmountCents,
       currency: "chf",
       automatic_payment_methods: { enabled: true, allow_redirects: "always" },
       metadata: {
@@ -306,6 +492,8 @@ export async function createBookingDraftWith(
         instructorId: data.instructorId,
         startDateTime: startDateTime.toISOString(),
         endDateTime: endDateTime.toISOString(),
+        creditsAppliedCents: String(creditsAppliedCents),
+        lockedCreditIds: consumedIds.join(","),
       },
       description: `Snowboard lesson · ${data.duration} · ${data.date} ${data.time}`,
     },
@@ -326,6 +514,8 @@ export async function createBookingDraftWith(
     bookingId: booking.id,
     clientSecret: intent.client_secret,
     totalPriceCents,
+    chargeAmountCents,
+    creditsAppliedCents,
     reused: false,
   };
 }
