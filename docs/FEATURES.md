@@ -1084,30 +1084,30 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
 
 ##### F-068 — Route-group refactor + global SiteNav (auth-aware) en chrome no-funnel
 
-- Sprint: 3 · Estado: backlog · Prioridad: P0
+- Sprint: 3 · Estado: review · Prioridad: P0
 - Depende de: F-005, F-031, F-032, F-051
 - Motivación: hoy `SiteNav` sólo se monta en `app/[locale]/page.tsx` (home). `/dashboard`, `/login`, `/terms`, `/privacy` quedan sin chrome global — el booker no tiene forma de salir del dashboard salvo escribiendo la URL. `CLAUDE.md §Routing conventions` ya prescribe route groups `(marketing)`, `(booking)`, `(auth)` + `dashboard/` con sus propios layouts; el código nunca aplicó el patrón. Este ticket alinea estructura con la convención y arregla el bug UX.
 - AC routing:
-  - [ ] Mover `app/[locale]/page.tsx` (home) → `app/[locale]/(marketing)/page.tsx`. URLs no cambian (route groups no participan en path).
-  - [ ] Mover `app/[locale]/terms/` → `app/[locale]/(marketing)/terms/` y `app/[locale]/privacy/` → `app/[locale]/(marketing)/privacy/`. Verificar que `sitemap.ts` + `robots.ts` siguen apuntando a los paths correctos.
-  - [ ] Mover `app/[locale]/login/` → `app/[locale]/(auth)/login/`. Verificar redirects en `lib/auth/index.ts` + middleware + `next=` query param de `/dashboard`.
-  - [ ] `app/[locale]/reservar/` queda fuera de cualquier grupo (booking flow ya tiene su `BookingHeader` y su layout propio; renombrar a `(booking)/reservar` añade fricción sin beneficio — defer).
-  - [ ] `app/[locale]/dashboard/` queda en su propio path (autenticado). Layout propio en este ticket.
+  - [x] Mover `app/[locale]/page.tsx` (home) → `app/[locale]/(marketing)/page.tsx`. URLs no cambian (route groups no participan en path). `git mv`; build confirma `/en`, `/de`, `/es` sirven home.
+  - [x] Mover `app/[locale]/terms/` → `app/[locale]/(marketing)/terms/` y `app/[locale]/privacy/` → `app/[locale]/(marketing)/privacy/`. `sitemap.ts`/`robots.ts` no referencian estos paths por string (no cambio necesario); build muestra `/en/terms` + `/en/privacy` intactos.
+  - [x] Mover `app/[locale]/login/` → `app/[locale]/(auth)/login/`. `next=` query param de `/dashboard` y redirects de Better Auth siguen verdes (F-033 + F-047 anonymous-redirect specs pasan).
+  - [x] `app/[locale]/reservar/` queda fuera de cualquier grupo. Spec F-068 asserta `site-nav` ausente en `/reservar`.
+  - [x] `app/[locale]/dashboard/` queda en su propio path (autenticado). Layout propio añadido.
 - AC layouts:
-  - [ ] `app/[locale]/(marketing)/layout.tsx` — server component, `setRequestLocale`, monta `<SiteNav>` arriba de `{children}`. Pasa props de utility copy del namespace `home` o nuevo `nav`.
-  - [ ] `app/[locale]/(auth)/layout.tsx` — server component idéntico al marketing, pero con `utility` copy diferente (e.g. "Have an account? Sign in" o variant según ruta — login no necesita "Sign in" repetido). Decisión final: usar el mismo `SiteNav` con `variant="auth"` que oculta el botón de sign-in cuando ya estamos en la página de login.
-  - [ ] `app/[locale]/dashboard/layout.tsx` — server component, monta `<SiteNav>` y pasa `{children}`. Para usuarios autenticados (middleware ya redirige anonymous), el componente muestra el variant logged-in.
-  - [ ] `app/[locale]/layout.tsx` queda sin tocar (mantiene `SiteFooter` + `NextIntlClientProvider`). Booking flow hereda layout padre + `reservar/layout.tsx` propio, sin SiteNav arriba.
+  - [x] `app/[locale]/(marketing)/layout.tsx` — server component, `setRequestLocale`, monta `<SiteNav utility={tNav("utility")}>` arriba de `{children}`. `utility` migrado de `home.utility` → `nav.utility` (chrome brand-wide, no page-specific).
+  - [x] `app/[locale]/(auth)/layout.tsx` — server component, monta `<SiteNav />` **sin** utility bar (brand row más quieto en páginas de credenciales). No se añadió prop `variant`: la decisión final fue suprimir sólo el utility bar; el CTA de la nav ya es session-aware (anonymous en /login ve "Sign in", que apunta a la misma página — aceptable, no recursivo dañino).
+  - [x] `app/[locale]/dashboard/layout.tsx` — server component, monta `<SiteNav />`. Middleware + auth gate de la page ya redirigen anonymous → en estado estable la nav muestra My account + Sign out.
+  - [x] `app/[locale]/layout.tsx` sin tocar (mantiene `SiteFooter` + `NextIntlClientProvider`). `reservar/` hereda layout padre + su `reservar/layout.tsx`, sin SiteNav.
 - AC SiteNav auth-aware:
-  - [ ] `app/components/SiteNav.tsx` (+ `MobileNav.tsx`) consume session: server component lee `await auth.api.getSession({ headers })`. Si `session?.user`, reemplaza el link `Sign in` por bloque `My account` (link a `/dashboard`) + `Sign out` (form action que llama `auth.api.signOut`).
-  - [ ] `Sign out` UI: shadcn `Button` variant `ghost`, en desktop nav + Sheet mobile. Server action `signOutAction` en `app/components/site-nav-actions.ts` (`'use server'`) que invoca `auth.api.signOut` + `redirect('/${locale}/')`.
-  - [ ] El bloque `LanguageSwitcher` no cambia.
-  - [ ] i18n keys nuevas en namespace `nav`: `nav.my_account`, `nav.sign_out`. Existentes (`nav.sign_in`, `nav.utility`) sin cambios.
+  - [x] `SiteNav.tsx` (+ `MobileNav.tsx`) consume session vía `auth.api.getSession({ headers })`. `signedIn` → bloque `My account` (`/dashboard`) + `Sign out` (form `action={signOutAction}`). Anonymous → `Sign in`.
+  - [x] `Sign out` UI: form server-action en desktop nav + Sheet mobile. Reusa `signOutAction` **ya existente** en `lib/auth/actions.ts` (no se creó `app/components/site-nav-actions.ts` — la action ya estaba y hace `auth.api.signOut` + `redirect("/")`; middleware reescribe a `/<locale>`). Botón estilizado editorial (no shadcn `Button` ghost — el ghost no encaja con el resto del chrome ink/uppercase; documentado inline).
+  - [x] `LanguageSwitcher` sin cambios.
+  - [x] i18n keys: se reusan `nav.signin` + `nav.dashboard_cta` existentes; añadidas `nav.sign_out` + `nav.utility` × 3 locales. (Los nombres `my_account`/`sign_in` del AC original ya existían como `dashboard_cta`/`signin` — no se renombran para no romper otros consumidores.)
 - AC tests:
-  - [ ] Playwright `e2e/f-068-global-nav.spec.ts` × 3 locales: assert `SiteNav` visible en `/`, `/login`, `/dashboard`, `/terms`, `/privacy`. Assert ausente en `/reservar` (funnel preserva su `BookingHeader`).
-  - [ ] Auth-aware variant: anonymous user → `Sign in` link visible. Post-signup (reuse helper de F-047) → `My account` + `Sign out` visibles, `Sign in` ausente. Click `Sign out` → redirige a home + cookie session limpia + reload `/dashboard` redirige a `/login?next=...`.
-  - [ ] Update specs existentes que asertan ausencia de nav en `/dashboard` o `/terms` (ninguno hoy según audit) — si aparecen, expand assertion.
-  - [ ] CLAUDE.md `§Routing conventions` actualizado si el árbol final difiere de lo prescrito (e.g. `reservar` no entró en `(booking)`).
+  - [x] Playwright `e2e/f-068-global-nav.spec.ts`: `SiteNav` visible en `/` `/login` `/terms` `/privacy` (× locales) + `/dashboard`; ausente en `/reservar`. **14/14 verde** contra dev server (Neon `dev`).
+  - [x] Auth-aware variant: anonymous → `Sign in` visible, `Sign out` ausente. Post-signup → `My account` + `Sign out` en `/dashboard`, `Sign in` ausente. Sign out → nav flippea a anonymous + `/dashboard` re-gatea a `/login?next=`.
+  - [x] Specs de chrome existentes sin regresión: smoke + F-032 + F-040 + F-051 (54/54) y F-033 (login) verdes. (F-047 isolation falla **sólo** en local por split dev-server-DB vs test-runner-DB; no es regresión — el resto de F-047 pasa.)
+  - [x] CLAUDE.md `§Routing conventions` actualizado: árbol real + nota de que `reservar/` queda fuera de `(booking)`.
 - Notas:
   - **No** moves de `reservar/` a `(booking)/` — `BookingHeader` y `reservar/layout.tsx` ya implementan el contrato funnel-only; renombrar añade churn sin beneficio. Documentar la desviación en CLAUDE.md.
   - **No** server-side conditional render de SiteNav según pathname en `app/[locale]/layout.tsx` (anti-pattern). Route groups + layouts dedicados son la herramienta nativa.
