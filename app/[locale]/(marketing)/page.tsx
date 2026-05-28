@@ -1,7 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
-import { SiteNav } from "@/app/components/SiteNav";
 
 type HomePageProps = {
   params: Promise<{ locale: string }>;
@@ -15,8 +14,6 @@ export default async function HomePage({ params }: HomePageProps) {
 
   return (
     <>
-      <SiteNav utility={tHome("utility")} />
-
       {/* hero: full-bleed Unsplash photo + editorial overlay.
           D-LOGO / D-PHOTO blockers track owner's real photography for Sprint 5. */}
       <section className="relative h-[86vh] min-h-[600px] max-h-[880px] overflow-hidden bg-foreground text-background">

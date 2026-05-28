@@ -12,6 +12,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { signOutAction } from "@/lib/auth/actions";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 
 type MobileNavProps = {
@@ -68,17 +69,30 @@ export function MobileNav({ signedIn }: MobileNavProps) {
         <div className="flex flex-col gap-5 border-t-2 border-foreground px-7 py-6">
           <LanguageSwitcher tone="light" className="justify-start" />
           {signedIn ? (
-            <Link
-              href="/dashboard"
-              onClick={close}
-              className="block min-h-11 w-full rounded-md border-2 border-foreground bg-foreground px-5 py-3 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-background transition-colors hover:bg-primary hover:border-primary"
-            >
-              {t("dashboard_cta")}
-            </Link>
+            <>
+              <Link
+                href="/dashboard"
+                onClick={close}
+                data-testid="mobile-nav-account"
+                className="block min-h-11 w-full rounded-md border-2 border-foreground bg-foreground px-5 py-3 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-background transition-colors hover:bg-primary hover:border-primary"
+              >
+                {t("dashboard_cta")}
+              </Link>
+              <form action={signOutAction} onSubmit={close}>
+                <button
+                  type="submit"
+                  data-testid="mobile-nav-signout"
+                  className="block min-h-11 w-full text-center text-xs font-bold uppercase tracking-[0.15em] text-foreground transition-colors hover:text-primary"
+                >
+                  {t("sign_out")}
+                </button>
+              </form>
+            </>
           ) : (
             <Link
               href="/login"
               onClick={close}
+              data-testid="mobile-nav-signin"
               className="block min-h-11 w-full rounded-md border-2 border-foreground bg-foreground px-5 py-3 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-background transition-colors hover:bg-primary hover:border-primary"
             >
               {t("signin")}

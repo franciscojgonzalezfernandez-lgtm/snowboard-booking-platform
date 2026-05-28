@@ -106,11 +106,11 @@ When in doubt: check what **Impeccable** would do. The skill is the source of tr
 ```
 app/
 ├── [locale]/                # i18n: en, de, es
-│   ├── (marketing)/         # Landing, instructores, blog
-│   ├── (booking)/           # Reservation flow
-│   ├── (auth)/              # Login, register, verify
-│   ├── dashboard/           # Authenticated student
-│   └── layout.tsx
+│   ├── (marketing)/         # Landing, terms, privacy — shared chrome layout (SiteNav with utility bar)
+│   ├── (auth)/              # Login, register, verify — shared chrome layout (SiteNav, no utility bar)
+│   ├── dashboard/           # Authenticated student — own layout with SiteNav + Sign out
+│   ├── reservar/            # Booking funnel — own BookingHeader (NOT inside any route group, deliberate per F-068)
+│   └── layout.tsx           # Root locale layout: NextIntlClientProvider + SiteFooter
 ├── instructor/              # EN only, outside [locale]
 ├── admin/                   # EN only, outside [locale]
 ├── api/
@@ -121,6 +121,7 @@ app/
 - **Instructor + admin panels:** English only
 - **Slug translations:** path segments translated per locale (e.g. `/de/instruktoren/`, `/es/instructores/`)
 - **EN locale: no prefix** in URLs (better SEO for English market)
+- **`reservar/` stays outside `(booking)` group on purpose** (F-068). `BookingHeader` already implements the funnel-only chrome contract; renaming would add churn without payoff. Pages inside `reservar/` must not mount `SiteNav`.
 
 ---
 
