@@ -1128,10 +1128,14 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
   - [ ] Tabs ordenados: Upcoming → Pending (cuando exista) → Past → Cancelled. Pending sigue siendo conditional (sólo si `pending.length > 0`).
   - [ ] **Mobile**: tabs full-width con scroll horizontal si overflow. Tap targets ≥44px (F-051 audit aplica).
   - [ ] **A11y**: shadcn `Tabs` ya provee `role="tablist"` + `aria-selected`. Verificar que el counter chip no rompe el accessible name del trigger (usar `aria-label` explícito con label + count).
+  - [ ] **Limpieza de acciones por `kind`** (`_components/booking-row.tsx`): hoy las rows renderizan acciones en secciones donde no aplican. Aprovechar el refactor de tabs para corregir:
+    - [ ] Quitar "Add to calendar" (link ICS, `booking-row.tsx:85`, hoy gated `kind === "past" && status === COMPLETED`) de las rows **Past**. Exportar al calendario una clase que ya ocurrió no tiene sentido. (Nota: el ICS sólo aplica a clases futuras; si más adelante se quiere ese CTA, su sitio es **Upcoming**, no Past — decisión separada, no se adelanta aquí.)
+    - [ ] Quitar "View details" (`booking-row.tsx:94`, link a `/reservar/exito/{id}`) de las rows **Cancelled**. Hoy se renderiza incondicionalmente, así que apunta una reserva cancelada a su página de éxito — incoherente. Las cancelled ya muestran `CancelledMeta` (motivo + credit). Mantener "View details" en Upcoming/Past.
 - AC i18n:
   - [ ] Reusa keys existentes `dashboard.section_{pending,upcoming,past,cancelled}` para labels de tab. Nuevas keys: `dashboard.tab_count_label` (interpola `{label}` + `{count}` para accessible name).
 - AC tests:
-  - [ ] Playwright `e2e/f-069-dashboard-tabs.spec.ts` × 1 locale (en): seed 1 upcoming + 2 cancelled-with-credit → asserta default tab = upcoming visible, click Cancelled tab → secciones upcoming/past ocultas + cancelled visible; counter chips correctos; `?tab=cancelled` deep-link aterriza directo en esa tab; reload preserva tab activa.
+  - [ ] Playwright `e2e/f-069-dashboard-tabs.spec.ts` × 1 locale (en): seed 1 upcoming + 1 past-completed + 2 cancelled-with-credit → asserta default tab = upcoming visible, click Cancelled tab → secciones upcoming/past ocultas + cancelled visible; counter chips correctos; `?tab=cancelled` deep-link aterriza directo en esa tab; reload preserva tab activa.
+  - [ ] Asserts de la limpieza de acciones: las rows **Cancelled** no exponen `data-testid="dashboard-booking-link"` ("View details"); las rows **Past** no exponen `data-testid="dashboard-booking-ics"` ("Add to calendar").
 - Notas:
   - **No** integración con F-068 SiteNav — F-069 es scope local del dashboard, no toca chrome global.
   - **No** persistir tab en cookie / localStorage — URL es source of truth; deep-link siempre gana.
