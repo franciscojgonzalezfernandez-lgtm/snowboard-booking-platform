@@ -1547,6 +1547,21 @@ Critical path: **F-057 + F-067 (paired PR) → F-058 + F-063 → F-059 → F-060
   - Decisión deliberada: usar `trustedProviders` (auto-link en login) en lugar del flow "Sign in to link account" (requiere UI extra + segundo login). El owner opera con un único pool de usuarios, sin riesgo de email collision malicioso a esta escala
   - Referencia Better Auth docs: https://www.better-auth.com/docs/concepts/users-accounts#account-linking
 
+### F-070 — Hide "My account" nav CTA when already on dashboard
+
+- Sprint: post-MVP · Estado: backlog · Prioridad: P3 (UX polish)
+- Depende de: F-068
+- Motivación: pulido UX pedido por owner. En el dashboard, el `SiteNav` sigue mostrando el botón "My account" (`dashboard_cta`) que linkea a `/dashboard` — la página en la que el usuario ya está. Es un no-op confuso (CTA que apunta a sí mismo). Ocultarlo cuando la ruta activa ya es el dashboard limpia el chrome y elimina el self-link.
+- AC:
+  - [ ] En `app/components/SiteNav.tsx:78` (link `data-testid="site-nav-account"`, label `dashboard_cta`), no renderizar el CTA cuando la ruta activa esté dentro de `/dashboard`. `Sign out` permanece visible.
+  - [ ] Detección de ruta: `usePathname()` (next/navigation) con match locale-aware (`/dashboard`, `/de/dashboard`, `/es/dashboard`). Si `SiteNav` debe quedarse como Server Component, pasar un prop `isOnDashboard` desde `dashboard/layout.tsx` en lugar de convertirlo a client — preferible para no añadir JS al bundle del marketing layout.
+  - [ ] Verificar que marketing + auth layouts (visitante anónimo) siguen mostrando el CTA normalmente.
+- Tests:
+  - [ ] Playwright: en `/dashboard` (y `/de/dashboard`, `/es/dashboard`) `site-nav-account` ausente; en `/` y `/login` autenticado, presente.
+- Notas:
+  - Trivial — single component, sin migración, sin server action. Candidato a agruparse con otro polish de chrome en Sprint 6.
+  - Si se opta por el prop `isOnDashboard` desde el layout, es la vía más barata: el `dashboard/layout.tsx` ya es el único mount point que renderiza el CTA en una página que es el propio destino.
+
 ---
 
 ## Bloqueantes / decisiones abiertas (consolidadas)
