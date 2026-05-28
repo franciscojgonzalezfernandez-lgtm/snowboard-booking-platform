@@ -11,6 +11,10 @@ async function signUp(page: Page, email: string): Promise<void> {
   await page.getByTestId("input-email").fill(email);
   await page.getByTestId("input-password").fill("Sn0wb0ard!Strong");
   await page.getByTestId("submit-credentials").click();
+  // Wait for the post-signup redirect so the session cookie is set before the
+  // test navigates on; otherwise /dashboard races the cookie and the auth
+  // middleware bounces to /login (no dashboard-page / phone-edit rendered).
+  await page.waitForURL(/\/(en|de|es)\/?$/);
 }
 
 test.describe("F-064b — edit phone from the dashboard", () => {
@@ -32,7 +36,10 @@ test.describe("F-064b — edit phone from the dashboard", () => {
     await page.getByTestId("phone-input").fill("+41 76 111 22 33");
     await page.getByTestId("phone-save").click();
 
-    await expect(page.getByText("Phone updated")).toBeVisible();
+    // `.first()` keeps this resilient to the duplicate-Toaster mount on main
+    // (fixed separately in chore/fix-double-toaster), where each dashboard toast
+    // renders twice; once that lands this still matches the single toast.
+    await expect(page.getByText("Phone updated").first()).toBeVisible();
     await expect(page.getByTestId("dashboard-account-phone")).toContainText(
       "+41761112233",
     );
