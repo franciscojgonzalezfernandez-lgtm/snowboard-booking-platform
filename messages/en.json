@@ -314,6 +314,7 @@
     "section_upcoming": "Upcoming",
     "section_past": "Past",
     "section_cancelled": "Cancelled",
+    "tab_count_label": "{label}, {count, plural, =0 {no bookings} one {# booking} other {# bookings}}",
     "empty_pending": "No payments waiting. Reservations only show up here in the 15 minutes after checkout if the payment was not completed.",
     "empty_upcoming": "No upcoming lessons. Reserve a slot and it will show up here with the date, instructor and receipt.",
     "empty_upcoming_cta": "Book a lesson",

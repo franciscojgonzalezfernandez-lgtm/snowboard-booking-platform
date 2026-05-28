@@ -1,4 +1,3 @@
-import { BookingStatus } from "@prisma/client";
 import { getTranslations } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
@@ -101,7 +100,7 @@ export function BookingRowItem({
             {t("resume_payment")}
           </Link>
         ) : null}
-        {kind === "past" && booking.status === BookingStatus.COMPLETED ? (
+        {kind === "upcoming" ? (
           <a
             href={`/api/booking/${booking.id}/ics`}
             data-testid="dashboard-booking-ics"
@@ -110,13 +109,15 @@ export function BookingRowItem({
             {t("add_to_calendar")} ↓
           </a>
         ) : null}
-        <Link
-          href={`/reservar/exito/${booking.id}`}
-          data-testid="dashboard-booking-link"
-          className="text-xs font-bold uppercase tracking-[0.18em] underline-offset-4 hover:underline"
-        >
-          {t("view_details")} →
-        </Link>
+        {kind === "upcoming" || kind === "past" ? (
+          <Link
+            href={`/reservar/exito/${booking.id}`}
+            data-testid="dashboard-booking-link"
+            className="text-xs font-bold uppercase tracking-[0.18em] underline-offset-4 hover:underline"
+          >
+            {t("view_details")} →
+          </Link>
+        ) : null}
       </div>
     </li>
   );

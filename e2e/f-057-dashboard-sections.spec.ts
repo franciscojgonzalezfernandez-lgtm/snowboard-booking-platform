@@ -48,12 +48,6 @@ const EMPTY_UPCOMING_CTA = {
   es: "Reservar una clase",
 } as const;
 
-const ADD_TO_CALENDAR = {
-  en: "Add to calendar",
-  de: "Zum Kalender hinzufügen",
-  es: "Añadir al calendario",
-} as const;
-
 function uniqueEmail(tag: string) {
   return `f057-${tag}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.test`;
 }
@@ -183,27 +177,13 @@ test.describe("F-057 — Dashboard grouped sections", () => {
 
       await page.goto(`/${locale}/dashboard`);
 
-      // Three section containers always render — even empty ones.
-      for (const kind of ["upcoming", "past", "cancelled"] as const) {
-        const section = page.getByTestId(`dashboard-section-${kind}`);
-        await expect(section).toBeVisible();
-        await expect(
-          page.getByTestId(`dashboard-section-heading-${kind}`),
-        ).toHaveText(SECTION_HEADING[locale][kind]);
-      }
-
-      // Counts.
+      // Default tab is Upcoming — panel + heading + row are visible.
       await expect(
-        page.getByTestId("dashboard-section-count-upcoming"),
-      ).toHaveText("1");
+        page.getByTestId("dashboard-tab-panel-upcoming"),
+      ).toBeVisible();
       await expect(
-        page.getByTestId("dashboard-section-count-past"),
-      ).toHaveText("1");
-      await expect(
-        page.getByTestId("dashboard-section-count-cancelled"),
-      ).toHaveText("1");
-
-      // Each booking lives in the correct section's <ol>.
+        page.getByTestId("dashboard-section-heading-upcoming"),
+      ).toHaveText(SECTION_HEADING[locale].upcoming);
       await expect(
         page
           .getByTestId("dashboard-bookings-upcoming")
@@ -215,45 +195,57 @@ test.describe("F-057 — Dashboard grouped sections", () => {
           .locator(`[data-booking-id="${upcoming.bookingId}"]`),
       ).toBeVisible();
 
+      // Counter chips per tab (mounted regardless of the active panel).
       await expect(
-        page
-          .getByTestId("dashboard-bookings-past")
-          .locator(`[data-booking-id="${past.bookingId}"]`),
-      ).toBeVisible();
-
+        page.getByTestId("dashboard-tab-count-upcoming"),
+      ).toHaveText("1");
+      await expect(page.getByTestId("dashboard-tab-count-past")).toHaveText(
+        "1",
+      );
       await expect(
-        page
-          .getByTestId("dashboard-bookings-cancelled")
-          .locator(`[data-booking-id="${cancelled.bookingId}"]`),
+        page.getByTestId("dashboard-tab-count-cancelled"),
+      ).toHaveText("1");
+
+      // Past tab: row visible once selected, and the ICS link is gone
+      // (F-069 removed Add-to-calendar from past lessons).
+      await page.getByTestId("dashboard-tab-past").click();
+      await expect(page.getByTestId("dashboard-tab-panel-past")).toBeVisible();
+      await expect(
+        page.getByTestId("dashboard-section-heading-past"),
+      ).toHaveText(SECTION_HEADING[locale].past);
+      const pastRow = page
+        .getByTestId("dashboard-bookings-past")
+        .locator(`[data-booking-id="${past.bookingId}"]`);
+      await expect(pastRow).toBeVisible();
+      await expect(pastRow.getByTestId("dashboard-booking-ics")).toHaveCount(0);
+
+      // Cancelled tab: row visible with linked AccountCredit + cancelled-on
+      // date, and no View-details link (F-069 cleanup).
+      await page.getByTestId("dashboard-tab-cancelled").click();
+      await expect(
+        page.getByTestId("dashboard-tab-panel-cancelled"),
       ).toBeVisible();
-
-      // Past COMPLETED row offers an Add to calendar link → .ics API route.
-      const pastRow = page.locator(`[data-booking-id="${past.bookingId}"]`);
-      const icsLink = pastRow.getByTestId("dashboard-booking-ics");
-      await expect(icsLink).toBeVisible();
-      await expect(icsLink).toContainText(ADD_TO_CALENDAR[locale]);
-      await expect(icsLink).toHaveAttribute(
-        "href",
-        `/api/booking/${past.bookingId}/ics`,
-      );
-
-      // Cancelled row surfaces the linked AccountCredit (amount + expiry).
-      const cancelledRow = page.locator(
-        `[data-booking-id="${cancelled.bookingId}"]`,
-      );
+      await expect(
+        page.getByTestId("dashboard-section-heading-cancelled"),
+      ).toHaveText(SECTION_HEADING[locale].cancelled);
+      const cancelledRow = page
+        .getByTestId("dashboard-bookings-cancelled")
+        .locator(`[data-booking-id="${cancelled.bookingId}"]`);
+      await expect(cancelledRow).toBeVisible();
       const creditMeta = cancelledRow.getByTestId(
         "dashboard-booking-credit-issued",
       );
       await expect(creditMeta).toBeVisible();
       await expect(creditMeta).toContainText("CHF");
       await expect(creditMeta).toContainText("110");
-
-      // Cancelled row also surfaces the cancelled-on date.
       await expect(
         cancelledRow.getByTestId("dashboard-booking-cancelled-at"),
       ).toBeVisible();
+      await expect(
+        cancelledRow.getByTestId("dashboard-booking-link"),
+      ).toHaveCount(0);
 
-      // Upcoming + Past rows do NOT carry the cancelled-meta block.
+      // Upcoming row does NOT carry the cancelled-meta block.
       await expect(
         page
           .locator(`[data-booking-id="${upcoming.bookingId}"]`)
@@ -272,14 +264,19 @@ test.describe("F-057 — Dashboard empty states per section", () => {
 
     await page.goto("/en/dashboard");
 
+    // Empty account defaults to the Upcoming tab so the Book-a-lesson CTA stays
+    // in front of the booker.
     await expect(page.getByTestId("dashboard-empty-upcoming")).toBeVisible();
-    await expect(page.getByTestId("dashboard-empty-past")).toBeVisible();
-    await expect(page.getByTestId("dashboard-empty-cancelled")).toBeVisible();
-
     const cta = page.getByTestId("dashboard-empty-upcoming-cta");
     await expect(cta).toBeVisible();
     await expect(cta).toHaveText(EMPTY_UPCOMING_CTA.en);
     await expect(cta).toHaveAttribute("href", "/en/reservar");
+
+    // Past + Cancelled empty states surface once their tab is selected.
+    await page.getByTestId("dashboard-tab-past").click();
+    await expect(page.getByTestId("dashboard-empty-past")).toBeVisible();
+    await page.getByTestId("dashboard-tab-cancelled").click();
+    await expect(page.getByTestId("dashboard-empty-cancelled")).toBeVisible();
 
     // Counts read 0 across the board.
     await expect(
@@ -387,6 +384,7 @@ test.describe("F-057 — Dashboard surfaces only user/ops cancellations in Cance
     });
 
     await page.goto("/en/dashboard");
+    await page.getByTestId("dashboard-tab-cancelled").click();
 
     const cancelledList = page.getByTestId("dashboard-bookings-cancelled");
     await expect(

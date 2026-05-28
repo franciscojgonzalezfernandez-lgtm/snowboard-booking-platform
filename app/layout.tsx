@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Archivo, Archivo_Black } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const archivo = Archivo({
@@ -33,7 +32,6 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${archivo.variable} ${archivoBlack.variable} antialiased`}>
         {children}
-        <Toaster />
         <Analytics />
         <SpeedInsights />
       </body>

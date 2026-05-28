@@ -133,6 +133,9 @@ test.describe("F-058 — User cancel flow (credit path)", () => {
       page.getByTestId("dashboard-section-count-upcoming"),
     ).toHaveText("0");
 
+    // The cancelled booking now lives under the Cancelled tab.
+    await page.getByTestId("dashboard-tab-cancelled").click();
+
     const cancelledRow = page
       .getByTestId("dashboard-bookings-cancelled")
       .getByTestId("dashboard-booking-row")
