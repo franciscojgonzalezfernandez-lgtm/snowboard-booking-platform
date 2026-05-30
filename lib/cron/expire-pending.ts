@@ -14,6 +14,16 @@ export const PENDING_PAYMENT_EXPIRY_MS = 15 * 60 * 1000;
 export type ExpirePendingDeps = {
   prisma: {
     booking: {
+      findMany(args: {
+        where: Record<string, unknown>;
+        select: { id: true };
+      }): Promise<Array<{ id: string }>>;
+      updateMany(args: {
+        where: Record<string, unknown>;
+        data: Record<string, unknown>;
+      }): Promise<{ count: number }>;
+    };
+    accountCredit: {
       updateMany(args: {
         where: Record<string, unknown>;
         data: Record<string, unknown>;
@@ -26,24 +36,47 @@ export type ExpirePendingDeps = {
 export type ExpirePendingSummary = {
   now: string;
   flipped: number;
+  /** F-060: credits unlocked back to ACTIVE because their draft expired. */
+  creditsReleased: number;
 };
 
 export async function runExpirePendingCron(
   deps: ExpirePendingDeps,
 ): Promise<ExpirePendingSummary> {
   const cutoff = new Date(deps.now.getTime() - PENDING_PAYMENT_EXPIRY_MS);
+  // Snapshot the stale ids first so we can release the credits they locked.
+  // A bulk updateMany can't return affected ids, and updateMany `where` can't
+  // filter AccountCredit by the related booking's status.
+  const stale = await deps.prisma.booking.findMany({
+    where: { status: "PENDING_PAYMENT", createdAt: { lt: cutoff } },
+    select: { id: true },
+  });
+  if (stale.length === 0) {
+    return { now: deps.now.toISOString(), flipped: 0, creditsReleased: 0 };
+  }
+  const ids = stale.map((b) => b.id);
+
+  // Re-assert the status + cutoff guard so a booking that confirmed between the
+  // snapshot and now is not clobbered back to PAYMENT_FAILED.
   const result = await deps.prisma.booking.updateMany({
-    where: {
-      status: "PENDING_PAYMENT",
-      createdAt: { lt: cutoff },
-    },
+    where: { id: { in: ids }, status: "PENDING_PAYMENT", createdAt: { lt: cutoff } },
     // `notes` flags expiry as the cause so admin queries can tell apart rows
     // that timed out from rows flipped by a real Stripe `payment_failed` event
     // (those carry a `failureReason` populated from `last_payment_error`).
     data: { status: "PAYMENT_FAILED", notes: "expired time" },
   });
+
+  // F-060: return credits that were locked by these expired drafts. The
+  // `status: LOCKED` guard means a credit already settled to USED (the booking
+  // actually confirmed in the race window) is left untouched.
+  const released = await deps.prisma.accountCredit.updateMany({
+    where: { lockedByBookingId: { in: ids }, status: "LOCKED" },
+    data: { status: "ACTIVE", lockedByBookingId: null },
+  });
+
   return {
     now: deps.now.toISOString(),
     flipped: result.count,
+    creditsReleased: released.count,
   };
 }

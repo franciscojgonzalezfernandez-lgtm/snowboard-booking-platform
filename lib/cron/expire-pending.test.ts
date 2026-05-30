@@ -13,23 +13,52 @@ type PendingFixtureRow = {
   createdAt: Date;
 };
 
+type CreditFixtureRow = {
+  id: string;
+  lockedByBookingId: string | null;
+  status: string;
+};
+
 function makeDeps(opts: {
   pendingFixtures: PendingFixtureRow[];
+  creditFixtures?: CreditFixtureRow[];
   now?: Date;
 }): {
   deps: ExpirePendingDeps;
+  /** Cutoff captured from the snapshot findMany, fired on every run. */
+  cutoffs: Date[];
+  /** Flip updateMany calls (skipped when nothing is stale). */
   calls: Array<{
     cutoff: Date;
     matched: string[];
     data: Record<string, unknown>;
   }>;
+  creditReleases: Array<{ ids: string[]; released: string[] }>;
 } {
+  const cutoffs: Date[] = [];
   const calls: Array<{
     cutoff: Date;
     matched: string[];
     data: Record<string, unknown>;
   }> = [];
+  const creditReleases: Array<{ ids: string[]; released: string[] }> = [];
   const fixtures = [...opts.pendingFixtures];
+  const credits = (opts.creditFixtures ?? []).map((c) => ({ ...c }));
+
+  const findMany = vi.fn(
+    async (args: { where: Record<string, unknown>; select: unknown }) => {
+      const where = args.where as {
+        status?: string;
+        createdAt?: { lt?: Date };
+      };
+      const cutoff = where.createdAt?.lt ?? new Date(0);
+      cutoffs.push(cutoff);
+      if (where.status !== "PENDING_PAYMENT") return [];
+      return fixtures
+        .filter((row) => row.createdAt.getTime() < cutoff.getTime())
+        .map((row) => ({ id: row.id }));
+    },
+  );
 
   const updateMany = vi.fn(
     async (args: {
@@ -37,14 +66,18 @@ function makeDeps(opts: {
       data: Record<string, unknown>;
     }) => {
       const where = args.where as {
+        id?: { in?: string[] };
         status?: string;
         createdAt?: { lt?: Date };
       };
       if (where.status !== "PENDING_PAYMENT") return { count: 0 };
       const cutoff = where.createdAt?.lt ?? new Date(0);
+      const idSet = new Set(where.id?.in ?? []);
       const matched: string[] = [];
       for (const row of fixtures) {
-        if (row.createdAt.getTime() < cutoff.getTime()) matched.push(row.id);
+        if (idSet.has(row.id) && row.createdAt.getTime() < cutoff.getTime()) {
+          matched.push(row.id);
+        }
       }
       calls.push({ cutoff, matched: [...matched], data: args.data });
       for (const id of matched) {
@@ -55,16 +88,45 @@ function makeDeps(opts: {
     },
   );
 
+  const creditUpdateMany = vi.fn(
+    async (args: {
+      where: { lockedByBookingId?: { in?: string[] }; status?: string };
+      data: Record<string, unknown>;
+    }) => {
+      const ids = args.where.lockedByBookingId?.in ?? [];
+      const idSet = new Set(ids);
+      const released: string[] = [];
+      for (const credit of credits) {
+        if (
+          credit.lockedByBookingId !== null &&
+          idSet.has(credit.lockedByBookingId) &&
+          credit.status === args.where.status
+        ) {
+          Object.assign(credit, args.data);
+          released.push(credit.id);
+        }
+      }
+      creditReleases.push({ ids: [...ids], released });
+      return { count: released.length };
+    },
+  );
+
   return {
     deps: {
       prisma: {
         booking: {
+          findMany: findMany as unknown as ExpirePendingDeps["prisma"]["booking"]["findMany"],
           updateMany: updateMany as unknown as ExpirePendingDeps["prisma"]["booking"]["updateMany"],
+        },
+        accountCredit: {
+          updateMany: creditUpdateMany as unknown as ExpirePendingDeps["prisma"]["accountCredit"]["updateMany"],
         },
       },
       now: opts.now ?? NOW,
     },
+    cutoffs,
     calls,
+    creditReleases,
   };
 }
 
@@ -89,9 +151,9 @@ describe("runExpirePendingCron", () => {
   });
 
   test("uses now - 15m as the cutoff exactly", async () => {
-    const { deps, calls } = makeDeps({ pendingFixtures: [] });
+    const { deps, cutoffs } = makeDeps({ pendingFixtures: [] });
     await runExpirePendingCron(deps);
-    expect(calls[0]!.cutoff.getTime()).toBe(
+    expect(cutoffs[0]!.getTime()).toBe(
       NOW.getTime() - PENDING_PAYMENT_EXPIRY_MS,
     );
   });
@@ -135,5 +197,36 @@ describe("runExpirePendingCron", () => {
     const { deps } = makeDeps({ pendingFixtures: [] });
     const summary = await runExpirePendingCron(deps);
     expect(summary.now).toBe(NOW.toISOString());
+  });
+
+  test("F-060: releases credits LOCKED by an expired draft back to ACTIVE", async () => {
+    const { deps, creditReleases } = makeDeps({
+      pendingFixtures: [
+        { id: "stale_draft", createdAt: new Date(NOW.getTime() - 30 * 60_000) },
+      ],
+      creditFixtures: [
+        { id: "cr_1", lockedByBookingId: "stale_draft", status: "LOCKED" },
+        { id: "cr_other", lockedByBookingId: "other_draft", status: "LOCKED" },
+      ],
+    });
+    const summary = await runExpirePendingCron(deps);
+    expect(summary.flipped).toBe(1);
+    expect(summary.creditsReleased).toBe(1);
+    expect(creditReleases[0]!.released).toEqual(["cr_1"]);
+  });
+
+  test("F-060: no stale drafts → credit release is skipped entirely", async () => {
+    const { deps, creditReleases } = makeDeps({
+      pendingFixtures: [
+        { id: "fresh", createdAt: new Date(NOW.getTime() - 5 * 60_000) },
+      ],
+      creditFixtures: [
+        { id: "cr_1", lockedByBookingId: "fresh", status: "LOCKED" },
+      ],
+    });
+    const summary = await runExpirePendingCron(deps);
+    expect(summary.flipped).toBe(0);
+    expect(summary.creditsReleased).toBe(0);
+    expect(creditReleases).toHaveLength(0);
   });
 });

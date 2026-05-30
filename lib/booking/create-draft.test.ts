@@ -1,6 +1,8 @@
 import { describe, expect, test, vi } from "vitest";
 import {
   AvailabilityKind,
+  CreditReason,
+  CreditStatus,
   Duration,
   Level,
   Locale,
@@ -72,6 +74,14 @@ function makeEnginePrisma() {
   };
 }
 
+type CreditFixture = {
+  id: string;
+  amountCents: number;
+  expiresAt: Date;
+  reason?: CreditReason;
+  sourceBookingId?: string;
+};
+
 function makeDeps(overrides?: {
   session?: CreateDraftDeps["session"];
   existingBooking?: {
@@ -82,15 +92,32 @@ function makeDeps(overrides?: {
   priceCentsByDuration?: Record<Duration, number> | unknown;
   stripeCreateError?: Error;
   retrieveSecret?: string;
+  /** F-060: PaymentIntent.amount returned by retrieve on the reused path. */
+  retrieveAmount?: number;
+  /** F-060: PaymentIntent.metadata returned by retrieve on the reused path. */
+  retrieveMetadata?: Record<string, string>;
   /** Simulate a booker who already has a phone on file (guard won't match). */
   userHasPhone?: boolean;
   /** Force the phone backfill update to throw a transient error. */
   userUpdateError?: Error;
+  /** F-060: rows accountCredit.findMany returns (already filter-matched). */
+  credits?: CreditFixture[];
+  /**
+   * F-060: override the count returned by the guarded lock/use updateMany to
+   * simulate a concurrent draft grabbing a credit between read and write.
+   */
+  lockCountOverride?: number;
 }) {
   const created: Array<{ id: string; data: unknown }> = [];
   const updates: Array<{ id: string; stripePaymentIntentId: string }> = [];
   const attendeesCreated: unknown[] = [];
   const userUpdates: Array<{ id: string; phone: string }> = [];
+  const creditWrites: Array<{
+    where: Record<string, unknown>;
+    data: Record<string, unknown>;
+  }> = [];
+  const creditCreates: Array<Record<string, unknown>> = [];
+  const dispatched: string[] = [];
 
   const bookingCreate = vi.fn(async (args: { data: unknown }) => {
     const id = `book_${created.length + 1}`;
@@ -141,17 +168,47 @@ function makeDeps(overrides?: {
     },
   );
 
+  const creditFindMany = vi.fn(async () =>
+    (overrides?.credits ?? []).map((c) => ({
+      id: c.id,
+      amountCents: c.amountCents,
+      expiresAt: c.expiresAt,
+      reason: c.reason ?? CreditReason.USER_CANCEL,
+      sourceBookingId: c.sourceBookingId ?? `src_${c.id}`,
+    })),
+  );
+  const creditUpdateMany = vi.fn(
+    async (args: {
+      where: { id: { in: string[] } | string } & Record<string, unknown>;
+      data: Record<string, unknown>;
+    }) => {
+      creditWrites.push({ where: args.where, data: args.data });
+      // The partial-credit write targets a single id (string); the bulk
+      // fully-consumed write targets `{ id: { in: [...] } }`.
+      const matched =
+        typeof args.where.id === "string" ? 1 : args.where.id.in.length;
+      const count = overrides?.lockCountOverride ?? matched;
+      return { count };
+    },
+  );
+  const creditCreate = vi.fn(async (args: { data: Record<string, unknown> }) => {
+    creditCreates.push(args.data);
+    return { id: `credit_remnant_${creditCreates.length}` };
+  });
+
   const prisma = {
     season: { findFirst: seasonFindFirst },
     booking: {
       findFirst: bookingFindFirst,
       update: bookingUpdate,
     },
+    accountCredit: { findMany: creditFindMany },
     $transaction: vi.fn(async (cb: (tx: unknown) => Promise<unknown>) =>
       cb({
         booking: { create: bookingCreate },
         attendee: { createMany: attendeeCreateMany },
         user: { update: userUpdate },
+        accountCredit: { updateMany: creditUpdateMany, create: creditCreate },
       }),
     ),
   } as unknown as CreateDraftDeps["prisma"];
@@ -167,6 +224,8 @@ function makeDeps(overrides?: {
   const paymentIntentRetrieve = vi.fn(async (id: string) => ({
     id,
     client_secret: overrides?.retrieveSecret ?? "pi_test_existing_secret",
+    amount: overrides?.retrieveAmount ?? 11000,
+    metadata: overrides?.retrieveMetadata ?? {},
   }));
 
   const stripe = {
@@ -185,6 +244,9 @@ function makeDeps(overrides?: {
     stripe,
     now: FIXED_NOW,
     newIcsUid: () => "booking-fixed-uuid@rideflumserberg.ch",
+    dispatchBookingConfirmedEmail: async (bookingId: string) => {
+      dispatched.push(bookingId);
+    },
   };
 
   return {
@@ -196,6 +258,9 @@ function makeDeps(overrides?: {
     updates,
     attendeesCreated,
     userUpdates,
+    creditWrites,
+    creditCreates,
+    dispatched,
     spies: {
       bookingCreate,
       attendeeCreateMany,
@@ -205,6 +270,9 @@ function makeDeps(overrides?: {
       paymentIntentCreate,
       paymentIntentRetrieve,
       userUpdate,
+      creditFindMany,
+      creditUpdateMany,
+      creditCreate,
     },
   };
 }
@@ -470,5 +538,258 @@ describe("createBookingDraftWith — phone auto-backfill (F-064a)", () => {
     if (result.ok) expect(result.clientSecret).toBe("pi_test_123_secret_abc");
     expect(spies.bookingCreate).toHaveBeenCalledTimes(1);
     expect(spies.paymentIntentCreate).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("createBookingDraftWith — F-060 credit redemption", () => {
+  const C_EARLY = new Date("2026-12-10T00:00:00.000Z");
+  const C_LATE = new Date("2026-12-31T00:00:00.000Z");
+
+  test("no creditIds → credit lookup is skipped, full price is charged", async () => {
+    const { deps, enginePrisma, spies } = makeDeps();
+    const result = await createBookingDraftWith(deps, enginePrisma, VALID_INPUT);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.chargeAmountCents).toBe(11000);
+      expect(result.creditsAppliedCents).toBe(0);
+    }
+    expect(spies.creditFindMany).not.toHaveBeenCalled();
+  });
+
+  test("happy partial: one credit discounts the charge, credit is LOCKED, metadata carries the ids", async () => {
+    const { deps, enginePrisma, spies, creditWrites } = makeDeps({
+      credits: [{ id: "cr1", amountCents: 5000, expiresAt: C_LATE }],
+    });
+
+    const result = await createBookingDraftWith(deps, enginePrisma, {
+      ...VALID_INPUT,
+      creditIds: ["cr1"],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.chargeAmountCents).toBe(6000);
+    expect(result.creditsAppliedCents).toBe(5000);
+    expect(result.clientSecret).toBe("pi_test_123_secret_abc");
+
+    // PaymentIntent charges the discounted amount and tags the locked credits.
+    const [piArgs] = spies.paymentIntentCreate.mock.calls[0] as unknown as [
+      { amount: number; metadata?: Record<string, string> },
+    ];
+    expect(piArgs.amount).toBe(6000);
+    expect(piArgs.metadata?.creditsAppliedCents).toBe("5000");
+    expect(piArgs.metadata?.lockedCreditIds).toBe("cr1");
+
+    // Credit moves ACTIVE → LOCKED (settled later by the webhook).
+    expect(creditWrites).toHaveLength(1);
+    expect(creditWrites[0]!.data).toMatchObject({ status: CreditStatus.LOCKED });
+    expect((creditWrites[0]!.where as { id: { in: string[] } }).id.in).toEqual(["cr1"]);
+  });
+
+  test("happy full (zero-charge): credits fully cover the lesson → CONFIRMED, no PaymentIntent, email dispatched", async () => {
+    const { deps, enginePrisma, spies, created, creditWrites, dispatched } =
+      makeDeps({
+        credits: [{ id: "cr1", amountCents: 11000, expiresAt: C_LATE }],
+      });
+
+    const result = await createBookingDraftWith(deps, enginePrisma, {
+      ...VALID_INPUT,
+      creditIds: ["cr1"],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.chargeAmountCents).toBe(0);
+    expect(result.creditsAppliedCents).toBe(11000);
+    expect(result.clientSecret).toBeNull();
+
+    // Booking is created CONFIRMED + paidAt; no Stripe call at all.
+    const createData = created[0]!.data as { status: string; paidAt?: Date };
+    expect(createData.status).toBe("CONFIRMED");
+    expect(createData.paidAt).toBeInstanceOf(Date);
+    expect(spies.paymentIntentCreate).not.toHaveBeenCalled();
+
+    // Credits flip straight to USED, and the confirmation email is dispatched here.
+    expect(creditWrites[0]!.data).toMatchObject({
+      status: CreditStatus.USED,
+      usedOnBookingId: created[0]!.id,
+    });
+    expect(dispatched).toEqual([created[0]!.id]);
+  });
+
+  test("oldest-first cap: only the earliest-expiring credits up to coverage are consumed", async () => {
+    // Sorted by expiry asc: cr_early (11000) covers the full 11000 alone, so
+    // cr_late is left untouched (ACTIVE).
+    const { deps, enginePrisma, creditWrites } = makeDeps({
+      credits: [
+        { id: "cr_late", amountCents: 5000, expiresAt: C_LATE },
+        { id: "cr_early", amountCents: 11000, expiresAt: C_EARLY },
+      ],
+    });
+
+    const result = await createBookingDraftWith(deps, enginePrisma, {
+      ...VALID_INPUT,
+      creditIds: ["cr_late", "cr_early"],
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.creditsAppliedCents).toBe(11000);
+    expect((creditWrites[0]!.where as { id: { in: string[] } }).id.in).toEqual([
+      "cr_early",
+    ]);
+  });
+
+  test("partial-use: the credit crossing the price is split — applied portion consumed, remainder re-issued (same expiry + provenance)", async () => {
+    // Sorted by expiry asc on an 11000 lesson:
+    //   cr1 (5000, 12-08) full → covered 5000
+    //   cr2 (5000, 12-10) full → covered 10000
+    //   cr3 (5000, 12-31) crosses → apply 1000, re-issue 4000 remnant
+    const { deps, enginePrisma, created, creditWrites, creditCreates } =
+      makeDeps({
+        credits: [
+          {
+            id: "cr1",
+            amountCents: 5000,
+            expiresAt: new Date("2026-12-08T00:00:00.000Z"),
+          },
+          { id: "cr2", amountCents: 5000, expiresAt: C_EARLY },
+          {
+            id: "cr3",
+            amountCents: 5000,
+            expiresAt: C_LATE,
+            reason: CreditReason.OPS_CANCEL,
+            sourceBookingId: "src_origin",
+          },
+        ],
+      });
+
+    const result = await createBookingDraftWith(deps, enginePrisma, {
+      ...VALID_INPUT,
+      creditIds: ["cr1", "cr2", "cr3"],
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      // Capped exactly at the price — no overshoot, no lost value.
+      expect(result.creditsAppliedCents).toBe(11000);
+      expect(result.chargeAmountCents).toBe(0);
+    }
+    // No overshoot annotation anymore.
+    const createData = created[0]!.data as { notes: string | null };
+    expect(createData.notes).toBeNull();
+
+    // Two fully-consumed credits flip to USED in one bulk write…
+    const bulk = creditWrites.find(
+      (w) => typeof (w.where as { id: unknown }).id === "object",
+    );
+    expect((bulk!.where as { id: { in: string[] } }).id.in).toEqual([
+      "cr1",
+      "cr2",
+    ]);
+    expect(bulk!.data).toMatchObject({ status: CreditStatus.USED });
+
+    // …and the crossing credit is rewritten down to the applied portion.
+    const partial = creditWrites.find(
+      (w) => typeof (w.where as { id: unknown }).id === "string",
+    );
+    expect((partial!.where as { id: string }).id).toBe("cr3");
+    expect(partial!.data).toMatchObject({
+      status: CreditStatus.USED,
+      amountCents: 1000,
+      usedOnBookingId: created[0]!.id,
+    });
+
+    // The 4000 remainder is re-issued ACTIVE, same expiry + inherited provenance.
+    expect(creditCreates).toHaveLength(1);
+    expect(creditCreates[0]).toMatchObject({
+      userId: "user_javi",
+      amountCents: 4000,
+      status: CreditStatus.ACTIVE,
+      expiresAt: C_LATE,
+      reason: CreditReason.OPS_CANCEL,
+      sourceBookingId: "src_origin",
+    });
+  });
+
+  test("exact coverage: a credit equal to the remaining balance is fully consumed with no remnant", async () => {
+    const { deps, enginePrisma, creditCreates, spies } = makeDeps({
+      // 6000 + 5000 == 11000 exactly → both full, nothing split.
+      credits: [
+        { id: "cr_a", amountCents: 6000, expiresAt: C_EARLY },
+        { id: "cr_b", amountCents: 5000, expiresAt: C_LATE },
+      ],
+    });
+
+    const result = await createBookingDraftWith(deps, enginePrisma, {
+      ...VALID_INPUT,
+      creditIds: ["cr_a", "cr_b"],
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.creditsAppliedCents).toBe(11000);
+      expect(result.chargeAmountCents).toBe(0);
+    }
+    expect(creditCreates).toHaveLength(0);
+    expect(spies.creditCreate).not.toHaveBeenCalled();
+  });
+
+  test("rejects with CREDIT_NOT_APPLICABLE when a selected credit is not returned (expired / used / locked / not owned)", async () => {
+    // Two ids requested, but the filtered lookup only returns one — the other
+    // failed the userId / status: ACTIVE / expiresAt > now guard.
+    const { deps, enginePrisma, spies } = makeDeps({
+      credits: [{ id: "cr_ok", amountCents: 5000, expiresAt: C_LATE }],
+    });
+
+    const result = await createBookingDraftWith(deps, enginePrisma, {
+      ...VALID_INPUT,
+      creditIds: ["cr_ok", "cr_bad"],
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toBe("CREDIT_NOT_APPLICABLE");
+    expect(spies.bookingCreate).not.toHaveBeenCalled();
+    expect(spies.paymentIntentCreate).not.toHaveBeenCalled();
+  });
+
+  test("race double-lock: guarded write matches fewer rows than selected → CREDIT_NOT_APPLICABLE, no PaymentIntent", async () => {
+    const { deps, enginePrisma, spies } = makeDeps({
+      credits: [{ id: "cr1", amountCents: 5000, expiresAt: C_LATE }],
+      // Concurrent draft grabbed cr1 between the read and the guarded write.
+      lockCountOverride: 0,
+    });
+
+    const result = await createBookingDraftWith(deps, enginePrisma, {
+      ...VALID_INPUT,
+      creditIds: ["cr1"],
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toBe("CREDIT_NOT_APPLICABLE");
+    expect(spies.paymentIntentCreate).not.toHaveBeenCalled();
+  });
+
+  test("reused draft reports the charge + credits from the existing PaymentIntent, not the new selection", async () => {
+    const { deps, enginePrisma } = makeDeps({
+      existingBooking: {
+        id: "book_existing",
+        stripePaymentIntentId: "pi_existing",
+        totalPriceCents: 11000,
+      },
+      retrieveSecret: "pi_existing_secret",
+      retrieveAmount: 6000,
+      retrieveMetadata: { creditsAppliedCents: "5000" },
+    });
+
+    const result = await createBookingDraftWith(deps, enginePrisma, {
+      ...VALID_INPUT,
+      creditIds: ["cr1"],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.reused).toBe(true);
+    expect(result.chargeAmountCents).toBe(6000);
+    expect(result.creditsAppliedCents).toBe(5000);
   });
 });

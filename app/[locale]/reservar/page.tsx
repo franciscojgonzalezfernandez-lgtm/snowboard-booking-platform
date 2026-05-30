@@ -17,6 +17,7 @@ import {
   getCachedCalendar,
   getCachedSlots,
 } from "@/lib/booking-engine/cache";
+import { getPriceCents } from "@/lib/pricing/get-price";
 import { BookingHeader } from "./booking-header";
 import { BookingStepper } from "./booking-stepper";
 import { BookerPaymentFlow } from "./booker-payment-flow";
@@ -31,6 +32,8 @@ type ReservarSearchParams = {
   t?: string;
   i?: string;
   l?: string;
+  /** F-060: `credit=auto` expands + pre-selects redeemable credits in Step 4. */
+  credit?: string;
 };
 
 type ReservarPageProps = {
@@ -193,6 +196,12 @@ export default async function ReservarPage({
   let instructorName: string | null = null;
   let resolvedLanguage: Locale | undefined = parsedLanguage;
   let publishableKey: string | undefined;
+  let lessonPriceCents = 0;
+  let redeemableCredits: Array<{
+    id: string;
+    amountCents: number;
+    expiresAtIso: string;
+  }> = [];
   if (shouldRenderSection4) {
     session = await auth.api.getSession({ headers: await headers() });
     publishableKey = process.env.STRIPE_PUBLISHABLE_KEY;
@@ -208,6 +217,40 @@ export default async function ReservarPage({
     instructorName = inst?.user.name ?? null;
     if (!resolvedLanguage && inst?.languages?.length) {
       resolvedLanguage = inst.languages[0];
+    }
+
+    // F-060: lesson price + redeemable credits feed the Apply-credits section
+    // and the Step 5 charge breakdown. The server action re-validates both, so
+    // these are display-only — a stale value can never over-discount a charge.
+    if (initialDuration && session?.user) {
+      const [season, credits] = await Promise.all([
+        prisma.season.findFirst({
+          where: { active: true },
+          select: { id: true, priceCentsByDuration: true },
+        }),
+        prisma.accountCredit.findMany({
+          where: {
+            userId: session.user.id,
+            status: "ACTIVE",
+            expiresAt: { gt: new Date() },
+          },
+          orderBy: { expiresAt: "asc" },
+          select: { id: true, amountCents: true, expiresAt: true },
+        }),
+      ]);
+      if (season) {
+        try {
+          lessonPriceCents = getPriceCents(season, initialDuration);
+        } catch {
+          // Misconfigured season pricing surfaces as PRICING_MISSING when the
+          // booker submits; the credit UI just renders without a price cap.
+        }
+      }
+      redeemableCredits = credits.map((c) => ({
+        id: c.id,
+        amountCents: c.amountCents,
+        expiresAtIso: c.expiresAt.toISOString(),
+      }));
     }
   }
 
@@ -377,6 +420,9 @@ export default async function ReservarPage({
                 instructorLabel={instructorName ?? "—"}
                 dateLabel={formatDateForLocale(parsedDateStr, locale)}
                 attendeeCountKey="summary_attendees_count"
+                lessonPriceCents={lessonPriceCents}
+                credits={redeemableCredits}
+                autoApplyCredits={sp.credit === "auto"}
                 section4={{
                   eyebrow: tStep4("eyebrow"),
                   heading: tStep4("heading"),

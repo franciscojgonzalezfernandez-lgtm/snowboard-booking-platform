@@ -1,5 +1,5 @@
 import type Stripe from "stripe";
-import { BookingStatus, type PrismaClient } from "@prisma/client";
+import { BookingStatus, CreditStatus, type PrismaClient } from "@prisma/client";
 
 export type WebhookOutcome =
   | { status: 200; body: { ok: true; duplicate?: true } }
@@ -19,6 +19,8 @@ export type StripeWebhookVerifier = {
 export type WebhookEventStore = {
   webhookEvent: Pick<PrismaClient["webhookEvent"], "createMany" | "update">;
   booking: Pick<PrismaClient["booking"], "findUnique" | "update">;
+  /** F-060: credits locked at draft time settle/unlock based on payment fate. */
+  accountCredit: Pick<PrismaClient["accountCredit"], "updateMany">;
 };
 
 export type DispatchBookingConfirmedEmail = (
@@ -205,6 +207,18 @@ async function onPaymentIntentSucceeded(
     },
   });
 
+  // F-060: settle credits that funded the cash-discounted portion. Keyed on
+  // `lockedByBookingId` + `status: LOCKED` so a Stripe retry (or any second
+  // pass) is a no-op — the second update matches 0 rows.
+  await opts.prisma.accountCredit.updateMany({
+    where: { lockedByBookingId: booking.id, status: CreditStatus.LOCKED },
+    data: {
+      status: CreditStatus.USED,
+      usedAt: new Date(),
+      usedOnBookingId: booking.id,
+    },
+  });
+
   try {
     await dispatch(booking.id);
   } catch (err) {
@@ -237,6 +251,8 @@ async function onPaymentIntentFailed(
         pi.last_payment_error?.message ?? pi.last_payment_error?.code ?? null,
     },
   });
+
+  await releaseLockedCredits(booking.id, opts);
 }
 
 async function onPaymentIntentCanceled(
@@ -253,6 +269,23 @@ async function onPaymentIntentCanceled(
   await opts.prisma.booking.update({
     where: { id: booking.id },
     data: { status: BookingStatus.CANCELLED_BY_SYSTEM },
+  });
+
+  await releaseLockedCredits(booking.id, opts);
+}
+
+/**
+ * F-060: return any credits locked by a draft to ACTIVE when its payment does
+ * not complete (failed / canceled / expired). Keyed on `status: LOCKED` so it
+ * is idempotent and never disturbs credits already settled as USED.
+ */
+async function releaseLockedCredits(
+  bookingId: string,
+  opts: HandleWebhookOptions,
+): Promise<void> {
+  await opts.prisma.accountCredit.updateMany({
+    where: { lockedByBookingId: bookingId, status: CreditStatus.LOCKED },
+    data: { status: CreditStatus.ACTIVE, lockedByBookingId: null },
   });
 }
 

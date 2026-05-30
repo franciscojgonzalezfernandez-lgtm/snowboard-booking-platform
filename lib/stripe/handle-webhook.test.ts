@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
 import type Stripe from "stripe";
-import { BookingStatus } from "@prisma/client";
+import { BookingStatus, CreditStatus } from "@prisma/client";
 
 import {
   handleStripeWebhook,
@@ -35,19 +35,33 @@ type BookingRow = {
   refundAmountCents?: number | null;
 };
 
+type CreditRow = {
+  id: string;
+  lockedByBookingId: string | null;
+  usedOnBookingId: string | null;
+  status: CreditStatus;
+};
+
 function makePrisma(opts: {
   /** Webhook event ids already processed. */
   existingEvents?: Set<string>;
   /** Seed bookings keyed by stripePaymentIntentId. */
   bookings?: BookingRow[];
+  /** F-060: credits locked/used by a draft, for settle/release assertions. */
+  credits?: CreditRow[];
 }) {
   const existingEvents = opts.existingEvents ?? new Set<string>();
   const bookings = new Map<string, BookingRow>(
     (opts.bookings ?? []).map((b) => [b.stripePaymentIntentId, b]),
   );
+  const credits = (opts.credits ?? []).map((c) => ({ ...c }));
   const eventUpdates: Array<{ id: string; processedAt: Date | null }> = [];
   const bookingUpdates: Array<{ id: string; data: Record<string, unknown> }> =
     [];
+  const creditUpdates: Array<{
+    where: Record<string, unknown>;
+    data: Record<string, unknown>;
+  }> = [];
 
   const eventCreateMany = vi.fn(
     async (args: { data: Array<{ id: string }> }) => {
@@ -95,20 +109,44 @@ function makePrisma(opts: {
     },
   );
 
+  const creditUpdateMany = vi.fn(
+    async (args: {
+      where: { lockedByBookingId: string; status: CreditStatus };
+      data: Record<string, unknown>;
+    }) => {
+      creditUpdates.push({ where: args.where, data: args.data });
+      let count = 0;
+      for (const credit of credits) {
+        if (
+          credit.lockedByBookingId === args.where.lockedByBookingId &&
+          credit.status === args.where.status
+        ) {
+          Object.assign(credit, args.data);
+          count++;
+        }
+      }
+      return { count };
+    },
+  );
+
   const prisma = {
     webhookEvent: { createMany: eventCreateMany, update: eventUpdate },
     booking: { findUnique: bookingFindUnique, update: bookingUpdate },
+    accountCredit: { updateMany: creditUpdateMany },
   } as unknown as WebhookEventStore;
 
   return {
     prisma,
     eventUpdates,
     bookingUpdates,
+    creditUpdates,
+    credits,
     spies: {
       eventCreateMany,
       eventUpdate,
       bookingFindUnique,
       bookingUpdate,
+      creditUpdateMany,
     },
   };
 }
@@ -535,5 +573,161 @@ describe("handleStripeWebhook — charge.dispute.created", () => {
     expect(ctx.severity).toBe("alert");
     expect(ctx.disputeId).toBe("dp_1");
     expect(ctx.paymentIntentId).toBe("pi_dis");
+  });
+});
+
+describe("handleStripeWebhook — F-060 credit settlement", () => {
+  test("succeeded settles credits LOCKED → USED keyed on lockedByBookingId", async () => {
+    const { prisma, credits, spies } = makePrisma({
+      bookings: [
+        {
+          id: "book_credit",
+          stripePaymentIntentId: "pi_credit",
+          status: BookingStatus.PENDING_PAYMENT,
+        },
+      ],
+      credits: [
+        {
+          id: "cr_1",
+          lockedByBookingId: "book_credit",
+          usedOnBookingId: null,
+          status: CreditStatus.LOCKED,
+        },
+      ],
+    });
+    const stripe = makeStripe({
+      event: paymentIntentEvent("evt_credit", "payment_intent.succeeded", {
+        id: "pi_credit",
+      }),
+    });
+
+    const out = await handleStripeWebhook({
+      rawBody: "{}",
+      signature: "t=1,v1=ok",
+      secret: "whsec_test",
+      stripe,
+      prisma,
+      dispatchBookingConfirmedEmail: vi.fn(async () => undefined),
+    });
+
+    expect(out.status).toBe(200);
+    expect(spies.creditUpdateMany).toHaveBeenCalledOnce();
+    expect(credits[0]!.status).toBe(CreditStatus.USED);
+    expect(credits[0]!.usedOnBookingId).toBe("book_credit");
+  });
+
+  test("succeeded credit settlement is idempotent — second pass affects 0 rows", async () => {
+    const { prisma, credits } = makePrisma({
+      bookings: [
+        {
+          id: "book_dup_credit",
+          stripePaymentIntentId: "pi_dup_credit",
+          status: BookingStatus.PENDING_PAYMENT,
+        },
+      ],
+      credits: [
+        {
+          id: "cr_dup",
+          lockedByBookingId: "book_dup_credit",
+          usedOnBookingId: "book_dup_credit",
+          status: CreditStatus.USED,
+        },
+      ],
+    });
+    const stripe = makeStripe({
+      event: paymentIntentEvent("evt_dup_credit", "payment_intent.succeeded", {
+        id: "pi_dup_credit",
+      }),
+    });
+
+    const out = await handleStripeWebhook({
+      rawBody: "{}",
+      signature: "t=1,v1=ok",
+      secret: "whsec_test",
+      stripe,
+      prisma,
+      dispatchBookingConfirmedEmail: vi.fn(async () => undefined),
+    });
+
+    expect(out.status).toBe(200);
+    // Already USED → status guard matches 0 rows, value unchanged.
+    expect(credits[0]!.status).toBe(CreditStatus.USED);
+  });
+
+  test("payment_failed releases credits LOCKED → ACTIVE", async () => {
+    const { prisma, credits } = makePrisma({
+      bookings: [
+        {
+          id: "book_failcredit",
+          stripePaymentIntentId: "pi_failcredit",
+          status: BookingStatus.PENDING_PAYMENT,
+        },
+      ],
+      credits: [
+        {
+          id: "cr_fail",
+          lockedByBookingId: "book_failcredit",
+          usedOnBookingId: null,
+          status: CreditStatus.LOCKED,
+        },
+      ],
+    });
+    const stripe = makeStripe({
+      event: paymentIntentEvent("evt_failcredit", "payment_intent.payment_failed", {
+        id: "pi_failcredit",
+        last_payment_error: {
+          message: "declined",
+        } as unknown as Stripe.PaymentIntent.LastPaymentError,
+      }),
+    });
+
+    const out = await handleStripeWebhook({
+      rawBody: "{}",
+      signature: "t=1,v1=ok",
+      secret: "whsec_test",
+      stripe,
+      prisma,
+    });
+
+    expect(out.status).toBe(200);
+    expect(credits[0]!.status).toBe(CreditStatus.ACTIVE);
+    expect(credits[0]!.lockedByBookingId).toBeNull();
+  });
+
+  test("canceled releases credits LOCKED → ACTIVE", async () => {
+    const { prisma, credits } = makePrisma({
+      bookings: [
+        {
+          id: "book_cancredit",
+          stripePaymentIntentId: "pi_cancredit",
+          status: BookingStatus.PENDING_PAYMENT,
+        },
+      ],
+      credits: [
+        {
+          id: "cr_can",
+          lockedByBookingId: "book_cancredit",
+          usedOnBookingId: null,
+          status: CreditStatus.LOCKED,
+        },
+      ],
+    });
+    const stripe = makeStripe({
+      event: paymentIntentEvent("evt_cancredit", "payment_intent.canceled", {
+        id: "pi_cancredit",
+      }),
+    });
+
+    const out = await handleStripeWebhook({
+      rawBody: "{}",
+      signature: "t=1,v1=ok",
+      secret: "whsec_test",
+      stripe,
+      prisma,
+    });
+
+    expect(out.status).toBe(200);
+    expect(credits[0]!.status).toBe(CreditStatus.ACTIVE);
+    expect(credits[0]!.lockedByBookingId).toBeNull();
   });
 });
