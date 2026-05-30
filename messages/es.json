@@ -245,6 +245,7 @@
       "error_attendees_max": "Máximo cuatro riders por reserva",
       "error_terms_required": "Acepta las condiciones para continuar",
       "error_credit_not_applicable": "Uno de los saldos seleccionados ya no está disponible. Hemos quitado tu selección — revísala e inténtalo de nuevo.",
+      "error_invalid_fields": "Revisa los campos marcados e inténtalo de nuevo.",
       "error_fallback": "No pudimos continuar. Revisa los campos marcados e inténtalo de nuevo."
     },
     "step5": {

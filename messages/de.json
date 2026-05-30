@@ -245,6 +245,7 @@
       "error_attendees_max": "Maximal vier fahrende Personen pro Buchung",
       "error_terms_required": "Akzeptiere die Bedingungen, um fortzufahren",
       "error_credit_not_applicable": "Eines der gewählten Guthaben ist nicht mehr verfügbar. Wir haben deine Auswahl zurückgesetzt — bitte prüfen und erneut versuchen.",
+      "error_invalid_fields": "Prüfe die markierten Felder und versuche es erneut.",
       "error_fallback": "Konnte nicht fortfahren. Prüfe die markierten Felder und versuche es erneut."
     },
     "step5": {

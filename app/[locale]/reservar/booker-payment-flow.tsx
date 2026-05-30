@@ -5,6 +5,8 @@ import {
   Controller,
   useFieldArray,
   useForm,
+  type FieldErrors,
+  type Path,
   type Resolver,
 } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -187,7 +189,7 @@ export function BookerPaymentFlow({
   const queryClient = useQueryClient();
   const [pending, startTransition] = useTransition();
   const [submitError, setSubmitError] = useState<{
-    kind: CreateBookingDraftError | "GENERIC";
+    kind: CreateBookingDraftError | "GENERIC" | "INVALID_FIELDS";
     message: string;
   } | null>(null);
   const { set } = useBookingUrlState();
@@ -199,7 +201,10 @@ export function BookerPaymentFlow({
     mode: "onTouched",
     defaultValues: {
       bookerName: bookerName ?? "",
-      bookerPhone: "+41 ",
+      // Start empty so the input reads as "to be filled". A pre-typed "+41 "
+      // looks already-completed to a first-time booker but fails the E.164
+      // regex — they then can't tell why the submit button is greyed out.
+      bookerPhone: "",
       attendees: [
         {
           name: "",
@@ -216,8 +221,9 @@ export function BookerPaymentFlow({
     register,
     control,
     handleSubmit,
+    setFocus,
     watch,
-    formState: { errors, isValid },
+    formState: { errors },
   } = form;
 
   const { fields, append, remove } = useFieldArray({
@@ -390,6 +396,55 @@ export function BookerPaymentFlow({
     });
   }
 
+  // RHF invokes this when handleSubmit decides the form is invalid (Zod
+  // resolver returned errors). Surface a top-of-form banner + jump focus to
+  // the first failing field so the booker isn't staring at a silently-greyed
+  // submit. Order matches the visual order on screen so the focus jump feels
+  // predictable.
+  function onInvalid(formErrors: FieldErrors<Step4FormValues>) {
+    setSubmitError({
+      kind: "INVALID_FIELDS",
+      message: t("error_invalid_fields"),
+    });
+
+    if (formErrors.bookerName) {
+      setFocus("bookerName");
+      return;
+    }
+    if (formErrors.bookerPhone) {
+      setFocus("bookerPhone");
+      return;
+    }
+    if (formErrors.attendees) {
+      // Find the first attendee row with any field error and focus its first
+      // failing sub-field. RHF's `attendees` error shape is either an array
+      // (one entry per row, undefined for clean rows) or a single error on the
+      // array itself (e.g. min/max length) — handle both.
+      const rows = Array.isArray(formErrors.attendees)
+        ? formErrors.attendees
+        : [];
+      const idx = rows.findIndex((row) => row != null);
+      if (idx >= 0) {
+        const row = rows[idx]!;
+        const subKey: "name" | "age" | "level" = row.name
+          ? "name"
+          : row.age
+            ? "age"
+            : "level";
+        setFocus(`attendees.${idx}.${subKey}` as Path<Step4FormValues>);
+        return;
+      }
+      // Fallback: focus the first attendee name input so the user lands
+      // somewhere actionable.
+      setFocus("attendees.0.name" as Path<Step4FormValues>);
+      return;
+    }
+    if (formErrors.acceptedTerms) {
+      setFocus("acceptedTerms");
+      return;
+    }
+  }
+
   // Build attendees-encoded payload server-action consumes directly; the
   // legacy /step-5 URL-encoded version is no longer needed but kept exported
   // by `lib/schemas/step4` for any external callers.
@@ -423,7 +478,7 @@ export function BookerPaymentFlow({
         <form
           data-testid="step4-form"
           noValidate
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(onSubmit, onInvalid)}
           className="mt-8 space-y-12"
         >
           <fieldset className="space-y-4" data-testid="step4-booker">
@@ -474,13 +529,20 @@ export function BookerPaymentFlow({
                 autoComplete="tel"
                 placeholder="+41 76 638 1870"
                 aria-invalid={errors.bookerPhone ? "true" : "false"}
+                aria-describedby={
+                  errors.bookerPhone ? "booker-phone-error" : "booker-phone-hint"
+                }
                 {...register("bookerPhone")}
               />
-              <p className="text-xs text-muted-foreground">
+              <p id="booker-phone-hint" className="text-xs text-muted-foreground">
                 {t("booker_phone_hint")}
               </p>
               {errors.bookerPhone ? (
-                <p className="text-xs text-destructive" role="alert">
+                <p
+                  id="booker-phone-error"
+                  className="text-xs text-destructive"
+                  role="alert"
+                >
                   {t("error_phone_invalid")}
                 </p>
               ) : null}
@@ -842,7 +904,7 @@ export function BookerPaymentFlow({
             <Button
               type="submit"
               data-testid="step4-submit"
-              disabled={pending || !isValid}
+              disabled={pending}
               className="w-full sm:w-auto"
             >
               {pending

@@ -245,6 +245,7 @@
       "error_attendees_max": "Maximum four riders per booking",
       "error_terms_required": "Accept the terms to continue",
       "error_credit_not_applicable": "One of the selected credits is no longer available. We've cleared your selection — please review and try again.",
+      "error_invalid_fields": "Check the highlighted fields and try again.",
       "error_fallback": "Could not continue. Check the highlighted fields and try again."
     },
     "step5": {
