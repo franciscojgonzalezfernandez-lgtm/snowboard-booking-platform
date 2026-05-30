@@ -42,6 +42,7 @@ const createdUserIds: string[] = [];
 let instructorId: string;
 let zeroChargeSlot: Slot;
 let partialSlot: Slot;
+let splitSlot: Slot;
 
 function toMinutes(hhmm: string): number {
   const parts = hhmm.split(":");
@@ -110,9 +111,10 @@ test.beforeAll(async () => {
   if (!instructor) throw new Error("No active en-speaking instructor seeded");
   instructorId = instructor.id;
 
-  const slots = await findFreeSlots(instructorId, 2);
+  const slots = await findFreeSlots(instructorId, 3);
   zeroChargeSlot = slots[0]!;
   partialSlot = slots[1]!;
+  splitSlot = slots[2]!;
 });
 
 test.afterAll(async () => {
@@ -296,5 +298,59 @@ test.describe("F-060 — checkout credit redemption", () => {
     );
     // A card is still required for the remaining CHF 60.
     await expect(page.getByTestId("step5-pay")).toContainText("60.00");
+  });
+
+  test("a credit larger than the lesson is split → CHF 110 applied, CHF 90 re-issued as a fresh credit (same expiry)", async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+    const userId = await signUp(page, uniqueEmail("split"));
+    // CHF 200 credit on a CHF 110 lesson → 110 applied, 90 re-issued.
+    await seedCredit(userId, 20000);
+
+    await page.goto(bookingUrl(splitSlot), {
+      waitUntil: "domcontentloaded",
+    });
+
+    // The applied total caps at the lesson price; the row spells out the split.
+    await expect(page.getByTestId("step4-credits")).toBeVisible();
+    await expect(page.getByTestId("step4-credits-total")).toContainText(
+      "110.00",
+    );
+    const creditsSection = page.getByTestId("step4-credits");
+    await expect(creditsSection).toContainText(/stays as credit/i);
+    await expect(creditsSection).toContainText("90.00");
+
+    await fillStep4Form(page);
+
+    // Fully covered → zero-charge confirm, no card.
+    const submit = page.getByTestId("step4-submit");
+    await expect(submit).toHaveText(/Confirm booking/i);
+    await submit.click();
+
+    await page.waitForURL(/\/en\/reservar\/exito\//);
+    await expect(page.getByTestId("exito-page")).toHaveAttribute(
+      "data-status",
+      "CONFIRMED",
+    );
+    await expect(page.getByTestId("payment-element")).toHaveCount(0);
+
+    // Ledger: original rewritten down to 11000 USED + a fresh 9000 ACTIVE remnant
+    // inheriting the original's expiry. No value lost.
+    const credits = await prisma.accountCredit.findMany({
+      where: { userId },
+      select: { amountCents: true, status: true, expiresAt: true },
+      orderBy: { amountCents: "asc" },
+    });
+    expect(credits).toHaveLength(2);
+    expect(credits[0]).toMatchObject({
+      amountCents: 9000,
+      status: CreditStatus.ACTIVE,
+    });
+    expect(credits[0]!.expiresAt.getTime()).toBe(FAR_EXPIRY.getTime());
+    expect(credits[1]).toMatchObject({
+      amountCents: 11000,
+      status: CreditStatus.USED,
+    });
   });
 });

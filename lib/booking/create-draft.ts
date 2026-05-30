@@ -1,6 +1,11 @@
 import { randomUUID } from "crypto";
 
-import { BookingStatus, CreditStatus, type Duration } from "@prisma/client";
+import {
+  BookingStatus,
+  CreditReason,
+  CreditStatus,
+  type Duration,
+} from "@prisma/client";
 import type Stripe from "stripe";
 
 import { durationMinutes } from "@/lib/booking-engine/duration";
@@ -40,8 +45,16 @@ export type CreateDraftDeps = {
   dispatchBookingConfirmedEmail?: (bookingId: string) => Promise<void>;
 };
 
-/** A credit row as loaded for redemption selection. */
-type CreditRow = { id: string; amountCents: number; expiresAt: Date };
+/** A credit row as loaded for redemption selection. `reason` + `sourceBookingId`
+ * travel along so a partially-consumed credit can re-issue its remainder with the
+ * original's provenance (F-060 partial-use). */
+type CreditRow = {
+  id: string;
+  amountCents: number;
+  expiresAt: Date;
+  reason: CreditReason;
+  sourceBookingId: string;
+};
 
 type PrismaSurface = {
   season: {
@@ -84,7 +97,13 @@ type PrismaSurface = {
         status: CreditStatus;
         expiresAt: { gt: Date };
       };
-      select: { id: true; amountCents: true; expiresAt: true };
+      select: {
+        id: true;
+        amountCents: true;
+        expiresAt: true;
+        reason: true;
+        sourceBookingId: true;
+      };
     }): Promise<CreditRow[]>;
   };
   $transaction<T>(
@@ -131,15 +150,31 @@ type PrismaTransactionSurface = {
   accountCredit: {
     updateMany(args: {
       where: {
-        id: { in: string[] };
+        id: { in: string[] } | string;
         userId: string;
         status: CreditStatus;
         expiresAt: { gt: Date };
       };
       data:
         | { status: CreditStatus; lockedByBookingId: string }
-        | { status: CreditStatus; usedAt: Date; usedOnBookingId: string };
+        | { status: CreditStatus; usedAt: Date; usedOnBookingId: string }
+        | {
+            status: CreditStatus;
+            amountCents: number;
+            usedAt: Date;
+            usedOnBookingId: string;
+          };
     }): Promise<{ count: number }>;
+    create(args: {
+      data: {
+        userId: string;
+        amountCents: number;
+        sourceBookingId: string;
+        reason: CreditReason;
+        status: CreditStatus;
+        expiresAt: Date;
+      };
+    }): Promise<{ id: string }>;
   };
 };
 
@@ -204,27 +239,66 @@ class CreditConflictError extends Error {
   }
 }
 
+/** The credit that straddles the coverage threshold: only `appliedCents` of it
+ * funds this lesson; `remnantCents` is re-issued as a fresh credit so no value
+ * is lost. Carries the parent's `expiresAt` + provenance for the remnant row. */
+type PartialCredit = {
+  id: string;
+  appliedCents: number;
+  remnantCents: number;
+  expiresAt: Date;
+  reason: CreditReason;
+  sourceBookingId: string;
+};
+
+type CreditSelection = {
+  /** Credits whose full amount funds the lesson (consumed outright). */
+  fullyConsumedIds: string[];
+  /** The single credit split across the threshold, or null if none crosses. */
+  partial: PartialCredit | null;
+  /** Total credit value applied to the lesson — capped at `totalPriceCents`. */
+  creditsAppliedCents: number;
+};
+
 /**
- * Oldest-first cap (F-060). Consume credits in expiry-ascending order until the
- * lesson price is covered; the credit that crosses the threshold is consumed in
- * full (all-or-nothing per credit — no partial use). Any selected credits past
- * the coverage point are left untouched (returned as ACTIVE).
+ * Oldest-first selection (F-060 partial-use). Consume credits in expiry-ascending
+ * order until the lesson price is covered. A credit whose amount exceeds the
+ * remaining balance is split: exactly the remaining balance funds the lesson and
+ * the rest becomes a `partial.remnantCents` re-issue (same expiry + provenance).
+ * `creditsAppliedCents` therefore never exceeds `totalPriceCents` — there is no
+ * overshoot and no lost value. Selected credits past the coverage point are left
+ * untouched (ACTIVE).
  */
 function selectCreditsToApply(
   credits: CreditRow[],
   totalPriceCents: number,
-): { consumedIds: string[]; creditsAppliedCents: number } {
+): CreditSelection {
   const sorted = [...credits].sort(
     (a, b) => a.expiresAt.getTime() - b.expiresAt.getTime(),
   );
-  const consumedIds: string[] = [];
+  const fullyConsumedIds: string[] = [];
+  let partial: PartialCredit | null = null;
   let creditsAppliedCents = 0;
   for (const credit of sorted) {
-    if (creditsAppliedCents >= totalPriceCents) break;
-    consumedIds.push(credit.id);
-    creditsAppliedCents += credit.amountCents;
+    const remaining = totalPriceCents - creditsAppliedCents;
+    if (remaining <= 0) break;
+    if (credit.amountCents <= remaining) {
+      fullyConsumedIds.push(credit.id);
+      creditsAppliedCents += credit.amountCents;
+    } else {
+      partial = {
+        id: credit.id,
+        appliedCents: remaining,
+        remnantCents: credit.amountCents - remaining,
+        expiresAt: credit.expiresAt,
+        reason: credit.reason,
+        sourceBookingId: credit.sourceBookingId,
+      };
+      creditsAppliedCents += remaining;
+      break;
+    }
   }
-  return { consumedIds, creditsAppliedCents };
+  return { fullyConsumedIds, partial, creditsAppliedCents };
 }
 
 export async function createBookingDraftWith(
@@ -334,7 +408,8 @@ export async function createBookingDraftWith(
   // is what protects against concurrent double-spend; this read drives the
   // charge amount + the zero-charge vs normal branch.
   const selectedCreditIds = data.creditIds ?? [];
-  let consumedIds: string[] = [];
+  let fullyConsumedIds: string[] = [];
+  let partialCredit: PartialCredit | null = null;
   let creditsAppliedCents = 0;
   if (selectedCreditIds.length > 0) {
     const credits = await prisma.accountCredit.findMany({
@@ -344,7 +419,13 @@ export async function createBookingDraftWith(
         status: CreditStatus.ACTIVE,
         expiresAt: { gt: now },
       },
-      select: { id: true, amountCents: true, expiresAt: true },
+      select: {
+        id: true,
+        amountCents: true,
+        expiresAt: true,
+        reason: true,
+        sourceBookingId: true,
+      },
     });
     // Any selected credit that is not owned / not ACTIVE / expired drops out of
     // the result set — reject the whole request rather than silently applying a
@@ -352,26 +433,19 @@ export async function createBookingDraftWith(
     if (credits.length !== selectedCreditIds.length) {
       return { ok: false, error: "CREDIT_NOT_APPLICABLE" };
     }
-    ({ consumedIds, creditsAppliedCents } = selectCreditsToApply(
-      credits,
-      totalPriceCents,
-    ));
+    ({ fullyConsumedIds, partial: partialCredit, creditsAppliedCents } =
+      selectCreditsToApply(credits, totalPriceCents));
   }
 
+  // `creditsAppliedCents` is capped at the price by the selection, so the charge
+  // is never negative. A credit only splits when it covers the lesson in full,
+  // so `partialCredit != null` always implies the zero-charge branch below.
   const chargeAmountCents = Math.max(0, totalPriceCents - creditsAppliedCents);
-  const isZeroCharge = chargeAmountCents === 0 && consumedIds.length > 0;
-  const overshootCents = Math.max(0, creditsAppliedCents - totalPriceCents);
+  const isZeroCharge = chargeAmountCents === 0 && creditsAppliedCents > 0;
 
   const attendeeRows = buildAttendeeRows(data.attendees, data.bookerName, now);
   const icsUid = newIcsUid();
-  const noteParts: string[] = [];
-  if (data.notes) noteParts.push(data.notes);
-  if (overshootCents > 0) {
-    noteParts.push(
-      `[F-060 credit overshoot: applied ${creditsAppliedCents} cents vs price ${totalPriceCents} cents]`,
-    );
-  }
-  const notes = noteParts.length > 0 ? noteParts.join("\n") : null;
+  const notes = data.notes ? data.notes : null;
 
   let booking: { id: string };
   try {
@@ -426,10 +500,10 @@ export async function createBookingDraftWith(
       // Zero-charge bookings consume credits outright (ACTIVE → USED) since
       // there is no payment to wait on; normal bookings lock them (ACTIVE →
       // LOCKED) until the webhook confirms or fails the payment.
-      if (consumedIds.length > 0) {
+      if (fullyConsumedIds.length > 0) {
         const result = await tx.accountCredit.updateMany({
           where: {
-            id: { in: consumedIds },
+            id: { in: fullyConsumedIds },
             userId: session.user.id,
             status: CreditStatus.ACTIVE,
             expiresAt: { gt: now },
@@ -445,8 +519,48 @@ export async function createBookingDraftWith(
                 lockedByBookingId: created.id,
               },
         });
-        if (result.count !== consumedIds.length) {
+        if (result.count !== fullyConsumedIds.length) {
           throw new CreditConflictError();
+        }
+      }
+
+      // F-060 partial-use: a credit that exceeds the remaining balance is split.
+      // It only ever arises when it covers the lesson in full → zero-charge, so
+      // there is no LOCKED intermediate: consume the needed `appliedCents` (the
+      // row's amount is rewritten down to what it funded) and re-issue the
+      // remainder as a fresh ACTIVE credit sharing the original's expiry +
+      // provenance. Rewriting the amount down keeps the ledger conserving: a
+      // later cancellation restores exactly `appliedCents`, which plus the
+      // remnant equals the original face value (see lib/booking/cancel.ts).
+      if (partialCredit) {
+        const used = await tx.accountCredit.updateMany({
+          where: {
+            id: partialCredit.id,
+            userId: session.user.id,
+            status: CreditStatus.ACTIVE,
+            expiresAt: { gt: now },
+          },
+          data: {
+            status: CreditStatus.USED,
+            amountCents: partialCredit.appliedCents,
+            usedAt: now,
+            usedOnBookingId: created.id,
+          },
+        });
+        if (used.count !== 1) {
+          throw new CreditConflictError();
+        }
+        if (partialCredit.remnantCents > 0) {
+          await tx.accountCredit.create({
+            data: {
+              userId: session.user.id,
+              amountCents: partialCredit.remnantCents,
+              sourceBookingId: partialCredit.sourceBookingId,
+              reason: partialCredit.reason,
+              status: CreditStatus.ACTIVE,
+              expiresAt: partialCredit.expiresAt,
+            },
+          });
         }
       }
 
@@ -493,7 +607,7 @@ export async function createBookingDraftWith(
         startDateTime: startDateTime.toISOString(),
         endDateTime: endDateTime.toISOString(),
         creditsAppliedCents: String(creditsAppliedCents),
-        lockedCreditIds: consumedIds.join(","),
+        lockedCreditIds: fullyConsumedIds.join(","),
       },
       description: `Snowboard lesson · ${data.duration} · ${data.date} ${data.time}`,
     },

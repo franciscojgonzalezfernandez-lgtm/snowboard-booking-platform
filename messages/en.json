@@ -229,7 +229,7 @@
       "credits_use_all": "Use all",
       "credits_clear": "Clear",
       "credits_expires": "Expires {date}",
-      "credits_fully_consumed": "This credit will be fully consumed.",
+      "credits_partial": "{applied} applied · {remainder} stays as credit.",
       "credits_residual_tooltip": "Lesson price already covered.",
       "credits_applied_label": "Total credits applied",
       "submit": "Continue to payment",

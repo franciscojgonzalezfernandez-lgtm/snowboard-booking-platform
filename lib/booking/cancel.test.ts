@@ -303,6 +303,45 @@ describe("cancelBookingByUserWith", () => {
     });
   });
 
+  test("F-060 partial-use: cancelling a split-funded booking restores only the applied portion (the remnant already exists), conserving the original face value", async () => {
+    // The booking was funded by a credit that got SPLIT at checkout: a CHF 200
+    // credit covering a CHF 110 lesson is rewritten down to a 11000 USED row
+    // (usedOnBookingId=book_1) and a separate 9000 ACTIVE remnant. Cancel reads
+    // the USED row's *reduced* amount (11000) — it must NOT restore the 20000
+    // face value, or the booker would end up with 20000 + 9000 = 29000. Restoring
+    // 11000 + the untouched 9000 remnant = 20000 original. No cash → no fresh credit.
+    const originalExpiry = new Date("2027-01-15T00:00:00.000Z");
+    const { deps, creditCreates, creditUpdates } = makeDeps({
+      booking: makeBooking({ totalPriceCents: 11000 }),
+      usedCredits: [
+        { id: "cr_split", amountCents: 11000, expiresAt: originalExpiry },
+      ],
+    });
+
+    const result = await cancelBookingByUserWith(deps, { bookingId: "book_1" });
+
+    expect(result).toMatchObject({
+      ok: true,
+      outcome: "credit",
+      creditAmountCents: 11000,
+    });
+    expect(creditCreates).toHaveLength(0);
+    if (result.ok && result.outcome === "credit") {
+      expect(result.creditExpiresAt.getTime()).toBe(originalExpiry.getTime());
+    }
+    const restore = creditUpdates.find(
+      (u) => (u.where as { id?: { in?: string[] } }).id?.in,
+    );
+    expect((restore!.where as { id: { in: string[] } }).id.in).toEqual([
+      "cr_split",
+    ]);
+    expect(restore!.data).toMatchObject({
+      status: CreditStatus.ACTIVE,
+      usedAt: null,
+      usedOnBookingId: null,
+    });
+  });
+
   test("F-060: a partly-credit-funded booking restores credits + mints a fresh credit for the cash portion only", async () => {
     const originalExpiry = new Date("2027-01-15T00:00:00.000Z");
     const { deps, creditCreates } = makeDeps({

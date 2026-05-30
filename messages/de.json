@@ -229,7 +229,7 @@
       "credits_use_all": "Alle verwenden",
       "credits_clear": "Zurücksetzen",
       "credits_expires": "Gültig bis {date}",
-      "credits_fully_consumed": "Dieses Guthaben wird vollständig aufgebraucht.",
+      "credits_partial": "{applied} eingelöst · {remainder} bleibt als Guthaben.",
       "credits_residual_tooltip": "Lektionspreis bereits gedeckt.",
       "credits_applied_label": "Eingelöstes Guthaben gesamt",
       "submit": "Weiter zur Zahlung",

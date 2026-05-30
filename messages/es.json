@@ -229,7 +229,7 @@
       "credits_use_all": "Usar todo",
       "credits_clear": "Quitar",
       "credits_expires": "Caduca {date}",
-      "credits_fully_consumed": "Este saldo se usará por completo.",
+      "credits_partial": "{applied} aplicado · {remainder} queda como saldo.",
       "credits_residual_tooltip": "El precio de la clase ya está cubierto.",
       "credits_applied_label": "Saldo aplicado total",
       "submit": "Continuar al pago",

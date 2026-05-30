@@ -52,15 +52,17 @@ export type CreditOption = {
 type PartitionedCredit = CreditOption & {
   /** Lesson price already covered by earlier credits → not selectable. */
   residual: boolean;
-  /** This credit alone overshoots the remaining price (all-or-nothing). */
-  fullyConsumed: boolean;
+  /** The crossing credit: only `appliedCents` funds the lesson and the rest is
+   * re-issued as a fresh credit (same expiry). null when not the crossing one. */
+  partial: { appliedCents: number; remnantCents: number } | null;
 };
 
 /**
- * Oldest-first partition mirroring the server cap (`selectCreditsToApply`):
- * walk credits by expiry ascending, marking each as consumed until the lesson
- * price is covered. Credits past the coverage point are residual and shown
- * dimmed — selecting them would waste value the price already covers.
+ * Oldest-first partition mirroring the server selection (`selectCreditsToApply`):
+ * walk credits by expiry ascending, consuming each until the lesson price is
+ * covered. The credit that crosses the threshold is split — only the remaining
+ * balance funds the lesson, the rest is re-issued (no lost value). Credits past
+ * the coverage point are residual and shown dimmed — selecting them adds nothing.
  */
 function partitionCredits(
   credits: CreditOption[],
@@ -72,12 +74,18 @@ function partitionCredits(
   let covered = 0;
   return sorted.map((c) => {
     const residual = lessonPriceCents > 0 && covered >= lessonPriceCents;
-    const fullyConsumed =
-      !residual &&
-      lessonPriceCents > 0 &&
-      covered + c.amountCents > lessonPriceCents;
-    if (!residual) covered += c.amountCents;
-    return { ...c, residual, fullyConsumed };
+    let partial: PartitionedCredit["partial"] = null;
+    if (!residual) {
+      const remaining = lessonPriceCents - covered;
+      if (lessonPriceCents > 0 && c.amountCents > remaining) {
+        partial = {
+          appliedCents: remaining,
+          remnantCents: c.amountCents - remaining,
+        };
+      }
+      covered += c.amountCents;
+    }
+    return { ...c, residual, partial };
   });
 }
 
@@ -733,9 +741,19 @@ export function BookerPaymentFlow({
                                   date: credit.expiresAtIso.slice(0, 10),
                                 })}
                               </span>
-                              {credit.fullyConsumed ? (
-                                <span className="block text-xs text-muted-foreground">
-                                  {t("credits_fully_consumed")}
+                              {credit.partial ? (
+                                <span
+                                  className="block text-xs text-muted-foreground"
+                                  data-testid={`credit-${credit.id}-partial`}
+                                >
+                                  {t("credits_partial", {
+                                    applied: formatChf(
+                                      credit.partial.appliedCents,
+                                    ),
+                                    remainder: formatChf(
+                                      credit.partial.remnantCents,
+                                    ),
+                                  })}
                                 </span>
                               ) : null}
                               {credit.residual ? (
