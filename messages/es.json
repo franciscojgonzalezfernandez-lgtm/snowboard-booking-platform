@@ -374,10 +374,9 @@
     },
     "credits": {
       "title": "Tu saldo",
-      "total": "Total disponible: {amount}",
-      "nearest_expiry": "Próximo vencimiento: {date}",
-      "expires": "Vence el {date}",
-      "expires_soon": "Vence el {date} — úsalo pronto",
+      "total_label": "Total disponible",
+      "expires_eyebrow": "Vence el",
+      "expires_soon_eyebrow": "Vence pronto",
       "source_cancellation": "De una cancelación del {date}",
       "apply_cta": "Aplicar al pagar",
       "empty": "Sin saldo disponible"
