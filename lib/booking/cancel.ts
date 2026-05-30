@@ -186,7 +186,11 @@ export async function cancelBookingByUserWith(
     hoursBeforeStart >= CREDIT_WINDOW_HOURS;
 
   if (earnsCredit) {
-    const creditExpiresAt = new Date(now.getTime() + CREDIT_VALIDITY_MS);
+    // Expiry anchored on the lesson start, not the cancellation moment, so the
+    // booker isn't penalised (in remaining validity) for cancelling early. Class
+    // is at least 48h out (CREDIT_WINDOW_HOURS guard above), so this is always
+    // strictly later than `now + CREDIT_VALIDITY_MS`.
+    const creditExpiresAt = new Date(startDateTime.getTime() + CREDIT_VALIDITY_MS);
     let restore: {
       restoredCents: number;
       freshCreditCents: number;

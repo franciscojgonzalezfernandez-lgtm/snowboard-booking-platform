@@ -8,6 +8,9 @@ import {
 } from "./cancel";
 
 const NOW = new Date("2026-12-01T08:00:00.000Z");
+// Default booking fixture starts at 2026-12-11 08:00Z. Credit expiry anchors on
+// the lesson start, so a fresh credit should expire 365 days after that.
+const DEFAULT_CLASS_START = new Date("2026-12-11T08:00:00.000Z");
 const OWNER_ID = "user_owner";
 
 type BookingFixture = {
@@ -185,9 +188,10 @@ describe("cancelBookingByUserWith", () => {
       reason: CreditReason.USER_CANCEL,
       status: CreditStatus.ACTIVE,
     });
-    // expiresAt is exactly now + 365 days.
+    // expiresAt anchors on the lesson start, not `now` — booker isn't penalised
+    // (in remaining validity) for cancelling early.
     expect(creditCreates[0]!.expiresAt.getTime()).toBe(
-      NOW.getTime() + CREDIT_VALIDITY_MS,
+      DEFAULT_CLASS_START.getTime() + CREDIT_VALIDITY_MS,
     );
     expect(bookingUpdates[0]!.data.status).toBe(BookingStatus.CANCELLED_BY_USER);
     expect(bookingUpdates[0]!.data.cancelledByUserAt).toEqual(NOW);
@@ -358,7 +362,7 @@ describe("cancelBookingByUserWith", () => {
     expect(creditCreates).toHaveLength(1);
     expect(creditCreates[0]!.amountCents).toBe(6000);
     expect(creditCreates[0]!.expiresAt.getTime()).toBe(
-      NOW.getTime() + CREDIT_VALIDITY_MS,
+      DEFAULT_CLASS_START.getTime() + CREDIT_VALIDITY_MS,
     );
   });
 
