@@ -9,6 +9,17 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
+  images: {
+    // F-073: instructor photos live on Vercel Blob. Public URLs are
+    // `https://<store>.public.blob.vercel-storage.com/<pathname>`; allow
+    // any subdomain since the store id is environment-specific.
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.public.blob.vercel-storage.com",
+      },
+    ],
+  },
 };
 
 // withNextIntl wraps first so the next-intl plugin sees the raw nextConfig;
