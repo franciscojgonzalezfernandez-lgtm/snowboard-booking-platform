@@ -297,8 +297,23 @@ export function BookerPaymentFlow({
   // (browser back/forward, soft-nav from another tab, etc.) so the Payment
   // Element never floats on a stale clientSecret. Stripe-side cleanup of
   // the orphan PaymentIntent happens via the cron expiry path (F-048).
+  //
+  // Skip the first run: on mount (and any remount of this island, e.g. a
+  // soft-nav or RSC refresh) there is no prior selection to invalidate, and
+  // firing `clearDraft()` would wipe a freshly-registered draft — the Payment
+  // Element would vanish right after a successful submit. Only clear when the
+  // slot-defining params genuinely change *after* mount.
+  const slotKeyRef = useRef<string | null>(null);
   useEffect(() => {
-    clearDraft();
+    const slotKey = `${duration}|${date}|${time}|${instructorId}|${language}`;
+    if (slotKeyRef.current === null) {
+      slotKeyRef.current = slotKey;
+      return;
+    }
+    if (slotKeyRef.current !== slotKey) {
+      slotKeyRef.current = slotKey;
+      clearDraft();
+    }
   }, [duration, date, time, instructorId, language, clearDraft]);
 
   function onSubmit(values: Step4FormValues) {
