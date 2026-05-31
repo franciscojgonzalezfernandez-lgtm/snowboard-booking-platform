@@ -1365,6 +1365,7 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
   - [x] `lib/booking/create-draft.ts`: persiste `chargeAmountCents` (el cargo Stripe; 0 en zero-charge) + `creditsAppliedCents` en `booking.create` (ambos paths).
   - [x] `lib/booking/resume-payment.ts`: usa `chargeAmountCents ?? totalPriceCents` (fallback legacy) para el monto del PaymentIntent (reuse **y** recreate) y para el total devuelto; expone `chargeAmountCents` + `creditsAppliedCents` en el resultado. El recreate-PI lleva `creditsAppliedCents` en metadata.
   - [x] `app/[locale]/reservar/pago/[bookingId]/page.tsx`: cobra/muestra el neto; breakdown `lesson_price − credits_applied = total` cuando hay créditos. Keys i18n `reservar.resume.{lesson_price,credits_applied}` × en/de/es.
+  - [x] Dashboard `_components/booking-row.tsx` + query `page.tsx` + `_lib/group.ts`: la row `PENDING_PAYMENT` con créditos muestra el **cargo neto** como cifra grande, con el precio completo tachado + `−{amount}` de crédito (antes mostraba 200 en grande). Key i18n `dashboard.pending_credit_applied` × en/de/es. Fallback a `totalPriceCents` para rows legacy.
 - Tests:
   - [x] Vitest `resume-payment.test.ts`: 2 regresiones nuevas — reuse y recreate con crédito cobran el **neto** (9000), no el precio (20000); recreate lleva metadata `creditsAppliedCents`. `create-draft.test.ts`: asserts que `booking.create` persiste `chargeAmountCents`/`creditsAppliedCents`. Suite completa 257/257, `tsc` clean.
 - Remediación de datos:

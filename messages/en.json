@@ -340,6 +340,7 @@
     "empty_cancelled": "No cancellations.",
     "add_to_calendar": "Add to calendar",
     "resume_payment": "Complete payment",
+    "pending_credit_applied": "−{amount} in credits",
     "cancelled_on": "Cancelled on {date}",
     "credit_issued": "Credit issued: {amount} · expires {expires}",
     "view_details": "View details",

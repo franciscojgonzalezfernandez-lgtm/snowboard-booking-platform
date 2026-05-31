@@ -340,6 +340,7 @@
     "empty_cancelled": "Keine Stornierungen.",
     "add_to_calendar": "Zum Kalender hinzufügen",
     "resume_payment": "Zahlung abschliessen",
+    "pending_credit_applied": "−{amount} Guthaben",
     "cancelled_on": "Storniert am {date}",
     "credit_issued": "Guthaben ausgestellt: {amount} · läuft ab {expires}",
     "view_details": "Details ansehen",

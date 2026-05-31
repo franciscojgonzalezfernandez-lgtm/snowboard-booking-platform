@@ -44,6 +44,14 @@ export function BookingRowItem({
     (startDateTime.getTime() - Date.now()) / (60 * 60 * 1000);
   const earnsCredit = hoursBeforeStart >= CREDIT_WINDOW_HOURS;
 
+  // F-084: a PENDING_PAYMENT booking that redeemed credits owes the net charge,
+  // not the full lesson price. Show the net as the headline figure with the
+  // full price struck through, matching the resume-payment page. Legacy rows
+  // (null chargeAmountCents) fall back to the full price.
+  const creditsAppliedCents = booking.creditsAppliedCents ?? 0;
+  const chargeAmountCents = booking.chargeAmountCents ?? booking.totalPriceCents;
+  const showNetCharge = kind === "pending" && creditsAppliedCents > 0;
+
   return (
     <li
       data-testid="dashboard-booking-row"
@@ -85,12 +93,36 @@ export function BookingRowItem({
             creditAmountLabel={formatChf(booking.totalPriceCents)}
           />
         ) : null}
-        <p
-          data-testid="dashboard-booking-total"
-          className="font-display text-2xl tracking-tight"
-        >
-          {formatChf(booking.totalPriceCents)}
-        </p>
+        {showNetCharge ? (
+          <div className="flex flex-col gap-0.5 sm:items-end">
+            <p
+              data-testid="dashboard-booking-full-price"
+              className="text-xs text-muted-foreground"
+            >
+              <span className="line-through">
+                {formatChf(booking.totalPriceCents)}
+              </span>{" "}
+              <span>
+                {t("pending_credit_applied", {
+                  amount: formatChf(creditsAppliedCents),
+                })}
+              </span>
+            </p>
+            <p
+              data-testid="dashboard-booking-total"
+              className="font-display text-2xl tracking-tight"
+            >
+              {formatChf(chargeAmountCents)}
+            </p>
+          </div>
+        ) : (
+          <p
+            data-testid="dashboard-booking-total"
+            className="font-display text-2xl tracking-tight"
+          >
+            {formatChf(booking.totalPriceCents)}
+          </p>
+        )}
         {kind === "pending" ? (
           <Link
             href={`/reservar/pago/${booking.id}`}

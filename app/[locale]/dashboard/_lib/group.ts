@@ -23,6 +23,11 @@ export type BookingRow = {
   language: DbLocale;
   status: BookingStatus;
   totalPriceCents: number;
+  // F-084: net charge + applied credits, so a PENDING_PAYMENT row shows what is
+  // actually owed (price minus credits) instead of the full lesson price. Null
+  // for legacy rows written before the columns existed.
+  chargeAmountCents: number | null;
+  creditsAppliedCents: number | null;
   createdAt: Date;
   cancelledByUserAt: Date | null;
   cancelledByOpsAt: Date | null;

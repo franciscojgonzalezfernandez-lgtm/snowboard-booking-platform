@@ -63,6 +63,8 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
         language: true,
         status: true,
         totalPriceCents: true,
+        chargeAmountCents: true,
+        creditsAppliedCents: true,
         createdAt: true,
         cancelledByUserAt: true,
         cancelledByOpsAt: true,
