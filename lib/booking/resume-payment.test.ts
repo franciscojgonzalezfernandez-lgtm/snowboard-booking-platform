@@ -14,6 +14,8 @@ type BookingFixture = {
   instructorId: string;
   status: BookingStatus;
   totalPriceCents: number;
+  chargeAmountCents: number | null;
+  creditsAppliedCents: number | null;
   stripePaymentIntentId: string | null;
   createdAt: Date;
   date: Date;
@@ -30,6 +32,10 @@ function baseBooking(overrides: Partial<BookingFixture> = {}): BookingFixture {
     instructorId: "inst_1",
     status: BookingStatus.PENDING_PAYMENT,
     totalPriceCents: 11000,
+    // Legacy default: no credit columns written → resume falls back to
+    // totalPriceCents. Credit-applied scenarios override these explicitly.
+    chargeAmountCents: null,
+    creditsAppliedCents: null,
     stripePaymentIntentId: "pi_existing",
     createdAt: new Date(NOW.getTime() - 5 * 60_000),
     date: new Date("2027-01-15T00:00:00.000Z"),
@@ -196,6 +202,8 @@ describe("resumePaymentWith", () => {
       bookingId: "bk_1",
       clientSecret: "secret_live",
       totalPriceCents: 11000,
+      chargeAmountCents: 11000,
+      creditsAppliedCents: 0,
     });
     expect(retrieveCalls).toEqual(["pi_existing"]);
     expect(createCalls).toEqual([]);
@@ -216,6 +224,8 @@ describe("resumePaymentWith", () => {
       bookingId: "bk_1",
       clientSecret: "pi_new_secret",
       totalPriceCents: 11000,
+      chargeAmountCents: 11000,
+      creditsAppliedCents: 0,
     });
     expect(createCalls.length).toBe(1);
     expect(createCalls[0]!.params.amount).toBe(11000);
@@ -225,6 +235,52 @@ describe("resumePaymentWith", () => {
     expect(updates).toEqual([
       { where: { id: "bk_1" }, data: { stripePaymentIntentId: "pi_new" } },
     ]);
+  });
+
+  // F-084 regression: a booking that applied credits at checkout must resume at
+  // the NET charge (price minus credits), never the full lesson price. Before
+  // the fix, resume read totalPriceCents and re-billed the full amount while the
+  // credits stayed LOCKED — charging twice over.
+  test("reuse path: a credit-applied booking returns the net charge, not the full price", async () => {
+    const { deps } = makeDeps({
+      booking: baseBooking({
+        totalPriceCents: 20000,
+        chargeAmountCents: 9000,
+        creditsAppliedCents: 11000,
+      }),
+      retrieve: {
+        id: "pi_existing",
+        client_secret: "secret_live",
+        status: "requires_payment_method",
+      },
+    });
+    const result = await resumePaymentWith(deps, "bk_1");
+    expect(result).toEqual({
+      ok: true,
+      bookingId: "bk_1",
+      clientSecret: "secret_live",
+      totalPriceCents: 20000,
+      chargeAmountCents: 9000,
+      creditsAppliedCents: 11000,
+    });
+  });
+
+  test("recreate path: a credit-applied booking re-bills the net charge + carries credit metadata", async () => {
+    const { deps, createCalls } = makeDeps({
+      booking: baseBooking({
+        totalPriceCents: 20000,
+        chargeAmountCents: 9000,
+        creditsAppliedCents: 11000,
+      }),
+      retrieve: { id: "pi_existing", client_secret: null, status: "canceled" },
+    });
+    const result = await resumePaymentWith(deps, "bk_1");
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.chargeAmountCents).toBe(9000);
+    expect(createCalls.length).toBe(1);
+    // The fresh PaymentIntent bills 9000 (net), NOT 20000 (full price).
+    expect(createCalls[0]!.params.amount).toBe(9000);
+    expect(createCalls[0]!.params.metadata?.creditsAppliedCents).toBe("11000");
   });
 
   test("returns ALREADY_CONFIRMED when Stripe says the existing PaymentIntent succeeded", async () => {

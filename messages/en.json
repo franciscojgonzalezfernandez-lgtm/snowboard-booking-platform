@@ -289,6 +289,8 @@
       "eyebrow": "Complete your payment",
       "heading": "Finish where you left off",
       "sub": "Your reservation is held for 15 minutes after checkout. Pay now and we'll send the confirmation right away.",
+      "lesson_price": "Lesson price {amount}",
+      "credits_applied": "Credits applied −{amount}",
       "total": "Total {amount}",
       "vat_note": "CHF, VAT included. You'll receive a receipt by email."
     },

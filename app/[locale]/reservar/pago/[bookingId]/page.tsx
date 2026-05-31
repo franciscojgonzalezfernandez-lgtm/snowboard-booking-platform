@@ -84,11 +84,25 @@ export default async function ResumePaymentPage({ params }: Props) {
       </header>
 
       <section className="mt-10 space-y-6">
+        {result.creditsAppliedCents > 0 && (
+          <div className="space-y-1 text-sm text-muted-foreground">
+            <p data-testid="resume-lesson-price">
+              {t("lesson_price", {
+                amount: formatChf(result.totalPriceCents),
+              })}
+            </p>
+            <p data-testid="resume-credits-applied">
+              {t("credits_applied", {
+                amount: formatChf(result.creditsAppliedCents),
+              })}
+            </p>
+          </div>
+        )}
         <p
           data-testid="resume-total"
           className="font-display text-xl tracking-tight"
         >
-          {t("total", { amount: formatChf(result.totalPriceCents) })}
+          {t("total", { amount: formatChf(result.chargeAmountCents) })}
         </p>
 
         <PaymentBlock
@@ -96,7 +110,7 @@ export default async function ResumePaymentPage({ params }: Props) {
           publishableKey={publishableKey}
           clientSecret={result.clientSecret}
           bookingId={result.bookingId}
-          totalLabel={formatChf(result.totalPriceCents)}
+          totalLabel={formatChf(result.chargeAmountCents)}
         />
 
         <p className="text-xs text-muted-foreground">{t("vat_note")}</p>

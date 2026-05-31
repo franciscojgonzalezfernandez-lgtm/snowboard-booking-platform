@@ -123,6 +123,8 @@ type PrismaTransactionSurface = {
         language: string;
         status: BookingStatus;
         totalPriceCents: number;
+        chargeAmountCents: number;
+        creditsAppliedCents: number;
         icsUid: string;
         notes: string | null;
         paidAt?: Date;
@@ -462,6 +464,13 @@ export async function createBookingDraftWith(
             ? BookingStatus.CONFIRMED
             : BookingStatus.PENDING_PAYMENT,
           totalPriceCents,
+          // F-084: persist the net charge + applied credits so the
+          // resume-payment flow bills the right amount without re-reading the
+          // Stripe PaymentIntent. `chargeAmountCents` is the Stripe charge (0 on
+          // the zero-charge path); for a no-credit booking it equals
+          // totalPriceCents.
+          chargeAmountCents,
+          creditsAppliedCents,
           icsUid,
           notes,
           ...(isZeroCharge ? { paidAt: now } : {}),

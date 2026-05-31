@@ -580,6 +580,14 @@ describe("createBookingDraftWith — F-060 credit redemption", () => {
     expect(piArgs.metadata?.creditsAppliedCents).toBe("5000");
     expect(piArgs.metadata?.lockedCreditIds).toBe("cr1");
 
+    // F-084: the net charge + applied credits are persisted on the Booking so
+    // the resume-payment flow bills the right amount without re-reading Stripe.
+    const [bookingArgs] = spies.bookingCreate.mock.calls[0] as unknown as [
+      { data: { chargeAmountCents: number; creditsAppliedCents: number } },
+    ];
+    expect(bookingArgs.data.chargeAmountCents).toBe(6000);
+    expect(bookingArgs.data.creditsAppliedCents).toBe(5000);
+
     // Credit moves ACTIVE → LOCKED (settled later by the webhook).
     expect(creditWrites).toHaveLength(1);
     expect(creditWrites[0]!.data).toMatchObject({ status: CreditStatus.LOCKED });

@@ -1354,6 +1354,26 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
   - Reusa `playwright-skill` para iteración rápida de specs.
   - Si F-058 termina enviando emails reales por accidente en preview (config Resend mal puesta), bloquear sprint hasta arreglar — owner no quiere ruido en su inbox real desde preview.
 
+##### F-084 — Fix: resume-payment cobra el precio completo ignorando créditos (pérdida de crédito)
+
+- Sprint: 3 (hotfix) · Estado: ✅ hecho (fix + tests) · Prioridad: P0
+- Depende de / corrige: F-060 (checkout credit redemption), F-067 (resume payment page)
+- Síntoma (reportado por owner 2026-05-31, user `iesjrm.ajgonzalez2`): reservó 2h (CHF 200) aplicando CHF 110 de crédito → carga neta debía ser CHF 90. El draft quedó `PENDING_PAYMENT`, el crédito pasó a `LOCKED`, pero la página de "pending payment" pedía **CHF 200** y el crédito "desaparecía". En el peor caso (PI original cancelado) el flujo recreaba un PaymentIntent por el precio completo → al pagar, el webhook liquidaba el crédito `LOCKED → USED`: **pagas 200 y quemas 110** (310 de valor por una clase de 200).
+- Causa raíz: `Booking.totalPriceCents` guarda el precio completo (200). El **cargo neto** (90) y los **créditos aplicados** (110) vivían **solo en el Stripe PaymentIntent**, nunca en la fila `Booking`. `resume-payment.ts` solo leía `totalPriceCents` → mostraba/cobraba 200.
+- AC fix:
+  - [x] Migración `20260531005142_booking_charge_and_credits_applied`: `Booking.chargeAmountCents Int?` + `creditsAppliedCents Int?` (nullable; aplica solo a Neon `dev` desde el worktree, prod por CI).
+  - [x] `lib/booking/create-draft.ts`: persiste `chargeAmountCents` (el cargo Stripe; 0 en zero-charge) + `creditsAppliedCents` en `booking.create` (ambos paths).
+  - [x] `lib/booking/resume-payment.ts`: usa `chargeAmountCents ?? totalPriceCents` (fallback legacy) para el monto del PaymentIntent (reuse **y** recreate) y para el total devuelto; expone `chargeAmountCents` + `creditsAppliedCents` en el resultado. El recreate-PI lleva `creditsAppliedCents` en metadata.
+  - [x] `app/[locale]/reservar/pago/[bookingId]/page.tsx`: cobra/muestra el neto; breakdown `lesson_price − credits_applied = total` cuando hay créditos. Keys i18n `reservar.resume.{lesson_price,credits_applied}` × en/de/es.
+- Tests:
+  - [x] Vitest `resume-payment.test.ts`: 2 regresiones nuevas — reuse y recreate con crédito cobran el **neto** (9000), no el precio (20000); recreate lleva metadata `creditsAppliedCents`. `create-draft.test.ts`: asserts que `booking.create` persiste `chargeAmountCents`/`creditsAppliedCents`. Suite completa 257/257, `tsc` clean.
+- Remediación de datos:
+  - [x] El crédito de 110 del owner estaba `LOCKED` (recuperable, no perdido). Liberado manualmente en Neon `dev` (booking stale → `PAYMENT_FAILED`, credit `LOCKED → ACTIVE`). El cron `expire-pending` (F-067) ya libera automáticamente tras 15 min; localmente no corría.
+- Notas:
+  - **Sin pérdida real de dinero en el incidente**: `paidAt` era null (nada capturado). El riesgo era pagar el recreate-PI a precio completo.
+  - **Diseño "ticket de cine"** de la página resume = followup separado (commit 2 / ticket aparte), no incluido en este fix.
+  - **Legacy rows**: bookings previos sin las columnas caen al fallback `totalPriceCents` (predan la redención de créditos, así que cargo == precio).
+
 #### Sequencing Sprint 3
 
 ```
