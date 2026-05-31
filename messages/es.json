@@ -289,6 +289,7 @@
       "eyebrow": "Completa tu pago",
       "heading": "Retoma el pago donde lo dejaste",
       "sub": "Tu reserva queda en pie 15 minutos después del checkout. Paga ahora y te enviaremos la confirmación al momento.",
+      "ticket_eyebrow": "Tu clase",
       "lesson_price": "Precio de la clase {amount}",
       "credits_applied": "Créditos aplicados −{amount}",
       "total": "Total {amount}",
