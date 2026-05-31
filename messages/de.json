@@ -375,11 +375,10 @@
     },
     "credits": {
       "title": "Dein Guthaben",
-      "total": "Verfügbar insgesamt: {amount}",
-      "nearest_expiry": "Nächster Ablauf: {date}",
-      "expires": "Läuft ab am {date}",
-      "expires_soon": "Läuft ab am {date} — bald einlösen",
-      "source_cancellation": "Aus Stornierung vom {date}",
+      "total_label": "Verfügbar insgesamt",
+      "expires_eyebrow": "Gültig bis",
+      "expires_soon_eyebrow": "Bald gültig bis",
+      "source_cancellation": "Aus einer Stornierung vom {date}",
       "apply_cta": "Beim Bezahlen einlösen",
       "empty": "Kein Guthaben verfügbar"
     }

@@ -375,11 +375,10 @@
     },
     "credits": {
       "title": "Your credits",
-      "total": "Total available: {amount}",
-      "nearest_expiry": "Nearest expiration: {date}",
-      "expires": "Expires {date}",
-      "expires_soon": "Expires {date} — use it soon",
-      "source_cancellation": "From cancellation on {date}",
+      "total_label": "Total available",
+      "expires_eyebrow": "Expires on",
+      "expires_soon_eyebrow": "Expires soon",
+      "source_cancellation": "From a cancellation on {date}",
       "apply_cta": "Apply at checkout",
       "empty": "No credits available"
     }
