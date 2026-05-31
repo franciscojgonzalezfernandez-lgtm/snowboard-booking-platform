@@ -290,8 +290,6 @@
       "heading": "Setze dort fort, wo du aufgehört hast",
       "sub": "Deine Buchung bleibt 15 Minuten nach dem Checkout reserviert. Zahle jetzt und wir senden dir die Bestätigung sofort.",
       "ticket_eyebrow": "Deine Lektion",
-      "lesson_price": "Kurspreis {amount}",
-      "credits_applied": "Guthaben angewendet −{amount}",
       "total": "Total {amount}",
       "vat_note": "CHF, MwSt. inbegriffen. Den Beleg erhältst du per E-Mail."
     },
