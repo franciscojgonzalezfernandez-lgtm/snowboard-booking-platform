@@ -115,18 +115,27 @@ export default async function InstructorAgendaPage({ searchParams }: Props) {
             Next →
           </Link>
         </div>
-        <Link
-          href={
-            includeCancelled
-              ? `/instructor?from=${fromIso}`
-              : `/instructor?from=${fromIso}&cancelled=1`
-          }
-          data-testid="agenda-toggle-cancelled"
-          data-active={includeCancelled}
-          className={navLinkClass}
-        >
-          {includeCancelled ? "Hide cancelled" : "Show cancelled"}
-        </Link>
+        <div className="flex items-center gap-6">
+          <Link
+            href={
+              includeCancelled
+                ? `/instructor?from=${fromIso}`
+                : `/instructor?from=${fromIso}&cancelled=1`
+            }
+            data-testid="agenda-toggle-cancelled"
+            data-active={includeCancelled}
+            className={navLinkClass}
+          >
+            {includeCancelled ? "Hide cancelled" : "Show cancelled"}
+          </Link>
+          <Link
+            href="/instructor/calendar"
+            data-testid="agenda-to-calendar"
+            className={navLinkClass}
+          >
+            Calendar →
+          </Link>
+        </div>
       </nav>
 
       <div>

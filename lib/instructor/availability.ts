@@ -143,8 +143,10 @@ export type CalendarDay = {
   isoDate: string;
   /** Has at least one AVAILABLE block. */
   open: boolean;
-  /** BLOCKED override windows on this day, as HH:MM ranges. */
-  blocked: Array<{ start: string; end: string }>;
+  /** The AVAILABLE block's id (for "close day"), or null when not open. */
+  openBlockId: string | null;
+  /** BLOCKED override windows on this day, as HH:MM ranges + their ids. */
+  blocked: Array<{ id: string; start: string; end: string }>;
   /** Occupying bookings on this day (CONFIRMED/PENDING/COMPLETED). */
   bookings: Array<{ id: string; anchorTime: string; status: BookingStatus }>;
 };
@@ -168,6 +170,7 @@ export function buildCalendarDays(
     byIso.set(toIsoDate(day), {
       isoDate: toIsoDate(day),
       open: false,
+      openBlockId: null,
       blocked: [],
       bookings: [],
     });
@@ -178,8 +181,10 @@ export function buildCalendarDays(
     if (!entry) continue;
     if (block.kind === AvailabilityKind.AVAILABLE) {
       entry.open = true;
+      entry.openBlockId = block.id;
     } else {
       entry.blocked.push({
+        id: block.id,
         start: HHMM(block.startDateTime),
         end: HHMM(block.endDateTime),
       });

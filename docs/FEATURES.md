@@ -1629,30 +1629,31 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel). La c
 
 ##### F-083 — Instructor calendar view (month + week): rangos de disponibilidad + bloqueos sub-día + overlay de bookings
 
-- Sprint: 4 · Estado: 🚧 en progreso · Prioridad: P1
-- Depende de: F-071 (`requireInstructor` + `getInstructorAgenda`), F-019 (schema `AvailabilityBlock`), F-022 (engine: BLOCKED gana sobre AVAILABLE), F-079 (cancel-day para días con bookings — **dep blanda**: solo el handoff de cancelar día con clases; el core no lo necesita)
+- Sprint: 4 · Estado: ◑ parcial — **vista Month + server actions + data layer hechos**; vista **Week timeline diferida** (ver Notas) · Prioridad: P1
+- Depende de: F-071 (`requireInstructor`), F-019 (schema `AvailabilityBlock`), F-022 (engine: BLOCKED gana sobre AVAILABLE), F-079 (cancel-day para días con bookings — **dep blanda**: solo el handoff de cancelar día con clases; el core no lo necesita)
 - **Supersede el surface UI de F-072** (list+form). Reusa y generaliza sus server actions de escritura.
 - Motivación: el owner gestiona disponibilidad por **rangos** (abrir lunes-domingo de una), no bloque a bloque, y necesita carving fino — bloquear 2h sueltas dentro de un día abierto, o cerrar un día entero. Un form lista-por-lista no encaja con ese mental model; un calendario sí. Decisión owner 2026-05-31.
 - AC modelo (sin schema change):
-  - [ ] Reusa `AvailabilityBlock{startDateTime, endDateTime, kind}` (F-019). **Abrir** = `kind=AVAILABLE`; **bloquear** = `kind=BLOCKED` (el engine F-022 ya hace que BLOCKED gane sobre AVAILABLE). Sin recurrencia: one-off ranges; recurring weekly = post-MVP.
-  - [ ] Operating hours desde `Season.operatingHoursStart/End`; abrir un día = AVAILABLE spanning esas horas en esa fecha.
-- AC server (`app/instructor/actions.ts`, todas con rol + ownership + Zod):
-  - [ ] `openAvailabilityRange({ fromDate, toDate })` — crea AVAILABLE por cada día del rango (incl. extremos) con operating hours de la Season activa. Idempotente: día ya abierto se merge/skip, no duplica. Multi-row → `$transaction`.
-  - [ ] `blockAvailabilityWindow({ date, startTime, endTime })` — crea BLOCKED override (p.ej. 2h) dentro de un día abierto. Valida `start < end`, dentro de operating hours, Season activa.
-  - [ ] `clearAvailability({ blockId })` — borra un AVAILABLE/BLOCKED. **Rechaza** si el rango solapa bookings `CONFIRMED`/`PENDING_PAYMENT` (mismo guard que F-072) → error i18n `availability.has_bookings`.
-  - [ ] Día con bookings no se cierra/bloquea desde aquí; el server rechaza defensivamente y la UI deriva a ops-cancel F-079. `revalidatePath('/instructor')` + `/instructor/calendar`.
-- AC UI (`app/instructor/calendar/page.tsx`, EN-only fuera de `[locale]`, gating vía `requireInstructor`):
-  - [ ] Toggle `[ Month | Week ]` + link a la lista F-071 como tercera vista. URL state `?view=month|week&anchor=YYYY-MM-DD`.
-  - [ ] **Month**: grid día-celda; cada día codifica estado (abierto / cerrado / con bookings [count] / parcialmente bloqueado). Drag-select de rango → `openAvailabilityRange`. Click día → panel day/week.
-  - [ ] **Week**: 7 columnas (Lun-Dom) × filas horarias (operating hours). Bookings como bloques no editables (link a detalle F-046/F-071). Pintar horas → abrir; click sobre franja abierta → `blockAvailabilityWindow` (2h default ajustable). Franjas/días con booking = locked visual.
-  - [ ] Bookings overlay reusa el loader `getInstructorAgenda` (F-071) sobre la malla de availability.
-  - [ ] Empty/edge states editoriales (semana sin abrir, fuera de Season). **impeccable** = source of truth visual (serif display, sin cards con sombra, alto contraste); **shadcn** para primitives (toggle, confirm dialog, popover de block). Confirm dialog antes de cerrar/borrar disponibilidad.
+  - [x] Reusa `AvailabilityBlock{startDateTime, endDateTime, kind}` (F-019). **Abrir** = `kind=AVAILABLE`; **bloquear** = `kind=BLOCKED` (el engine F-022 ya hace que BLOCKED gane sobre AVAILABLE). Sin recurrencia: one-off ranges; recurring weekly = post-MVP.
+  - [x] Operating hours desde `Season.operatingHoursStart/End`; abrir un día = AVAILABLE spanning esas horas en esa fecha.
+- AC server (cores puros en `lib/instructor/availability-actions.ts`, wrappers `"use server"` en `app/instructor/actions.ts` con rol + ownership + Zod):
+  - [x] `openAvailabilityRange({ fromDate, toDate })` — crea AVAILABLE por cada día del rango (incl. extremos) con operating hours de la Season activa. Idempotente: día ya abierto se skip (no duplica). **Desviación:** `createMany` (single-table) en vez de `$transaction`; cap `MAX_OPEN_RANGE_DAYS=92`.
+  - [x] `blockAvailabilityWindow({ date, startTime, endTime })` — crea BLOCKED override (p.ej. 2h). Valida `start < end` (`INVALID_RANGE`), dentro de operating hours (`OUT_OF_HOURS`), Season activa.
+  - [x] `clearAvailability({ blockId })` — borra un AVAILABLE/BLOCKED. **Rechaza** (`HAS_BOOKINGS`) si solapa bookings `CONFIRMED`/`PENDING_PAYMENT`/`COMPLETED` (guard `blockOverlapsBookings`). `NOT_FOUND`/`FORBIDDEN` por ownership.
+  - [x] Día con bookings no se cierra/bloquea desde aquí; el server rechaza defensivamente y la UI deriva a ops-cancel F-079. `revalidatePath('/instructor')` + `/instructor/calendar`.
+  - [x] Data layer: `lib/instructor/calendar-data.ts` `getInstructorCalendar` + helper puro `buildCalendarDays` (folde blocks + bookings en una entrada por día con `openBlockId`, `blocked[]`, `bookings[]`).
+- AC UI (`app/instructor/calendar/page.tsx` + `_components/month-calendar.tsx`, EN-only fuera de `[locale]`, gating vía `requireInstructor`):
+  - [x] **Month** (entregado): grid día-celda Mon-start; cada día codifica estado (abierto / cerrado / con bookings [count] / nº de bloqueos). Nav prev/this-month/next por `?month=YYYY-MM` + link recíproco con la agenda F-071. **Desviación:** apertura por **form de rango** (from/to) + click-día → panel con open/close-day + form de bloqueo + remove; **drag-select diferido** (ver Notas).
+  - [ ] **Week timeline** (diferido — ver Notas): 7 cols × filas horarias, pintar horas, bloques de booking.
+  - [x] Bookings overlay (`getInstructorCalendar` carga blocks + bookings ocupantes; días con clase = locked visual + lista en el panel con hint a ops-cancel). **Nota:** loader propio en vez de `getInstructorAgenda`.
+  - [x] Estados editoriales + tokens design-system (cream/ink/border, `font-display`, borders-not-shadows); **shadcn** `Button`/`Input`. Confirm dialog antes de borrar = **diferido** (de momento delete directo con `pending` lock).
 - Tests:
-  - Vitest: `openAvailabilityRange` (N días, idempotente, respeta operating hours), `blockAvailabilityWindow` (override dentro de día, valida bounds), `clearAvailability` (rechaza con booking activo).
-  - Playwright `e2e/f-083-instructor-calendar.spec.ts`: abrir semana → días open; bloquear 2h → engine la resta (cross-check `GET /api/availability/slots`); cerrar día con booking → bloqueado + hint a ops-cancel; anónimo → redirect login; no-instructor → 403.
+  - [x] Vitest: `lib/instructor/availability.test.ts` (helpers: overlap, buildOpenRangeBlocks idempotente, validateBlockWindow, buildCalendarDays) + `availability-actions.test.ts` (los tres cores: happy, idempotente, INVALID_RANGE, RANGE_TOO_LONG, NO_ACTIVE_SEASON, OUT_OF_HOURS, NOT_FOUND, FORBIDDEN, HAS_BOOKINGS). Suite 284/284, tsc + lint limpios.
+  - [ ] Playwright `e2e/f-083-instructor-calendar.spec.ts` — **pendiente** (requiere sesión instructor; va con la verificación manual del owner).
 - Notas:
-  - **Separación con F-079.** No cancela clases reales. Día con bookings = read-only aquí; cancelar clases (refund/credit/email) vive en ops-cancel F-078/F-079; el calendario solo enlaza a ese flujo.
-  - **Supersede F-072 UI.** `app/instructor/availability/page.tsx` (list+form) se reemplaza por este calendario; las server actions de F-072 se generalizan a las tres de arriba conservando el guard "no borrar con booking activo".
+  - **Week timeline diferida.** El valor central de F-083 (gestión por rangos + overlay de bookings que muestra qué días tienen clase — el gap de F-072) lo cubre la vista Month. La vista Week (timeline horario con pintado de horas) es la pieza interactiva más pesada; se difiere a un follow-up para no entregarla a medias. El toggle Month/Week + drag-select + confirm dialog entran con ella.
+  - **Separación con F-079.** No cancela clases reales. Día con bookings = read-only aquí; cancelar clases (refund/credit/email) vive en ops-cancel F-078/F-079; el calendario solo enlaza/hint a ese flujo.
+  - **Supersede F-072 UI.** El `app/instructor/availability/page.tsx` (list+form) de F-072 ya no se construye; este calendario es el surface. Las 3 server actions cubren su CRUD conservando el guard "no borrar con booking activo".
   - **Engine intacto.** No toca `lib/booking-engine`; solo produce rows AVAILABLE/BLOCKED que el engine ya interpreta (F-022 BLOCKED>AVAILABLE, buffer=0 F-036).
 
 #### Tickets pre-definidos
