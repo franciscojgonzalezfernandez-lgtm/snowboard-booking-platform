@@ -17,6 +17,8 @@ export type ResumePaymentDeps = {
           instructorId: true;
           status: true;
           totalPriceCents: true;
+          chargeAmountCents: true;
+          creditsAppliedCents: true;
           stripePaymentIntentId: true;
           createdAt: true;
           date: true;
@@ -29,6 +31,8 @@ export type ResumePaymentDeps = {
         instructorId: string;
         status: BookingStatus;
         totalPriceCents: number;
+        chargeAmountCents: number | null;
+        creditsAppliedCents: number | null;
         stripePaymentIntentId: string | null;
         createdAt: Date;
         date: Date;
@@ -65,7 +69,17 @@ export type ResumePaymentDeps = {
 };
 
 export type ResumePaymentResult =
-  | { ok: true; clientSecret: string; totalPriceCents: number; bookingId: string }
+  | {
+      ok: true;
+      clientSecret: string;
+      bookingId: string;
+      /** Full lesson price before credits — for the breakdown line. */
+      totalPriceCents: number;
+      /** Net amount actually billed via Stripe (price minus applied credits). */
+      chargeAmountCents: number;
+      /** Credit value applied to this booking (0 when none). */
+      creditsAppliedCents: number;
+    }
   | { ok: false; error: ResumePaymentError };
 
 export type ResumePaymentError =
@@ -110,6 +124,8 @@ export async function resumePaymentWith(
       instructorId: true,
       status: true,
       totalPriceCents: true,
+      chargeAmountCents: true,
+      creditsAppliedCents: true,
       stripePaymentIntentId: true,
       createdAt: true,
       date: true,
@@ -119,6 +135,14 @@ export async function resumePaymentWith(
   });
   if (!booking) return { ok: false, error: "NOT_FOUND" };
   if (booking.bookerId !== deps.bookerId) return { ok: false, error: "FORBIDDEN" };
+
+  // F-084: the Stripe charge is the net of credits, not the full lesson price.
+  // `chargeAmountCents` is persisted at draft creation; fall back to
+  // `totalPriceCents` for legacy rows written before this column existed (those
+  // predate credit redemption, so charge == price). `creditsAppliedCents`
+  // defaults to 0 for the same legacy reason.
+  const chargeCents = booking.chargeAmountCents ?? booking.totalPriceCents;
+  const creditsAppliedCents = booking.creditsAppliedCents ?? 0;
 
   if (booking.status === BookingStatus.CONFIRMED || booking.status === BookingStatus.COMPLETED) {
     return { ok: false, error: "ALREADY_CONFIRMED" };
@@ -154,8 +178,10 @@ export async function resumePaymentWith(
       return {
         ok: true,
         clientSecret: pi.client_secret,
-        totalPriceCents: booking.totalPriceCents,
         bookingId: booking.id,
+        totalPriceCents: booking.totalPriceCents,
+        chargeAmountCents: chargeCents,
+        creditsAppliedCents,
       };
     }
     // Anything else (canceled, requires_capture, processing without secret)
@@ -172,7 +198,11 @@ export async function resumePaymentWith(
 
   const fresh = await deps.stripe.paymentIntents.create(
     {
-      amount: booking.totalPriceCents,
+      // F-084: bill the net charge (price minus applied credits), NOT the full
+      // lesson price. The credits stay LOCKED to this booking — the webhook
+      // settles them to USED on success — so re-billing the full price would
+      // double-charge the booker (pay full price AND burn the locked credit).
+      amount: chargeCents,
       currency: "chf",
       automatic_payment_methods: { enabled: true, allow_redirects: "always" },
       metadata: {
@@ -181,6 +211,7 @@ export async function resumePaymentWith(
         instructorId: booking.instructorId,
         startDateTime: startUtc.toISOString(),
         endDateTime: endUtc.toISOString(),
+        creditsAppliedCents: String(creditsAppliedCents),
         resumed: "true",
       },
       description: `Snowboard lesson (resume) · ${booking.duration} · ${booking.date.toISOString().slice(0, 10)} ${booking.anchorTime}`,
@@ -202,8 +233,10 @@ export async function resumePaymentWith(
   return {
     ok: true,
     clientSecret: fresh.client_secret,
-    totalPriceCents: booking.totalPriceCents,
     bookingId: booking.id,
+    totalPriceCents: booking.totalPriceCents,
+    chargeAmountCents: chargeCents,
+    creditsAppliedCents,
   };
 }
 

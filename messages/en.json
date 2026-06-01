@@ -289,6 +289,7 @@
       "eyebrow": "Complete your payment",
       "heading": "Finish where you left off",
       "sub": "Your reservation is held for 15 minutes after checkout. Pay now and we'll send the confirmation right away.",
+      "ticket_eyebrow": "Your lesson",
       "total": "Total {amount}",
       "vat_note": "CHF, VAT included. You'll receive a receipt by email."
     },
@@ -338,6 +339,7 @@
     "empty_cancelled": "No cancellations.",
     "add_to_calendar": "Add to calendar",
     "resume_payment": "Complete payment",
+    "pending_credit_applied": "−{amount} in credits",
     "cancelled_on": "Cancelled on {date}",
     "credit_issued": "Credit issued: {amount} · expires {expires}",
     "view_details": "View details",

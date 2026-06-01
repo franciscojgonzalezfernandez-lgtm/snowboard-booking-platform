@@ -123,6 +123,8 @@ type PrismaTransactionSurface = {
         language: string;
         status: BookingStatus;
         totalPriceCents: number;
+        chargeAmountCents: number;
+        creditsAppliedCents: number;
         icsUid: string;
         notes: string | null;
         paidAt?: Date;
@@ -329,6 +331,48 @@ export async function createBookingDraftWith(
     startDateTime.getTime() + durationMinutes(data.duration) * 60_000,
   );
 
+  // Idempotent-resubmit guard — runs BEFORE the availability re-check on
+  // purpose. A resubmit of the same slot (the client lost the draft on a
+  // remount, a double-click, a back-nav to Step 4) finds the booker's own
+  // in-flight PENDING_PAYMENT booking, which now "occupies" the slot. Checking
+  // availability first would (correctly, from the engine's view) report the
+  // slot taken and return SLOT_TAKEN against the booker's *own* draft, dead-
+  // ending them on the calendar. Instead reuse the existing PaymentIntent
+  // (charge + locked credits already encoded) so the Payment Element re-mounts.
+  const existing = await prisma.booking.findFirst({
+    where: {
+      bookerId: session.user.id,
+      instructorId: data.instructorId,
+      date: dayUtc,
+      anchorTime: data.time,
+      status: BookingStatus.PENDING_PAYMENT,
+      createdAt: { gt: new Date(now.getTime() - IDEMPOTENCY_WINDOW_MS) },
+      stripePaymentIntentId: { not: null },
+    },
+    select: { id: true, stripePaymentIntentId: true, totalPriceCents: true },
+  });
+
+  if (existing?.stripePaymentIntentId) {
+    const pi = await stripe.paymentIntents.retrieve(
+      existing.stripePaymentIntentId,
+    );
+    if (pi.client_secret) {
+      // Reflect the charge + credits locked on the first submit, not the
+      // (possibly changed) current selection. Changing credits requires
+      // voiding the draft first.
+      const reusedCredits = Number(pi.metadata?.creditsAppliedCents ?? 0);
+      return {
+        ok: true,
+        bookingId: existing.id,
+        clientSecret: pi.client_secret,
+        totalPriceCents: existing.totalPriceCents,
+        chargeAmountCents: pi.amount,
+        creditsAppliedCents: Number.isFinite(reusedCredits) ? reusedCredits : 0,
+        reused: true,
+      };
+    }
+  }
+
   const ctx = await loadEngineContext(enginePrisma, {
     from: dayUtc,
     to: dayUtc,
@@ -363,44 +407,6 @@ export async function createBookingDraftWith(
       return { ok: false, error: "PRICING_MISSING" };
     }
     throw err;
-  }
-
-  // Reuse an in-flight draft BEFORE re-resolving credits: on a resubmit the
-  // chosen credits are already LOCKED by the first attempt, so a fresh ACTIVE
-  // lookup would (correctly) reject them. The existing PaymentIntent already
-  // encodes the charge + locked credits, so short-circuit to it here.
-  const existing = await prisma.booking.findFirst({
-    where: {
-      bookerId: session.user.id,
-      instructorId: data.instructorId,
-      date: dayUtc,
-      anchorTime: data.time,
-      status: BookingStatus.PENDING_PAYMENT,
-      createdAt: { gt: new Date(now.getTime() - IDEMPOTENCY_WINDOW_MS) },
-      stripePaymentIntentId: { not: null },
-    },
-    select: { id: true, stripePaymentIntentId: true, totalPriceCents: true },
-  });
-
-  if (existing?.stripePaymentIntentId) {
-    const pi = await stripe.paymentIntents.retrieve(
-      existing.stripePaymentIntentId,
-    );
-    if (pi.client_secret) {
-      // Reflect the charge + credits locked on the first submit, not the
-      // (possibly changed) current selection. Changing credits requires
-      // voiding the draft first.
-      const reusedCredits = Number(pi.metadata?.creditsAppliedCents ?? 0);
-      return {
-        ok: true,
-        bookingId: existing.id,
-        clientSecret: pi.client_secret,
-        totalPriceCents: existing.totalPriceCents,
-        chargeAmountCents: pi.amount,
-        creditsAppliedCents: Number.isFinite(reusedCredits) ? reusedCredits : 0,
-        reused: true,
-      };
-    }
   }
 
   // F-060: resolve which of the chosen credits actually apply (owned, ACTIVE,
@@ -462,6 +468,13 @@ export async function createBookingDraftWith(
             ? BookingStatus.CONFIRMED
             : BookingStatus.PENDING_PAYMENT,
           totalPriceCents,
+          // F-084: persist the net charge + applied credits so the
+          // resume-payment flow bills the right amount without re-reading the
+          // Stripe PaymentIntent. `chargeAmountCents` is the Stripe charge (0 on
+          // the zero-charge path); for a no-credit booking it equals
+          // totalPriceCents.
+          chargeAmountCents,
+          creditsAppliedCents,
           icsUid,
           notes,
           ...(isZeroCharge ? { paidAt: now } : {}),

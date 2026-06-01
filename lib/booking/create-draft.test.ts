@@ -453,6 +453,34 @@ describe("createBookingDraftWith — idempotency", () => {
     expect(spies.paymentIntentCreate).not.toHaveBeenCalled();
     expect(spies.bookingCreate).not.toHaveBeenCalled();
   });
+
+  // Regression: a resubmit of the same slot must reuse the booker's own
+  // in-flight draft even though that draft makes the engine report the slot
+  // taken. The idempotency check runs BEFORE the availability re-check, so the
+  // booker is never dead-ended on SLOT_TAKEN against their own pending booking.
+  test("reuses the in-flight draft even when the engine reports the slot taken", async () => {
+    const existing = {
+      id: "book_existing",
+      stripePaymentIntentId: "pi_existing",
+      totalPriceCents: 20000,
+    };
+    const { deps, enginePrisma, spies } = makeDeps({
+      existingBooking: existing,
+      retrieveSecret: "pi_existing_secret_xyz",
+    });
+    // The slot now reads as fully unavailable (their own PENDING booking holds
+    // it). Pre-reorder this returned SLOT_TAKEN; now reuse short-circuits first.
+    (enginePrisma as unknown as {
+      availabilityBlock: { findMany: () => Promise<unknown[]> };
+    }).availabilityBlock.findMany = vi.fn(async () => []);
+
+    const result = await createBookingDraftWith(deps, enginePrisma, VALID_INPUT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.reused).toBe(true);
+    expect(result.bookingId).toBe("book_existing");
+    expect(spies.bookingCreate).not.toHaveBeenCalled();
+  });
 });
 
 describe("createBookingDraftWith — attendee isBooker flag", () => {
@@ -579,6 +607,14 @@ describe("createBookingDraftWith — F-060 credit redemption", () => {
     expect(piArgs.amount).toBe(6000);
     expect(piArgs.metadata?.creditsAppliedCents).toBe("5000");
     expect(piArgs.metadata?.lockedCreditIds).toBe("cr1");
+
+    // F-084: the net charge + applied credits are persisted on the Booking so
+    // the resume-payment flow bills the right amount without re-reading Stripe.
+    const [bookingArgs] = spies.bookingCreate.mock.calls[0] as unknown as [
+      { data: { chargeAmountCents: number; creditsAppliedCents: number } },
+    ];
+    expect(bookingArgs.data.chargeAmountCents).toBe(6000);
+    expect(bookingArgs.data.creditsAppliedCents).toBe(5000);
 
     // Credit moves ACTIVE → LOCKED (settled later by the webhook).
     expect(creditWrites).toHaveLength(1);

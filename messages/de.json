@@ -289,6 +289,7 @@
       "eyebrow": "Zahlung abschliessen",
       "heading": "Setze dort fort, wo du aufgehört hast",
       "sub": "Deine Buchung bleibt 15 Minuten nach dem Checkout reserviert. Zahle jetzt und wir senden dir die Bestätigung sofort.",
+      "ticket_eyebrow": "Deine Lektion",
       "total": "Total {amount}",
       "vat_note": "CHF, MwSt. inbegriffen. Den Beleg erhältst du per E-Mail."
     },
@@ -338,6 +339,7 @@
     "empty_cancelled": "Keine Stornierungen.",
     "add_to_calendar": "Zum Kalender hinzufügen",
     "resume_payment": "Zahlung abschliessen",
+    "pending_credit_applied": "−{amount} Guthaben",
     "cancelled_on": "Storniert am {date}",
     "credit_issued": "Guthaben ausgestellt: {amount} · läuft ab {expires}",
     "view_details": "Details ansehen",

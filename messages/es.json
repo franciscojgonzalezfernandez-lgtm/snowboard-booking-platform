@@ -289,6 +289,7 @@
       "eyebrow": "Completa tu pago",
       "heading": "Retoma el pago donde lo dejaste",
       "sub": "Tu reserva queda en pie 15 minutos después del checkout. Paga ahora y te enviaremos la confirmación al momento.",
+      "ticket_eyebrow": "Tu clase",
       "total": "Total {amount}",
       "vat_note": "CHF, IVA incluido. Recibirás el recibo por email."
     },
@@ -338,6 +339,7 @@
     "empty_cancelled": "Sin cancelaciones.",
     "add_to_calendar": "Añadir al calendario",
     "resume_payment": "Completar pago",
+    "pending_credit_applied": "−{amount} en créditos",
     "cancelled_on": "Cancelada el {date}",
     "credit_issued": "Crédito emitido: {amount} · caduca el {expires}",
     "view_details": "Ver detalles",

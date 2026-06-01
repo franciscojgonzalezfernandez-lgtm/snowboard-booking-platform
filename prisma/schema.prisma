@@ -202,6 +202,14 @@ model Booking {
   language              Locale
   status                BookingStatus
   totalPriceCents       Int
+  // F-084: net amount actually charged via Stripe (totalPriceCents minus credits
+  // applied at checkout). Persisted so the resume-payment flow knows what to bill
+  // without re-reading the Stripe PaymentIntent. Null for legacy rows + the
+  // zero-charge path (charge is 0); resume falls back to totalPriceCents when null.
+  chargeAmountCents     Int?
+  // F-084: total credit value applied to this booking at draft creation. Snapshot
+  // for display / audit; the authoritative credit ledger lives in AccountCredit.
+  creditsAppliedCents   Int?
   stripePaymentIntentId String?       @unique
   icsUid                String        @unique
   googleEventId         String?
