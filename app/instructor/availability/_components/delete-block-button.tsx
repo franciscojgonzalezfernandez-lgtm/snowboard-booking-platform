@@ -24,13 +24,24 @@ const ERROR_COPY: Record<string, string> = {
 
 type Props = {
   blockId: string;
+  /** Server rejects deleting a window that overlaps an active booking; when
+   * true we block the click up front so the modal never promises a delete the
+   * guard will refuse. */
+  hasActiveBooking: boolean;
 };
 
-export function DeleteBlockButton({ blockId }: Props) {
+export function DeleteBlockButton({ blockId, hasActiveBooking }: Props) {
   const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
+  function onOpenChange(next: boolean) {
+    setOpen(next);
+    if (!next) setError(null);
+  }
+
   function onConfirm() {
+    setError(null);
     startTransition(async () => {
       const res = await deleteAvailabilityBlock(blockId);
       if (res.ok) {
@@ -38,8 +49,9 @@ export function DeleteBlockButton({ blockId }: Props) {
         setOpen(false);
         return;
       }
-      toast.error(ERROR_COPY[res.error] ?? "Could not delete the window.");
-      setOpen(false);
+      // Keep the dialog open and show why inline — a closing toast was too
+      // easy to miss (the user saw "nothing happened").
+      setError(ERROR_COPY[res.error] ?? "Could not delete the window.");
     });
   }
 
@@ -50,25 +62,40 @@ export function DeleteBlockButton({ blockId }: Props) {
         variant="outline"
         size="sm"
         data-testid={`availability-delete-${blockId}`}
-        onClick={() => setOpen(true)}
+        onClick={() => onOpenChange(true)}
+        disabled={hasActiveBooking}
+        title={
+          hasActiveBooking
+            ? "Cancel the booking in this window before deleting it."
+            : undefined
+        }
       >
         Delete
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent data-testid="availability-delete-dialog">
         <DialogHeader>
           <DialogTitle>Delete this availability window?</DialogTitle>
           <DialogDescription>
-            Booking slots that depended on this window stop being offered. Past
-            bookings inside the window are not affected.
+            Booking slots from this window stop being offered. A window with a
+            confirmed or pending booking can&apos;t be deleted — cancel the
+            booking first.
           </DialogDescription>
         </DialogHeader>
+        {error ? (
+          <p
+            data-testid="availability-delete-error"
+            className="text-sm font-medium text-destructive"
+          >
+            {error}
+          </p>
+        ) : null}
         <DialogFooter>
           <Button
             type="button"
             variant="outline"
             data-testid="availability-delete-cancel"
-            onClick={() => setOpen(false)}
+            onClick={() => onOpenChange(false)}
             disabled={pending}
           >
             Cancel

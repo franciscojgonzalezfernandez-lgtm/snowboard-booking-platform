@@ -219,12 +219,13 @@ test("delete is rejected when the window contains a CONFIRMED booking", async ({
   });
 
   await page.goto("/instructor/availability");
-  await page.getByTestId(`availability-delete-${block.id}`).click();
-  await page.getByTestId("availability-delete-confirm").click();
 
-  // Toast surfaces the error and the row stays.
+  // The row flags the booking and the Delete control is blocked up front, so
+  // the instructor never opens a modal that promises a delete the server guard
+  // would refuse.
+  await expect(page.getByTestId("availability-has-booking")).toBeVisible();
   await expect(
-    page.getByText(/confirmed or pending booking/i).first(),
-  ).toBeVisible();
+    page.getByTestId(`availability-delete-${block.id}`),
+  ).toBeDisabled();
   await expect(page.getByTestId("availability-list-item")).toHaveCount(1);
 });

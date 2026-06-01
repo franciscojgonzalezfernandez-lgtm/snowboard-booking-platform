@@ -17,10 +17,24 @@ import {
 /** Booking statuses that occupy a slot for the conflict check (subset of
  * `OCCUPYING_STATUSES` in the engine — COMPLETED can't appear inside a future
  * block we're trying to delete, so we skip it). */
-const ACTIVE_BOOKING_STATUSES: BookingStatus[] = [
+export const ACTIVE_BOOKING_STATUSES: BookingStatus[] = [
   BookingStatus.PENDING_PAYMENT,
   BookingStatus.CONFIRMED,
 ];
+
+/**
+ * True overlap between a booking (date + anchorTime + duration) and a block
+ * window. Shared by the delete guard and the availability page badge so both
+ * agree on what "this window has a booking" means.
+ */
+export function bookingOverlapsWindow(
+  booking: { date: Date; anchorTime: string; duration: Duration },
+  window: { startDateTime: Date; endDateTime: Date },
+): boolean {
+  const start = setUtcTime(booking.date, booking.anchorTime);
+  const end = new Date(start.getTime() + durationMinutes(booking.duration) * 60_000);
+  return start < window.endDateTime && window.startDateTime < end;
+}
 
 export type CreateBlockDeps = {
   prisma: CreatePrismaSurface;
@@ -214,11 +228,7 @@ export async function deleteInstructorAvailabilityBlock(
     },
     select: { date: true, anchorTime: true, duration: true },
   });
-  const conflict = candidates.some((b) => {
-    const bStart = setUtcTime(b.date, b.anchorTime);
-    const bEnd = new Date(bStart.getTime() + durationMinutes(b.duration) * 60_000);
-    return bStart < block.endDateTime && block.startDateTime < bEnd;
-  });
+  const conflict = candidates.some((b) => bookingOverlapsWindow(b, block));
   if (conflict) {
     return { ok: false, error: "HAS_ACTIVE_BOOKINGS" };
   }

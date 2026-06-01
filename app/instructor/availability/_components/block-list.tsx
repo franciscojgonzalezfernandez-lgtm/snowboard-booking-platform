@@ -5,6 +5,7 @@ export type BlockRow = {
   dateLabel: string;
   startLabel: string;
   endLabel: string;
+  hasActiveBooking: boolean;
 };
 
 type Props = {
@@ -43,8 +44,19 @@ export function BlockList({ rows }: Props) {
             <p className="text-xs text-muted-foreground">
               {row.startLabel} – {row.endLabel}
             </p>
+            {row.hasActiveBooking ? (
+              <p
+                data-testid="availability-has-booking"
+                className="text-xs font-medium text-muted-foreground"
+              >
+                Has a booking — cancel it before deleting this window.
+              </p>
+            ) : null}
           </div>
-          <DeleteBlockButton blockId={row.id} />
+          <DeleteBlockButton
+            blockId={row.id}
+            hasActiveBooking={row.hasActiveBooking}
+          />
         </li>
       ))}
     </ul>
