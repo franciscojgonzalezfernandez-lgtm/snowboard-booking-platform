@@ -1437,21 +1437,25 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel). La c
 
 ##### F-072 — Instructor availability block management (CRUD)
 
-- Sprint: 4 · Estado: backlog · Prioridad: P0
+- Sprint: 4 · Estado: done · Prioridad: P0
 - Depende de: F-071, F-019 (AvailabilityBlock schema)
 - Motivación: el instructor define cuándo está disponible. Hoy `AvailabilityBlock` se siembra; el owner necesita crear/borrar ventanas sin tocar DB.
 - AC server:
-  - [ ] Server actions en `app/instructor/actions.ts`: `createAvailabilityBlock(input)`, `deleteAvailabilityBlock(id)`. Zod (start < end, sin solape con bloque existente del mismo instructor, dentro de `Season` activa).
-  - [ ] Verificar rol + ownership (`block.instructorId === session.user.instructor.id`).
-  - [ ] Rechazar delete si el bloque contiene bookings `CONFIRMED`/`PENDING_PAYMENT` (error i18n).
-  - [ ] `revalidatePath('/instructor')` + `/instructor/availability`.
+  - [x] Server actions en `app/instructor/actions.ts`: `createAvailabilityBlock(input)`, `deleteAvailabilityBlock(id)`. Lógica pura en `lib/instructor/availability-block.ts` (mismo split que `cancel.ts` / `create-draft.ts`). Zod en `lib/schemas/availability-block.ts`: `start < end`, formato `YYYY-MM-DD` + `HH:MM`. DB-side: sin solape con bloque existente del mismo instructor (`findFirst` con `startDateTime: { lt: end }` + `endDateTime: { gt: start }`, indexado), dentro de `Season` activa (`[startDate, endDate + 1d)` para permitir bloques hasta el último día).
+  - [x] Verificar rol + ownership: `requireInstructor()` en cada action; delete re-comprueba `block.instructorId === instructorId` (id viene del cliente → `FORBIDDEN` si no matchea).
+  - [x] Rechazar delete si el bloque contiene bookings `CONFIRMED`/`PENDING_PAYMENT`: `findMany` de bookings del instructor en el rango de día del bloque + filtro JS de overlap real con `setUtcTime(date, anchorTime) + duration`. Devuelve `HAS_ACTIVE_BOOKINGS` con copy "This window has a confirmed or pending booking. Cancel the booking first." en el toast.
+  - [x] `revalidatePath('/instructor')` + `/instructor/availability` + `revalidateTag(AVAILABILITY_TAGS.root)` (sin este último el booker no vería el bloque nuevo hasta el revalidate de 30min).
 - AC UI:
-  - [ ] `app/instructor/availability/page.tsx`: lista de bloques futuros + form crear (date + start/end time, shadcn RHF + Zod) + delete inline (confirm dialog).
+  - [x] `app/instructor/availability/page.tsx`: lista de bloques futuros (`endDateTime > now`, ordenados asc) + form crear con inputs nativos `<input type="date">` + `<input type="time" step="900">` (shadcn no incluye Calendar; HTML5 nativo evita instalar un primitive para una sola pantalla) + RHF + Zod resolver + delete inline con shadcn `Dialog` confirm. Patrón de form-fix de PR #100 aplicado: submit nunca disabled por `!isValid`, `setFocus` en el primer error.
+  - [x] Link "Manage availability →" añadido al header de `/instructor` (F-071) para navegación.
 - Tests:
-  - Vitest: solape rechazado, end<=start rechazado, delete con booking activo rechazado, happy create/delete.
-  - Playwright: crear bloque → aparece en lista; delete → desaparece.
+  - [x] Vitest `lib/instructor/availability-block.test.ts` (14 specs): happy create, end<=start, end==start, malformed date, no active season, antes de season, después de season, boundary último día permitido, overlap rechazado. Delete: happy, NOT_FOUND, FORBIDDEN (ownership), HAS_ACTIVE_BOOKINGS, booking fuera del bloque no impide delete.
+  - [x] Playwright `e2e/f-072-instructor-availability.spec.ts` (4 specs): crear → aparece en lista; delete con confirm dialog → desaparece; overlap → error inline + lista intacta; delete con booking `CONFIRMED` dentro del rango → toast de error + row se queda.
 - Notas:
+  - **Kind = AVAILABLE only**. El picker de kind no existe — `BLOCKED` (excepciones sub-día dentro de una ventana AVAILABLE) lo cubre F-083 según su propio spec.
   - Recurrencia (weekly recurring availability) fuera de scope MVP — single blocks. Recurring = F-XXX post-MVP si el owner lo pide.
+  - Wall-clock UTC: el form acepta `HH:MM` y se guarda como UTC literal (consistente con `setUtcTime` del booking-engine). TZ display correctness es un concern transversal del proyecto, no parte de F-072.
+  - F-083 supersede esta surface más adelante con un calendario mensual/semanal; el modelo de datos no cambia, así que F-083 es un swap puramente de UI.
 
 ##### F-073 — Instructor profile edit + photo upload (Vercel Blob)
 

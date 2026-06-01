@@ -86,6 +86,13 @@ export default async function InstructorAgendaPage({ searchParams }: Props) {
             ? "No classes in this window."
             : `${totalClasses} ${totalClasses === 1 ? "class" : "classes"} scheduled.`}
         </p>
+        <Link
+          href="/instructor/availability"
+          data-testid="agenda-manage-availability"
+          className="inline-block text-xs font-bold uppercase tracking-[0.18em] underline-offset-4 hover:underline"
+        >
+          Manage availability →
+        </Link>
       </header>
 
       <nav
