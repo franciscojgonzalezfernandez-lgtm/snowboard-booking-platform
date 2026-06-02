@@ -20,6 +20,16 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  experimental: {
+    serverActions: {
+      // F-073: instructor photo upload accepts up to 5MB
+      // (`PHOTO_MAX_BYTES`). Next.js Server Actions default to a 1MB body
+      // limit, which silently rejects larger uploads with an opaque
+      // "unexpected response" runtime error before our Zod size check fires.
+      // Bump to 6MB to leave headroom for the FormData boundary + filename.
+      bodySizeLimit: "6mb",
+    },
+  },
 };
 
 // withNextIntl wraps first so the next-intl plugin sees the raw nextConfig;
