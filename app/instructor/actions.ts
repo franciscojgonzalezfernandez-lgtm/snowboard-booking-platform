@@ -116,7 +116,13 @@ export async function uploadInstructorPhotoAction(
       prisma,
       blob,
       instructorId,
-      onWarning: (err, ctx) => Sentry.captureException(err, { extra: ctx }),
+      onWarning: (err, ctx) => {
+        Sentry.captureException(err, { extra: ctx });
+        // In production Sentry collects the cause; in dev (no DSN) it would
+        // be swallowed, so always echo to the server console too. Cheap and
+        // makes blob-token / blob-config issues visible immediately.
+        console.error("[F-073] blob warning", ctx, err);
+      },
     },
     file,
     { mime: file.type as never, sizeBytes: file.size },
@@ -132,7 +138,10 @@ export async function removeInstructorPhotoAction(): Promise<RemovePhotoResult> 
     prisma,
     blob,
     instructorId,
-    onWarning: (err, ctx) => Sentry.captureException(err, { extra: ctx }),
+    onWarning: (err, ctx) => {
+      Sentry.captureException(err, { extra: ctx });
+      console.error("[F-073] blob warning", ctx, err);
+    },
   });
   if (result.ok) bustInstructorCaches(["/instructor/profile", "/instructor"]);
   return result;
