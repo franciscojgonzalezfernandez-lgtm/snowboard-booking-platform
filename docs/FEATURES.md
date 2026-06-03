@@ -1459,22 +1459,27 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel). La c
 
 ##### F-073 — Instructor profile edit + photo upload (Vercel Blob)
 
-- Sprint: 4 · Estado: backlog · Prioridad: P1
+- Sprint: 4 · Estado: done (photo runtime-gated en `BLOB_READ_WRITE_TOKEN`) · Prioridad: P1
 - Depende de: F-071
 - Motivación: el instructor edita bio/specialties/languages/foto que alimentan Step 3 (F-022) + página de instructores (Sprint 5). Hoy la foto es estática (`/instructors/javi.png`, F-021); migrar a Vercel Blob para self-service.
 - AC server:
-  - [ ] `updateInstructorProfile(input)` en `app/instructor/actions.ts`: Zod (bio ≤2000, specialties `string[]`, languages `Locale[]` subset, active boolean). Rol + ownership.
-  - [ ] Photo upload vía Vercel Blob (`@vercel/blob` `put`): `uploadInstructorPhoto(file)` server action, valida mime (jpeg/png/webp) + size ≤5MB, persiste URL pública en `Instructor.photo`, borra blob anterior si existe.
-  - [ ] `revalidatePath('/instructor/profile')` + revalidar Step 3 / instructores.
+  - [x] `updateInstructorProfile(input)` en `app/instructor/actions.ts`: lógica pura en `lib/instructor/profile.ts` (mismo split que cancel.ts / create-draft.ts). Zod en `lib/schemas/instructor-profile.ts` (bio ≤2000, specialties `string[].max(12).min(1).max(40)` con dedupe en transform, languages `Locale[].min(1)`, active + acceptsSameDayIfBooked boolean). Rol + ownership vía `requireInstructor()`.
+  - [x] Photo upload vía Vercel Blob (`@vercel/blob` `put`): `uploadInstructorPhoto(formData)` server action acepta FormData (file binario), valida mime (jpeg/png/webp) + size ≤5MB en `photoUploadMetaSchema`, persiste URL pública en `Instructor.photo`, borra blob anterior con `del` (best-effort, fallo no rompe upload). Añadido `removeInstructorPhoto()` por simetría.
+  - [x] `revalidatePath('/instructor/profile')` + `/instructor` + `revalidateTag(AVAILABILITY_TAGS.root)` (Step 3 cachea los datos de instructor vía la cache de availability).
 - AC infra:
-  - [ ] `BLOB_READ_WRITE_TOKEN` env documentado (Vercel auto-provee en deploy; local vía `vercel env pull`).
+  - [x] `BLOB_READ_WRITE_TOKEN` runtime-gated: el action layer pasa `blob: null` cuando el env var falta y la pura devuelve `BLOB_NOT_CONFIGURED`. UI muestra notice inline pidiendo al admin que provisione Vercel Blob. Vercel auto-inyecta el token cuando se conecta el Blob store al proyecto; no requiere cambio de código.
+  - [x] `next.config.ts`: `images.remotePatterns` añade `*.public.blob.vercel-storage.com` para que `next/image` acepte las URLs de Blob.
 - AC UI:
-  - [ ] `app/instructor/profile/page.tsx`: form bio + specialties (tag input) + languages (multi-select) + foto (preview + replace). shadcn.
+  - [x] `app/instructor/profile/page.tsx`: server component que renderiza `<PhotoUploader>` + `<ProfileForm>`. Form RHF + Zod con Textarea para bio, tag input hand-rolled para specialties (no hay primitive de tag en shadcn), checkboxes para languages (en/de/es) y para active/acceptsSameDayIfBooked.
+  - [x] `<PhotoUploader>`: preview redondo con `next/image`, fallback iniciales si null, native `<form action={...}>` con `<input type="file">` (FormData → File es el patrón correcto en Server Actions), botones "Replace" + "Remove". Cuando `blobConfigured === false`, muestra notice + disabled controls.
+  - [x] Link "Edit profile →" añadido al header de `/instructor` para navegación.
 - Tests:
-  - Vitest: validación Zod, mime/size rechazo.
-  - Playwright: editar bio → persiste; upload foto → preview + URL Blob en DB.
+  - [x] Vitest `lib/instructor/profile.test.ts` (17 specs): update happy + bio>2000 + specialties>12 + languages vacío + dedupe + NOT_FOUND. Upload happy + replace con del previo + BLOB_NOT_CONFIGURED + INVALID_MIME + TOO_LARGE + UPLOAD_FAILED + old-blob-del-failure swallowed + NOT_FOUND. Remove happy + idempotente cuando no hay foto + BLOB_NOT_CONFIGURED. + Vitest `lib/forms/focus-first-error.test.ts` (3 specs) para el helper compartido nuevo.
+  - [x] Playwright `e2e/f-073-instructor-profile.spec.ts` (4 specs): edita bio + specialty + language y persiste; bio>2000 → banner inline + foco en bio; blob no configurado → notice + controls disabled (skip cuando token presente); blob configurado → upload de PNG 1x1 persiste URL (skip cuando token ausente).
 - Notas:
-  - Primer uso de Vercel Blob en el proyecto. Si el token no está provisionado, photo upload queda blocked-in-progress (el resto del profile edit funciona sin él).
+  - Primer uso de Vercel Blob en el proyecto. El runtime-gating en `BLOB_READ_WRITE_TOKEN` permite shipar F-073 hoy: el profile edit funciona inmediatamente; el upload "se enciende" cuando el owner conecta un Blob store en Vercel (Dashboard → Storage → Create → Blob → Connect to project → token auto-inyectado → redeploy). Sin Blob, el upload UI muestra notice claro.
+  - **`focusFirstError` helper extraído** en `lib/forms/focus-first-error.ts` y aplicado al `<ProfileForm>` (3ª aparición del patrón tras PR #100 + F-072). Las refactors de las 2 formularios previos viven en sus PRs originales; este PR solo aporta el helper + la 3ª uso. Si llega un 4º form, ya hay helper.
+  - F-074 / F-075 (Google Calendar OAuth + sync) siguen siendo el siguiente tail del instructor pipeline; ⛔ blocked-in-progress en OAuth consent screen del owner.
 
 ##### F-074 — Google Calendar OAuth connect + token encryption (ADR-007) ⛔
 

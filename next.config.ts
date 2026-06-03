@@ -9,6 +9,33 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
+  images: {
+    // F-073: instructor photos live on Vercel Blob. Public URLs are
+    // `https://<store-id>.public.blob.vercel-storage.com/<pathname>`; allow
+    // any subdomain since the store id is environment-specific.
+    //
+    // The single-`*` wildcard rejected real store hostnames in prod
+    // ("Invalid src prop … is not configured under images"); `**` is the
+    // robust variant for arbitrary subdomain prefixes and is explicit per the
+    // Next.js docs.
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**.public.blob.vercel-storage.com",
+        pathname: "/**",
+      },
+    ],
+  },
+  experimental: {
+    serverActions: {
+      // F-073: instructor photo upload accepts up to 5MB
+      // (`PHOTO_MAX_BYTES`). Next.js Server Actions default to a 1MB body
+      // limit, which silently rejects larger uploads with an opaque
+      // "unexpected response" runtime error before our Zod size check fires.
+      // Bump to 6MB to leave headroom for the FormData boundary + filename.
+      bodySizeLimit: "6mb",
+    },
+  },
 };
 
 // withNextIntl wraps first so the next-intl plugin sees the raw nextConfig;
