@@ -1520,21 +1520,27 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel). La c
 - Notas:
   - ⛔ hereda blocker de F-074. Best-effort siempre: fallo de GCal nunca rompe booking/cancel.
 
-##### F-076 — Admin panel shell + instructor CRUD
+##### F-076 — Admin panel: calendar-first shell + availability editing + instructor CRUD
 
-- Sprint: 4 · Estado: backlog · Prioridad: P0
-- Depende de: F-068 (nav patterns)
-- Motivación: panel ops del owner. CRUD de instructores para expansión multi-instructor (MVP: 1, pero el panel lo soporta).
+- Sprint: 4 · Estado: done · Prioridad: P0
+- Depende de: F-068 (nav patterns), F-083 (calendar UI + availability cores — reusados, no reescritos)
+- Reshape (owner, 2026-06-03): el landing de `/admin` **no** es un listado CRUD — es un **calendario mensual** que muestra las clases de cualquier instructor y permite **editar su disponibilidad** (abrir/cerrar días, bloquear ventanas) ahí mismo. CRUD de instructores pasa a página secundaria. Single-instructor MVP, pero arquitecturado multi-instructor (selector de instructor). Stacked sobre F-083: el branch salió de `f-083-instructor-calendar`; rebase a `main` cuando F-083 mergee.
 - AC routing/auth:
-  - [ ] `app/admin/layout.tsx` + `page.tsx`. EN-only, fuera de `[locale]`. Gating `session.user.roles.includes('admin')`, else 403/redirect.
-- AC CRUD:
-  - [ ] `app/admin/instructors/`: lista + crear (crea `User` con rol `instructor` + `Instructor` row en `$transaction`) + editar (active toggle, bio, languages) + soft-deactivate (`active=false`, nunca hard-delete).
-  - [ ] Server actions en `app/admin/actions.ts`, Zod, rol-gated.
+  - [x] `lib/auth/require-admin.ts` espejo de `require-instructor.ts`: re-chequea `roles.includes('admin')` contra DB (nunca confiar en rol client-side); anónimo → `/en/login`, no-admin → `notFound()`. `app/admin/layout.tsx` gatea toda el área (EN-only, fuera de `[locale]`).
+- AC calendario (landing):
+  - [x] `app/admin/page.tsx` **es** el calendario. Selector de instructor (`?instructor=`, default primer activo) + nav de mes (`?month=`). Reusa `getInstructorCalendar` (F-083) por instructor seleccionado. Empty-state cuando no hay instructores activos.
+  - [x] `MonthCalendar` extraído a `components/calendar/month-calendar.tsx`, **action-agnostic**: recibe las 3 acciones (`open/block/clear`) por prop. Instructor (`/instructor/calendar`) pasa sus acciones; admin pasa las suyas con el instructor seleccionado inyectado (`app/admin/_components/admin-calendar.tsx`). Helpers de grid del mes lifted a `lib/calendar/month-grid.ts`.
+- AC edición de disponibilidad (admin):
+  - [x] `adminOpenAvailabilityRange` / `adminBlockAvailabilityWindow` / `adminClearAvailability` en `app/admin/actions.ts`: `requireAdmin()` + valida que el `instructorId` (enviado por el cliente) sea un Instructor **activo** antes de delegar en los cores DI de `lib/instructor/availability-actions.ts` (F-083). Revalida `/admin` + `/instructor*` + `AVAILABILITY_TAGS.root`.
+- AC CRUD (secundario):
+  - [x] `app/admin/instructors/`: lista (activos primero) + crear (`User` rol `[student, instructor]` + `Instructor` en `$transaction`) + editar (active toggle, bio, languages) + soft-deactivate con confirm dialog (`active=false`, nunca hard-delete). Cores DI en `lib/admin/instructors.ts`, Zod en `lib/schemas/instructor.ts`, rol-gated en `app/admin/actions.ts`. El user nace sin credenciales — reclama la cuenta luego vía magic-link/Google con el mismo email.
 - Tests:
-  - Vitest: create instructor (transacción user+instructor), deactivate, rol rechazado.
-  - Playwright: admin crea instructor → aparece en lista; non-admin → 403.
+  - [x] Vitest `lib/admin/instructors.test.ts` (8 specs): create transacción user+instructor (email normalizado, roles), EMAIL_TAKEN sin tocar la transacción, INVALID_INPUT (email/sin idioma), update parcial, update/deactivate NOT_FOUND, deactivate = `active:false`.
+  - [x] Playwright `e2e/f-076-admin.spec.ts` (3 specs): no-admin → 404; admin aterriza en calendario, abre y cierra un día del instructor seleccionado; admin crea instructor → aparece en lista + persiste rol instructor. Suite unit completa 306/306, `tsc` + `eslint` limpios.
 - Notas:
   - Hard-delete prohibido — bookings/availability FK. Solo `active=false`.
+  - F-077 (tabla de bookings con búsqueda/filtros + entry point de ops-cancel) sigue siendo ticket aparte — el calendario es la vista visual, no sustituye la tabla.
+  - La edición de disponibilidad como admin (antes sin ticket — F-072/F-083 eran instructor-only) queda absorbida aquí.
 
 ##### F-077 — Admin bookings view (all bookings, filtros)
 
