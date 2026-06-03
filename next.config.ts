@@ -11,12 +11,18 @@ const nextConfig: NextConfig = {
   },
   images: {
     // F-073: instructor photos live on Vercel Blob. Public URLs are
-    // `https://<store>.public.blob.vercel-storage.com/<pathname>`; allow
+    // `https://<store-id>.public.blob.vercel-storage.com/<pathname>`; allow
     // any subdomain since the store id is environment-specific.
+    //
+    // The single-`*` wildcard rejected real store hostnames in prod
+    // ("Invalid src prop … is not configured under images"); `**` is the
+    // robust variant for arbitrary subdomain prefixes and is explicit per the
+    // Next.js docs.
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "*.public.blob.vercel-storage.com",
+        hostname: "**.public.blob.vercel-storage.com",
+        pathname: "/**",
       },
     ],
   },

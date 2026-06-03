@@ -8,6 +8,15 @@ import { requireInstructor } from "@/lib/auth/require-instructor";
 import { AVAILABILITY_TAGS } from "@/lib/booking-engine/cache";
 import { prisma } from "@/lib/db";
 import {
+  blockAvailabilityWindowWith,
+  clearAvailabilityWith,
+  openAvailabilityRangeWith,
+  type AvailabilityDeps,
+  type BlockWindowResult,
+  type ClearResult,
+  type OpenRangeResult,
+} from "@/lib/instructor/availability-actions";
+import {
   createInstructorAvailabilityBlock,
   deleteInstructorAvailabilityBlock,
   type CreateBlockResult,
@@ -29,11 +38,64 @@ import type { UpdateInstructorProfileInput } from "@/lib/schemas/instructor-prof
  * Instructor Server Actions. Thin session + cache-invalidation wrappers; the
  * policy / DB writes live in `lib/instructor/*`.
  *
- * Booker-side availability is cached (`lib/booking-engine/cache.ts`), so a
- * successful mutation must bust `AVAILABILITY_TAGS.root` — otherwise a freshly
- * created block (or edited profile field) doesn't show up on `/reservar` until
- * the 30-min revalidate.
+ * Surfaces sharing this file:
+ *   - F-072 availability page  → availability-block.ts (create/delete block)
+ *   - F-073 profile page       → profile.ts            (update + photo)
+ *   - F-083 calendar           → availability-actions.ts (open/block/clear)
+ *
+ * Booker-side availability is cached (`lib/booking-engine/cache.ts`), so any
+ * successful mutation must bust `AVAILABILITY_TAGS.root` — otherwise a fresh
+ * block / edited field doesn't show on `/reservar` until the 30-min revalidate.
  */
+
+function instructorDeps(instructorId: string): AvailabilityDeps {
+  return {
+    prisma: prisma as unknown as AvailabilityDeps["prisma"],
+    instructorId,
+  };
+}
+
+// F-083 calendar bust set (includes /instructor/calendar). F-072/F-073 use
+// `bustInstructorCaches(paths)` below to pick the exact surfaces they touch.
+function revalidateInstructor() {
+  revalidatePath("/instructor");
+  revalidatePath("/instructor/calendar");
+  revalidatePath("/instructor/availability");
+  revalidateTag(AVAILABILITY_TAGS.root);
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// F-083: calendar range mutations
+
+export async function openAvailabilityRange(input: {
+  fromDate: string;
+  toDate: string;
+}): Promise<OpenRangeResult> {
+  const { instructorId } = await requireInstructor();
+  const result = await openAvailabilityRangeWith(instructorDeps(instructorId), input);
+  if (result.ok) revalidateInstructor();
+  return result;
+}
+
+export async function blockAvailabilityWindow(input: {
+  date: string;
+  startTime: string;
+  endTime: string;
+}): Promise<BlockWindowResult> {
+  const { instructorId } = await requireInstructor();
+  const result = await blockAvailabilityWindowWith(instructorDeps(instructorId), input);
+  if (result.ok) revalidateInstructor();
+  return result;
+}
+
+export async function clearAvailability(input: {
+  blockId: string;
+}): Promise<ClearResult> {
+  const { instructorId } = await requireInstructor();
+  const result = await clearAvailabilityWith(instructorDeps(instructorId), input);
+  if (result.ok) revalidateInstructor();
+  return result;
+}
 
 function blobClient(): BlobClient | null {
   if (!process.env.BLOB_READ_WRITE_TOKEN) return null;
