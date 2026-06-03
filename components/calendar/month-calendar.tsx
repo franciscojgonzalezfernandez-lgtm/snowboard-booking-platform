@@ -44,7 +44,16 @@ export type CalendarActions = {
     endTime: string;
   }): Promise<BlockWindowResult>;
   clearAvailability(input: { blockId: string }): Promise<ClearResult>;
+  /** All-mode close: clears every active instructor's block on the day. */
+  closeDay?(input: { date: string }): Promise<ClearResult>;
 };
+
+/**
+ * "single" edits one instructor by block id; "all" edits every active
+ * instructor by date (close is day-based, sub-day block windows are hidden
+ * since they only make sense per instructor).
+ */
+export type CalendarMode = "single" | "all";
 
 function dayNumber(iso: string): number {
   return Number(iso.slice(8, 10));
@@ -65,9 +74,17 @@ type Props = {
   monthIso: string;
   todayIso: string;
   actions: CalendarActions;
+  mode?: CalendarMode;
 };
 
-export function MonthCalendar({ days, monthIso, todayIso, actions }: Props) {
+export function MonthCalendar({
+  days,
+  monthIso,
+  todayIso,
+  actions,
+  mode = "single",
+}: Props) {
+  const isAll = mode === "all";
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [selectedIso, setSelectedIso] = useState<string | null>(null);
@@ -253,11 +270,18 @@ export function MonthCalendar({ days, monthIso, todayIso, actions }: Props) {
                     type="button"
                     variant="outline"
                     data-testid="close-day"
-                    disabled={pending || !selected.openBlockId}
-                    onClick={() =>
-                      selected.openBlockId &&
-                      run(() => actions.clearAvailability({ blockId: selected.openBlockId! }))
-                    }
+                    disabled={pending || (!isAll && !selected.openBlockId)}
+                    onClick={() => {
+                      if (isAll) {
+                        run(() => actions.closeDay!({ date: selected.isoDate }));
+                      } else if (selected.openBlockId) {
+                        run(() =>
+                          actions.clearAvailability({
+                            blockId: selected.openBlockId!,
+                          }),
+                        );
+                      }
+                    }}
                   >
                     Close day
                   </Button>
@@ -280,7 +304,7 @@ export function MonthCalendar({ days, monthIso, todayIso, actions }: Props) {
                 )}
               </div>
 
-              {selected.open ? (
+              {!isAll && selected.open ? (
                 <form
                   data-testid="block-window-form"
                   className="flex flex-wrap items-end gap-3 border-t border-input pt-4"
@@ -330,7 +354,7 @@ export function MonthCalendar({ days, monthIso, todayIso, actions }: Props) {
                 </form>
               ) : null}
 
-              {selected.blocked.length > 0 ? (
+              {!isAll && selected.blocked.length > 0 ? (
                 <div className="space-y-2 border-t border-input pt-4">
                   <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
                     Blocked windows

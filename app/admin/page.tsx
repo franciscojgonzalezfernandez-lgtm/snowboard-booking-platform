@@ -10,9 +10,12 @@ import {
   shiftMonth,
 } from "@/lib/calendar/month-grid";
 import { prisma } from "@/lib/db";
-import { getInstructorCalendar } from "@/lib/instructor/calendar-data";
+import {
+  getAllInstructorsCalendar,
+  getInstructorCalendar,
+} from "@/lib/instructor/calendar-data";
 
-import { AdminCalendar } from "./_components/admin-calendar";
+import { AdminCalendar, ALL_INSTRUCTORS } from "./_components/admin-calendar";
 import { InstructorSelector } from "./_components/instructor-selector";
 
 export const metadata: Metadata = {
@@ -60,24 +63,29 @@ export default async function AdminCalendarPage({ searchParams }: Props) {
     );
   }
 
-  const options = instructors.map((i) => ({
-    id: i.id,
-    name: i.user.name ?? i.user.email,
-  }));
-  const selected =
-    options.find((o) => o.id === instructorParam) ?? options[0]!;
+  // "All instructors" leads the selector and is the default landing — the
+  // admin's bird's-eye view. A specific instructor is opt-in via ?instructor=.
+  const options = [
+    { id: ALL_INSTRUCTORS, name: "All instructors" },
+    ...instructors.map((i) => ({ id: i.id, name: i.user.name ?? i.user.email })),
+  ];
+  const selectedId =
+    options.find((o) => o.id === instructorParam)?.id ?? ALL_INSTRUCTORS;
+  const isAll = selectedId === ALL_INSTRUCTORS;
 
   const { gridStart, gridEnd, monthFirst } = monthGrid(year, month);
-  const days = await getInstructorCalendar({
-    instructorId: selected.id,
-    from: gridStart,
-    to: gridEnd,
-  });
+  const days = isAll
+    ? await getAllInstructorsCalendar({ from: gridStart, to: gridEnd })
+    : await getInstructorCalendar({
+        instructorId: selectedId,
+        from: gridStart,
+        to: gridEnd,
+      });
 
   const navLinkClass =
     "text-xs font-bold uppercase tracking-[0.18em] underline-offset-4 hover:underline";
   const monthHref = (delta: number) =>
-    `/admin?instructor=${selected.id}&month=${shiftMonth(year, month, delta)}`;
+    `/admin?instructor=${selectedId}&month=${shiftMonth(year, month, delta)}`;
 
   return (
     <div data-testid="admin-calendar" className="mx-auto max-w-4xl px-6 py-12">
@@ -101,7 +109,7 @@ export default async function AdminCalendarPage({ searchParams }: Props) {
           </label>
           <InstructorSelector
             instructors={options}
-            selectedId={selected.id}
+            selectedId={selectedId}
             month={currentMonthIso}
           />
         </div>
@@ -110,7 +118,7 @@ export default async function AdminCalendarPage({ searchParams }: Props) {
             ← Previous
           </Link>
           <Link
-            href={`/admin?instructor=${selected.id}`}
+            href={`/admin?instructor=${selectedId}`}
             data-testid="calendar-today"
             className={navLinkClass}
           >
@@ -126,7 +134,7 @@ export default async function AdminCalendarPage({ searchParams }: Props) {
         days={days}
         monthIso={currentMonthIso}
         todayIso={toIsoDate(startOfUtcDay(now))}
-        instructorId={selected.id}
+        selected={selectedId}
       />
     </div>
   );

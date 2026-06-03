@@ -54,6 +54,20 @@ async function signUpAsAdmin(page: Page): Promise<{
   return { userId, instructorId: instructor.id };
 }
 
+/** Create a bare active instructor (no signup) to populate the "All" view. */
+async function createActiveInstructor(name: string): Promise<string> {
+  const email = uniqueEmail("extra");
+  const user = await prisma.user.create({
+    data: { email, name, roles: [Role.student, Role.instructor] },
+    select: { id: true },
+  });
+  const instructor = await prisma.instructor.create({
+    data: { userId: user.id, specialties: [], languages: [DbLocale.en] },
+    select: { id: true },
+  });
+  return instructor.id;
+}
+
 async function inSeasonDate(offsetDays = 0): Promise<Date> {
   const season = await prisma.season.findFirst({
     where: { active: true },
@@ -169,4 +183,47 @@ test("admin creates an instructor and it appears in the list", async ({
   });
   expect(created?.roles).toContain(Role.instructor);
   expect(created?.instructor).not.toBeNull();
+});
+
+test("All mode opens and closes a day for every active instructor", async ({
+  page,
+}) => {
+  test.setTimeout(60_000);
+  const { instructorId: instructorA } = await signUpAsAdmin(page);
+  const instructorB = await createActiveInstructor("F076 Coach B");
+  // Past the seeded owner's 56-day availability window so the day starts closed
+  // for every active instructor (All mode reads "open" if *any* is open).
+  const day = await inSeasonDate(50);
+  const iso = isoDate(day);
+  const dayStart = new Date(`${iso}T00:00:00.000Z`);
+  const dayEnd = new Date(`${iso}T23:59:59.999Z`);
+
+  const availableCount = () =>
+    prisma.availabilityBlock.count({
+      where: {
+        instructorId: { in: [instructorA, instructorB] },
+        kind: "AVAILABLE",
+        startDateTime: { gte: dayStart, lte: dayEnd },
+      },
+    });
+
+  await page.goto(`/admin?instructor=all&month=${isoMonth(day)}`);
+  await expect(page.getByTestId("admin-calendar")).toBeVisible();
+
+  const cell = page.getByTestId(`calendar-day-${iso}`);
+  await expect(cell).toHaveAttribute("data-open", "false");
+  await cell.click();
+  await expect(page.getByTestId("day-panel")).toBeVisible();
+  // Sub-day block UI is hidden in All mode.
+  await expect(page.getByTestId("block-window-form")).toHaveCount(0);
+
+  await page.getByTestId("open-day").click();
+  await expect(cell).toHaveAttribute("data-open", "true", { timeout: 15_000 });
+  // Both instructors opened.
+  expect(await availableCount()).toBe(2);
+
+  await cell.click();
+  await page.getByTestId("close-day").click();
+  await expect(cell).toHaveAttribute("data-open", "false", { timeout: 15_000 });
+  expect(await availableCount()).toBe(0);
 });

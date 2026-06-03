@@ -1,9 +1,11 @@
 "use server";
 
+import { AvailabilityKind } from "@prisma/client";
 import { revalidatePath, revalidateTag } from "next/cache";
 
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { AVAILABILITY_TAGS } from "@/lib/booking-engine/cache";
+import { addDays, startOfUtcDay } from "@/lib/booking-engine/time";
 import { prisma } from "@/lib/db";
 import {
   createInstructorWith,
@@ -18,6 +20,7 @@ import {
   blockAvailabilityWindowWith,
   clearAvailabilityWith,
   openAvailabilityRangeWith,
+  type AvailabilityActionError,
   type AvailabilityDeps,
   type BlockWindowResult,
   type ClearResult,
@@ -111,6 +114,71 @@ export async function adminClearAvailability(input: {
   });
   if (result.ok) revalidateAvailability();
   return result;
+}
+
+// --- "All instructors" batch availability ---------------------------------
+// The admin calendar's "All" mode edits every active instructor at once. Open
+// loops the per-instructor core over the range; close finds each active
+// instructor's AVAILABLE block on the day and clears it. The day panel only
+// exposes open/close on booking-free days, so close never trips the booking
+// guard — instructors with a class that day are simply not closeable.
+
+async function activeInstructorIds(): Promise<string[]> {
+  const rows = await prisma.instructor.findMany({
+    where: { active: true },
+    select: { id: true },
+  });
+  return rows.map((r) => r.id);
+}
+
+export async function adminOpenRangeAllInstructors(input: {
+  fromDate: string;
+  toDate: string;
+}): Promise<OpenRangeResult> {
+  await requireAdmin();
+  const ids = await activeInstructorIds();
+  let created = 0;
+  let firstError: AvailabilityActionError | null = null;
+  for (const id of ids) {
+    const result = await openAvailabilityRangeWith(availabilityDeps(id), input);
+    if (result.ok) created += result.created;
+    else if (!firstError) firstError = result.error;
+  }
+  // Surface the error only when nothing landed (e.g. invalid range / no season
+  // hits every instructor identically). A partial success still revalidates.
+  if (firstError && created === 0) return { ok: false, error: firstError };
+  revalidateAvailability();
+  return { ok: true, created };
+}
+
+export async function adminCloseDayAllInstructors(input: {
+  date: string;
+}): Promise<ClearResult> {
+  await requireAdmin();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date)) {
+    return { ok: false, error: "INVALID_INPUT" };
+  }
+  const dayStart = startOfUtcDay(new Date(`${input.date}T00:00:00.000Z`));
+  const dayEnd = addDays(dayStart, 1);
+
+  const blocks = await prisma.availabilityBlock.findMany({
+    where: {
+      instructor: { active: true },
+      kind: AvailabilityKind.AVAILABLE,
+      startDateTime: { gte: dayStart, lt: dayEnd },
+    },
+    select: { id: true, instructorId: true },
+  });
+
+  for (const block of blocks) {
+    // Ownership + booking guard re-checked inside the core; a booked day is
+    // simply skipped (the UI never offers close there anyway).
+    await clearAvailabilityWith(availabilityDeps(block.instructorId), {
+      blockId: block.id,
+    });
+  }
+  revalidateAvailability();
+  return { ok: true };
 }
 
 export async function createInstructor(
