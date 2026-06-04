@@ -27,7 +27,7 @@ const ALL_LOCALES: Locale[] = [Locale.en, Locale.de, Locale.es];
 
 const ERROR_COPY: Record<string, string> = {
   INVALID_INPUT: "Check the highlighted fields and try again.",
-  EMAIL_TAKEN: "An account with that email already exists.",
+  ALREADY_INSTRUCTOR: "That user is already an instructor.",
 };
 
 const FIELD_ORDER: (keyof CreateInstructorInput)[] = [
