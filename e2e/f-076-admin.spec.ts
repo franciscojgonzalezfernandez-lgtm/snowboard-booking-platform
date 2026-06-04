@@ -185,6 +185,39 @@ test("admin creates an instructor and it appears in the list", async ({
   expect(created?.instructor).not.toBeNull();
 });
 
+test("creating an instructor for an existing user promotes them in place", async ({
+  page,
+}) => {
+  test.setTimeout(60_000);
+  // A plain student account that registered earlier.
+  const email = uniqueEmail("existing");
+  await prisma.user.create({
+    data: { email, name: "Existing Person", roles: [Role.student] },
+  });
+
+  await signUpAsAdmin(page);
+  await page.goto("/admin/instructors");
+  await page.getByTestId("instructor-name").fill("Existing Person");
+  await page.getByTestId("instructor-email").fill(email);
+  await page.getByTestId("instructor-bio").fill("Promoted from existing user.");
+  await page.getByTestId("instructor-create-submit").click();
+
+  await expect(page.getByTestId("admin-instructor-list")).toContainText(email, {
+    timeout: 15_000,
+  });
+
+  // Same user, now with the instructor role + an Instructor profile (no dup user).
+  const promoted = await prisma.user.findUnique({
+    where: { email },
+    select: { roles: true, instructor: { select: { id: true } } },
+  });
+  expect(promoted?.roles).toEqual(
+    expect.arrayContaining([Role.student, Role.instructor]),
+  );
+  expect(promoted?.instructor).not.toBeNull();
+  expect(await prisma.user.count({ where: { email } })).toBe(1);
+});
+
 test("All mode opens and closes a day for every active instructor", async ({
   page,
 }) => {

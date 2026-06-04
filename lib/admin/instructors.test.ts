@@ -9,17 +9,22 @@ import {
 } from "./instructors";
 
 function makeDeps(overrides?: {
-  existingUser?: { id: string } | null;
+  existingUser?:
+    | { id: string; roles: Role[]; instructor: { id: string } | null }
+    | null;
   instructor?: { id: string } | null;
 }) {
   const userCreate = vi.fn(async () => ({ id: "user_new" }));
+  const userUpdate = vi.fn(async ({ where }: { where: { id: string } }) => ({
+    id: where.id,
+  }));
   const instructorCreate = vi.fn(async () => ({ id: "inst_new" }));
   const instructorUpdate = vi.fn(async ({ where }: { where: { id: string } }) => ({
     id: where.id,
   }));
   const $transaction = vi.fn(async (fn: (tx: unknown) => Promise<unknown>) =>
     fn({
-      user: { create: userCreate },
+      user: { create: userCreate, update: userUpdate },
       instructor: { create: instructorCreate },
     }),
   );
@@ -40,7 +45,10 @@ function makeDeps(overrides?: {
       $transaction,
     } as unknown as AdminInstructorDeps["prisma"],
   };
-  return { deps, spies: { userCreate, instructorCreate, instructorUpdate, $transaction } };
+  return {
+    deps,
+    spies: { userCreate, userUpdate, instructorCreate, instructorUpdate, $transaction },
+  };
 }
 
 describe("createInstructorWith", () => {
@@ -76,14 +84,46 @@ describe("createInstructorWith", () => {
     });
   });
 
-  test("rejects when email already in use, without touching the transaction", async () => {
-    const { deps, spies } = makeDeps({ existingUser: { id: "user_existing" } });
+  test("promotes an existing non-instructor user (adds role + profile, no new user)", async () => {
+    const { deps, spies } = makeDeps({
+      existingUser: { id: "user_existing", roles: [Role.student], instructor: null },
+    });
+    const result = await createInstructorWith(deps, {
+      name: "Existing Person",
+      email: "existing@example.com",
+      languages: [Locale.de],
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      instructorId: "inst_new",
+      userId: "user_existing",
+    });
+    expect(spies.userCreate).not.toHaveBeenCalled();
+    expect(spies.userUpdate).toHaveBeenCalledWith({
+      where: { id: "user_existing" },
+      data: { roles: [Role.student, Role.instructor] },
+    });
+    expect(spies.instructorCreate).toHaveBeenCalledWith({
+      data: { userId: "user_existing", bio: null, languages: [Locale.de], specialties: [] },
+      select: { id: true },
+    });
+  });
+
+  test("rejects when the user is already an instructor, without touching the transaction", async () => {
+    const { deps, spies } = makeDeps({
+      existingUser: {
+        id: "user_existing",
+        roles: [Role.student, Role.instructor],
+        instructor: { id: "inst_existing" },
+      },
+    });
     const result = await createInstructorWith(deps, {
       name: "Dup",
       email: "dup@example.com",
       languages: [Locale.en],
     });
-    expect(result).toEqual({ ok: false, error: "EMAIL_TAKEN" });
+    expect(result).toEqual({ ok: false, error: "ALREADY_INSTRUCTOR" });
     expect(spies.$transaction).not.toHaveBeenCalled();
   });
 

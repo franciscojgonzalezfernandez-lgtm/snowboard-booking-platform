@@ -21,7 +21,7 @@ import {
 
 export type AdminInstructorError =
   | "INVALID_INPUT"
-  | "EMAIL_TAKEN"
+  | "ALREADY_INSTRUCTOR"
   | "NOT_FOUND";
 
 export type CreateInstructorResult =
@@ -44,6 +44,10 @@ type InstructorTx = {
       };
       select: { id: true };
     }): Promise<{ id: string }>;
+    update(args: {
+      where: { id: string };
+      data: { roles: Role[] };
+    }): Promise<{ id: string }>;
   };
   instructor: {
     create(args: {
@@ -63,8 +67,12 @@ export type AdminInstructorDeps = {
     user: {
       findUnique(args: {
         where: { email: string };
-        select: { id: true };
-      }): Promise<{ id: string } | null>;
+        select: { id: true; roles: true; instructor: { select: { id: true } } };
+      }): Promise<{
+        id: string;
+        roles: Role[];
+        instructor: { id: string } | null;
+      } | null>;
     };
     instructor: {
       findUnique(args: {
@@ -80,6 +88,11 @@ export type AdminInstructorDeps = {
   };
 };
 
+/** Append `instructor` without dropping existing roles or duplicating it. */
+function withInstructorRole(roles: Role[]): Role[] {
+  return roles.includes(Role.instructor) ? roles : [...roles, Role.instructor];
+}
+
 export async function createInstructorWith(
   deps: AdminInstructorDeps,
   input: CreateInstructorInput,
@@ -90,25 +103,37 @@ export async function createInstructorWith(
 
   const existing = await deps.prisma.user.findUnique({
     where: { email },
-    select: { id: true },
+    select: { id: true, roles: true, instructor: { select: { id: true } } },
   });
-  if (existing) return { ok: false, error: "EMAIL_TAKEN" };
+
+  // Already a coach — nothing to do, surface it so the admin isn't confused.
+  if (existing?.instructor) {
+    return { ok: false, error: "ALREADY_INSTRUCTOR" };
+  }
 
   const { userId, instructorId } = await deps.prisma.$transaction(async (tx) => {
-    const user = await tx.user.create({
-      data: { email, name, roles: [Role.student, Role.instructor] },
-      select: { id: true },
-    });
+    // Existing user (e.g. a student or someone who registered earlier): promote
+    // in place by adding the `instructor` role + attaching an Instructor
+    // profile, rather than rejecting on the unique email.
+    const userId = existing
+      ? (
+          await tx.user.update({
+            where: { id: existing.id },
+            data: { roles: withInstructorRole(existing.roles) },
+          })
+        ).id
+      : (
+          await tx.user.create({
+            data: { email, name, roles: [Role.student, Role.instructor] },
+            select: { id: true },
+          })
+        ).id;
+
     const instructor = await tx.instructor.create({
-      data: {
-        userId: user.id,
-        bio: bio ?? null,
-        languages,
-        specialties,
-      },
+      data: { userId, bio: bio ?? null, languages, specialties },
       select: { id: true },
     });
-    return { userId: user.id, instructorId: instructor.id };
+    return { userId, instructorId: instructor.id };
   });
 
   return { ok: true, instructorId, userId };
