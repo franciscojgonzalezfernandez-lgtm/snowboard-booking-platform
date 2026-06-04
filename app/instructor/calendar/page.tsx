@@ -12,33 +12,45 @@ import {
   shiftMonth,
 } from "@/lib/calendar/month-grid";
 import { getInstructorCalendar } from "@/lib/instructor/calendar-data";
+import { prisma } from "@/lib/db";
 
 import {
   blockAvailabilityWindow,
   clearAvailability,
   openAvailabilityRange,
 } from "../actions";
+import { CalendarConnection } from "./_components/calendar-connection";
 
 export const metadata: Metadata = {
   title: "Calendar · Instructor",
 };
 
 type Props = {
-  searchParams: Promise<{ month?: string }>;
+  searchParams: Promise<{
+    month?: string;
+    calendar_connected?: string;
+    calendar_error?: string;
+  }>;
 };
 
 export default async function InstructorCalendarPage({ searchParams }: Props) {
   const { instructorId } = await requireInstructor();
-  const { month: monthParam } = await searchParams;
+  const {
+    month: monthParam,
+    calendar_connected: justConnected,
+    calendar_error: errorCode,
+  } = await searchParams;
   const now = new Date();
   const { year, month } = parseMonth(monthParam, now);
   const { gridStart, gridEnd, monthFirst } = monthGrid(year, month);
 
-  const days = await getInstructorCalendar({
-    instructorId,
-    from: gridStart,
-    to: gridEnd,
-  });
+  const [days, instructor] = await Promise.all([
+    getInstructorCalendar({ instructorId, from: gridStart, to: gridEnd }),
+    prisma.instructor.findUnique({
+      where: { id: instructorId },
+      select: { calendarConnected: true },
+    }),
+  ]);
 
   const navLinkClass =
     "text-xs font-bold uppercase tracking-[0.18em] underline-offset-4 hover:underline";
@@ -89,6 +101,14 @@ export default async function InstructorCalendarPage({ searchParams }: Props) {
           Agenda view →
         </Link>
       </nav>
+
+      <div className="pb-8">
+        <CalendarConnection
+          connected={instructor?.calendarConnected ?? false}
+          justConnected={justConnected === "1"}
+          errorCode={errorCode ?? null}
+        />
+      </div>
 
       <MonthCalendar
         days={days}
