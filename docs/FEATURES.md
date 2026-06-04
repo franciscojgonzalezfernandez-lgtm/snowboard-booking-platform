@@ -1546,18 +1546,22 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel). La c
 
 ##### F-077 — Admin bookings view (all bookings, filtros)
 
-- Sprint: 4 · Estado: backlog · Prioridad: P0
+- Sprint: 4 · Estado: done · Prioridad: P0
 - Depende de: F-076
 - Motivación: el owner necesita ver TODAS las reservas (no solo su agenda como instructor) para soporte, ops-cancel, auditoría.
 - AC:
-  - [ ] `app/admin/bookings/page.tsx`: tabla paginada, filtros por status, rango de fecha, instructor, búsqueda por email/nombre booker.
-  - [ ] Cada row: booker, instructor, date/time, duration, status, total CHF, credits aplicados, link a detalle.
-  - [ ] Detalle `app/admin/bookings/[id]/page.tsx`: full info + attendees + payment + acciones (ops-cancel F-078, no-show re-flip F-081 montan aquí).
+  - [x] `app/admin/bookings/page.tsx`: tabla paginada (default `pageSize=25`, cap `100`), filtros por status, rango de fecha, instructor, búsqueda por email/nombre booker. Filter bar es `<form method="get">` server-rendered — sin JS island; el URL es el estado canónico.
+  - [x] Cada row: booker (name + email), instructor, date/time, duration, status, total CHF, credits aplicados (cuando >0, muted), link a detalle.
+  - [x] Detalle `app/admin/bookings/[id]/page.tsx`: full info + attendees + payment (Stripe PI, paid/refunded timestamps) + credit ledger (sourced/redeemed) + audit timestamps. Acciones ops-cancel (F-078) y no-show (F-081) renderizadas como `<Button disabled>` con tooltip de ticket pendiente — wiring llega con esos tickets sin tocar este layout.
 - Tests:
-  - Vitest: query con filtros combinados + paginación.
-  - Playwright: filtrar por status → subset correcto; abrir detalle.
+  - [x] Vitest: 8 specs en `lib/admin/bookings.test.ts` (no filtros, status, date range, instructorId, q name|email, AND combinado, page out-of-range, orderBy). 3 specs en `lib/admin/booking-detail.test.ts` (happy, NOT_FOUND, booker-first order). 8 specs en `lib/schemas/admin-bookings.test.ts` (defaults, status drop, date drop, swap, page clamp, pageSize cap, q trim/length, array params).
+  - [x] Playwright `e2e/f-077-admin-bookings.spec.ts`: no-admin → 404; admin ve lista; filtra `?status=CONFIRMED` → subset; abre detalle.
 - Notas:
-  - Read + navegación aquí; mutaciones en F-078/F-081.
+  - Read-only. Mutaciones llegan con F-078 / F-081; el detail page renderiza los botones disabled como placeholders para no restructurar la página entonces.
+  - Reusa `requireAdmin` + layout del admin shell (F-076). Single change en `app/admin/layout.tsx`: nuevo nav link "Bookings" entre Calendar e Instructors.
+  - Pure loaders en `lib/admin/bookings.ts` + `booking-detail.ts` mirror del patrón DI de `lib/admin/instructors.ts` (F-076). Vitest los conduce con fake Prisma sin tocar `next/headers`.
+  - Offset pagination (`skip`/`take`). URL-stable. Cursor migration non-breaking si crece el volumen.
+  - `q` matches booker `name` OR `email` case-insensitive (`contains` con `mode: 'insensitive'`).
 
 ##### F-078 — Ops-cancel: cancelBookingByOps + Stripe refund + credit re-emit
 
