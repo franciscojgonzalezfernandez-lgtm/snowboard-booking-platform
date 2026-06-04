@@ -7,14 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { CalendarDay } from "@/lib/instructor/availability";
-
-import type { AvailabilityActionError } from "@/lib/instructor/availability-actions";
-
-import {
-  blockAvailabilityWindow,
-  clearAvailability,
-  openAvailabilityRange,
-} from "../../actions";
+import type {
+  AvailabilityActionError,
+  BlockWindowResult,
+  ClearResult,
+  OpenRangeResult,
+} from "@/lib/instructor/availability-actions";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 
@@ -26,8 +24,36 @@ const ERROR_COPY: Record<AvailabilityActionError, string> = {
   INVALID_RANGE: "The end must come after the start.",
   HAS_BOOKINGS: "This day has booked classes. Cancel them from the admin panel first.",
   NOT_FOUND: "That block no longer exists. Refreshing.",
-  FORBIDDEN: "You can only edit your own availability.",
+  FORBIDDEN: "You can only edit this instructor's availability.",
 };
+
+/**
+ * Availability mutations the calendar drives, injected by the host route. The
+ * instructor page (`/instructor/calendar`) binds the session instructor; the
+ * admin page (`/admin`) binds the selected instructor. Keeping these as props
+ * decouples the grid from any one `actions.ts`.
+ */
+export type CalendarActions = {
+  openAvailabilityRange(input: {
+    fromDate: string;
+    toDate: string;
+  }): Promise<OpenRangeResult>;
+  blockAvailabilityWindow(input: {
+    date: string;
+    startTime: string;
+    endTime: string;
+  }): Promise<BlockWindowResult>;
+  clearAvailability(input: { blockId: string }): Promise<ClearResult>;
+  /** All-mode close: clears every active instructor's block on the day. */
+  closeDay?(input: { date: string }): Promise<ClearResult>;
+};
+
+/**
+ * "single" edits one instructor by block id; "all" edits every active
+ * instructor by date (close is day-based, sub-day block windows are hidden
+ * since they only make sense per instructor).
+ */
+export type CalendarMode = "single" | "all";
 
 function dayNumber(iso: string): number {
   return Number(iso.slice(8, 10));
@@ -47,9 +73,18 @@ type Props = {
   /** "YYYY-MM" of the focused month — out-of-month grid cells render dimmed. */
   monthIso: string;
   todayIso: string;
+  actions: CalendarActions;
+  mode?: CalendarMode;
 };
 
-export function MonthCalendar({ days, monthIso, todayIso }: Props) {
+export function MonthCalendar({
+  days,
+  monthIso,
+  todayIso,
+  actions,
+  mode = "single",
+}: Props) {
+  const isAll = mode === "all";
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [selectedIso, setSelectedIso] = useState<string | null>(null);
@@ -82,7 +117,7 @@ export function MonthCalendar({ days, monthIso, todayIso }: Props) {
         onSubmit={(e) => {
           e.preventDefault();
           if (!rangeFrom || !rangeTo) return;
-          run(() => openAvailabilityRange({ fromDate: rangeFrom, toDate: rangeTo }));
+          run(() => actions.openAvailabilityRange({ fromDate: rangeFrom, toDate: rangeTo }));
         }}
       >
         <div className="space-y-1">
@@ -235,11 +270,18 @@ export function MonthCalendar({ days, monthIso, todayIso }: Props) {
                     type="button"
                     variant="outline"
                     data-testid="close-day"
-                    disabled={pending || !selected.openBlockId}
-                    onClick={() =>
-                      selected.openBlockId &&
-                      run(() => clearAvailability({ blockId: selected.openBlockId! }))
-                    }
+                    disabled={pending || (!isAll && !selected.openBlockId)}
+                    onClick={() => {
+                      if (isAll) {
+                        run(() => actions.closeDay!({ date: selected.isoDate }));
+                      } else if (selected.openBlockId) {
+                        run(() =>
+                          actions.clearAvailability({
+                            blockId: selected.openBlockId!,
+                          }),
+                        );
+                      }
+                    }}
                   >
                     Close day
                   </Button>
@@ -250,7 +292,7 @@ export function MonthCalendar({ days, monthIso, todayIso }: Props) {
                     disabled={pending}
                     onClick={() =>
                       run(() =>
-                        openAvailabilityRange({
+                        actions.openAvailabilityRange({
                           fromDate: selected.isoDate,
                           toDate: selected.isoDate,
                         }),
@@ -262,14 +304,14 @@ export function MonthCalendar({ days, monthIso, todayIso }: Props) {
                 )}
               </div>
 
-              {selected.open ? (
+              {!isAll && selected.open ? (
                 <form
                   data-testid="block-window-form"
                   className="flex flex-wrap items-end gap-3 border-t border-input pt-4"
                   onSubmit={(e) => {
                     e.preventDefault();
                     run(() =>
-                      blockAvailabilityWindow({
+                      actions.blockAvailabilityWindow({
                         date: selected.isoDate,
                         startTime: blockStart,
                         endTime: blockEnd,
@@ -312,7 +354,7 @@ export function MonthCalendar({ days, monthIso, todayIso }: Props) {
                 </form>
               ) : null}
 
-              {selected.blocked.length > 0 ? (
+              {!isAll && selected.blocked.length > 0 ? (
                 <div className="space-y-2 border-t border-input pt-4">
                   <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
                     Blocked windows
@@ -332,7 +374,7 @@ export function MonthCalendar({ days, monthIso, todayIso }: Props) {
                           size="sm"
                           data-testid={`unblock-${b.id}`}
                           disabled={pending}
-                          onClick={() => run(() => clearAvailability({ blockId: b.id }))}
+                          onClick={() => run(() => actions.clearAvailability({ blockId: b.id }))}
                           className="h-auto px-0 text-xs uppercase tracking-wider text-muted-foreground hover:bg-transparent hover:text-destructive hover:underline"
                         >
                           Remove
