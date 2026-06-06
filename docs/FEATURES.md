@@ -1481,27 +1481,27 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel). La c
   - **`focusFirstError` helper extraído** en `lib/forms/focus-first-error.ts` y aplicado al `<ProfileForm>` (3ª aparición del patrón tras PR #100 + F-072). Las refactors de las 2 formularios previos viven en sus PRs originales; este PR solo aporta el helper + la 3ª uso. Si llega un 4º form, ya hay helper.
   - F-074 / F-075 (Google Calendar OAuth + sync) siguen siendo el siguiente tail del instructor pipeline; ⛔ blocked-in-progress en OAuth consent screen del owner.
 
-##### F-074 — Google Calendar OAuth connect + token encryption (ADR-007) ⛔
+##### F-074 — Google Calendar OAuth connect + token encryption (ADR-007)
 
-- Sprint: 4 · Estado: backlog (blocked-in-progress) · Prioridad: P1
+- Sprint: 4 · Estado: done · Prioridad: P1
 - Depende de: F-073
-- Bloqueado por: `ENCRYPTION_KEY` env (32-byte base64) + Google OAuth consent screen → Production + scope `calendar.events` con offline access. Los `GOOGLE_ID/SECRET` actuales son login-only (Better Auth), sin scope de calendar.
+- Desbloqueado (owner, 2026-06-05): `ENCRYPTION_KEY` generada + en Vercel (prod+preview) + `.env.local`; consent screen con scope `calendar.events` (Testing + owner como test user → sin verificación) + redirect URI `…/instructor/calendar/callback` registrado. Reusa el OAuth client de `GOOGLE_ID/SECRET` (flujo aparte del login de Better Auth).
 - Motivación: sincronizar bookings con el Google Calendar del instructor para que vea sus clases en su calendario personal y se bloquee el slot externamente (futuro buffer, ver F-023 nota).
 - AC crypto:
-  - [ ] `lib/calendar/crypto.ts`: `encryptToken(plain): string` / `decryptToken(cipher): string` AES-256-GCM con `ENCRYPTION_KEY`. IV aleatorio por cifrado, authTag concatenado. Unit-tested round-trip.
-  - [ ] `lib/calendar/README.md`: formato + proceso de rotación de key (ADR-007).
+  - [x] `lib/calendar/crypto.ts`: `encryptToken` / `decryptToken` AES-256-GCM con `ENCRYPTION_KEY`. IV aleatorio + authTag concatenados (`base64(iv||tag||ct)`). `isCalendarCryptoConfigured()` para fail-soft sin key. 10 specs Vitest (round-trip, IV único, tamper ct/tag → throw, cross-key → throw, key ausente/mal-tamaño → throw).
+  - [x] `lib/calendar/README.md`: formato + proceso de rotación de key (ADR-007).
 - AC OAuth:
-  - [ ] Route handler `app/instructor/calendar/connect/route.ts` → Google OAuth consent con `access_type=offline` + `prompt=consent` (fuerza refresh_token), scope `https://www.googleapis.com/auth/calendar.events`.
-  - [ ] Callback `app/instructor/calendar/callback/route.ts`: intercambia code → refresh_token, lo **encripta** y persiste en `Instructor.googleRefreshToken`, set `calendarConnected = true`. State param anti-CSRF.
-  - [ ] `disconnectCalendar()` server action → borra `googleRefreshToken`, `calendarConnected = false`.
+  - [x] `app/instructor/calendar/connect/route.ts` (Node runtime) → consent `access_type=offline` + `prompt=consent`, scope `calendar.events`. State anti-CSRF en cookie httpOnly scoped al callback. Fail-soft (`?calendar_error=not_configured`) si falta env. Helpers en `lib/calendar/google-oauth.ts` (fetch, sin dep `googleapis`).
+  - [x] `app/instructor/calendar/callback/route.ts`: valida state, intercambia code → refresh_token, lo **encripta** y persiste en `Instructor.googleRefreshToken`, `calendarConnected = true`. Errores → redirect con `?calendar_error=` + Sentry capture.
+  - [x] `disconnectCalendar()` server action → borra `googleRefreshToken`, `calendarConnected = false`.
 - AC UI:
-  - [ ] Sección en `/instructor/profile` (o `/instructor/calendar`): estado conectado/desconectado + botón connect/disconnect.
+  - [x] Sección `CalendarConnection` en `/instructor/calendar`: estado conectado/desconectado + connect (form GET → route handler) / disconnect (action) + mensajes desde `?calendar_connected` / `?calendar_error`.
 - Tests:
-  - Vitest: crypto round-trip + tamper authTag → throw.
-  - Playwright: skip si no hay credenciales (gated por env); happy path manual en runbook.
+  - [x] Vitest crypto (10) + Playwright `e2e/f-074-calendar-connect.spec.ts` (3): connect route (authed) → 307 a `accounts.google.com` con scope/offline/prompt/state + cookie anti-CSRF; UI muestra Connect desconectado; disconnect limpia token + flag en DB. Suite unit 337/337, `tsc` + `eslint` limpios.
+  - El happy-path con consent real de Google queda manual (runbook) — el spec verifica el wiring sin salir a Google.
 - Notas:
-  - ⛔ No mergeable hasta provisionar env + consent. El código + crypto se pueden escribir y unit-testear; el OAuth E2E queda manual.
   - Refresh token nunca en plain text ni en logs (security checklist).
+  - `refreshAccessToken` + `InvalidGrantError` ya en `google-oauth.ts` — los consume F-075 (sync).
 
 ##### F-075 — Google Calendar event sync (insert/delete) ⛔
 

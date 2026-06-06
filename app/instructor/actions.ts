@@ -193,6 +193,23 @@ export async function uploadInstructorPhotoAction(
   return result;
 }
 
+export type DisconnectCalendarResult = { ok: true };
+
+/**
+ * Drop the stored Google refresh token + flip `calendarConnected` off. The
+ * encrypted token is simply discarded; revoking access on Google's side is the
+ * instructor's choice (a cleared token is inert regardless).
+ */
+export async function disconnectCalendar(): Promise<DisconnectCalendarResult> {
+  const { instructorId } = await requireInstructor();
+  await prisma.instructor.update({
+    where: { id: instructorId },
+    data: { googleRefreshToken: null, calendarConnected: false },
+  });
+  revalidatePath("/instructor/calendar");
+  return { ok: true };
+}
+
 export async function removeInstructorPhotoAction(): Promise<RemovePhotoResult> {
   const { instructorId } = await requireInstructor();
   const blob = blobClient();
