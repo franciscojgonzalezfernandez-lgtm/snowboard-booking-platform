@@ -1869,6 +1869,56 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel). La c
   - Trivial — single component, sin migración, sin server action. Candidato a agruparse con otro polish de chrome en Sprint 6.
   - Si se opta por el prop `isOnDashboard` desde el layout, es la vía más barata: el `dashboard/layout.tsx` ya es el único mount point que renderiza el CTA en una página que es el propio destino.
 
+### F-085 — Admin tables: status differentiation + visual contrast
+
+- Sprint: post-Sprint 5 · Estado: backlog · Prioridad: P2 (UX polish)
+- Depende de: F-077 (admin bookings list), F-076 (admin shell), F-071 (instructor agenda)
+- Motivación: owner reporta que la tabla de `/admin/bookings` (F-077) es muy plana — todas las filas iguales en peso visual, status como uppercase muted no diferencia confirmed / pending / cancelled / completed a primer vistazo. Para ops triage (ver de un golpe qué necesita acción) hace falta encoding visual fuerte por status. Misma observación aplica a la agenda del instructor (F-071) y al booking-row del dashboard del booker (F-047). Polish cross-cutting, no bug — diferible hasta cerrar Sprint 5 (landing/SEO) para no diluir foco.
+- AC visual:
+  - [ ] Status badge con color encoding por `BookingStatus`: `CONFIRMED` = verde (success token), `PENDING_PAYMENT` = ámbar (warning), `COMPLETED` = ink muted, `CANCELLED_BY_USER` / `CANCELLED_BY_OPS` / `CANCELLED_BY_SYSTEM` = destructive muted, `PAYMENT_FAILED` = destructive fuerte, `REFUNDED` = ink muted con strikethrough. Tokens nuevos en `app/globals.css` si hace falta — añadir `--color-success` + `--color-warning` (no existen actualmente; el design-system tiene ink/cream/destructive solo).
+  - [ ] Cancelled rows con `opacity-60` + price `line-through` (visual decay sin esconder la fila — el owner necesita verlas para audit).
+  - [ ] Pending payment rows con left-border accent ámbar 2px para destacar acción requerida.
+  - [ ] Date column con weight contrast: día de la semana en `font-bold`, fecha en `font-medium`, tabular-nums para alineación.
+  - [ ] Mantener el design-system editorial (borders-not-shadows, no gradients, no rainbow). Color es señal, no decoración.
+- AC scope:
+  - [ ] Aplicar a 3 surfaces: `app/admin/bookings/_components/booking-row.tsx`, `app/admin/bookings/[id]/page.tsx` (detail page status), `app/instructor/_components/agenda-booking.tsx`, `app/[locale]/dashboard/_components/booking-row.tsx`. Patrón compartido via lib helper.
+  - [ ] Extraer `<StatusBadge status={...} />` a `components/booking/status-badge.tsx` (consumido por admin EN-only + dashboard i18n). Para i18n el componente recibe el label como prop, los tokens de color son universales.
+- Tests:
+  - [ ] Playwright visual snapshot por status × 4 surfaces (16 cases). Reusa setup de F-077 + F-071 + F-047.
+  - [ ] Vitest sobre el color-map: cada `BookingStatus` value tiene token + label asociados (compile-time exhaustiveness via `satisfies Record<BookingStatus, ...>`).
+- Notas:
+  - **No** rediseñar la tabla completa (zebra striping, hover states pesados, sortable headers). Solo color encoding + density tweaks. Si crece a redesign full, ticket aparte F-XXX.
+  - **No** introducir gráficos / charts en MVP — solo señales visuales en la tabla existente.
+  - Acompañar con accesibilidad: status NO debe depender solo de color. El text label sigue presente y los badges tienen `aria-label` explícito.
+
+### F-086 — Type duplication audit + shared types extraction
+
+- Sprint: post-MVP · Estado: backlog · Prioridad: P1 (technical debt)
+- Depende de: —
+- Motivación: la codebase tiene tipos definidos en múltiples lugares (cada surface re-declara su `BookingRow`, su `Attendee`, etc.). Ejemplos visibles:
+  - `lib/admin/bookings.ts` `AdminBookingRow` vs `lib/instructor/agenda.ts` `AgendaBooking` vs `app/[locale]/dashboard/_lib/group.ts` `BookingRow` — los tres son projections del mismo modelo `Booking` con overlap >70%.
+  - `lib/admin/booking-detail.ts` `AdminBookingAttendee` vs el shape inline en dashboard cancel flow vs el del confirmation email template.
+  - Result-type pattern (`{ ok: true; data } | { ok: false; error }`) re-implementado en cada server-action core (`lib/booking/cancel.ts`, `lib/instructor/availability-actions.ts`, `lib/admin/instructors.ts`, `lib/booking/mark-no-show.ts` etc.) sin un `Result<T, E>` compartido.
+  - Status / Duration / Locale / Level **labels** duplicados entre `app/instructor/_lib/labels.ts` y `lib/admin/format.ts` (deliberado en F-077 para evitar `lib/` → `app/` dep, pero ahora hay drift potencial).
+  - Filter/searchParams Zod schemas: `lib/schemas/admin-bookings.ts` y `lib/schemas/availability.ts` repiten el patrón de `parseFilters(searchParams) → Typed`. Podría haber un `lib/schemas/_searchparams-helpers.ts` con `readOne`, `parseIsoDate`, `parseEnum` reusables.
+- AC análisis:
+  - [ ] Inventario completo: `grep`-driven scan de `type Booking\w+` / `type Attendee\w+` / `type \w+Result =` / `Record<BookingStatus,` / `Record<Duration,` / `Record<Locale,` a través de `lib/` + `app/`. Output: tabla `path:line, type-name, what-it-projects, callers`.
+  - [ ] Clasificar cada duplicado: **(a) merge** (mismo modelo, mismo shape — promueve a `lib/_types/`); **(b) keep separate** (intencional — surface-specific projection con razón documentada); **(c) drift** (drift bug — convergir y añadir test).
+  - [ ] Identificar el "core domain types" mínimo: `lib/_types/booking.ts` con `BookingProjection`, `Attendee`, etc. — utility types que componen el shape común y que cada surface extiende vía `Pick<>` / intersection.
+  - [ ] Proponer `Result<T, E>` compartido en `lib/_types/result.ts` con type-helpers (`ok()`, `err()`, narrowing guards). Migrar surfaces existentes en commits separados.
+  - [ ] Decidir destino del shared labels map: `lib/_labels/` (UI-agnostic, EN-only) consumido tanto por admin/instructor como por dashboard pasando el `t()` del locale. Evita drift y dependency invertida `lib/` → `app/`.
+- AC implementación (después del análisis):
+  - [ ] PR del análisis (read-only audit doc).
+  - [ ] PRs por dominio: types booking, types attendee, types result, labels. Cada uno migración auto-contenida con test de paridad antes/después.
+- Tests:
+  - [ ] Vitest snapshot del shape proyectado de cada surface (booking-row admin vs instructor agenda vs dashboard) — falla si una surface drifta del baseline sin actualizar el baseline.
+  - [ ] `tsc --noEmit` post-migration debe quedar igual o mejor (menos LoC, mismo strictness).
+- Notas:
+  - **No** quitar tipos con razón documentada — algunas projections son intencionalmente distintas (e.g. admin necesita `booker.phone` que la agenda del instructor no carga). El audit debe distinguir "duplicado por accidente" vs "diferente por diseño".
+  - **No** crear un `types/index.ts` god-module — `lib/_types/{booking,attendee,result,labels}.ts` por dominio, importable per-need.
+  - **No** romper la regla `lib/` no importa de `app/`. Si labels viven en `lib/_labels/`, app las consume pasando i18n strings — no al revés.
+  - Estimación: análisis ~1 día, migration ~3-5 días según hallazgos. Empezar por result-type (más universal y menos polémico) antes que projections.
+
 ---
 
 ## Bloqueantes / decisiones abiertas (consolidadas)
