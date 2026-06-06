@@ -1329,7 +1329,7 @@ Critical path original (multi-page MVP, ya completado a través de F-046): F-039
 
 ##### F-066 — Cancellation flow E2E + production smoke (Sprint 3 close)
 
-- Sprint: 3 · Estado: backlog · Prioridad: P0
+- Sprint: 3 · Estado: done · Prioridad: P0
 - Depende de: F-058, F-059, F-060, F-061, F-063
 - Motivación: F-063 cerró templates + dispatch con unit tests, pero el flujo end-to-end (signup → book → cancel → email recibido → credit aplicable en próximo checkout) sólo se valida de verdad cuando F-058/F-059/F-060 land. Este ticket es la última puerta del Sprint 3: verifica que la cadena completa funciona en preview y luego en producción antes de declarar el sprint cerrado.
 - AC E2E (Playwright, contra preview Vercel + Neon `dev`):
