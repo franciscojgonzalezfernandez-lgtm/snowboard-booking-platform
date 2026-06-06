@@ -1403,7 +1403,7 @@ Critical path: **F-057 + F-067 (paired PR) → F-058 + F-063 → F-059 → F-060
 
 ```
 Instructor:  F-071 ─┬─ F-072 (availability CRUD)
-                    ├─ F-073 (profile + Blob photo) ── F-074 ⛔ ── F-075 ⛔
+                    ├─ F-073 (profile + Blob photo) ── F-074 ── F-075
                     └─ F-065 (feedback)
 Admin:       F-076 ─┬─ F-077 (bookings view) ── F-078 (ops-cancel) ── F-079 (cancel day)
                     └─ F-080 (pricing editor)
@@ -1411,7 +1411,7 @@ Admin:       F-076 ─┬─ F-077 (bookings view) ── F-078 (ops-cancel) ─
 Tip:         F-082 ⛔ (paralelo, blocked tail)
 ```
 
-Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel). La cadena instructor **F-071 → F-073 → F-074 → F-075** corre en paralelo (tail blocked). ⛔ = blocked-in-progress.
+Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel). La cadena instructor **F-071 → F-073 → F-074 → F-075** corre en paralelo (GCal tail ya landed). ⛔ = blocked-in-progress.
 
 #### Tickets
 
@@ -1503,22 +1503,23 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel). La c
   - Refresh token nunca en plain text ni en logs (security checklist).
   - `refreshAccessToken` + `InvalidGrantError` ya en `google-oauth.ts` — los consume F-075 (sync).
 
-##### F-075 — Google Calendar event sync (insert/delete) ⛔
+##### F-075 — Google Calendar event sync (insert/delete)
 
-- Sprint: 4 · Estado: backlog (blocked-in-progress) · Prioridad: P1
-- Depende de: F-074
-- Bloqueado por: hereda F-074.
+- Sprint: 4 · Estado: done · Prioridad: P1
+- Depende de: F-074 (OAuth + token crypto), F-044 (webhook CONFIRMED), F-058 (user-cancel), F-078 (ops-cancel). Stacked sobre `f-078-ops-cancel` para los dos hooks de cancel; rebase a `main` cuando F-078 mergee.
+- Desbloqueado: F-074 landed (owner provisionó `ENCRYPTION_KEY` + consent screen 2026-06-05) — el blocker ya no aplica.
 - Motivación: cuando un booking pasa a `CONFIRMED`, crear evento en el calendar del instructor; al cancelar, borrarlo. `Booking.googleEventId` ya en schema.
 - AC:
-  - [ ] `lib/calendar/sync.ts`: `insertEvent(booking)` → crea evento (summary, attendees, start/end en `Europe/Zurich`), persiste `Booking.googleEventId`. `deleteEvent(booking)` → borra por `googleEventId`, nullifica.
-  - [ ] Hook en F-044 (booking CONFIRMED post-webhook) → `insertEvent` best-effort (try/catch, `onError` stage `gcal_insert`, no rollback del booking).
-  - [ ] Hook en cancel flows (F-058 user-cancel, F-078 ops-cancel) → `deleteEvent` best-effort.
-  - [ ] Refresca access_token desde refresh_token (decrypt) en cada llamada; maneja `invalid_grant` → marca `calendarConnected=false` + `onError`.
+  - [x] `lib/calendar/sync.ts`: `insertEventWith(deps, bookingId)` → crea evento (summary, descripción, attendee = booker, start/end en `Europe/Zurich`), persiste `Booking.googleEventId`. `deleteEventWith(deps, bookingId)` → borra por `googleEventId`, nullifica. Cores DI puros (prisma + `GoogleCalendarClient` + `refreshAccessToken`/`decrypt` inyectables); cliente REST Calendar v3 sobre `fetch` (sin dep `googleapis`, `sendUpdates=none` para no duplicar el invite del .ics F-045). `buildCalendarSyncDeps(prisma, onError)` arma deps de prod sin importar `next/*`.
+  - [x] Hook en F-044 (booking CONFIRMED post-webhook) → `insertEventWith` best-effort vía nueva opción `syncCalendarOnConfirm` en `handleStripeWebhook` (default no-op); wired en `app/api/webhooks/stripe/route.ts`. `try/catch`, `onError` stage `gcal_insert`, no rollback del booking. Idempotente en retry de Stripe vía `googleEventId` persistido (`already_synced` → skip).
+  - [x] Hook en cancel flows (F-058 user-cancel en `app/[locale]/dashboard/actions.ts`, F-078 ops-cancel en `app/admin/actions.ts`) → `deleteEventWith` best-effort tras el commit del cancel.
+  - [x] Refresca access_token desde refresh_token (decrypt) en cada llamada; maneja `invalid_grant` (`InvalidGrantError` de F-074) → limpia `calendarConnected=false` + `googleRefreshToken=null` + `onError`, devuelve `disconnected`.
 - Tests:
-  - Vitest: sync helpers con Google client mockeado — insert persiste id, delete nullifica, invalid_grant desconecta.
-  - Playwright: manual (cuenta Google real), en runbook.
+  - [x] Vitest `lib/calendar/sync.test.ts` (11 specs): insert persiste id + start/end/tz/attendee correctos, idempotencia (`already_synced` skip), skip no-CONFIRMED / no-conectado / not-found, `invalid_grant` desconecta instructor, fallo de Calendar API → `error` reportado sin throw; delete nullifica id, no-op sin evento, skip desconectado, `invalid_grant` desconecta. Suite unit 374/374, `tsc` + `eslint` limpios.
+  - Playwright: manual (cuenta Google real), en runbook — el wiring se verifica en el Vitest core (cliente mockeado).
 - Notas:
-  - ⛔ hereda blocker de F-074. Best-effort siempre: fallo de GCal nunca rompe booking/cancel.
+  - Best-effort siempre: fallo de GCal nunca rompe booking/cancel. El evento es reconciliable después.
+  - One-way sync (app → calendar del instructor). No se leen cambios desde Google (fuera de scope MVP).
 
 ##### F-076 — Admin panel: calendar-first shell + availability editing + instructor CRUD
 
@@ -1579,7 +1580,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel). La c
     - `PENDING_PAYMENT`: libera LOCKED credits → ACTIVE, sin Stripe, sin fresh credit (no había nada capturado).
     - Idempotente: 2º click ve `status === CANCELLED_BY_OPS` → short-circuit, sin Stripe ni DB writes.
   - [x] Dispatch email ops-cancel (booker locale) best-effort vía `sendCancellationEmails({variant: "ops", opsOutcome, cashRefundedCents, creditReEmittedCents, creditExpiresAt})`. Nuevo template `cancellation-user-ops.tsx` (en/de/es) con secciones condicionales refund + credit. Ops-notif extendida con 4 variantes nuevas (`ops_cash` / `ops_credit` / `ops_mixed` / `ops_no_charge`). `onError` stage `dispatch_ops_cancel_email`, no rollback.
-  - [ ] Hook `deleteEvent` (F-075) best-effort si calendar conectado — diferido hasta F-074/F-075 land.
+  - [x] Hook `deleteEvent` (F-075) best-effort si calendar conectado — landed en F-075 (`deleteEventWith` en el wrapper `cancelBookingByOps`).
 - AC UI:
   - [x] `OpsCancelButton` cliente (`app/admin/bookings/[id]/_components/ops-cancel-button.tsx`) reemplaza el placeholder disabled de F-077. Confirm dialog (shadcn `Dialog`) muestra preview del cash refund + credit re-emit (`ops-cancel-preview-cash/-credit/-none` testids) + textarea opcional para `reason`. Toast Sonner con el desglose al éxito; manejo de `NOT_FOUND` / `FORBIDDEN_STATUS` inline.
 - Tests:
