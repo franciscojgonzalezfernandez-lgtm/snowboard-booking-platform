@@ -21,7 +21,13 @@ export type CancellationOpsNotifEmailProps = {
   bookerName: string;
   bookerEmail: string;
   attendeeCount: number;
-  cancellationVariant: "credit" | "forfeit";
+  cancellationVariant:
+    | "credit"
+    | "forfeit"
+    | "ops_cash"
+    | "ops_credit"
+    | "ops_mixed"
+    | "ops_no_charge";
 };
 
 type Copy = {
@@ -41,6 +47,10 @@ type Copy = {
   variantLabel: string;
   variantCredit: string;
   variantForfeit: string;
+  variantOpsCash: string;
+  variantOpsCredit: string;
+  variantOpsMixed: string;
+  variantOpsNoCharge: string;
   signoff: string;
 };
 
@@ -61,12 +71,28 @@ const COPY: Copy = {
   variantLabel: "Outcome",
   variantCredit: "Booker received credit",
   variantForfeit: "Booker forfeited payment",
+  variantOpsCash: "Ops cancel · cash refund issued",
+  variantOpsCredit: "Ops cancel · credit re-emitted",
+  variantOpsMixed: "Ops cancel · cash refund + credit re-emitted",
+  variantOpsNoCharge: "Ops cancel · never paid, slot released",
   signoff: "— automated notification",
 };
 
 export function getCancellationOpsNotifCopy(): Copy {
   return COPY;
 }
+
+const VARIANT_LABEL: Record<
+  CancellationOpsNotifEmailProps["cancellationVariant"],
+  (copy: Copy) => string
+> = {
+  credit: (c) => c.variantCredit,
+  forfeit: (c) => c.variantForfeit,
+  ops_cash: (c) => c.variantOpsCash,
+  ops_credit: (c) => c.variantOpsCredit,
+  ops_mixed: (c) => c.variantOpsMixed,
+  ops_no_charge: (c) => c.variantOpsNoCharge,
+};
 
 export function CancellationOpsNotifEmail(
   props: CancellationOpsNotifEmailProps,
@@ -82,8 +108,7 @@ export function CancellationOpsNotifEmail(
     cancellationVariant,
   } = props;
   const t = getCancellationOpsNotifCopy();
-  const variantLine =
-    cancellationVariant === "credit" ? t.variantCredit : t.variantForfeit;
+  const variantLine = VARIANT_LABEL[cancellationVariant](t);
 
   return (
     <Html lang="en">

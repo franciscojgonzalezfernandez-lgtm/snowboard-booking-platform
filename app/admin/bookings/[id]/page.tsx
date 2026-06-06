@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import { OpsCancelButton } from "./_components/ops-cancel-button";
 import {
   DURATION_LABEL,
   LANGUAGE_LABEL,
@@ -54,6 +55,17 @@ export default async function AdminBookingDetailPage({ params }: Props) {
   const showOpsCancel =
     b.status === "CONFIRMED" || b.status === "PENDING_PAYMENT" || b.status === "COMPLETED";
   const showNoShow = b.status === "COMPLETED" && b.autoCompletedAt !== null;
+
+  // Mirror the gating in `cancelBookingByOpsWith`: only money actually
+  // captured earns a Stripe refund. PENDING_PAYMENT rows never paid.
+  const cashRefundPreviewCents =
+    b.status !== "PENDING_PAYMENT" &&
+    b.paidAt !== null &&
+    b.stripePaymentIntentId !== null
+      ? (b.chargeAmountCents ?? b.totalPriceCents)
+      : 0;
+  const creditReEmitPreviewCents =
+    b.status !== "PENDING_PAYMENT" ? (b.creditsAppliedCents ?? 0) : 0;
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-12">
@@ -190,14 +202,11 @@ export default async function AdminBookingDetailPage({ params }: Props) {
       <Section title="Actions">
         <div className="flex flex-wrap gap-3">
           {showOpsCancel ? (
-            <Button
-              type="button"
-              disabled
-              title="Available in F-078"
-              data-testid="admin-detail-action-ops-cancel"
-            >
-              Cancel (ops refund) — F-078
-            </Button>
+            <OpsCancelButton
+              bookingId={b.id}
+              cashRefundPreviewCents={cashRefundPreviewCents}
+              creditReEmitPreviewCents={creditReEmitPreviewCents}
+            />
           ) : null}
           {showNoShow ? (
             <Button

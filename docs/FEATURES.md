@@ -1565,27 +1565,30 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel). La c
 
 ##### F-078 — Ops-cancel: cancelBookingByOps + Stripe refund + credit re-emit
 
-- Sprint: 4 · Estado: backlog · Prioridad: P0
+- Sprint: 4 · Estado: done · Prioridad: P0
 - Depende de: F-077, F-060 (ledger credits aplicados), F-044 (webhook/PI), ADR-008
 - Motivación: cuando la escuela falla (clima, instructor enfermo, fuerza mayor) → `CANCELLED_BY_OPS` con **cash refund** vía Stripe (ADR-008). Deferido de Sprint 3. Si el booking original usó credits, re-emitir credit en lugar de cash (hereda ledger F-060).
 - AC schema:
-  - [ ] Migración `<date>_booking_stripe_refund_id`: añadir `Booking.stripeRefundId String? @unique`.
+  - [x] Migración `20260606120000_booking_stripe_refund_id`: añadir `Booking.stripeRefundId String? @unique`.
 - AC server:
-  - [ ] `cancelBookingByOps(bookingId, reason?)` en `app/admin/actions.ts`. Rol admin. `$transaction`:
-    - Status → `CANCELLED_BY_OPS`.
-    - Si pagada con credit (`creditsAppliedCents > 0`): re-emitir `AccountCredit` (`reason=OPS_CANCEL`, mismo amount, `expiresAt = startDateTime + 365d` — anclado en la clase cancelada, alineado con F-058). No-op Stripe.
-    - Si pagada cash (`stripePaymentIntentId`): `stripe.refunds.create({ payment_intent })`, persistir `stripeRefundId`. Idempotente (Stripe rechaza double-refund mismo PI).
-    - Mixto: refund cash de la parte cobrada + re-emit credit de la parte credit.
-  - [ ] Dispatch email ops-cancel (booker locale) best-effort: referencia refund id o credit re-emitido (template ADR-008). `onError` stage `dispatch_ops_cancel_email`, no rollback.
-  - [ ] Hook `deleteEvent` (F-075) best-effort si calendar conectado.
+  - [x] `cancelBookingByOps(bookingId, reason?)` en `app/admin/actions.ts` (thin wrapper sobre el core puro `lib/booking/cancel-by-ops.ts`). `requireAdmin()` + `$transaction`:
+    - Status → `CANCELLED_BY_OPS` con `cancelledByOpsAt` + `opsReason`.
+    - Cash captured (`paidAt != null && stripePaymentIntentId != null && chargeAmountCents > 0`): `stripe.refunds.create({ payment_intent, amount })` con `Idempotency-Key: ops-refund-${bookingId}` ANTES del `$transaction` (Stripe es idempotente; retry reuses el refund). Persiste `stripeRefundId` + `refundedAt` + `refundAmountCents` post-transaction.
+    - Credit portion (`creditsAppliedCents > 0`): mint fresh `AccountCredit` (`reason=OPS_CANCEL`, `expiresAt = startDateTime + 365d`). Las USED originales quedan USED para audit.
+    - Mixto: ambas ramas en el mismo flujo.
+    - `PENDING_PAYMENT`: libera LOCKED credits → ACTIVE, sin Stripe, sin fresh credit (no había nada capturado).
+    - Idempotente: 2º click ve `status === CANCELLED_BY_OPS` → short-circuit, sin Stripe ni DB writes.
+  - [x] Dispatch email ops-cancel (booker locale) best-effort vía `sendCancellationEmails({variant: "ops", opsOutcome, cashRefundedCents, creditReEmittedCents, creditExpiresAt})`. Nuevo template `cancellation-user-ops.tsx` (en/de/es) con secciones condicionales refund + credit. Ops-notif extendida con 4 variantes nuevas (`ops_cash` / `ops_credit` / `ops_mixed` / `ops_no_charge`). `onError` stage `dispatch_ops_cancel_email`, no rollback.
+  - [ ] Hook `deleteEvent` (F-075) best-effort si calendar conectado — diferido hasta F-074/F-075 land.
 - AC UI:
-  - [ ] Botón "Cancel (ops refund)" en `app/admin/bookings/[id]` con confirm dialog que muestra el refund cash / credit re-emit antes de confirmar.
+  - [x] `OpsCancelButton` cliente (`app/admin/bookings/[id]/_components/ops-cancel-button.tsx`) reemplaza el placeholder disabled de F-077. Confirm dialog (shadcn `Dialog`) muestra preview del cash refund + credit re-emit (`ops-cancel-preview-cash/-credit/-none` testids) + textarea opcional para `reason`. Toast Sonner con el desglose al éxito; manejo de `NOT_FOUND` / `FORBIDDEN_STATUS` inline.
 - Tests:
-  - Vitest sobre `cancelBookingByOps` — 6 specs: cash refund happy, credit re-emit happy, mixto, idempotencia (re-cancel sin double-refund), rol rechazado, booking ya cancelada rechazada.
-  - Playwright: admin ops-cancel cash booking → status flip + refund id; credit-paid booking → credit row re-emitida.
+  - [x] Vitest `lib/booking/cancel-by-ops.test.ts` — 7 specs (los 6 del AC + `PENDING_PAYMENT` extra): cash refund happy, credit re-emit happy, mixto, idempotencia (re-cancel sin Stripe ni DB), `CANCELLED_BY_USER` → `FORBIDDEN_STATUS`, `NOT_FOUND`, PENDING_PAYMENT libera LOCKED.
+  - [x] Playwright `e2e/f-078-ops-cancel.spec.ts` — 2 specs no-Stripe (credit-paid → OPS_CANCEL credit re-emitted; PENDING_PAYMENT → LOCKED released, no fresh credit). Spec F-077 actualizada para esperar el botón **enabled**.
+  - Cash refund Stripe path validado en el Vitest core (mock `stripeRefund`); driver Playwright contra Stripe test mode queda como manual smoke en producción (no automatizable sin fixtures de PI live).
 - Notas:
   - `CreditReason.OPS_CANCEL` ya en enum (ADR-008, antes sin emisores) — ahora lo usa.
-  - Idempotencia vía `WebhookEvent` o el propio PI (ADR-006).
+  - Idempotencia: Stripe-side via `Idempotency-Key: ops-refund-${bookingId}` (retry hits same refund), DB-side via `where: { status: { in: cancellable } }` en el `updateMany` (segundo writer matchea 0 → corto-circuita).
 
 ##### F-079 — "Cancel day" batch modal + impact preview
 

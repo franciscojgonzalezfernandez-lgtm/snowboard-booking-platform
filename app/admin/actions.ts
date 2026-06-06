@@ -1,10 +1,17 @@
 "use server";
 
 import { AvailabilityKind } from "@prisma/client";
+import * as Sentry from "@sentry/nextjs";
 import { revalidatePath, revalidateTag } from "next/cache";
 
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { AVAILABILITY_TAGS } from "@/lib/booking-engine/cache";
+import {
+  cancelBookingByOpsWith,
+  type CancelBookingByOpsDeps,
+  type CancelBookingByOpsResult,
+  type StripeRefundFn,
+} from "@/lib/booking/cancel-by-ops";
 import { addDays, startOfUtcDay } from "@/lib/booking-engine/time";
 import { prisma } from "@/lib/db";
 import {
@@ -16,6 +23,7 @@ import {
   type DeactivateInstructorResult,
   type UpdateInstructorResult,
 } from "@/lib/admin/instructors";
+import { sendCancellationEmails } from "@/lib/email/send-cancellation";
 import {
   blockAvailabilityWindowWith,
   clearAvailabilityWith,
@@ -30,6 +38,7 @@ import type {
   CreateInstructorInput,
   UpdateInstructorInput,
 } from "@/lib/schemas/instructor";
+import { getStripe } from "@/lib/stripe/server";
 
 // Thin `"use server"` wrappers for the admin panel. Every action re-checks the
 // admin role server-side (never trust a client-sent role). The availability
@@ -218,4 +227,112 @@ export async function deactivateInstructor(input: {
     revalidateTag(AVAILABILITY_TAGS.root);
   }
   return result;
+}
+
+// --- F-078: ops-cancel ----------------------------------------------------
+// Wraps the pure `cancelBookingByOpsWith` core: validates the admin session,
+// injects a Stripe refund call (idempotent by booking id), dispatches the
+// ops-cancel emails best-effort, and revalidates the affected caches so the
+// freed slot reappears and the admin views refresh.
+
+const stripeOpsRefund: StripeRefundFn = async ({
+  paymentIntentId,
+  amountCents,
+  idempotencyKey,
+}) => {
+  const refund = await getStripe().refunds.create(
+    { payment_intent: paymentIntentId, amount: amountCents },
+    { idempotencyKey },
+  );
+  return { id: refund.id };
+};
+
+export type CancelBookingByOpsActionResult =
+  | {
+      ok: true;
+      outcome: "cash" | "credit" | "mixed" | "no_charge" | "already_cancelled";
+      cashRefundedCents: number;
+      creditReEmittedCents: number;
+    }
+  | { ok: false; error: "NOT_FOUND" | "FORBIDDEN_STATUS" };
+
+export async function cancelBookingByOps(input: {
+  bookingId: string;
+  reason?: string;
+}): Promise<CancelBookingByOpsActionResult> {
+  const { userId } = await requireAdmin();
+
+  const deps: CancelBookingByOpsDeps = {
+    adminUserId: userId,
+    prisma: prisma as unknown as CancelBookingByOpsDeps["prisma"],
+    stripeRefund: stripeOpsRefund,
+  };
+
+  let result: CancelBookingByOpsResult;
+  try {
+    result = await cancelBookingByOpsWith(deps, input);
+  } catch (err) {
+    Sentry.captureException(err, {
+      tags: { source: "cancel-booking-by-ops" },
+      extra: { bookingId: input.bookingId },
+    });
+    throw err;
+  }
+
+  if (!result.ok) {
+    return result;
+  }
+
+  // Skip email dispatch for the already-cancelled short-circuit — the email
+  // was already sent on the original cancel.
+  if (result.outcome !== "already_cancelled") {
+    try {
+      await sendCancellationEmails({
+        bookingId: input.bookingId,
+        variant: "ops",
+        opsOutcome: result.outcome,
+        cashRefundedCents: result.cashRefundedCents,
+        creditReEmittedCents: result.creditReEmittedCents,
+        creditExpiresAt: result.creditExpiresAt,
+      });
+    } catch (err) {
+      Sentry.captureException(err, {
+        tags: {
+          source: "cancel-booking-by-ops",
+          stage: "dispatch_ops_cancel_email",
+        },
+        extra: { bookingId: input.bookingId, outcome: result.outcome },
+      });
+    }
+
+    // Slot is free again — bust the availability cache so other sessions
+    // see it immediately. Mirrors the user-cancel revalidation surface.
+    const dateIso = result.date.toISOString().slice(0, 10);
+    revalidateTag(AVAILABILITY_TAGS.root);
+    revalidateTag(AVAILABILITY_TAGS.duration(result.duration));
+    revalidateTag(AVAILABILITY_TAGS.date(dateIso));
+    revalidateTag(AVAILABILITY_TAGS.month(dateIso.slice(0, 7)));
+  }
+
+  // Always refresh the admin views — the row's status changed (or at least
+  // a duplicate click should re-render the now-disabled action).
+  revalidatePath("/admin");
+  revalidatePath("/admin/bookings");
+  revalidatePath(`/admin/bookings/${input.bookingId}`);
+  revalidatePath("/[locale]/dashboard", "page");
+
+  if (result.outcome === "already_cancelled") {
+    return {
+      ok: true,
+      outcome: "already_cancelled",
+      cashRefundedCents: 0,
+      creditReEmittedCents: 0,
+    };
+  }
+  return {
+    ok: true,
+    outcome: result.outcome,
+    cashRefundedCents: result.cashRefundedCents,
+    creditReEmittedCents: result.creditReEmittedCents,
+  };
 }
