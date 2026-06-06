@@ -31,6 +31,13 @@ export default async function AdminLayout({
               Calendar
             </Link>
             <Link
+              href="/admin/bookings"
+              data-testid="admin-nav-bookings"
+              className="text-xs font-bold uppercase tracking-[0.18em] underline-offset-4 hover:underline"
+            >
+              Bookings
+            </Link>
+            <Link
               href="/admin/instructors"
               data-testid="admin-nav-instructors"
               className="text-xs font-bold uppercase tracking-[0.18em] underline-offset-4 hover:underline"
