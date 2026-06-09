@@ -182,8 +182,9 @@ test("admin sees the bookings list, filters by status, and opens a detail", asyn
   await expect(page.getByTestId("admin-detail-attendees")).toBeVisible();
   await expect(page.getByTestId("admin-detail-attendee")).toHaveCount(1);
 
-  // The ops-cancel placeholder is rendered disabled (not wired until F-078).
+  // F-078 wired the ops-cancel button — it's now an enabled trigger that
+  // opens the confirm dialog (covered end-to-end in `f-078-ops-cancel.spec.ts`).
   const opsBtn = page.getByTestId("admin-detail-action-ops-cancel");
   await expect(opsBtn).toBeVisible();
-  await expect(opsBtn).toBeDisabled();
+  await expect(opsBtn).toBeEnabled();
 });

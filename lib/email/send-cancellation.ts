@@ -15,6 +15,10 @@ import {
   CancellationUserForfeitEmail,
   getCancellationUserForfeitCopy,
 } from "./templates/cancellation-user-forfeit";
+import {
+  CancellationUserOpsEmail,
+  getCancellationUserOpsCopy,
+} from "./templates/cancellation-user-ops";
 
 const APP_BASE_URL = "https://rideflumserberg.ch";
 const OPS_EMAIL = "franciscojgonzalezfernandez@gmail.com";
@@ -123,6 +127,22 @@ export type CancellationDispatchArgs =
       bookingId: string;
       variant: "forfeit";
       hoursBeforeStart: number;
+    }
+  | {
+      bookingId: string;
+      variant: "ops";
+      /** Subtype mirrors the core `CancelBookingByOpsResult.outcome`. Drives
+       * which sections render in the booker email + the ops notification
+       * variant label. */
+      opsOutcome: "cash" | "credit" | "mixed" | "no_charge";
+      /** Owner-supplied cancellation reason, surfaced to the booker (F-078).
+       * Trimmed/blank reasons collapse to `undefined` and omit the section. */
+      opsReason?: string | null;
+      cashRefundedCents: number;
+      creditReEmittedCents: number;
+      /** Anchored on the lesson start (F-078). Only present when a credit
+       * was re-emitted; `null` for cash-only and no-charge. */
+      creditExpiresAt: Date | null;
     };
 
 export type SendCancellationResult =
@@ -207,7 +227,7 @@ export async function sendCancellationEmailsWith(
       },
     );
     bookerResult = { sent: true, emailId: sent.id };
-  } else {
+  } else if (args.variant === "forfeit") {
     const copy = getCancellationUserForfeitCopy(locale);
     const sent = await deps.send(
       {
@@ -245,6 +265,65 @@ export async function sendCancellationEmailsWith(
       },
     );
     bookerResult = { sent: true, emailId: sent.id };
+  } else {
+    // ops-cancel: cash refund / credit re-emit / mixed. Always informational
+    // for the booker; no obligation to act. `no_charge` (PENDING_PAYMENT
+    // never paid) renders the bare "we cancelled" intro with no money-back
+    // sections — still worth telling them the slot is gone.
+    const copy = getCancellationUserOpsCopy(locale);
+    const reasonLabel = args.opsReason?.trim() ? args.opsReason.trim() : null;
+    const cashRefundLabel =
+      args.cashRefundedCents > 0 ? formatChf(args.cashRefundedCents) : null;
+    const creditAmountLabel =
+      args.creditReEmittedCents > 0
+        ? formatChf(args.creditReEmittedCents)
+        : null;
+    const creditExpiresAtLabel =
+      args.creditExpiresAt !== null
+        ? formatDateLabel(args.creditExpiresAt, locale)
+        : null;
+    const sent = await deps.send(
+      {
+        to: booking.booker.email,
+        subject: copy.subject(bookerName),
+        react: React.createElement(CancellationUserOpsEmail, {
+          locale,
+          bookerName,
+          bookingDateLabel: bookerDateLabel,
+          bookingDurationLabel: bookerDurationLabel,
+          instructorName,
+          reasonLabel,
+          cashRefundLabel,
+          creditAmountLabel,
+          creditExpiresAtLabel,
+          manageBookingUrl,
+          termsUrl,
+        }),
+        text: buildOpsPlainText({
+          copy,
+          bookerName,
+          bookingDateLabel: bookerDateLabel,
+          bookingDurationLabel: bookerDurationLabel,
+          instructorName,
+          reasonLabel,
+          cashRefundLabel,
+          creditAmountLabel,
+          creditExpiresAtLabel,
+          manageBookingUrl,
+          termsUrl,
+        }),
+        tags: [
+          { name: "feature", value: "booking" },
+          { name: "kind", value: "cancellation-ops" },
+          { name: "locale", value: locale },
+        ],
+      },
+      {
+        client: deps.emailClient,
+        idempotencyKey: `cancel-${booking.id}-ops-booker`,
+      },
+    );
+    bookerResult = { sent: true, emailId: sent.id };
   }
 
   let opsResult:
@@ -270,9 +349,9 @@ export async function sendCancellationEmailsWith(
           bookerName,
           bookerEmail: booking.booker.email,
           attendeeCount: booking.attendees.length,
-          cancellationVariant: args.variant,
+          cancellationVariant: opsNotifVariant(args),
         }),
-        text: buildOpsPlainText({
+        text: buildOpsNotifPlainText({
           copy: opsCopy,
           instructorName,
           bookingDateLabel: opsDateLabel,
@@ -281,7 +360,7 @@ export async function sendCancellationEmailsWith(
           bookerName,
           bookerEmail: booking.booker.email,
           attendeeCount: booking.attendees.length,
-          cancellationVariant: args.variant,
+          cancellationVariant: opsNotifVariant(args),
         }),
         tags: [
           { name: "feature", value: "booking" },
@@ -390,6 +469,69 @@ function buildForfeitPlainText(args: {
 }
 
 function buildOpsPlainText(args: {
+  copy: ReturnType<typeof getCancellationUserOpsCopy>;
+  bookerName: string;
+  bookingDateLabel: string;
+  bookingDurationLabel: string;
+  instructorName: string;
+  reasonLabel: string | null;
+  cashRefundLabel: string | null;
+  creditAmountLabel: string | null;
+  creditExpiresAtLabel: string | null;
+  manageBookingUrl: string;
+  termsUrl: string;
+}): string {
+  const { copy } = args;
+  const lines: string[] = [
+    copy.greeting(args.bookerName),
+    copy.intro,
+    "",
+    copy.summaryTitle,
+    `${copy.dateLabel}: ${args.bookingDateLabel}`,
+    `${copy.durationLabel}: ${args.bookingDurationLabel}`,
+    `${copy.instructorLabel}: ${args.instructorName}`,
+  ];
+  if (args.reasonLabel) {
+    lines.push("", `${copy.reasonHeadline}: ${args.reasonLabel}`);
+  }
+  if (args.cashRefundLabel) {
+    lines.push("", copy.refundHeadline, copy.refundBody(args.cashRefundLabel));
+  }
+  if (args.creditAmountLabel && args.creditExpiresAtLabel) {
+    lines.push(
+      "",
+      copy.creditHeadline,
+      copy.creditBody({
+        amount: args.creditAmountLabel,
+        expiresAt: args.creditExpiresAtLabel,
+      }),
+    );
+  }
+  lines.push(
+    "",
+    `${copy.ctaLabel}: ${args.manageBookingUrl}`,
+    "",
+    `${copy.termsLine} ${args.termsUrl}`,
+    "",
+    copy.signoff,
+  );
+  return lines.join("\n");
+}
+
+type OpsNotifVariant =
+  | "credit"
+  | "forfeit"
+  | "ops_cash"
+  | "ops_credit"
+  | "ops_mixed"
+  | "ops_no_charge";
+
+function opsNotifVariant(args: CancellationDispatchArgs): OpsNotifVariant {
+  if (args.variant === "credit" || args.variant === "forfeit") return args.variant;
+  return `ops_${args.opsOutcome}` as OpsNotifVariant;
+}
+
+function buildOpsNotifPlainText(args: {
   copy: ReturnType<typeof getCancellationOpsNotifCopy>;
   instructorName: string;
   bookingDateLabel: string;
@@ -398,13 +540,25 @@ function buildOpsPlainText(args: {
   bookerName: string;
   bookerEmail: string;
   attendeeCount: number;
-  cancellationVariant: "credit" | "forfeit";
+  cancellationVariant: OpsNotifVariant;
 }): string {
   const { copy } = args;
-  const variantLine =
-    args.cancellationVariant === "credit"
-      ? copy.variantCredit
-      : copy.variantForfeit;
+  const variantLine = ((): string => {
+    switch (args.cancellationVariant) {
+      case "credit":
+        return copy.variantCredit;
+      case "forfeit":
+        return copy.variantForfeit;
+      case "ops_cash":
+        return copy.variantOpsCash;
+      case "ops_credit":
+        return copy.variantOpsCredit;
+      case "ops_mixed":
+        return copy.variantOpsMixed;
+      case "ops_no_charge":
+        return copy.variantOpsNoCharge;
+    }
+  })();
   return [
     copy.intro,
     "",

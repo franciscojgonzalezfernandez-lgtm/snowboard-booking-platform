@@ -220,6 +220,11 @@ model Booking {
   paidAt                DateTime?
   refundedAt            DateTime?
   refundAmountCents       Int?
+  /// F-078: Stripe refund id for ops-cancellations of cash-paid bookings.
+  /// Persisted so the action is idempotent — a second `cancelBookingByOps`
+  /// call sees the booking already CANCELLED_BY_OPS + the refund id set
+  /// and short-circuits without re-hitting Stripe.
+  stripeRefundId          String?       @unique
   failureReason           String?       @db.Text
   confirmationEmailSentAt DateTime?
   reminder24hSentAt       DateTime?
