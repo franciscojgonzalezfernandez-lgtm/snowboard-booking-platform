@@ -135,6 +135,9 @@ export type CancellationDispatchArgs =
        * which sections render in the booker email + the ops notification
        * variant label. */
       opsOutcome: "cash" | "credit" | "mixed" | "no_charge";
+      /** Owner-supplied cancellation reason, surfaced to the booker (F-078).
+       * Trimmed/blank reasons collapse to `undefined` and omit the section. */
+      opsReason?: string | null;
       cashRefundedCents: number;
       creditReEmittedCents: number;
       /** Anchored on the lesson start (F-078). Only present when a credit
@@ -268,6 +271,7 @@ export async function sendCancellationEmailsWith(
     // never paid) renders the bare "we cancelled" intro with no money-back
     // sections — still worth telling them the slot is gone.
     const copy = getCancellationUserOpsCopy(locale);
+    const reasonLabel = args.opsReason?.trim() ? args.opsReason.trim() : null;
     const cashRefundLabel =
       args.cashRefundedCents > 0 ? formatChf(args.cashRefundedCents) : null;
     const creditAmountLabel =
@@ -288,6 +292,7 @@ export async function sendCancellationEmailsWith(
           bookingDateLabel: bookerDateLabel,
           bookingDurationLabel: bookerDurationLabel,
           instructorName,
+          reasonLabel,
           cashRefundLabel,
           creditAmountLabel,
           creditExpiresAtLabel,
@@ -300,6 +305,7 @@ export async function sendCancellationEmailsWith(
           bookingDateLabel: bookerDateLabel,
           bookingDurationLabel: bookerDurationLabel,
           instructorName,
+          reasonLabel,
           cashRefundLabel,
           creditAmountLabel,
           creditExpiresAtLabel,
@@ -468,6 +474,7 @@ function buildOpsPlainText(args: {
   bookingDateLabel: string;
   bookingDurationLabel: string;
   instructorName: string;
+  reasonLabel: string | null;
   cashRefundLabel: string | null;
   creditAmountLabel: string | null;
   creditExpiresAtLabel: string | null;
@@ -484,6 +491,9 @@ function buildOpsPlainText(args: {
     `${copy.durationLabel}: ${args.bookingDurationLabel}`,
     `${copy.instructorLabel}: ${args.instructorName}`,
   ];
+  if (args.reasonLabel) {
+    lines.push("", `${copy.reasonHeadline}: ${args.reasonLabel}`);
+  }
   if (args.cashRefundLabel) {
     lines.push("", copy.refundHeadline, copy.refundBody(args.cashRefundLabel));
   }

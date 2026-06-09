@@ -148,10 +148,23 @@ export function CancellationOpsNotifEmail(
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <Text style={row}>
-      <span style={rowLabel}>{label}</span>
-      <span style={rowValue}>{value}</span>
-    </Text>
+    <table
+      role="presentation"
+      width="100%"
+      cellPadding="0"
+      cellSpacing="0"
+      border={0}
+      style={row}
+    >
+      <tbody>
+        <tr>
+          <td style={rowLabel}>{label}</td>
+          <td style={rowValue} align="right">
+            {value}
+          </td>
+        </tr>
+      </tbody>
+    </table>
   );
 }
 
@@ -201,19 +214,24 @@ const summaryTitle = {
 };
 
 const row = {
-  display: "flex" as const,
-  fontSize: "14px",
-  justifyContent: "space-between" as const,
-  lineHeight: "1.6",
+  borderCollapse: "collapse" as const,
   margin: "0 0 4px",
+  width: "100%",
 };
 
 const rowLabel = {
   color: "#5f574f",
+  fontSize: "14px",
+  lineHeight: "1.6",
+  padding: "0",
 };
 
 const rowValue = {
   color: "#17130f",
+  fontSize: "14px",
+  lineHeight: "1.6",
+  padding: "0",
+  textAlign: "right" as const,
 };
 
 const variantBody = {

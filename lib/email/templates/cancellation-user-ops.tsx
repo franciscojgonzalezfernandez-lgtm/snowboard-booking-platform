@@ -24,6 +24,9 @@ export type CancellationUserOpsEmailProps = {
   bookingDateLabel: string;
   bookingDurationLabel: string;
   instructorName: string;
+  /** Optional reason the owner gave for cancelling, shown to the booker. Null
+   * when the admin left it blank — the reason section is then omitted. */
+  reasonLabel: string | null;
   /** Cash refund issued in CHF; null when ops cancelled a fully credit-paid
    * booking (nothing to refund) or a never-paid PENDING_PAYMENT draft. */
   cashRefundLabel: string | null;
@@ -45,6 +48,7 @@ type Copy = {
   dateLabel: string;
   durationLabel: string;
   instructorLabel: string;
+  reasonHeadline: string;
   refundHeadline: string;
   refundBody: (amount: string) => string;
   creditHeadline: string;
@@ -66,6 +70,7 @@ const COPY: Record<Locale, Copy> = {
     dateLabel: "Date",
     durationLabel: "Length",
     instructorLabel: "Instructor",
+    reasonHeadline: "Reason",
     refundHeadline: "Refund",
     refundBody: (amount) =>
       `We've refunded ${amount} to your card. It typically appears within 3–5 business days.`,
@@ -86,6 +91,7 @@ const COPY: Record<Locale, Copy> = {
     dateLabel: "Datum",
     durationLabel: "Dauer",
     instructorLabel: "Coach",
+    reasonHeadline: "Grund",
     refundHeadline: "Rückerstattung",
     refundBody: (amount) =>
       `Wir haben ${amount} auf deine Karte zurückerstattet. Die Gutschrift erscheint typischerweise in 3–5 Werktagen.`,
@@ -106,6 +112,7 @@ const COPY: Record<Locale, Copy> = {
     dateLabel: "Fecha",
     durationLabel: "Duración",
     instructorLabel: "Instructor",
+    reasonHeadline: "Motivo",
     refundHeadline: "Reembolso",
     refundBody: (amount) =>
       `Hemos reembolsado ${amount} a tu tarjeta. Suele aparecer en 3–5 días laborables.`,
@@ -129,6 +136,7 @@ export function CancellationUserOpsEmail(props: CancellationUserOpsEmailProps) {
     bookingDateLabel,
     bookingDurationLabel,
     instructorName,
+    reasonLabel,
     cashRefundLabel,
     creditAmountLabel,
     creditExpiresAtLabel,
@@ -153,6 +161,13 @@ export function CancellationUserOpsEmail(props: CancellationUserOpsEmailProps) {
             <Row label={t.durationLabel} value={bookingDurationLabel} />
             <Row label={t.instructorLabel} value={instructorName} />
           </Section>
+
+          {reasonLabel ? (
+            <Section style={summary}>
+              <Text style={summaryTitle}>{t.reasonHeadline}</Text>
+              <Text style={calloutBody}>{reasonLabel}</Text>
+            </Section>
+          ) : null}
 
           {cashRefundLabel ? (
             <Section style={callout}>
@@ -195,10 +210,23 @@ export function CancellationUserOpsEmail(props: CancellationUserOpsEmailProps) {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <Text style={row}>
-      <span style={rowLabel}>{label}</span>
-      <span style={rowValue}>{value}</span>
-    </Text>
+    <table
+      role="presentation"
+      width="100%"
+      cellPadding="0"
+      cellSpacing="0"
+      border={0}
+      style={row}
+    >
+      <tbody>
+        <tr>
+          <td style={rowLabel}>{label}</td>
+          <td style={rowValue} align="right">
+            {value}
+          </td>
+        </tr>
+      </tbody>
+    </table>
   );
 }
 
@@ -275,19 +303,24 @@ const calloutBody = {
 };
 
 const row = {
-  display: "flex" as const,
-  fontSize: "14px",
-  justifyContent: "space-between" as const,
-  lineHeight: "1.6",
+  borderCollapse: "collapse" as const,
   margin: "0 0 4px",
+  width: "100%",
 };
 
 const rowLabel = {
   color: "#5f574f",
+  fontSize: "14px",
+  lineHeight: "1.6",
+  padding: "0",
 };
 
 const rowValue = {
   color: "#17130f",
+  fontSize: "14px",
+  lineHeight: "1.6",
+  padding: "0",
+  textAlign: "right" as const,
 };
 
 const ctaSection = {

@@ -136,7 +136,7 @@ export function OpsCancelButton({
               htmlFor="ops-cancel-reason"
               className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground"
             >
-              Reason (optional, internal audit)
+              Reason (optional — shown to the booker)
             </label>
             <Textarea
               id="ops-cancel-reason"

@@ -62,33 +62,109 @@ exports[`cancellation email templates — snapshots > cancellation-ops-notif · 
                               style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 12px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
                               Released slot
                             </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Date</span
-                              ><span style="color:#17130f"
-                                >Saturday, 5 December 2026</span
-                              >
-                            </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Start</span
-                              ><span style="color:#17130f">11:00</span>
-                            </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Length</span
-                              ><span style="color:#17130f">1 hour</span>
-                            </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Instructor</span
-                              ><span style="color:#17130f">Javi</span>
-                            </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">2 riders</span
-                              ><span style="color:#17130f"></span>
-                            </p>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Date
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    Saturday, 5 December 2026
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Start
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    11:00
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Length
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    1 hour
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Instructor
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    Javi
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    2 riders
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right"></td>
+                                </tr>
+                              </tbody>
+                            </table>
                           </td>
                         </tr>
                       </tbody>
@@ -108,18 +184,48 @@ exports[`cancellation email templates — snapshots > cancellation-ops-notif · 
                               style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 12px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
                               Booker
                             </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Name</span
-                              ><span style="color:#17130f">Lara Tester</span>
-                            </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Email</span
-                              ><span style="color:#17130f"
-                                >lara@example.test</span
-                              >
-                            </p>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Name
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    Lara Tester
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Email
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    lara@example.test
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
                           </td>
                         </tr>
                       </tbody>
@@ -227,33 +333,109 @@ exports[`cancellation email templates — snapshots > cancellation-ops-notif · 
                               style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 12px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
                               Released slot
                             </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Date</span
-                              ><span style="color:#17130f"
-                                >Saturday, 5 December 2026</span
-                              >
-                            </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Start</span
-                              ><span style="color:#17130f">11:00</span>
-                            </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Length</span
-                              ><span style="color:#17130f">1 hour</span>
-                            </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Instructor</span
-                              ><span style="color:#17130f">Javi</span>
-                            </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">2 riders</span
-                              ><span style="color:#17130f"></span>
-                            </p>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Date
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    Saturday, 5 December 2026
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Start
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    11:00
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Length
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    1 hour
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Instructor
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    Javi
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    2 riders
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right"></td>
+                                </tr>
+                              </tbody>
+                            </table>
                           </td>
                         </tr>
                       </tbody>
@@ -273,18 +455,48 @@ exports[`cancellation email templates — snapshots > cancellation-ops-notif · 
                               style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 12px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
                               Booker
                             </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Name</span
-                              ><span style="color:#17130f">Lara Tester</span>
-                            </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Email</span
-                              ><span style="color:#17130f"
-                                >lara@example.test</span
-                              >
-                            </p>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Name
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    Lara Tester
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Email
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    lara@example.test
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
                           </td>
                         </tr>
                       </tbody>
@@ -397,23 +609,69 @@ exports[`cancellation email templates — snapshots > cancellation-user-credit �
                               style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 12px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
                               Stornierte Stunde
                             </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Datum</span
-                              ><span style="color:#17130f"
-                                >Saturday, 5 December 2026</span
-                              >
-                            </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Dauer</span
-                              ><span style="color:#17130f">1 hour</span>
-                            </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Coach</span
-                              ><span style="color:#17130f">Javi</span>
-                            </p>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Datum
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    Saturday, 5 December 2026
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Dauer
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    1 hour
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Coach
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    Javi
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
                           </td>
                         </tr>
                       </tbody>
@@ -552,23 +810,69 @@ exports[`cancellation email templates — snapshots > cancellation-user-credit �
                               style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 12px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
                               Cancelled lesson
                             </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Date</span
-                              ><span style="color:#17130f"
-                                >Saturday, 5 December 2026</span
-                              >
-                            </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Length</span
-                              ><span style="color:#17130f">1 hour</span>
-                            </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Instructor</span
-                              ><span style="color:#17130f">Javi</span>
-                            </p>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Date
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    Saturday, 5 December 2026
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Length
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    1 hour
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Instructor
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    Javi
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
                           </td>
                         </tr>
                       </tbody>
@@ -706,23 +1010,69 @@ exports[`cancellation email templates — snapshots > cancellation-user-credit �
                               style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 12px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
                               Clase cancelada
                             </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Fecha</span
-                              ><span style="color:#17130f"
-                                >Saturday, 5 December 2026</span
-                              >
-                            </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Duración</span
-                              ><span style="color:#17130f">1 hour</span>
-                            </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Instructor</span
-                              ><span style="color:#17130f">Javi</span>
-                            </p>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Fecha
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    Saturday, 5 December 2026
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Duración
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    1 hour
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Instructor
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    Javi
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
                           </td>
                         </tr>
                       </tbody>
@@ -859,23 +1209,69 @@ exports[`cancellation email templates — snapshots > cancellation-user-forfeit 
                               style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 12px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
                               Stornierte Stunde
                             </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Datum</span
-                              ><span style="color:#17130f"
-                                >Saturday, 5 December 2026</span
-                              >
-                            </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Dauer</span
-                              ><span style="color:#17130f">1 hour</span>
-                            </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Coach</span
-                              ><span style="color:#17130f">Javi</span>
-                            </p>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Datum
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    Saturday, 5 December 2026
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Dauer
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    1 hour
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Coach
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    Javi
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
                           </td>
                         </tr>
                       </tbody>
@@ -1012,23 +1408,69 @@ exports[`cancellation email templates — snapshots > cancellation-user-forfeit 
                               style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 12px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
                               Cancelled lesson
                             </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Date</span
-                              ><span style="color:#17130f"
-                                >Saturday, 5 December 2026</span
-                              >
-                            </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Length</span
-                              ><span style="color:#17130f">1 hour</span>
-                            </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Instructor</span
-                              ><span style="color:#17130f">Javi</span>
-                            </p>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Date
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    Saturday, 5 December 2026
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Length
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    1 hour
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Instructor
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    Javi
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
                           </td>
                         </tr>
                       </tbody>
@@ -1165,23 +1607,69 @@ exports[`cancellation email templates — snapshots > cancellation-user-forfeit 
                               style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 12px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
                               Clase cancelada
                             </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Fecha</span
-                              ><span style="color:#17130f"
-                                >Saturday, 5 December 2026</span
-                              >
-                            </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Duración</span
-                              ><span style="color:#17130f">1 hour</span>
-                            </p>
-                            <p
-                              style="font-size:14px;line-height:1.6;display:flex;justify-content:space-between;margin:0 0 4px;margin-top:0;margin-right:0;margin-bottom:4px;margin-left:0">
-                              <span style="color:#5f574f">Instructor</span
-                              ><span style="color:#17130f">Javi</span>
-                            </p>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Fecha
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    Saturday, 5 December 2026
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Duración
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    1 hour
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Instructor
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    Javi
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
                           </td>
                         </tr>
                       </tbody>

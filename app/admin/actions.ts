@@ -291,6 +291,7 @@ export async function cancelBookingByOps(input: {
         bookingId: input.bookingId,
         variant: "ops",
         opsOutcome: result.outcome,
+        opsReason: input.reason ?? null,
         cashRefundedCents: result.cashRefundedCents,
         creditReEmittedCents: result.creditReEmittedCents,
         creditExpiresAt: result.creditExpiresAt,
