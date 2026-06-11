@@ -1688,26 +1688,26 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-065 — Instructor feedback per booking + bookerId history view
 
-- Sprint: 4 · Estado: backlog · Prioridad: P1
+- Sprint: 4 · Estado: done · Prioridad: P1
 - Depende de: F-062
 - Motivación: owner pidió poder dejar notas sobre cada clase completada para informar futuras clases del mismo booker (progreso, nivel real observado, preferencias, advertencias). Per-booking single note (no per-attendee), visibilidad sólo interna del instructor — el booker no las ve. Cross-booking visibility se resuelve con lookup por `bookerId` de bookings `COMPLETED` previas (sin schema de Person, sin attendee fingerprint).
 - AC schema:
-  - [ ] Migración `<date>_booking_instructor_note`: añadir `Booking.instructorNote String? @db.Text` + `Booking.instructorNoteSetAt DateTime?`.
+  - [x] Migración `20260611211247_booking_instructor_note`: añade `Booking.instructorNote String? @db.Text` + `Booking.instructorNoteSetAt DateTime?`.
 - AC server:
-  - [ ] Server action `setInstructorNote(bookingId, note: string | null)` en `app/instructor/actions.ts` (`'use server'`). Resolve session, verificar `session.user.roles.includes('instructor')`, verificar `booking.instructorId === session.user.instructor.id`, verificar `booking.status === 'COMPLETED'` (no-op si no, rechaza). Update + `revalidatePath('/instructor')`.
-  - [ ] Note `null` o empty string → clear (`instructorNote=null`, `instructorNoteSetAt=null`).
+  - [x] Server action `setInstructorNote(bookingId, note: string | null)` en `app/instructor/actions.ts`; lógica pura en `lib/instructor/instructor-note.ts` (`setInstructorNoteWith`, mismo split deps-inyectados que profile.ts). `requireInstructor()` resuelve session + rol, la pura re-verifica `booking.instructorId === instructorId` (→ FORBIDDEN) + `status === 'COMPLETED'` (→ NOT_COMPLETED, no-op) + NOT_FOUND. Update + `revalidatePath('/instructor')`.
+  - [x] Note `null` o empty/whitespace-only → clear (`instructorNote=null`, `instructorNoteSetAt=null`); texto se persiste trimmeado con `instructorNoteSetAt = now`. Zod `instructorNoteSchema` (max 5000) en `lib/schemas/instructor-note.ts`.
 - AC UI:
-  - [ ] En la agenda diaria del instructor (Sprint 4 vista principal), row de booking `COMPLETED` muestra textarea inline con valor actual + auto-save debounced (1.5s) → server action.
-  - [ ] Sidebar / panel de "Booker history": al hover/click en bookerId, mostrar lista de bookings `COMPLETED` previas de ese booker con su `instructorNote` (read-only). Orden cronológico inverso. Limit 10.
-  - [ ] **Sin visibilidad para el booker**: dashboard del booker (`/dashboard`) **no** muestra `instructorNote`. Internal-only.
+  - [x] Agenda diaria: row `COMPLETED` monta `<InstructorNoteField>` (client island) con valor actual + auto-save debounced 1.5s (+ flush en blur) → server action, con status `Saving…/Saved/Save failed` aria-live.
+  - [x] Panel "Booker history": `<details>` por row `COMPLETED` (click-to-expand, accesible) lista las bookings `COMPLETED` previas del mismo booker con su `instructorNote` (read-only), orden `date` desc, limit 10, excluyendo la propia row. Histories se cargan una sola vez en `page.tsx` (`getBookerNoteHistories`, un único `findMany` para todos los bookers de la ventana → sin N+1).
+  - [x] **Sin visibilidad para el booker**: dashboard del booker (`/dashboard`) **no** muestra `instructorNote`. Internal-only (aserción explícita en el e2e).
 - Tests:
-  - Vitest sobre `setInstructorNote` — 5 specs: happy, rechaza role!=instructor, rechaza booking ajeno, rechaza status!=COMPLETED, clear con empty string.
-  - Playwright happy path × 1 locale (instructor view) — booking COMPLETED → escribir nota → debounce → reload → nota persistida; hover booker history → 2 bookings previos con sus notes.
+  - [x] Vitest `lib/instructor/instructor-note.test.ts` (9 specs): `setInstructorNoteWith` happy (trim + setAt), FORBIDDEN booking ajeno, NOT_COMPLETED, NOT_FOUND, clear con whitespace, clear con null. `getBookerNoteHistories` empty-ids no-query, bucket por bookerId + scoping/orden, cap a `BOOKER_HISTORY_LIMIT`.
+  - [x] Playwright `e2e/f-065-instructor-note.spec.ts` (1 spec): COMPLETED today → escribir nota → blur/debounce → `Saved` → reload → nota persistida; expandir booker history → 2 notas previas (newest-first), excluye la de hoy; `/dashboard` no contiene la nota.
 - Notas:
   - **No** rich text editor — `<textarea>` plain. Si owner pide formato post-launch, F-XXX post-MVP.
   - **No** attendee-level feedback. Decisión deliberada del desglose Sprint 3: per-booking + lookup por bookerId cubre el use case sin schema de Person/Attendee fingerprint.
   - **No** email del feedback al booker. Internal-only.
-  - Booker history query: `prisma.booking.findMany({ where: { bookerId, status: 'COMPLETED', instructorNote: { not: null } }, orderBy: { date: 'desc' }, take: 10 })`. Sin índice nuevo necesario — `Booking.bookerId` ya indexado por F-020.
+  - Booker history query scoped a `instructorId` además de `bookerId` (multi-instructor-safe: un instructor sólo ve sus propias notas privadas). `findMany({ where: { instructorId, bookerId: { in }, status: 'COMPLETED', instructorNote: { not: null } }, orderBy: { date: 'desc' } })` + cap en memoria por booker. Sin índice nuevo — `Booking.bookerId` ya indexado por F-020.
 
 ### Sprint 5 — Landing + SEO (semanas 9-10)
 

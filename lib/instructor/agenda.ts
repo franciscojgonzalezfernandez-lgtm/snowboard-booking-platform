@@ -35,12 +35,16 @@ export type AgendaAttendee = {
 
 export type AgendaBooking = {
   id: string;
+  bookerId: string;
   date: Date;
   anchorTime: string;
   duration: Duration;
   language: Locale;
   status: BookingStatus;
   totalPriceCents: number;
+  // F-065: present on COMPLETED rows for the inline note editor. Null until the
+  // instructor writes one.
+  instructorNote: string | null;
   attendees: AgendaAttendee[];
 };
 
@@ -132,12 +136,14 @@ export async function getInstructorAgenda({
     orderBy: [{ date: "asc" }, { anchorTime: "asc" }],
     select: {
       id: true,
+      bookerId: true,
       date: true,
       anchorTime: true,
       duration: true,
       language: true,
       status: true,
       totalPriceCents: true,
+      instructorNote: true,
       attendees: {
         select: { name: true, isBooker: true },
         orderBy: { isBooker: "desc" },
