@@ -32,6 +32,12 @@ import {
   type DeactivateInstructorResult,
   type UpdateInstructorResult,
 } from "@/lib/admin/instructors";
+import {
+  updateSeasonPricingWith,
+  type AdminPricingDeps,
+  type UpdateSeasonPricingResult,
+} from "@/lib/admin/pricing";
+import type { UpdateSeasonPricingInput } from "@/lib/schemas/pricing";
 import { sendCancellationEmails } from "@/lib/email/send-cancellation";
 import {
   blockAvailabilityWindowWith,
@@ -234,6 +240,29 @@ export async function deactivateInstructor(input: {
     revalidatePath("/admin/instructors");
     revalidatePath("/admin");
     revalidateTag(AVAILABILITY_TAGS.root);
+  }
+  return result;
+}
+
+// --- F-080: season pricing editor -----------------------------------------
+// Wraps the pure `updateSeasonPricingWith` core. The owner edits prices in CHF
+// (the client form converts francs → cents); this validates the admin session,
+// writes the active `Season.priceCentsByDuration`, and revalidates both the
+// pricing page and the booking funnel (Step 1) so a new price shows at once.
+
+function pricingDeps(): AdminPricingDeps {
+  return { prisma };
+}
+
+export async function updateSeasonPricing(
+  input: UpdateSeasonPricingInput,
+): Promise<UpdateSeasonPricingResult> {
+  await requireAdmin();
+  const result = await updateSeasonPricingWith(pricingDeps(), input);
+  if (result.ok) {
+    revalidatePath("/admin/pricing");
+    // Step 1 reads the active season price; bust every locale's funnel page.
+    revalidatePath("/[locale]/reservar", "page");
   }
   return result;
 }

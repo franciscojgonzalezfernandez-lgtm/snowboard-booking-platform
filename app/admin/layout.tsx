@@ -51,6 +51,13 @@ export default async function AdminLayout({
             >
               Cancel day
             </Link>
+            <Link
+              href="/admin/pricing"
+              data-testid="admin-nav-pricing"
+              className="text-xs font-bold uppercase tracking-[0.18em] underline-offset-4 hover:underline"
+            >
+              Pricing
+            </Link>
           </nav>
         </div>
         <form action={signOutAction}>
