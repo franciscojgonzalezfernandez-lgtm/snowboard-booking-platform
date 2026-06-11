@@ -28,15 +28,22 @@ const DURATION_LABEL: Record<Duration, string> = {
 };
 
 /** Calendar-event shape passed to {@link GoogleCalendarClient.insert}. Times are
- * RFC 3339 with an explicit UTC offset (`…Z`); `timeZone` is carried alongside
- * for Google's display layer. */
+ * *floating* local wall-clock with no offset (e.g. `2026-11-30T12:00:00`) paired
+ * with `timeZone`; Google resolves the instant in that zone. anchorTime is a
+ * naive Europe/Zurich wall-clock everywhere in the app, so we must NOT stamp it
+ * as UTC (`…Z`) here — that read 12:00 as UTC and displayed every event shifted
+ * by the Zurich offset (13:00 in winter). */
 export type CalendarEventPayload = {
   summary: string;
   description: string;
   location: string;
-  startDateTimeUtc: string;
-  endDateTimeUtc: string;
+  startDateTime: string;
+  endDateTime: string;
   timeZone: string;
+  /** Always null: F-075 mirrors the lesson into the *instructor's* own calendar
+   * to block the slot. Adding the booker as an attendee surfaced the lesson on
+   * the client's personal calendar (not intended) — the booker gets their own
+   * copy via the .ics confirmation email. Kept nullable for a future opt-in. */
   attendeeEmail: string | null;
 };
 
@@ -282,17 +289,30 @@ function buildEventPayload(booking: BookingRowForSync): CalendarEventPayload {
     summary: `Snowboard lesson — ${bookerName}`,
     description: `${DURATION_LABEL[booking.duration]} lesson.\nBooker: ${bookerName} <${booking.booker.email}>`,
     location: EVENT_LOCATION,
-    startDateTimeUtc: startUtc.toISOString(),
-    endDateTimeUtc: endUtc.toISOString(),
+    startDateTime: toFloatingLocal(startUtc),
+    endDateTime: toFloatingLocal(endUtc),
     timeZone: EVENT_TIME_ZONE,
-    attendeeEmail: booking.booker.email,
+    // Instructor calendar only — see CalendarEventPayload.attendeeEmail.
+    attendeeEmail: null,
   };
 }
 
+/** Format a wall-clock Date's UTC-container fields as a floating local datetime
+ * (`YYYY-MM-DDTHH:MM:SS`, no offset). anchorTime is stored as a naive
+ * Europe/Zurich wall-clock inside a UTC-typed Date; emitting it with a `Z` would
+ * make Google read it as UTC and display it shifted by the Zurich offset. */
+function toFloatingLocal(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(
+    d.getUTCDate(),
+  )}T${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:00`;
+}
+
 /**
- * Production Google Calendar v3 client over `fetch`. `sendUpdates=none` keeps
- * Google from emailing the attendee — the booker already gets the .ics from the
- * confirmation email (F-045), so a second Google invite would be noise.
+ * Production Google Calendar v3 client over `fetch`. The event carries no
+ * attendees (instructor-calendar mirror only), so `sendUpdates=none` is just
+ * belt-and-suspenders against Google emailing anyone. The booker gets their own
+ * copy via the .ics confirmation email (F-045).
  */
 export const googleCalendarRestClient: GoogleCalendarClient = {
   async insert(accessToken, event) {
@@ -306,8 +326,8 @@ export const googleCalendarRestClient: GoogleCalendarClient = {
         summary: event.summary,
         description: event.description,
         location: event.location,
-        start: { dateTime: event.startDateTimeUtc, timeZone: event.timeZone },
-        end: { dateTime: event.endDateTimeUtc, timeZone: event.timeZone },
+        start: { dateTime: event.startDateTime, timeZone: event.timeZone },
+        end: { dateTime: event.endDateTime, timeZone: event.timeZone },
         ...(event.attendeeEmail
           ? { attendees: [{ email: event.attendeeEmail }] }
           : {}),

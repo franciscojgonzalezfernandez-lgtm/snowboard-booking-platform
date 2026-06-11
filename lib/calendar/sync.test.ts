@@ -99,13 +99,16 @@ describe("insertEventWith", () => {
 
     expect(result).toEqual({ status: "synced", eventId: "evt_new" });
     expect(calendar.insert).toHaveBeenCalledTimes(1);
-    // start 08:00 UTC, TWO_HOURS → 10:00 UTC; booker carried as attendee.
+    // anchorTime 08:00 is a naive Europe/Zurich wall-clock; TWO_HOURS → 10:00.
+    // Emit as *floating* local time (no `Z`) + timeZone so Google shows 08:00
+    // in Zurich, not 08:00 UTC (= 09:00 Zurich). No attendee: instructor-only.
     const [, payload] = (calendar.insert as ReturnType<typeof vi.fn>).mock
       .calls[0]!;
-    expect(payload.startDateTimeUtc).toBe("2026-12-11T08:00:00.000Z");
-    expect(payload.endDateTimeUtc).toBe("2026-12-11T10:00:00.000Z");
+    expect(payload.startDateTime).toBe("2026-12-11T08:00:00");
+    expect(payload.endDateTime).toBe("2026-12-11T10:00:00");
+    expect(payload.startDateTime).not.toMatch(/Z$/);
     expect(payload.timeZone).toBe("Europe/Zurich");
-    expect(payload.attendeeEmail).toBe("ada@example.com");
+    expect(payload.attendeeEmail).toBeNull();
     expect(captured.bookingUpdate).toEqual([
       { id: "book_1", googleEventId: "evt_new" },
     ]);
