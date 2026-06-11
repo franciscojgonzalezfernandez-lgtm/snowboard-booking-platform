@@ -14,18 +14,9 @@ import type {
   OpenRangeResult,
 } from "@/lib/instructor/availability-actions";
 
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+import { AVAILABILITY_ERROR_COPY as ERROR_COPY } from "./availability-errors";
 
-const ERROR_COPY: Record<AvailabilityActionError, string> = {
-  INVALID_INPUT: "Check the dates and times, then try again.",
-  NO_ACTIVE_SEASON: "No active season — set one up first.",
-  RANGE_TOO_LONG: "That range is too long. Open at most a quarter at a time.",
-  OUT_OF_HOURS: "That window falls outside the season's operating hours.",
-  INVALID_RANGE: "The end must come after the start.",
-  HAS_BOOKINGS: "This day has booked classes. Cancel them from the admin panel first.",
-  NOT_FOUND: "That block no longer exists. Refreshing.",
-  FORBIDDEN: "You can only edit this instructor's availability.",
-};
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 
 /**
  * Availability mutations the calendar drives, injected by the host route. The
