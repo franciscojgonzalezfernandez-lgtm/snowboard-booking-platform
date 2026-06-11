@@ -8,8 +8,16 @@ import {
 
 import { loadAdminBookings, type AdminBookingRow, type AdminBookingsDeps } from "./bookings";
 
-type FindManyArgs = Parameters<AdminBookingsDeps["prisma"]["booking"]["findMany"]>[0];
-type CountArgs = Parameters<AdminBookingsDeps["prisma"]["booking"]["count"]>[0];
+// Local arg shapes for the recorded calls. Deps now take the full `Db` client,
+// so we shape what the suite asserts on rather than deriving from the (widened,
+// optional-arg) generated delegate signatures.
+type FindManyArgs = {
+  where: Record<string, unknown>;
+  orderBy: Array<Record<string, "asc" | "desc">>;
+  skip: number;
+  take: number;
+};
+type CountArgs = { where: Record<string, unknown> };
 
 function makeRow(overrides: Partial<{ id: string; status: BookingStatus; date: Date; anchorTime: string }> = {}): AdminBookingRow {
   return {
@@ -41,7 +49,7 @@ function makeDeps(rows: AdminBookingRow[], total = rows.length) {
     return rows;
   });
   const deps: AdminBookingsDeps = {
-    prisma: { booking: { count, findMany } },
+    prisma: { booking: { count, findMany } } as unknown as AdminBookingsDeps["prisma"],
   };
   return {
     deps,

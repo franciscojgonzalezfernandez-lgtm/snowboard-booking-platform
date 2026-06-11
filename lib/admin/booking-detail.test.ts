@@ -87,7 +87,7 @@ function buildBooking(): AdminBookingDetail {
 function makeDeps(booking: AdminBookingDetail | null) {
   const findUnique = vi.fn(async () => booking);
   const deps: AdminBookingDetailDeps = {
-    prisma: { booking: { findUnique } as never },
+    prisma: { booking: { findUnique } } as unknown as AdminBookingDetailDeps["prisma"],
   };
   return { deps, spies: { findUnique } };
 }

@@ -66,7 +66,7 @@ export default async function ResumePaymentPage({ params }: Props) {
 
   const result = await resumePaymentWith(
     {
-      prisma: prisma as unknown as Parameters<typeof resumePaymentWith>[0]["prisma"],
+      prisma,
       stripe: getStripe(),
       bookerId: session.user.id,
     },

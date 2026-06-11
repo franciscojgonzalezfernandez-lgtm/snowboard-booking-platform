@@ -57,13 +57,13 @@ import { getStripe } from "@/lib/stripe/server";
 
 function availabilityDeps(instructorId: string): AvailabilityDeps {
   return {
-    prisma: prisma as unknown as AvailabilityDeps["prisma"],
+    prisma,
     instructorId,
   };
 }
 
 function instructorDeps(): AdminInstructorDeps {
-  return { prisma: prisma as unknown as AdminInstructorDeps["prisma"] };
+  return { prisma };
 }
 
 // A successful availability mutation must bust the booker-side availability
@@ -273,7 +273,7 @@ export async function cancelBookingByOps(input: {
 
   const deps: CancelBookingByOpsDeps = {
     adminUserId: userId,
-    prisma: prisma as unknown as CancelBookingByOpsDeps["prisma"],
+    prisma,
     stripeRefund: stripeOpsRefund,
   };
 
@@ -368,7 +368,7 @@ export async function cancelBookingByOps(input: {
 
 function cancelDayDeps(): CancelDayDeps {
   return {
-    prisma: prisma as unknown as CancelDayDeps["prisma"],
+    prisma,
   };
 }
 

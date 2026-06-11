@@ -1,7 +1,8 @@
 import React from "react";
-import type { Duration, Locale } from "@prisma/client";
+import type { Duration, Locale, Prisma } from "@prisma/client";
 
 import { formatChf } from "@/lib/pricing/format";
+import type { Db } from "@/lib/db";
 import { sendEmail, type EmailClient } from "./send-email";
 import {
   CancellationOpsNotifEmail,
@@ -52,33 +53,7 @@ const INTL_TAG: Record<Locale, string> = {
   es: "es-CH",
 };
 
-export type BookingRowForCancellation = {
-  id: string;
-  date: Date;
-  anchorTime: string;
-  duration: Duration;
-  language: Locale;
-  cancellationEmailSentAt: Date | null;
-  opsCancellationNotifSentAt: Date | null;
-  booker: { name: string | null; email: string };
-  instructor: { user: { name: string | null } };
-  attendees: Array<{ id: string }>;
-};
-
-type BookingSelect = {
-  id: true;
-  date: true;
-  anchorTime: true;
-  duration: true;
-  language: true;
-  cancellationEmailSentAt: true;
-  opsCancellationNotifSentAt: true;
-  booker: { select: { name: true; email: true } };
-  instructor: { select: { user: { select: { name: true } } } };
-  attendees: { select: { id: true } };
-};
-
-const BOOKING_SELECT: BookingSelect = {
+const BOOKING_SELECT = {
   id: true,
   date: true,
   anchorTime: true,
@@ -89,24 +64,14 @@ const BOOKING_SELECT: BookingSelect = {
   booker: { select: { name: true, email: true } },
   instructor: { select: { user: { select: { name: true } } } },
   attendees: { select: { id: true } },
-};
+} satisfies Prisma.BookingSelect;
+
+export type BookingRowForCancellation = Prisma.BookingGetPayload<{
+  select: typeof BOOKING_SELECT;
+}>;
 
 export type SendCancellationDeps = {
-  prisma: {
-    booking: {
-      findUnique(args: {
-        where: { id: string };
-        select: BookingSelect;
-      }): Promise<BookingRowForCancellation | null>;
-      update(args: {
-        where: { id: string };
-        data: {
-          cancellationEmailSentAt?: Date;
-          opsCancellationNotifSentAt?: Date;
-        };
-      }): Promise<{ id: string }>;
-    };
-  };
+  prisma: Db;
   send: typeof sendEmail;
   emailClient?: EmailClient;
   now?: Date;
@@ -585,7 +550,7 @@ export async function sendCancellationEmails(
   const { prisma } = await import("@/lib/db");
   return sendCancellationEmailsWith(
     {
-      prisma: prisma as unknown as SendCancellationDeps["prisma"],
+      prisma,
       send: sendEmail,
     },
     args,

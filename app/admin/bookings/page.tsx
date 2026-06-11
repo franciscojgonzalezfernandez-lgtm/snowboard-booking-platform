@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { parseAdminBookingsFilters } from "@/lib/schemas/admin-bookings";
 
 function bookingsDeps(): AdminBookingsDeps {
-  return { prisma: prisma as unknown as AdminBookingsDeps["prisma"] };
+  return { prisma };
 }
 
 import { BookingRow } from "./_components/booking-row";

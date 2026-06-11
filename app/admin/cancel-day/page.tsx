@@ -64,7 +64,7 @@ export default async function AdminCancelDayPage({ searchParams }: Props) {
   let invalidDate = false;
   if (isValidDate(date)) {
     const deps: CancelDayDeps = {
-      prisma: prisma as unknown as CancelDayDeps["prisma"],
+      prisma,
     };
     const res = await previewCancelDayWith(deps, { date, instructorId });
     if (res.ok) preview = res.preview;

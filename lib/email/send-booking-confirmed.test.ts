@@ -70,11 +70,8 @@ function makeDeps(
 
   const deps: SendBookingConfirmedDeps = {
     prisma: {
-      booking: {
-        findUnique: findUnique as unknown as SendBookingConfirmedDeps["prisma"]["booking"]["findUnique"],
-        update,
-      },
-    },
+      booking: { findUnique, update },
+    } as unknown as SendBookingConfirmedDeps["prisma"],
     send: (input, opts) => sendEmail(input, { ...opts, env: baseEnv }),
     emailClient: client,
     now: FIXED_NOW,

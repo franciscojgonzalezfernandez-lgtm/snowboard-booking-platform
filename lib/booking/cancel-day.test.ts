@@ -15,6 +15,15 @@ const DAY_END = new Date("2026-12-12T00:00:00.000Z");
 
 type RowOverrides = Partial<CancelDayBookingRow>;
 
+/** The slice of Prisma's `findMany` args this suite asserts against. Deps now
+ * take the full `Db` client, so we shape the recorded call locally instead of
+ * deriving it from the (widened, union-typed) generated arg type. */
+type FindManyWhere = {
+  date: { gte: Date; lt: Date };
+  status: { in: BookingStatus[] };
+  instructorId?: string;
+};
+
 function makeRow(id: string, overrides: RowOverrides = {}): CancelDayBookingRow {
   return {
     id,
@@ -41,11 +50,7 @@ function makeDeps(rows: CancelDayBookingRow[]): {
   const findMany = vi.fn(async () => rows);
   return {
     deps: {
-      prisma: {
-        booking: {
-          findMany: findMany as unknown as CancelDayDeps["prisma"]["booking"]["findMany"],
-        },
-      },
+      prisma: { booking: { findMany } } as unknown as CancelDayDeps["prisma"],
     },
     findMany,
   };
@@ -62,9 +67,7 @@ describe("previewCancelDayWith", () => {
     const { deps, findMany } = makeDeps([]);
     await previewCancelDayWith(deps, { date: DAY });
     expect(findMany).toHaveBeenCalledTimes(1);
-    const args = findMany.mock.calls[0]![0] as Parameters<
-      CancelDayDeps["prisma"]["booking"]["findMany"]
-    >[0];
+    const args = findMany.mock.calls[0]![0] as { where: FindManyWhere };
     expect(args.where.date.gte).toEqual(DAY_START);
     expect(args.where.date.lt).toEqual(DAY_END);
     expect(args.where.status.in).toEqual([
@@ -78,9 +81,7 @@ describe("previewCancelDayWith", () => {
   test("forwards instructor filter when provided", async () => {
     const { deps, findMany } = makeDeps([]);
     await previewCancelDayWith(deps, { date: DAY, instructorId: "ins_42" });
-    const args = findMany.mock.calls[0]![0] as Parameters<
-      CancelDayDeps["prisma"]["booking"]["findMany"]
-    >[0];
+    const args = findMany.mock.calls[0]![0] as { where: FindManyWhere };
     expect(args.where.instructorId).toBe("ins_42");
   });
 
@@ -334,9 +335,7 @@ describe("cancelDayByOpsWith", () => {
       { date: DAY, instructorId: "ins_42" },
       cancelOne as unknown as CancelOneFn,
     );
-    const args = findMany.mock.calls[0]![0] as Parameters<
-      CancelDayDeps["prisma"]["booking"]["findMany"]
-    >[0];
+    const args = findMany.mock.calls[0]![0] as { where: FindManyWhere };
     expect(args.where.instructorId).toBe("ins_42");
   });
 });

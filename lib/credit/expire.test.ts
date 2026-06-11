@@ -56,11 +56,8 @@ function makeDeps(opts: {
   return {
     deps: {
       prisma: {
-        accountCredit: {
-          updateMany:
-            updateMany as unknown as ExpireCreditsDeps["prisma"]["accountCredit"]["updateMany"],
-        },
-      },
+        accountCredit: { updateMany },
+      } as unknown as ExpireCreditsDeps["prisma"],
       now: opts.now ?? NOW,
     },
     calls,

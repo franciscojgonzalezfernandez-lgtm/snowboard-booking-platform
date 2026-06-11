@@ -1,11 +1,12 @@
 import React from "react";
 import type { CreateEmailOptions } from "resend";
-import type { Duration, Locale, PrismaClient } from "@prisma/client";
+import type { Duration, Locale, Prisma, PrismaClient } from "@prisma/client";
 
 import { durationMinutes } from "@/lib/booking-engine/duration";
 import { setUtcTime, zurichWallClockToUtc } from "@/lib/booking-engine/time";
 import { buildBookingIcs } from "@/lib/ics/build-event";
 import { formatChf } from "@/lib/pricing/format";
+import type { Db } from "@/lib/db";
 import { sendEmail, type EmailClient } from "./send-email";
 import {
   BookingConfirmedEmail,
@@ -54,33 +55,26 @@ const INTL_TAG: Record<Locale, string> = {
 
 void DURATION_LABEL_KEYS;
 
-export type BookingRowForEmail = {
-  id: string;
-  date: Date;
-  anchorTime: string;
-  duration: Duration;
-  language: Locale;
-  totalPriceCents: number;
-  icsUid: string;
-  confirmationEmailSentAt: Date | null;
-  booker: { name: string | null; email: string };
-  instructor: { user: { name: string | null } };
-  attendees: Array<{ id: string }>;
-};
+const BOOKING_SELECT = {
+  id: true,
+  date: true,
+  anchorTime: true,
+  duration: true,
+  language: true,
+  totalPriceCents: true,
+  icsUid: true,
+  confirmationEmailSentAt: true,
+  booker: { select: { name: true, email: true } },
+  instructor: { select: { user: { select: { name: true } } } },
+  attendees: { select: { id: true } },
+} satisfies Prisma.BookingSelect;
+
+export type BookingRowForEmail = Prisma.BookingGetPayload<{
+  select: typeof BOOKING_SELECT;
+}>;
 
 export type SendBookingConfirmedDeps = {
-  prisma: {
-    booking: {
-      findUnique(args: {
-        where: { id: string };
-        select: BookingSelect;
-      }): Promise<BookingRowForEmail | null>;
-      update(args: {
-        where: { id: string };
-        data: { confirmationEmailSentAt: Date };
-      }): Promise<{ id: string }>;
-    };
-  };
+  prisma: Db;
   send: typeof sendEmail;
   emailClient?: EmailClient;
   now?: Date;
@@ -95,22 +89,6 @@ export type SendBookingConfirmedResult =
   | { ok: true; sent: true; emailId: string }
   | { ok: true; sent: false; reason: "ALREADY_SENT" }
   | { ok: false; error: "BOOKING_NOT_FOUND" };
-
-const BOOKING_SELECT = {
-  id: true,
-  date: true,
-  anchorTime: true,
-  duration: true,
-  language: true,
-  totalPriceCents: true,
-  icsUid: true,
-  confirmationEmailSentAt: true,
-  booker: { select: { name: true, email: true } },
-  instructor: { select: { user: { select: { name: true } } } },
-  attendees: { select: { id: true } },
-} as const;
-
-type BookingSelect = typeof BOOKING_SELECT;
 
 export async function sendBookingConfirmedEmailWith(
   deps: SendBookingConfirmedDeps,
@@ -270,7 +248,7 @@ export async function sendBookingConfirmedEmail(input: {
   const { prisma } = await import("@/lib/db");
   return sendBookingConfirmedEmailWith(
     {
-      prisma: prisma as unknown as SendBookingConfirmedDeps["prisma"],
+      prisma,
       send: sendEmail,
     },
     input.bookingId,

@@ -50,7 +50,7 @@ import type { UpdateInstructorProfileInput } from "@/lib/schemas/instructor-prof
 
 function instructorDeps(instructorId: string): AvailabilityDeps {
   return {
-    prisma: prisma as unknown as AvailabilityDeps["prisma"],
+    prisma,
     instructorId,
   };
 }

@@ -1,7 +1,8 @@
-import type { Duration, Locale } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
 import { durationMinutes } from "@/lib/booking-engine/duration";
 import { addDays, setUtcTime, startOfUtcDay } from "@/lib/booking-engine/time";
+import type { Db } from "@/lib/db";
 import type {
   SendBookingReminderDeps,
   SendBookingReminderResult,
@@ -11,29 +12,22 @@ import type {
   SendPostClassResult,
 } from "@/lib/email/send-post-class";
 
-export type CandidateRow = {
-  id: string;
-  date: Date;
-  anchorTime: string;
-  duration: Duration;
-  language: Locale;
-  reminder24hSentAt: Date | null;
-  postClassEmailSentAt: Date | null;
-};
+export const CANDIDATE_SELECT = {
+  id: true,
+  date: true,
+  anchorTime: true,
+  duration: true,
+  language: true,
+  reminder24hSentAt: true,
+  postClassEmailSentAt: true,
+} satisfies Prisma.BookingSelect;
+
+export type CandidateRow = Prisma.BookingGetPayload<{
+  select: typeof CANDIDATE_SELECT;
+}>;
 
 export type CronDeps = {
-  prisma: {
-    booking: {
-      findMany(args: {
-        where: Record<string, unknown>;
-        select: Record<string, unknown>;
-      }): Promise<CandidateRow[]>;
-      updateMany(args: {
-        where: Record<string, unknown>;
-        data: Record<string, unknown>;
-      }): Promise<{ count: number }>;
-    };
-  };
+  prisma: Db;
   sendReminder: (
     deps: SendBookingReminderDeps,
     bookingId: string,
@@ -69,16 +63,6 @@ export type CronRunSummary = {
   postClass: BucketSummary;
   completed: CompleteSummary;
 };
-
-export const CANDIDATE_SELECT = {
-  id: true,
-  date: true,
-  anchorTime: true,
-  duration: true,
-  language: true,
-  reminder24hSentAt: true,
-  postClassEmailSentAt: true,
-} as const;
 
 export async function runBookingEmailsCron(
   deps: CronDeps,

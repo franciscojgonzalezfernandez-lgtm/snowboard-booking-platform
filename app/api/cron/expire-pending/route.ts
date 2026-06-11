@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/db";
-import {
-  runExpirePendingCron,
-  type ExpirePendingDeps,
-} from "@/lib/cron/expire-pending";
+import { runExpirePendingCron } from "@/lib/cron/expire-pending";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,7 +22,7 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   const summary = await runExpirePendingCron({
-    prisma: prisma as unknown as ExpirePendingDeps["prisma"],
+    prisma,
     now: new Date(),
   });
 

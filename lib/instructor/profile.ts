@@ -1,4 +1,4 @@
-import type { Locale } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
 import {
   PHOTO_MAX_BYTES,
@@ -8,6 +8,7 @@ import {
   type PhotoUploadMeta,
   type UpdateInstructorProfileInput,
 } from "@/lib/schemas/instructor-profile";
+import type { Db } from "@/lib/db";
 
 /** Dep-injected surface mirroring `@vercel/blob`'s `put` + `del` signatures
  * (only the bits we use). `null` means "Blob is not configured for this
@@ -23,23 +24,27 @@ export type BlobClient = {
   del(url: string): Promise<void>;
 };
 
-type ProfileRow = {
-  id: string;
-  photo: string | null;
-  bio: string | null;
-  specialties: string[];
-  languages: Locale[];
-  active: boolean;
-  acceptsSameDayIfBooked: boolean;
-};
+const PROFILE_SELECT = {
+  id: true,
+  photo: true,
+  bio: true,
+  specialties: true,
+  languages: true,
+  active: true,
+  acceptsSameDayIfBooked: true,
+} satisfies Prisma.InstructorSelect;
+
+type ProfileRow = Prisma.InstructorGetPayload<{
+  select: typeof PROFILE_SELECT;
+}>;
 
 export type UpdateProfileDeps = {
-  prisma: UpdatePrismaSurface;
+  prisma: Db;
   instructorId: string;
 };
 
 export type UploadPhotoDeps = {
-  prisma: PhotoPrismaSurface;
+  prisma: Db;
   /** `null` ⇒ Blob env var missing in this runtime. */
   blob: BlobClient | null;
   instructorId: string;
@@ -69,56 +74,6 @@ export type UploadPhotoResult =
 export type RemovePhotoResult =
   | { ok: true }
   | { ok: false; error: "BLOB_NOT_CONFIGURED" | "NOT_FOUND" };
-
-type UpdatePrismaSurface = {
-  instructor: {
-    update(args: {
-      where: { id: string };
-      data: {
-        bio: string | null;
-        specialties: string[];
-        languages: Locale[];
-        active: boolean;
-        acceptsSameDayIfBooked: boolean;
-      };
-      select: ProfileSelect;
-    }): Promise<ProfileRow>;
-  };
-};
-
-type PhotoPrismaSurface = {
-  instructor: {
-    findUnique(args: {
-      where: { id: string };
-      select: { photo: true };
-    }): Promise<{ photo: string | null } | null>;
-    update(args: {
-      where: { id: string };
-      data: { photo: string | null };
-      select: ProfileSelect;
-    }): Promise<ProfileRow>;
-  };
-};
-
-type ProfileSelect = {
-  id: true;
-  photo: true;
-  bio: true;
-  specialties: true;
-  languages: true;
-  active: true;
-  acceptsSameDayIfBooked: true;
-};
-
-const PROFILE_SELECT: ProfileSelect = {
-  id: true,
-  photo: true,
-  bio: true,
-  specialties: true,
-  languages: true,
-  active: true,
-  acceptsSameDayIfBooked: true,
-};
 
 /** Re-export so callers can size their `<input type="file">` accept attribute
  * + show the limit in the UI without re-defining it. */

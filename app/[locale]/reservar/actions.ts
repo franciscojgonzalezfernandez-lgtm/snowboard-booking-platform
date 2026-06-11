@@ -59,7 +59,7 @@ export async function createBookingDraft(
   const session = await auth.api.getSession({ headers: await headers() });
   const deps: CreateDraftDeps = {
     session: session?.user ? { user: { id: session.user.id } } : null,
-    prisma: prisma as unknown as CreateDraftDeps["prisma"],
+    prisma,
     stripe: getStripe(),
     // F-060 zero-charge path: a fully-credit-covered booking is created
     // CONFIRMED with no PaymentIntent, so no webhook will send the confirmation.

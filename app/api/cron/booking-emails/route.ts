@@ -2,16 +2,10 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 
 import { prisma } from "@/lib/db";
-import { runBookingEmailsCron, type CronDeps } from "@/lib/cron/booking-emails";
+import { runBookingEmailsCron } from "@/lib/cron/booking-emails";
 import { sendEmail } from "@/lib/email/send-email";
-import {
-  sendBookingReminderEmailWith,
-  type SendBookingReminderDeps,
-} from "@/lib/email/send-booking-reminder";
-import {
-  sendPostClassEmailWith,
-  type SendPostClassDeps,
-} from "@/lib/email/send-post-class";
+import { sendBookingReminderEmailWith } from "@/lib/email/send-booking-reminder";
+import { sendPostClassEmailWith } from "@/lib/email/send-post-class";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,15 +26,15 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   const summary = await runBookingEmailsCron({
-    prisma: prisma as unknown as CronDeps["prisma"],
+    prisma,
     sendReminder: sendBookingReminderEmailWith,
     sendPostClass: sendPostClassEmailWith,
     reminderDeps: {
-      prisma: prisma as unknown as SendBookingReminderDeps["prisma"],
+      prisma,
       send: sendEmail,
     },
     postClassDeps: {
-      prisma: prisma as unknown as SendPostClassDeps["prisma"],
+      prisma,
       send: sendEmail,
       googlePlaceId: process.env.GOOGLE_PLACE_ID ?? null,
       tipUrl: process.env.INSTRUCTOR_TIP_URL ?? null,

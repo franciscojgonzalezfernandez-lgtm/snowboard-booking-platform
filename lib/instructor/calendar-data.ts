@@ -6,7 +6,7 @@ import {
   OCCUPYING_BOOKING_STATUSES,
   type AvailabilityBlockRow,
   type BookingInterval,
-  type CalendarDay,
+  type InstructorCalendarDay,
 } from "./availability";
 
 export type GetInstructorCalendarArgs = {
@@ -27,7 +27,7 @@ export async function getInstructorCalendar({
   instructorId,
   from,
   to,
-}: GetInstructorCalendarArgs): Promise<CalendarDay[]> {
+}: GetInstructorCalendarArgs): Promise<InstructorCalendarDay[]> {
   const fromDay = startOfUtcDay(from);
   const toDay = startOfUtcDay(to);
   const toExclusive = addDays(toDay, 1);
@@ -87,7 +87,7 @@ export type GetAllInstructorsCalendarArgs = {
 export async function getAllInstructorsCalendar({
   from,
   to,
-}: GetAllInstructorsCalendarArgs): Promise<CalendarDay[]> {
+}: GetAllInstructorsCalendarArgs): Promise<InstructorCalendarDay[]> {
   const fromDay = startOfUtcDay(from);
   const toDay = startOfUtcDay(to);
   const toExclusive = addDays(toDay, 1);

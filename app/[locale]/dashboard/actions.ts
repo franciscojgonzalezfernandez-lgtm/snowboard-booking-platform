@@ -40,7 +40,7 @@ export async function cancelBookingByUser(
 
   const deps: CancelBookingByUserDeps = {
     session: session?.user ? { user: { id: session.user.id } } : null,
-    prisma: prisma as unknown as CancelBookingByUserDeps["prisma"],
+    prisma,
   };
 
   const result = await cancelBookingByUserWith(deps, { bookingId });

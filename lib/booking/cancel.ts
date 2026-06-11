@@ -6,6 +6,7 @@ import {
 } from "@prisma/client";
 
 import { setUtcTime, startOfUtcDay } from "@/lib/booking-engine/time";
+import type { Db } from "@/lib/db";
 
 /** Free-cancellation cutoff (F-039b). At or beyond this many hours before the
  * lesson start we issue a credit; inside it the lesson fee is forfeited. */
@@ -26,75 +27,12 @@ export type CancelBookingByUserInput = {
   bookingId: string;
 };
 
-type BookingRowForCancel = {
-  id: string;
-  bookerId: string;
-  status: BookingStatus;
-  date: Date;
-  anchorTime: string;
-  duration: Duration;
-  totalPriceCents: number;
-};
-
 export type CancelBookingByUserDeps = {
   /** Pre-resolved session from the framework; null if anonymous. */
   session: { user: { id: string } } | null;
-  prisma: PrismaSurface;
+  prisma: Db;
   /** Reference clock — tests inject a fixed Date, production passes new Date(). */
   now?: Date;
-};
-
-type PrismaSurface = {
-  booking: {
-    findUnique(args: {
-      where: { id: string };
-      select: {
-        id: true;
-        bookerId: true;
-        status: true;
-        date: true;
-        anchorTime: true;
-        duration: true;
-        totalPriceCents: true;
-      };
-    }): Promise<BookingRowForCancel | null>;
-  };
-  $transaction<T>(cb: (tx: TransactionSurface) => Promise<T>): Promise<T>;
-};
-
-type RestoredCreditRow = { id: string; amountCents: number; expiresAt: Date };
-
-type TransactionSurface = {
-  booking: {
-    updateMany(args: {
-      where: { id: string; status: { in: readonly BookingStatus[] } };
-      data: { status: BookingStatus; cancelledByUserAt: Date };
-    }): Promise<{ count: number }>;
-  };
-  accountCredit: {
-    findMany(args: {
-      where: { usedOnBookingId: string; status: CreditStatus };
-      select: { id: true; amountCents: true; expiresAt: true };
-    }): Promise<RestoredCreditRow[]>;
-    updateMany(args: {
-      where:
-        | { id: { in: string[] }; status: CreditStatus }
-        | { lockedByBookingId: string; status: CreditStatus };
-      data:
-        | { status: CreditStatus; usedAt: null; usedOnBookingId: null }
-        | { status: CreditStatus; lockedByBookingId: null };
-    }): Promise<{ count: number }>;
-    create(args: {
-      data: {
-        userId: string;
-        amountCents: number;
-        sourceBookingId: string;
-        reason: CreditReason;
-        status: CreditStatus;
-        expiresAt: Date;
-      };
-    }): Promise<{ id: string }>;
-  };
 };
 
 export type CancelBookingByUserResult =
@@ -199,7 +137,7 @@ export async function cancelBookingByUserWith(
     try {
       restore = await prisma.$transaction(async (tx) => {
         const flipped = await tx.booking.updateMany({
-          where: { id: booking.id, status: { in: CANCELABLE_STATUSES } },
+          where: { id: booking.id, status: { in: [...CANCELABLE_STATUSES] } },
           data: {
             status: BookingStatus.CANCELLED_BY_USER,
             cancelledByUserAt: now,
@@ -288,7 +226,7 @@ export async function cancelBookingByUserWith(
   // LOCKED by an unpaid draft were never spent, so release them back to ACTIVE.
   const flippedCount = await prisma.$transaction(async (tx) => {
     const flipped = await tx.booking.updateMany({
-      where: { id: booking.id, status: { in: CANCELABLE_STATUSES } },
+      where: { id: booking.id, status: { in: [...CANCELABLE_STATUSES] } },
       data: {
         status: BookingStatus.CANCELLED_BY_USER,
         cancelledByUserAt: now,

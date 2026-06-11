@@ -5,13 +5,12 @@ import { BookingStatus } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { STATUS_LABEL } from "@/lib/admin/format";
+import type { InstructorOption } from "../../_components/instructor-selector";
 
 // Server-rendered <form method="get"> — no JS island. Filtering submits the
 // form, which lets the page re-parse searchParams and render the new view.
 // A hidden `page=1` resets pagination whenever filters change so users don't
 // land on an out-of-range page after narrowing.
-
-type InstructorOption = { id: string; name: string };
 
 type Props = {
   instructors: InstructorOption[];

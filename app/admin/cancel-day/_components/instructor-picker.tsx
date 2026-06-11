@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-type InstructorOption = { id: string; name: string };
+import type { InstructorOption } from "../../_components/instructor-selector";
 
 type Props = {
   instructors: InstructorOption[];
