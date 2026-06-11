@@ -52,3 +52,50 @@ export function toIsoDate(date: Date): string {
   const d = String(date.getUTCDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
 }
+
+/** The single timezone all booking wall-clocks are expressed in (Swiss school). */
+export const BOOKING_TIME_ZONE = "Europe/Zurich";
+
+/** Offset in ms of `timeZone` at the given absolute instant (local − UTC). */
+function tzOffsetMs(timeZone: string, at: Date): number {
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+  const parts: Record<string, string> = {};
+  for (const part of dtf.formatToParts(at)) parts[part.type] = part.value;
+  const asUtc = Date.UTC(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour),
+    Number(parts.minute),
+    Number(parts.second),
+  );
+  return asUtc - at.getTime();
+}
+
+/**
+ * Convert a naive Europe/Zurich wall-clock — the kind {@link setUtcTime} stamps
+ * into a Date's UTC accessors (e.g. `12:00:00Z` *meaning* 12:00 Zurich) — into
+ * the true UTC instant. DST-aware: subtracts the zone's offset at that wall
+ * time (two-pass to settle the offset across a DST boundary).
+ *
+ * Use ONLY at boundaries that emit an absolute time to an external calendar
+ * (the .ics `DTSTART`). Without it, 12:00 Zurich was written as 12:00 UTC and
+ * rendered an hour late (13:00 in winter) in every mail-client calendar.
+ */
+export function zurichWallClockToUtc(wallClockAsUtc: Date): Date {
+  const naiveMs = wallClockAsUtc.getTime();
+  const off1 = tzOffsetMs(BOOKING_TIME_ZONE, new Date(naiveMs));
+  let utcMs = naiveMs - off1;
+  const off2 = tzOffsetMs(BOOKING_TIME_ZONE, new Date(utcMs));
+  if (off2 !== off1) utcMs = naiveMs - off2;
+  return new Date(utcMs);
+}

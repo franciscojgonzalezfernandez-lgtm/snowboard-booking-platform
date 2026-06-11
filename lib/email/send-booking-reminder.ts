@@ -3,7 +3,7 @@ import type { CreateEmailOptions } from "resend";
 import type { Duration, Locale } from "@prisma/client";
 
 import { durationMinutes } from "@/lib/booking-engine/duration";
-import { setUtcTime } from "@/lib/booking-engine/time";
+import { setUtcTime, zurichWallClockToUtc } from "@/lib/booking-engine/time";
 import { buildBookingIcs } from "@/lib/ics/build-event";
 import { sendEmail, type EmailClient } from "./send-email";
 import {
@@ -144,7 +144,10 @@ export async function sendBookingReminderEmailWith(
   const icsContent = buildBookingIcs({
     uid: booking.icsUid,
     title: `Snowboard lesson · ${instructorName}`,
-    startUtc,
+    // anchorTime is a naive Europe/Zurich wall-clock; convert to the true UTC
+    // instant so the .ics DTSTART renders at 12:00 Zurich, not 12:00 UTC. The
+    // email body keeps the naive `startUtc` (formatted in UTC) for its label.
+    startUtc: zurichWallClockToUtc(startUtc),
     durationMinutes: minutes,
     location: deps.location ?? LOCATION,
     description: `Ride Flumserberg booking. ${copy.summaryTitle}: ${dateLabel} ${timeLabel}.`,

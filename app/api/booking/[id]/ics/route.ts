@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { durationMinutes } from "@/lib/booking-engine/duration";
-import { setUtcTime } from "@/lib/booking-engine/time";
+import { setUtcTime, zurichWallClockToUtc } from "@/lib/booking-engine/time";
 import { buildBookingIcs } from "@/lib/ics/build-event";
 
 export const runtime = "nodejs";
@@ -53,7 +53,9 @@ export async function GET(_request: Request, { params }: RouteParams) {
   const ics = buildBookingIcs({
     uid: booking.icsUid,
     title: `Snowboard lesson · ${instructorName}`,
-    startUtc,
+    // anchorTime is a naive Europe/Zurich wall-clock; emit the true UTC instant
+    // so the .ics DTSTART renders at 12:00 Zurich, not 12:00 UTC.
+    startUtc: zurichWallClockToUtc(startUtc),
     durationMinutes: durationMinutes(booking.duration),
     location: LOCATION,
     description: `Ride Flumserberg booking ${booking.id}.`,
