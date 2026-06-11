@@ -229,7 +229,7 @@
 
 ### F-017 — Resend account + verificación de dominio DNS
 
-- Sprint: 1.5 · Estado: review · Prioridad: P0
+- Sprint: 1.5 · Estado: done · Prioridad: P0
 - Depende de: F-015
 - AC:
   - [x] Cuenta Resend creada
@@ -267,11 +267,11 @@
 
 ### F-019 — Secrets de Stripe + Resend + Google en Vercel
 
-- Sprint: 1.5 · Estado: backlog · Prioridad: P0
+- Sprint: 1.5 · Estado: done · Prioridad: P0
 - Depende de: F-016, F-017, F-018
 - AC:
-  - [ ] Todas las env vars sensibles en Vercel env (no commits)
-  - [ ] `.env.example` documenta nombres (sin valores)
+  - [x] Todas las env vars sensibles en Vercel env (no commits) — verificado operacionalmente: prod corre Stripe (Sprint 2), Resend (confirmaciones/reminders) y Google OAuth + GCal sync (Sprint 4), imposible sin los secrets en Vercel env.
+  - [x] `.env.example` documenta nombres (sin valores) — 26 vars documentadas (`RESEND_API_KEY`, `STRIPE_*` ×3, `GOOGLE_*` ×3, `DATABASE_URL`/`DIRECT_URL`, `BETTER_AUTH_*`, `BLOB_*`, `SENTRY_*`, `CRON_SECRET`, `ENCRYPTION_KEY`, etc.).
 - Tests: N/A (smoke en F-018).
 
 ---
@@ -391,7 +391,7 @@
 
 ### F-027 — UI Step 3 (anchor time + instructor + idioma de la clase)
 
-- Sprint: 1 · Estado: review · Prioridad: P0
+- Sprint: 1 · Estado: done · Prioridad: P0
 - Depende de: F-024, F-026
 - AC:
   - [x] Lista de anchor times con disponibilidad real (`app/[locale]/reservar/step-3/page.tsx` SSR + `step3-selection.tsx` cliente). Cada anchor renderiza disable cuando `available=false`.
@@ -408,7 +408,7 @@
 
 ### F-036 — Multi-instructor seed + buffer-minutes = 0
 
-- Sprint: 1 · Estado: review · Prioridad: P0
+- Sprint: 1 · Estado: done · Prioridad: P0
 - Depende de: F-021, F-022, F-027
 - AC:
   - [x] Engine: `BUFFER_MINUTES` baja de `10` a `0` para liberar slots back-to-back. Gestión del gap real queda en manos del instructor en MVP; cuando crezca la operativa volveremos a parametrizarlo (ver `Notas`). Doc-comment de `collidesWithBooking` actualizado, specs `availability.test.ts` actualizadas para reflejar la nueva semántica (back-to-back permitido, antes rechazado).
@@ -431,7 +431,7 @@
 
 ### F-037 — Auto-migrate + reseed Neon dev / main on schema PRs
 
-- Sprint: 1 · Estado: review · Prioridad: P0
+- Sprint: 1 · Estado: done · Prioridad: P0
 - Depende de: F-020, F-021, F-036
 - AC:
   - [x] `.github/workflows/db-migrate.yml` triggers on `pull_request` + `push` to `main` filtered by paths `prisma/schema.prisma`, `prisma/migrations/**`, `prisma/seed.ts`. Adds a `workflow_dispatch` for manual runs targeting either Neon branch.
@@ -449,7 +449,7 @@
 
 ### F-038 — Hourly anchor times (09:00 → 15:00) + operating hours 08:00 → 17:00
 
-- Sprint: 1 · Estado: review · Prioridad: P0
+- Sprint: 1 · Estado: done · Prioridad: P0
 - Depende de: F-021, F-024, F-027, F-036
 - Motivación (CRO): la baseline de 4 anchors cada 2h (`09/11/13/15`) quemaba slots adyacentes. Un booking `ONE_HOUR` @ 09:00 termina a 10:00 pero el siguiente anchor disponible era 11:00 — la hora 10:00 quedaba inalcanzable como punto de inicio aunque el instructor estuviera libre. Resultado: reservas perdidas a partir de la segunda hora de cada bloque. Con `BUFFER_MINUTES=0` tras F-036 podemos exponer anchors horarios sin retocar el engine. Operating hours pasan a `08:00 → 17:00` para reflejar el horario real de la estación de Flumserberg (apertura a las 08:00) — los anchors siguen empezando a las 09:00 porque es la primera hora de clase razonable; las 08:00–09:00 quedan como margen operacional del instructor.
 - AC:
