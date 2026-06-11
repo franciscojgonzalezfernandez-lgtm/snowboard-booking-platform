@@ -1593,18 +1593,21 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel). La c
 
 ##### F-079 — "Cancel day" batch modal + impact preview
 
-- Sprint: 4 · Estado: backlog · Prioridad: P1
+- Sprint: 4 · Estado: done · Prioridad: P1
 - Depende de: F-078
 - Motivación: cierre operativo (clima/avalancha) afecta TODAS las clases de un día. Cancelar una a una es lento y propenso a error. Batch con preview del impacto antes de ejecutar.
 - AC:
-  - [ ] Modal/page (selector de fecha + instructor opcional) → preview: lista de bookings afectadas, total cash refund, total credit re-emit, nº attendees.
-  - [ ] Confirmar → ejecuta `cancelBookingByOps` por cada booking (el refund Stripe es por-PI, no cabe en un solo `$transaction` DB). Reporta resultado por booking (success/fail), sin abortar el resto ante fallo parcial.
-  - [ ] Rol admin. Idempotente (re-run salta las ya canceladas).
+  - [x] Página dedicada `/admin/cancel-day` (selector de fecha + selector de instructor `all | <id>`) → preview server-side: lista de bookings afectadas (anchor time, booker, instructor, status, attendees) + totales (bookings, attendees, cash refund proyectado, credit re-emit proyectado). Bookmarkable vía `?date=YYYY-MM-DD&instructor=<id|all>`.
+  - [x] Confirmar → `cancelDayByOps` loopea `cancelBookingByOps` por cada booking (sin `$transaction` envolvente — Stripe refunds son side-effects externos por-PI). Resultados per-booking en `results[]` con `succeeded` / `failed` / `alreadyCancelled` agregados; partial-fail no aborta el resto. Sentry breadcrumb `warning` cuando `totals.failed > 0` para visibilidad.
+  - [x] Rol admin (`requireAdmin` en el wrapper de `app/admin/actions.ts`). Idempotente vía la idempotency F-078 (Stripe `ops-refund-${bookingId}` + status guard) — re-ejecutar el batch contabiliza ya-canceladas como `already_cancelled` sin tocar Stripe ni DB.
 - Tests:
-  - Vitest: preview agrega correctamente; batch ejecuta N cancels, reporta fallos parciales.
-  - Playwright: cancel day con 2 bookings seed → preview muestra 2 → confirma → ambas `CANCELLED_BY_OPS`.
+  - [x] Vitest `lib/booking/cancel-day.test.ts` (13 specs): preview agrega cash/credit/attendees (mixto, PENDING_PAYMENT contribuye cero, CONFIRMED sin paidAt no refunda), date inválida → `INVALID_INPUT`, instructor filter; batch loopea N cancels (success/already/forbidden/uncaught), summary suma per-bucket, empty-day short-circuit. Suite global 376/376.
+  - [x] Playwright `e2e/f-079-cancel-day.spec.ts`: seed 2 bookings credit-paid mismo día → preview muestra `bookings=2` + ambos rows → confirm → ambos `CANCELLED_BY_OPS` + 2 OPS_CANCEL credits ACTIVE; preview re-fetched muestra `0` + empty-state.
 - Notas:
-  - Fallos parciales tolerados — el owner reintenta los que fallaron (idempotente).
+  - **Cash-refund Stripe path** se cubre en el Vitest (mock `stripeRefund`); Playwright drivea el credit path para no requerir live Stripe en el smoke suite — mismo patrón F-078.
+  - Reusa el wrapper público `cancelBookingByOps`: cada booking dispara su email + revalidaciones de availability; el batch sólo añade `revalidatePath('/admin/cancel-day' | '/admin' | '/admin/bookings')`.
+  - Loop secuencial por simplicidad (un día de ~10 bookings no necesita concurrencia bounded; Stripe rate-limits + per-booking idempotency keys lo harían seguro de paralelizar más adelante).
+  - Nav admin: link "Cancel day" añadido en `app/admin/layout.tsx` después de "Instructors".
 
 ##### F-080 — Pricing editor (Season.priceCentsByDuration)
 

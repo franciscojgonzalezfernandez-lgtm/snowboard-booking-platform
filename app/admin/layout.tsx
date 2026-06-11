@@ -44,6 +44,13 @@ export default async function AdminLayout({
             >
               Instructors
             </Link>
+            <Link
+              href="/admin/cancel-day"
+              data-testid="admin-nav-cancel-day"
+              className="text-xs font-bold uppercase tracking-[0.18em] underline-offset-4 hover:underline"
+            >
+              Cancel day
+            </Link>
           </nav>
         </div>
         <form action={signOutAction}>

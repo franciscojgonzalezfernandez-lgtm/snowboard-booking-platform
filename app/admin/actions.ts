@@ -12,6 +12,14 @@ import {
   type CancelBookingByOpsResult,
   type StripeRefundFn,
 } from "@/lib/booking/cancel-by-ops";
+import {
+  cancelDayByOpsWith,
+  previewCancelDayWith,
+  type CancelDayBatchResult,
+  type CancelDayDeps,
+  type CancelDayPreview,
+  type CancelOneFn,
+} from "@/lib/booking/cancel-day";
 import { addDays, startOfUtcDay } from "@/lib/booking-engine/time";
 import { buildCalendarSyncDeps, deleteEventWith } from "@/lib/calendar/sync";
 import { prisma } from "@/lib/db";
@@ -350,4 +358,76 @@ export async function cancelBookingByOps(input: {
     cashRefundedCents: result.cashRefundedCents,
     creditReEmittedCents: result.creditReEmittedCents,
   };
+}
+
+// --- F-079: ops-cancel-day (batch) ----------------------------------------
+// Read-only preview + batch wrapper around `cancelBookingByOps`. The batch
+// is sequential and tolerates per-booking failures (no `$transaction` —
+// Stripe refunds are per-PI external side-effects). Each underlying call is
+// idempotent (F-078), so the owner can re-run safely.
+
+function cancelDayDeps(): CancelDayDeps {
+  return {
+    prisma: prisma as unknown as CancelDayDeps["prisma"],
+  };
+}
+
+export type PreviewCancelDayActionResult =
+  | { ok: true; preview: CancelDayPreview }
+  | { ok: false; error: "INVALID_INPUT" };
+
+export async function previewCancelDay(input: {
+  date: string;
+  instructorId?: string;
+}): Promise<PreviewCancelDayActionResult> {
+  await requireAdmin();
+  return previewCancelDayWith(cancelDayDeps(), input);
+}
+
+export async function cancelDayByOps(input: {
+  date: string;
+  instructorId?: string;
+  reason?: string;
+}): Promise<CancelDayBatchResult> {
+  await requireAdmin();
+
+  // Each booking goes through the full F-078 action: Stripe refund + DB flip
+  // + booker email + per-booking revalidation. The batch only sequences the
+  // calls — no shared transaction.
+  const cancelOne: CancelOneFn = async ({ bookingId, reason }) =>
+    cancelBookingByOps({ bookingId, reason });
+
+  let result: CancelDayBatchResult;
+  try {
+    result = await cancelDayByOpsWith(cancelDayDeps(), input, cancelOne);
+  } catch (err) {
+    Sentry.captureException(err, {
+      tags: { source: "cancel-day-by-ops" },
+      extra: { date: input.date, instructorId: input.instructorId ?? null },
+    });
+    throw err;
+  }
+
+  if (result.ok && result.totals.failed > 0) {
+    // Surface partial failures so they're visible without scraping per-row
+    // results from the response. The batch still resolves ok=true so the UI
+    // shows the per-booking breakdown.
+    Sentry.captureMessage("cancel-day partial failure", {
+      level: "warning",
+      tags: { source: "cancel-day-by-ops" },
+      extra: {
+        date: input.date,
+        instructorId: input.instructorId ?? null,
+        totals: result.totals,
+      },
+    });
+  }
+
+  // Each per-booking action already revalidated its own surfaces. Refresh
+  // the cancel-day page so the preview reflects the now-cancelled bookings.
+  revalidatePath("/admin/cancel-day");
+  revalidatePath("/admin");
+  revalidatePath("/admin/bookings");
+
+  return result;
 }
