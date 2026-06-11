@@ -43,6 +43,15 @@ export type CreateDraftDeps = {
    * the caller.
    */
   dispatchBookingConfirmedEmail?: (bookingId: string) => Promise<void>;
+  /**
+   * F-075 zero-charge path: mirror the freshly-CONFIRMED booking into the
+   * instructor's Google Calendar. A fully-credit-covered booking has no
+   * PaymentIntent, so the Stripe webhook — which carries the calendar sync on
+   * the paid path — never fires; do it here instead, exactly like the email
+   * above. Defaults to a no-op; the real wrapper injects the calendar insert.
+   * Best-effort: failures are swallowed (booking is already CONFIRMED).
+   */
+  syncCalendarOnConfirm?: (bookingId: string) => Promise<void>;
 };
 
 /** A credit row as loaded for redemption selection. `reason` + `sourceBookingId`
@@ -595,6 +604,17 @@ export async function createBookingDraftWith(
         await deps.dispatchBookingConfirmedEmail(booking.id);
       } catch {
         // booking is CONFIRMED; the email is reissuable from the admin panel.
+      }
+    }
+    // F-075: mirror the confirmed booking into the instructor's Google Calendar.
+    // Same best-effort contract as the email — a Google failure never fails the
+    // booking; the event is reconcilable later. The paid path does this from the
+    // Stripe webhook, which never fires for a zero-charge booking.
+    if (deps.syncCalendarOnConfirm) {
+      try {
+        await deps.syncCalendarOnConfirm(booking.id);
+      } catch {
+        // booking is CONFIRMED; the calendar event is reconcilable later.
       }
     }
     return {
