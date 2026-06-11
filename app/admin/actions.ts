@@ -13,6 +13,7 @@ import {
   type StripeRefundFn,
 } from "@/lib/booking/cancel-by-ops";
 import { addDays, startOfUtcDay } from "@/lib/booking-engine/time";
+import { buildCalendarSyncDeps, deleteEventWith } from "@/lib/calendar/sync";
 import { prisma } from "@/lib/db";
 import {
   createInstructorWith,
@@ -305,6 +306,19 @@ export async function cancelBookingByOps(input: {
         extra: { bookingId: input.bookingId, outcome: result.outcome },
       });
     }
+
+    // F-075: remove the booking from the instructor's Google Calendar
+    // (best-effort). No-ops without a synced event; swallows its own errors so
+    // a Google failure never fails the ops-cancel already committed in the DB.
+    await deleteEventWith(
+      buildCalendarSyncDeps(prisma, (err, ctx) => {
+        Sentry.captureException(err, {
+          tags: { source: "cancel-booking-by-ops" },
+          extra: { bookingId: input.bookingId, ...ctx },
+        });
+      }),
+      input.bookingId,
+    );
 
     // Slot is free again — bust the availability cache so other sessions
     // see it immediately. Mirrors the user-cancel revalidation surface.

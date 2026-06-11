@@ -7,6 +7,7 @@ import { AVAILABILITY_TAGS } from "@/lib/booking-engine/cache";
 import { getStripe } from "@/lib/stripe/server";
 import { handleStripeWebhook } from "@/lib/stripe/handle-webhook";
 import { sendBookingConfirmedEmail } from "@/lib/email/send-booking-confirmed";
+import { buildCalendarSyncDeps, insertEventWith } from "@/lib/calendar/sync";
 import { prisma } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -27,6 +28,16 @@ export async function POST(request: Request) {
     },
     dispatchBookingConfirmedEmail: async (bookingId) => {
       await sendBookingConfirmedEmail({ bookingId });
+    },
+    syncCalendarOnConfirm: async (bookingId) => {
+      // F-075: best-effort Google Calendar insert. The helper swallows its own
+      // errors into onError; the handler's try/catch is belt-and-suspenders.
+      await insertEventWith(
+        buildCalendarSyncDeps(prisma, (err, ctx) => {
+          Sentry.captureException(err, { tags: { source: "stripe-webhook" }, extra: ctx });
+        }),
+        bookingId,
+      );
     },
   });
 

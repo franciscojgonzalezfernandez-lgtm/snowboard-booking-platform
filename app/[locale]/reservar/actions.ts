@@ -14,6 +14,7 @@ import {
 import { prisma } from "@/lib/db";
 import { getStripe } from "@/lib/stripe/server";
 import { sendBookingConfirmedEmail } from "@/lib/email/send-booking-confirmed";
+import { buildCalendarSyncDeps, insertEventWith } from "@/lib/calendar/sync";
 import type {
   CreateBookingDraftInput,
   CreateBookingDraftResult,
@@ -72,6 +73,20 @@ export async function createBookingDraft(
           extra: { bookingId },
         });
       }
+    },
+    // F-075 zero-charge path: same calendar insert the Stripe webhook runs on
+    // the paid path. `insertEventWith` swallows its own failures into onError
+    // (best-effort), so this never fails the booking.
+    syncCalendarOnConfirm: async (bookingId: string) => {
+      await insertEventWith(
+        buildCalendarSyncDeps(prisma, (err, ctx) => {
+          Sentry.captureException(err, {
+            tags: { source: "create-draft-zero-charge-gcal" },
+            extra: ctx,
+          });
+        }),
+        bookingId,
+      );
     },
   };
   const result = await createBookingDraftWith(deps, prisma, input);

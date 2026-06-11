@@ -118,6 +118,7 @@ function makeDeps(overrides?: {
   }> = [];
   const creditCreates: Array<Record<string, unknown>> = [];
   const dispatched: string[] = [];
+  const synced: string[] = [];
 
   const bookingCreate = vi.fn(async (args: { data: unknown }) => {
     const id = `book_${created.length + 1}`;
@@ -247,6 +248,9 @@ function makeDeps(overrides?: {
     dispatchBookingConfirmedEmail: async (bookingId: string) => {
       dispatched.push(bookingId);
     },
+    syncCalendarOnConfirm: async (bookingId: string) => {
+      synced.push(bookingId);
+    },
   };
 
   return {
@@ -261,6 +265,7 @@ function makeDeps(overrides?: {
     creditWrites,
     creditCreates,
     dispatched,
+    synced,
     spies: {
       bookingCreate,
       attendeeCreateMany,
@@ -622,11 +627,18 @@ describe("createBookingDraftWith — F-060 credit redemption", () => {
     expect((creditWrites[0]!.where as { id: { in: string[] } }).id.in).toEqual(["cr1"]);
   });
 
-  test("happy full (zero-charge): credits fully cover the lesson → CONFIRMED, no PaymentIntent, email dispatched", async () => {
-    const { deps, enginePrisma, spies, created, creditWrites, dispatched } =
-      makeDeps({
-        credits: [{ id: "cr1", amountCents: 11000, expiresAt: C_LATE }],
-      });
+  test("happy full (zero-charge): credits fully cover the lesson → CONFIRMED, no PaymentIntent, email dispatched + calendar synced", async () => {
+    const {
+      deps,
+      enginePrisma,
+      spies,
+      created,
+      creditWrites,
+      dispatched,
+      synced,
+    } = makeDeps({
+      credits: [{ id: "cr1", amountCents: 11000, expiresAt: C_LATE }],
+    });
 
     const result = await createBookingDraftWith(deps, enginePrisma, {
       ...VALID_INPUT,
@@ -651,6 +663,31 @@ describe("createBookingDraftWith — F-060 credit redemption", () => {
       usedOnBookingId: created[0]!.id,
     });
     expect(dispatched).toEqual([created[0]!.id]);
+    // F-075: no webhook fires on the zero-charge path, so the Google Calendar
+    // insert must run from here (regression guard for the missing-event bug).
+    expect(synced).toEqual([created[0]!.id]);
+  });
+
+  test("zero-charge calendar sync is best-effort: an insert failure never fails the booking", async () => {
+    const { deps, enginePrisma, created } = makeDeps({
+      credits: [{ id: "cr1", amountCents: 11000, expiresAt: C_LATE }],
+    });
+    // The real wrapper's insertEventWith swallows its own errors, but the action
+    // guards with try/catch too — a throwing dep must not break confirmation.
+    deps.syncCalendarOnConfirm = async () => {
+      throw new Error("google down");
+    };
+
+    const result = await createBookingDraftWith(deps, enginePrisma, {
+      ...VALID_INPUT,
+      creditIds: ["cr1"],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.chargeAmountCents).toBe(0);
+    const createData = created[0]!.data as { status: string };
+    expect(createData.status).toBe("CONFIRMED");
   });
 
   test("oldest-first cap: only the earliest-expiring credits up to coverage are consumed", async () => {

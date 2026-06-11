@@ -117,7 +117,10 @@ describe("sendBookingConfirmedEmailWith", () => {
     expect(att.contentType).toContain("text/calendar");
     const decoded = Buffer.from(att.content, "base64").toString("utf8");
     expect(decoded).toContain("UID:booking-fixed-uuid@rideflumserberg.ch");
-    expect(decoded).toContain("DTSTART:20261205T110000Z");
+    // anchorTime "11:00" is Europe/Zurich; 2026-12-05 is winter (CET, UTC+1), so
+    // the absolute DTSTART is 10:00Z. Asserting 11:00Z here would re-introduce
+    // the +1h offset bug (the event displaying an hour late in mail clients).
+    expect(decoded).toContain("DTSTART:20261205T100000Z");
   });
 
   test("is idempotent — second invocation returns ALREADY_SENT and does not call Resend", async () => {

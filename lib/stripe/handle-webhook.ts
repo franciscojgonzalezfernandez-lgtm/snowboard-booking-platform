@@ -42,6 +42,13 @@ export type HandleWebhookOptions = {
    * status (the row is already CONFIRMED; admin can resend manually).
    */
   dispatchBookingConfirmedEmail?: DispatchBookingConfirmedEmail;
+  /**
+   * F-075: push the freshly-CONFIRMED booking into the instructor's Google
+   * Calendar (best-effort). Defaults to a no-op so the webhook works without a
+   * connected calendar. Failures are logged via `onError` and never roll back
+   * the booking — the event is reconcilable later.
+   */
+  syncCalendarOnConfirm?: (bookingId: string) => Promise<void>;
 };
 
 /**
@@ -229,6 +236,16 @@ async function onPaymentIntentSucceeded(
     // Do NOT rethrow: the row is CONFIRMED, the email is reissuable from the
     // admin panel (Sprint 4). Failing the webhook would make Stripe retry and
     // double-dispatch on the next delivery.
+  }
+
+  // F-075: mirror the confirmed booking into the instructor's Google Calendar.
+  // Best-effort, same contract as the email: a Google failure never fails the
+  // webhook (the row is CONFIRMED; the event is reconcilable). The sync helper
+  // itself is idempotent on Stripe retries via the persisted googleEventId.
+  try {
+    await opts.syncCalendarOnConfirm?.(booking.id);
+  } catch (err) {
+    opts.onError?.(err, { stage: "gcal_insert", bookingId: booking.id });
   }
 }
 

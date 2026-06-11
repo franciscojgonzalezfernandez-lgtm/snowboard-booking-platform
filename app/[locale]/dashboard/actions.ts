@@ -7,6 +7,7 @@ import * as Sentry from "@sentry/nextjs";
 import { auth } from "@/lib/auth";
 import { cancelBookingByUserWith, type CancelBookingByUserDeps } from "@/lib/booking/cancel";
 import { AVAILABILITY_TAGS } from "@/lib/booking-engine/cache";
+import { buildCalendarSyncDeps, deleteEventWith } from "@/lib/calendar/sync";
 import { prisma } from "@/lib/db";
 import { sendCancellationEmails } from "@/lib/email/send-cancellation";
 import { userPhoneSchema } from "@/lib/schemas/user-phone";
@@ -69,6 +70,20 @@ export async function cancelBookingByUser(
       extra: { bookingId, outcome: result.outcome },
     });
   }
+
+  // F-075: remove the booking from the instructor's Google Calendar
+  // (best-effort). The helper no-ops when there's no synced event and swallows
+  // its own errors into onError — a Google failure never fails the cancel the
+  // booker already confirmed.
+  await deleteEventWith(
+    buildCalendarSyncDeps(prisma, (err, ctx) => {
+      Sentry.captureException(err, {
+        tags: { source: "cancel-booking-by-user" },
+        extra: { bookingId, ...ctx },
+      });
+    }),
+    bookingId,
+  );
 
   // The slot is free again (the engine already excludes CANCELLED_BY_*); bust
   // the availability cache so other sessions see it immediately.

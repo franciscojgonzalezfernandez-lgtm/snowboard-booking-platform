@@ -8,6 +8,7 @@ import {
   setUtcTime,
   startOfUtcDay,
   toIsoDate,
+  zurichWallClockToUtc,
 } from "./time";
 
 describe("time helpers", () => {
@@ -72,6 +73,24 @@ describe("time helpers", () => {
 
     it("toIsoDate produces yyyy-mm-dd", () => {
       expect(toIsoDate(new Date("2026-01-05T12:34:56.000Z"))).toBe("2026-01-05");
+    });
+  });
+
+  describe("zurichWallClockToUtc", () => {
+    it("subtracts the +1h CET offset in winter (DST off)", () => {
+      // 2026-11-30 12:00 Europe/Zurich = 11:00 UTC.
+      const wall = setUtcTime(new Date("2026-11-30T00:00:00.000Z"), "12:00");
+      expect(zurichWallClockToUtc(wall).toISOString()).toBe(
+        "2026-11-30T11:00:00.000Z",
+      );
+    });
+
+    it("subtracts the +2h CEST offset in summer (DST on)", () => {
+      // 2026-07-15 12:00 Europe/Zurich = 10:00 UTC.
+      const wall = setUtcTime(new Date("2026-07-15T00:00:00.000Z"), "12:00");
+      expect(zurichWallClockToUtc(wall).toISOString()).toBe(
+        "2026-07-15T10:00:00.000Z",
+      );
     });
   });
 });
