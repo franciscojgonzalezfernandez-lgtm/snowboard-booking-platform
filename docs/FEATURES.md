@@ -1395,7 +1395,7 @@ Critical path: **F-057 + F-067 (paired PR) → F-058 + F-063 → F-059 → F-060
 
 ### Sprint 4 — Vista instructor + Admin (semanas 7-8)
 
-> Sprint más grande del MVP: self-service del instructor + panel ops/admin. `/instructor` y `/admin` viven **fuera de `[locale]`** (EN-only, ver Routing conventions). 3 tickets **blocked-in-progress** (⛔ F-074 / F-075 GCal, F-082 Tip) dependen de setup externo del owner (env + OAuth consent + TWINT) — AC escrito, no mergeable hasta provisionar el blocker. Buildable-now core (10): F-071, F-072, F-073, F-065, F-076, F-077, F-078, F-079, F-080, F-081. Si desborda 2 semanas, split en **4a** (instructor + admin core) / **4b** (GCal + Tip al desbloquearse).
+> Sprint más grande del MVP: self-service del instructor + panel ops/admin. `/instructor` y `/admin` viven **fuera de `[locale]`** (EN-only, ver Routing conventions). GCal (F-074 OAuth + F-075 sync) **landed** tras provisionar el owner `ENCRYPTION_KEY` + consent screen (2026-06-05). 1 ticket sigue **blocked-in-progress** (⛔ F-082 Tip) — depende de setup externo del owner (`INSTRUCTOR_TIP_URL` / TWINT), AC escrito, no mergeable hasta provisionar el blocker. Buildable-now core (10): F-071, F-072, F-073, F-065, F-076, F-077, F-078, F-079, F-080, F-081. Si desborda 2 semanas, split en **4a** (instructor + admin core) / **4b** (GCal + Tip al desbloquearse).
 >
 > **D-TIP resuelto (desglose 2026-05-29):** instructor recibe el **100%** de las propinas en MVP (sin split escuela). Revisable cuando entre un segundo coach.
 
@@ -1411,7 +1411,7 @@ Admin:       F-076 ─┬─ F-077 (bookings view) ── F-078 (ops-cancel) ─
 Tip:         F-082 ⛔ (paralelo, blocked tail)
 ```
 
-Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel). La cadena instructor **F-071 → F-073 → F-074 → F-075** corre en paralelo (GCal tail ya landed). ⛔ = blocked-in-progress.
+Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — **done**. La cadena instructor **F-071 → F-073 → F-074 → F-075** (GCal tail) — **done**. ⛔ = blocked-in-progress (solo F-082).
 
 #### Tickets
 
@@ -1479,7 +1479,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel). La c
 - Notas:
   - Primer uso de Vercel Blob en el proyecto. El runtime-gating en `BLOB_READ_WRITE_TOKEN` permite shipar F-073 hoy: el profile edit funciona inmediatamente; el upload "se enciende" cuando el owner conecta un Blob store en Vercel (Dashboard → Storage → Create → Blob → Connect to project → token auto-inyectado → redeploy). Sin Blob, el upload UI muestra notice claro.
   - **`focusFirstError` helper extraído** en `lib/forms/focus-first-error.ts` y aplicado al `<ProfileForm>` (3ª aparición del patrón tras PR #100 + F-072). Las refactors de las 2 formularios previos viven en sus PRs originales; este PR solo aporta el helper + la 3ª uso. Si llega un 4º form, ya hay helper.
-  - F-074 / F-075 (Google Calendar OAuth + sync) siguen siendo el siguiente tail del instructor pipeline; ⛔ blocked-in-progress en OAuth consent screen del owner.
+  - F-074 / F-075 (Google Calendar OAuth + sync) cierran el tail del instructor pipeline — **done** (owner provisionó `ENCRYPTION_KEY` + consent screen 2026-06-05; PR #113).
 
 ##### F-074 — Google Calendar OAuth connect + token encryption (ADR-007)
 
