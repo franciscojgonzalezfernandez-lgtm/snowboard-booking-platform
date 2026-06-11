@@ -5,7 +5,7 @@ import {
   type CalendarActions,
   type CalendarMode,
 } from "@/components/calendar/month-calendar";
-import type { CalendarDay } from "@/lib/instructor/availability";
+import type { InstructorCalendarDay } from "@/lib/instructor/availability";
 
 import {
   adminBlockAvailabilityWindow,
@@ -18,7 +18,7 @@ import {
 export const ALL_INSTRUCTORS = "all";
 
 type Props = {
-  days: CalendarDay[];
+  days: InstructorCalendarDay[];
   monthIso: string;
   todayIso: string;
   /** A specific instructor id, or {@link ALL_INSTRUCTORS} for every active one. */

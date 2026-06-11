@@ -80,19 +80,25 @@ function makeDeps(opts: {
   const deps: ResumePaymentDeps = {
     prisma: {
       booking: {
-        findUnique: (async ({ where }) => {
+        findUnique: async ({ where }: { where: { id: string } }) => {
           if (!bookingRef || bookingRef.id !== where.id) return null;
           return { ...bookingRef };
-        }) as ResumePaymentDeps["prisma"]["booking"]["findUnique"],
-        update: (async ({ where, data }) => {
+        },
+        update: async ({
+          where,
+          data,
+        }: {
+          where: { id: string };
+          data: Record<string, unknown>;
+        }) => {
           updates.push({ where, data: { ...data } });
           if (bookingRef && bookingRef.id === where.id) {
             bookingRef = { ...bookingRef, ...(data as Partial<BookingFixture>) };
           }
           return { id: where.id };
-        }) as ResumePaymentDeps["prisma"]["booking"]["update"],
+        },
       },
-    },
+    } as unknown as ResumePaymentDeps["prisma"],
     stripe: {
       paymentIntents: {
         retrieve: vi.fn(async (id: string) => {

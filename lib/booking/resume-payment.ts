@@ -1,53 +1,14 @@
-import { BookingStatus, type Duration } from "@prisma/client";
+import { BookingStatus } from "@prisma/client";
 import type Stripe from "stripe";
 
 import { durationMinutes } from "@/lib/booking-engine/duration";
 import { setUtcTime } from "@/lib/booking-engine/time";
+import type { Db } from "@/lib/db";
 
 export const RESUME_WINDOW_MS = 15 * 60 * 1000;
 
 export type ResumePaymentDeps = {
-  prisma: {
-    booking: {
-      findUnique(args: {
-        where: { id: string };
-        select: {
-          id: true;
-          bookerId: true;
-          instructorId: true;
-          status: true;
-          totalPriceCents: true;
-          chargeAmountCents: true;
-          creditsAppliedCents: true;
-          stripePaymentIntentId: true;
-          createdAt: true;
-          date: true;
-          anchorTime: true;
-          duration: true;
-        };
-      }): Promise<{
-        id: string;
-        bookerId: string;
-        instructorId: string;
-        status: BookingStatus;
-        totalPriceCents: number;
-        chargeAmountCents: number | null;
-        creditsAppliedCents: number | null;
-        stripePaymentIntentId: string | null;
-        createdAt: Date;
-        date: Date;
-        anchorTime: string;
-        duration: Duration;
-      } | null>;
-      update(args: {
-        where: { id: string };
-        data: {
-          status?: BookingStatus;
-          stripePaymentIntentId?: string;
-        };
-      }): Promise<{ id: string }>;
-    };
-  };
+  prisma: Db;
   stripe: {
     paymentIntents: {
       retrieve(

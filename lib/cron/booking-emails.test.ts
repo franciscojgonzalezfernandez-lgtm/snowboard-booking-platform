@@ -142,12 +142,8 @@ function makeDeps(opts: {
 
   const deps: CronDeps = {
     prisma: {
-      booking: {
-        findMany: findMany as unknown as CronDeps["prisma"]["booking"]["findMany"],
-        updateMany:
-          updateMany as unknown as CronDeps["prisma"]["booking"]["updateMany"],
-      },
-    },
+      booking: { findMany, updateMany },
+    } as unknown as CronDeps["prisma"],
     sendReminder,
     sendPostClass,
     reminderDeps: {

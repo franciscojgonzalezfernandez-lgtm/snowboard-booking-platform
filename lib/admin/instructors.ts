@@ -8,6 +8,7 @@ import {
   type DeactivateInstructorInput,
   type UpdateInstructorInput,
 } from "@/lib/schemas/instructor";
+import type { Db } from "@/lib/db";
 
 // Pure, dependency-injected cores for admin instructor CRUD. They live in
 // `lib/` (not the `"use server"` module in `app/`) so Vitest can drive them
@@ -34,58 +35,9 @@ export type DeactivateInstructorResult =
   | { ok: true }
   | { ok: false; error: AdminInstructorError };
 
-type InstructorTx = {
-  user: {
-    create(args: {
-      data: {
-        email: string;
-        name: string;
-        roles: Role[];
-      };
-      select: { id: true };
-    }): Promise<{ id: string }>;
-    update(args: {
-      where: { id: string };
-      data: { roles: Role[] };
-    }): Promise<{ id: string }>;
-  };
-  instructor: {
-    create(args: {
-      data: {
-        userId: string;
-        bio: string | null;
-        languages: CreateInstructorInput["languages"];
-        specialties: string[];
-      };
-      select: { id: true };
-    }): Promise<{ id: string }>;
-  };
-};
 
 export type AdminInstructorDeps = {
-  prisma: {
-    user: {
-      findUnique(args: {
-        where: { email: string };
-        select: { id: true; roles: true; instructor: { select: { id: true } } };
-      }): Promise<{
-        id: string;
-        roles: Role[];
-        instructor: { id: string } | null;
-      } | null>;
-    };
-    instructor: {
-      findUnique(args: {
-        where: { id: string };
-        select: { id: true };
-      }): Promise<{ id: string } | null>;
-      update(args: {
-        where: { id: string };
-        data: Record<string, unknown>;
-      }): Promise<{ id: string }>;
-    };
-    $transaction<T>(fn: (tx: InstructorTx) => Promise<T>): Promise<T>;
-  };
+  prisma: Db;
 };
 
 /** Append `instructor` without dropping existing roles or duplicating it. */

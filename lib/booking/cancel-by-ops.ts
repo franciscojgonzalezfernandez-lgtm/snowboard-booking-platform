@@ -6,6 +6,7 @@ import {
 } from "@prisma/client";
 
 import { setUtcTime, startOfUtcDay } from "@/lib/booking-engine/time";
+import type { Db } from "@/lib/db";
 
 /** Re-emitted credit validity for an ops-cancel (ADR-008 / F-078): one year
  * anchored on the cancelled lesson start, mirroring the user-cancel credit
@@ -28,21 +29,6 @@ export type CancelBookingByOpsInput = {
   reason?: string;
 };
 
-type BookingRowForOpsCancel = {
-  id: string;
-  bookerId: string;
-  status: BookingStatus;
-  date: Date;
-  anchorTime: string;
-  duration: Duration;
-  totalPriceCents: number;
-  chargeAmountCents: number | null;
-  creditsAppliedCents: number | null;
-  stripePaymentIntentId: string | null;
-  paidAt: Date | null;
-  stripeRefundId: string | null;
-};
-
 export type StripeRefundFn = (args: {
   paymentIntentId: string;
   amountCents: number;
@@ -53,72 +39,12 @@ export type CancelBookingByOpsDeps = {
   /** Pre-resolved admin context. The thin Server Action wrapper has already
    * called `requireAdmin()` — this only needs the admin user id for audit. */
   adminUserId: string;
-  prisma: PrismaSurface;
+  prisma: Db;
   /** Stripe refund call — injected so unit tests can drive the cash path
    * without hitting the real API. Production wires `stripe.refunds.create`. */
   stripeRefund: StripeRefundFn;
   /** Reference clock — tests inject a fixed Date, production passes new Date(). */
   now?: Date;
-};
-
-type PrismaSurface = {
-  booking: {
-    findUnique(args: {
-      where: { id: string };
-      select: {
-        id: true;
-        bookerId: true;
-        status: true;
-        date: true;
-        anchorTime: true;
-        duration: true;
-        totalPriceCents: true;
-        chargeAmountCents: true;
-        creditsAppliedCents: true;
-        stripePaymentIntentId: true;
-        paidAt: true;
-        stripeRefundId: true;
-      };
-    }): Promise<BookingRowForOpsCancel | null>;
-    update(args: {
-      where: { id: string };
-      data: {
-        stripeRefundId: string;
-        refundedAt: Date;
-        refundAmountCents: number;
-      };
-    }): Promise<{ id: string }>;
-  };
-  $transaction<T>(cb: (tx: TransactionSurface) => Promise<T>): Promise<T>;
-};
-
-type TransactionSurface = {
-  booking: {
-    updateMany(args: {
-      where: { id: string; status: { in: readonly BookingStatus[] } };
-      data: {
-        status: BookingStatus;
-        cancelledByOpsAt: Date;
-        opsReason: string | null;
-      };
-    }): Promise<{ count: number }>;
-  };
-  accountCredit: {
-    updateMany(args: {
-      where: { lockedByBookingId: string; status: CreditStatus };
-      data: { status: CreditStatus; lockedByBookingId: null };
-    }): Promise<{ count: number }>;
-    create(args: {
-      data: {
-        userId: string;
-        amountCents: number;
-        sourceBookingId: string;
-        reason: CreditReason;
-        status: CreditStatus;
-        expiresAt: Date;
-      };
-    }): Promise<{ id: string }>;
-  };
 };
 
 export type CancelBookingByOpsResult =
@@ -261,7 +187,7 @@ export async function cancelBookingByOpsWith(
   try {
     txOutcome = await prisma.$transaction(async (tx) => {
       const flipped = await tx.booking.updateMany({
-        where: { id: booking.id, status: { in: OPS_CANCELABLE_STATUSES } },
+        where: { id: booking.id, status: { in: [...OPS_CANCELABLE_STATUSES] } },
         data: {
           status: BookingStatus.CANCELLED_BY_OPS,
           cancelledByOpsAt: now,

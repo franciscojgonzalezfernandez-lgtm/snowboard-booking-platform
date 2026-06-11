@@ -10,15 +10,10 @@
 // a credit as ACTIVE for ~a month. The sweep is idempotent, so the extra runs
 // cost nothing.
 
+import type { Db } from "@/lib/db";
+
 export type ExpireCreditsDeps = {
-  prisma: {
-    accountCredit: {
-      updateMany(args: {
-        where: Record<string, unknown>;
-        data: Record<string, unknown>;
-      }): Promise<{ count: number }>;
-    };
-  };
+  prisma: Db;
   now: Date;
 };
 

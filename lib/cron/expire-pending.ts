@@ -9,27 +9,12 @@
 // Source of truth for the 15-minute cutoff: `IDEMPOTENCY_WINDOW_MS` in
 // lib/booking/create-draft.ts. Mirrored here as `PENDING_PAYMENT_EXPIRY_MS`.
 
+import type { Db } from "@/lib/db";
+
 export const PENDING_PAYMENT_EXPIRY_MS = 15 * 60 * 1000;
 
 export type ExpirePendingDeps = {
-  prisma: {
-    booking: {
-      findMany(args: {
-        where: Record<string, unknown>;
-        select: { id: true };
-      }): Promise<Array<{ id: string }>>;
-      updateMany(args: {
-        where: Record<string, unknown>;
-        data: Record<string, unknown>;
-      }): Promise<{ count: number }>;
-    };
-    accountCredit: {
-      updateMany(args: {
-        where: Record<string, unknown>;
-        data: Record<string, unknown>;
-      }): Promise<{ count: number }>;
-    };
-  };
+  prisma: Db;
   now: Date;
 };
 

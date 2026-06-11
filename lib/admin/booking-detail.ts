@@ -7,6 +7,8 @@ import type {
   Locale,
 } from "@prisma/client";
 
+import type { Db } from "@/lib/db";
+
 // Pure loader for a single admin booking detail (F-077). Includes the full
 // row + attendees (booker-first) + the AccountCredit ledger entries that
 // reference this booking on either side (sourced + redeemed).
@@ -68,17 +70,8 @@ export type AdminBookingDetailResult =
   | { ok: true; booking: AdminBookingDetail }
   | { ok: false; error: "NOT_FOUND" };
 
-type BookingDelegate = {
-  findUnique(args: {
-    where: { id: string };
-    select: unknown;
-  }): Promise<AdminBookingDetail | null>;
-};
-
 export type AdminBookingDetailDeps = {
-  prisma: {
-    booking: BookingDelegate;
-  };
+  prisma: Db;
 };
 
 const DETAIL_SELECT = {

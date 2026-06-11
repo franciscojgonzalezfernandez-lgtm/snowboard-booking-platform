@@ -139,7 +139,7 @@ export function validateBlockWindow(args: {
   };
 }
 
-export type CalendarDay = {
+export type InstructorCalendarDay = {
   isoDate: string;
   /** Has at least one AVAILABLE block. */
   open: boolean;
@@ -164,8 +164,8 @@ export function buildCalendarDays(
   days: Date[],
   blocks: AvailabilityBlockRow[],
   bookings: BookingInterval[],
-): CalendarDay[] {
-  const byIso = new Map<string, CalendarDay>();
+): InstructorCalendarDay[] {
+  const byIso = new Map<string, InstructorCalendarDay>();
   for (const day of days) {
     byIso.set(toIsoDate(day), {
       isoDate: toIsoDate(day),

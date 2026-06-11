@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import type { CalendarDay } from "@/lib/instructor/availability";
+import type { InstructorCalendarDay } from "@/lib/instructor/availability";
 import type {
   AvailabilityActionError,
   BlockWindowResult,
@@ -69,7 +69,7 @@ function longDate(iso: string): string {
 }
 
 type Props = {
-  days: CalendarDay[];
+  days: InstructorCalendarDay[];
   /** "YYYY-MM" of the focused month — out-of-month grid cells render dimmed. */
   monthIso: string;
   todayIso: string;

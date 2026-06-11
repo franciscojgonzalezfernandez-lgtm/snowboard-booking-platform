@@ -1,11 +1,6 @@
 import { randomUUID } from "crypto";
 
-import {
-  BookingStatus,
-  CreditReason,
-  CreditStatus,
-  type Duration,
-} from "@prisma/client";
+import { BookingStatus, CreditReason, CreditStatus } from "@prisma/client";
 import type Stripe from "stripe";
 
 import { durationMinutes } from "@/lib/booking-engine/duration";
@@ -19,6 +14,7 @@ import {
   type CreateBookingDraftResult,
   type DraftAttendeeInput,
 } from "@/lib/schemas/booking-draft";
+import type { Db } from "@/lib/db";
 
 const IDEMPOTENCY_WINDOW_MS = 15 * 60 * 1000;
 const ICS_DOMAIN = "rideflumserberg.ch";
@@ -26,8 +22,7 @@ const ICS_DOMAIN = "rideflumserberg.ch";
 export type CreateDraftDeps = {
   /** Pre-resolved session from the framework; null if anonymous. */
   session: { user: { id: string } } | null;
-  /** A Prisma-like surface; constrained to the queries this action needs. */
-  prisma: PrismaSurface;
+  prisma: Db;
   /** Stripe-like surface; mocked in tests, real Stripe SDK in production. */
   stripe: StripeSurface;
   /** Reference clock — tests inject a fixed Date, production passes new Date(). */
@@ -63,130 +58,6 @@ type CreditRow = {
   expiresAt: Date;
   reason: CreditReason;
   sourceBookingId: string;
-};
-
-type PrismaSurface = {
-  season: {
-    findFirst(args: {
-      where: { active: true };
-      select: { id: true; priceCentsByDuration: true };
-    }): Promise<{ id: string; priceCentsByDuration: unknown } | null>;
-  };
-  booking: {
-    findFirst(args: {
-      where: {
-        bookerId: string;
-        instructorId: string;
-        date: Date;
-        anchorTime: string;
-        status: BookingStatus;
-        createdAt: { gt: Date };
-        stripePaymentIntentId: { not: null };
-      };
-      select: {
-        id: true;
-        stripePaymentIntentId: true;
-        totalPriceCents: true;
-      };
-    }): Promise<{
-      id: string;
-      stripePaymentIntentId: string | null;
-      totalPriceCents: number;
-    } | null>;
-    update(args: {
-      where: { id: string };
-      data: { stripePaymentIntentId: string };
-    }): Promise<{ id: string }>;
-  };
-  accountCredit: {
-    findMany(args: {
-      where: {
-        id: { in: string[] };
-        userId: string;
-        status: CreditStatus;
-        expiresAt: { gt: Date };
-      };
-      select: {
-        id: true;
-        amountCents: true;
-        expiresAt: true;
-        reason: true;
-        sourceBookingId: true;
-      };
-    }): Promise<CreditRow[]>;
-  };
-  $transaction<T>(
-    cb: (tx: PrismaTransactionSurface) => Promise<T>,
-  ): Promise<T>;
-} & PrismaTransactionSurface;
-
-type PrismaTransactionSurface = {
-  booking: {
-    create(args: {
-      data: {
-        bookerId: string;
-        instructorId: string;
-        date: Date;
-        anchorTime: string;
-        duration: Duration;
-        language: string;
-        status: BookingStatus;
-        totalPriceCents: number;
-        chargeAmountCents: number;
-        creditsAppliedCents: number;
-        icsUid: string;
-        notes: string | null;
-        paidAt?: Date;
-      };
-      select: { id: true };
-    }): Promise<{ id: string }>;
-  };
-  attendee: {
-    createMany(args: {
-      data: Array<{
-        bookingId: string;
-        name: string;
-        birthDate: Date;
-        level: string;
-        isBooker: boolean;
-      }>;
-    }): Promise<{ count: number }>;
-  };
-  user: {
-    update(args: {
-      where: { id: string; phone: null };
-      data: { phone: string };
-    }): Promise<{ id: string }>;
-  };
-  accountCredit: {
-    updateMany(args: {
-      where: {
-        id: { in: string[] } | string;
-        userId: string;
-        status: CreditStatus;
-        expiresAt: { gt: Date };
-      };
-      data:
-        | { status: CreditStatus; lockedByBookingId: string }
-        | { status: CreditStatus; usedAt: Date; usedOnBookingId: string }
-        | {
-            status: CreditStatus;
-            amountCents: number;
-            usedAt: Date;
-            usedOnBookingId: string;
-          };
-    }): Promise<{ count: number }>;
-    create(args: {
-      data: {
-        userId: string;
-        amountCents: number;
-        sourceBookingId: string;
-        reason: CreditReason;
-        status: CreditStatus;
-        expiresAt: Date;
-      };
-    }): Promise<{ id: string }>;
-  };
 };
 
 type StripeSurface = {

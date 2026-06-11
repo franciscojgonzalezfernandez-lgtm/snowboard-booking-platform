@@ -21,7 +21,7 @@ import { prisma } from "@/lib/db";
 import { formatChf } from "@/lib/pricing/format";
 
 function detailDeps(): AdminBookingDetailDeps {
-  return { prisma: prisma as unknown as AdminBookingDetailDeps["prisma"] };
+  return { prisma };
 }
 
 export const metadata: Metadata = {

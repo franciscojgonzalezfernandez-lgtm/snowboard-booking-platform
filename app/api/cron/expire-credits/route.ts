@@ -3,10 +3,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 
-import {
-  runExpireCreditsCron,
-  type ExpireCreditsDeps,
-} from "@/lib/credit/expire";
+import { runExpireCreditsCron } from "@/lib/credit/expire";
 import { prisma } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -41,7 +38,7 @@ export async function GET(request: Request): Promise<Response> {
 
   try {
     const summary = await runExpireCreditsCron({
-      prisma: prisma as unknown as ExpireCreditsDeps["prisma"],
+      prisma,
       now: new Date(),
     });
 

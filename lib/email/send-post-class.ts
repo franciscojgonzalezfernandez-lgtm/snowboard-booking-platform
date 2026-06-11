@@ -1,6 +1,7 @@
 import React from "react";
-import type { Locale } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
+import type { Db } from "@/lib/db";
 import { sendEmail, type EmailClient } from "./send-email";
 import {
   PostClassEmail,
@@ -10,27 +11,20 @@ import {
 const CONTACT_EMAIL = "franciscojgonzalezfernandez@gmail.com";
 const APP_BASE_URL = "https://rideflumserberg.ch";
 
-export type BookingRowForPostClass = {
-  id: string;
-  language: Locale;
-  postClassEmailSentAt: Date | null;
-  booker: { name: string | null; email: string };
-  instructor: { user: { name: string | null } };
-};
+const BOOKING_SELECT = {
+  id: true,
+  language: true,
+  postClassEmailSentAt: true,
+  booker: { select: { name: true, email: true } },
+  instructor: { select: { user: { select: { name: true } } } },
+} satisfies Prisma.BookingSelect;
+
+export type BookingRowForPostClass = Prisma.BookingGetPayload<{
+  select: typeof BOOKING_SELECT;
+}>;
 
 export type SendPostClassDeps = {
-  prisma: {
-    booking: {
-      findUnique(args: {
-        where: { id: string };
-        select: BookingSelect;
-      }): Promise<BookingRowForPostClass | null>;
-      update(args: {
-        where: { id: string };
-        data: { postClassEmailSentAt: Date };
-      }): Promise<{ id: string }>;
-    };
-  };
+  prisma: Db;
   send: typeof sendEmail;
   emailClient?: EmailClient;
   now?: Date;
@@ -46,16 +40,6 @@ export type SendPostClassResult =
   | { ok: true; sent: true; emailId: string }
   | { ok: true; sent: false; reason: "ALREADY_SENT" }
   | { ok: false; error: "BOOKING_NOT_FOUND" };
-
-const BOOKING_SELECT = {
-  id: true,
-  language: true,
-  postClassEmailSentAt: true,
-  booker: { select: { name: true, email: true } },
-  instructor: { select: { user: { select: { name: true } } } },
-} as const;
-
-type BookingSelect = typeof BOOKING_SELECT;
 
 function buildReviewUrl(placeId: string | null | undefined): string | null {
   if (!placeId) return null;
@@ -163,7 +147,7 @@ export async function sendPostClassEmail(input: {
   const { prisma } = await import("@/lib/db");
   return sendPostClassEmailWith(
     {
-      prisma: prisma as unknown as SendPostClassDeps["prisma"],
+      prisma,
       send: sendEmail,
       now: input.now,
       googlePlaceId: process.env.GOOGLE_PLACE_ID ?? null,

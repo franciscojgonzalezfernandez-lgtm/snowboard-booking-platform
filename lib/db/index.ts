@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 
 const globalForPrisma = globalThis as unknown as {
@@ -19,3 +19,16 @@ export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }
+
+/**
+ * The app's Prisma client type. Inject this as the `prisma` dependency of pure,
+ * unit-tested functions instead of hand-writing a structural "surface" type:
+ * production passes the real `prisma` with no cast, and every `where`/`select`/
+ * `data` shape is checked against the generated schema (so a select that drifts
+ * from the code that reads it becomes a compile error). Tests still pass a
+ * partial mock cast to `Db`.
+ */
+export type Db = PrismaClient;
+
+/** Client passed to a `$transaction(async (tx) => …)` callback. */
+export type DbTx = Prisma.TransactionClient;

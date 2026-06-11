@@ -1,7 +1,8 @@
 import React from "react";
 import type { CreateEmailOptions } from "resend";
-import type { Duration, Locale } from "@prisma/client";
+import type { Duration, Locale, Prisma } from "@prisma/client";
 
+import type { Db } from "@/lib/db";
 import { durationMinutes } from "@/lib/booking-engine/duration";
 import { setUtcTime, zurichWallClockToUtc } from "@/lib/booking-engine/time";
 import { buildBookingIcs } from "@/lib/ics/build-event";
@@ -46,31 +47,24 @@ const INTL_TAG: Record<Locale, string> = {
   es: "es-CH",
 };
 
-export type BookingRowForReminder = {
-  id: string;
-  date: Date;
-  anchorTime: string;
-  duration: Duration;
-  language: Locale;
-  icsUid: string;
-  reminder24hSentAt: Date | null;
-  booker: { name: string | null; email: string };
-  instructor: { user: { name: string | null } };
-};
+const BOOKING_SELECT = {
+  id: true,
+  date: true,
+  anchorTime: true,
+  duration: true,
+  language: true,
+  icsUid: true,
+  reminder24hSentAt: true,
+  booker: { select: { name: true, email: true } },
+  instructor: { select: { user: { select: { name: true } } } },
+} satisfies Prisma.BookingSelect;
+
+export type BookingRowForReminder = Prisma.BookingGetPayload<{
+  select: typeof BOOKING_SELECT;
+}>;
 
 export type SendBookingReminderDeps = {
-  prisma: {
-    booking: {
-      findUnique(args: {
-        where: { id: string };
-        select: BookingSelect;
-      }): Promise<BookingRowForReminder | null>;
-      update(args: {
-        where: { id: string };
-        data: { reminder24hSentAt: Date };
-      }): Promise<{ id: string }>;
-    };
-  };
+  prisma: Db;
   send: typeof sendEmail;
   emailClient?: EmailClient;
   now?: Date;
@@ -87,20 +81,6 @@ export type SendBookingReminderResult =
   | { ok: true; sent: true; emailId: string }
   | { ok: true; sent: false; reason: "ALREADY_SENT" }
   | { ok: false; error: "BOOKING_NOT_FOUND" };
-
-const BOOKING_SELECT = {
-  id: true,
-  date: true,
-  anchorTime: true,
-  duration: true,
-  language: true,
-  icsUid: true,
-  reminder24hSentAt: true,
-  booker: { select: { name: true, email: true } },
-  instructor: { select: { user: { select: { name: true } } } },
-} as const;
-
-type BookingSelect = typeof BOOKING_SELECT;
 
 export async function sendBookingReminderEmailWith(
   deps: SendBookingReminderDeps,
@@ -259,7 +239,7 @@ export async function sendBookingReminderEmail(input: {
   const { prisma } = await import("@/lib/db");
   return sendBookingReminderEmailWith(
     {
-      prisma: prisma as unknown as SendBookingReminderDeps["prisma"],
+      prisma,
       send: sendEmail,
       now: input.now,
     },

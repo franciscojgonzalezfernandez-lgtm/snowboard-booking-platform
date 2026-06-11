@@ -2,6 +2,7 @@ import { AvailabilityKind } from "@prisma/client";
 import { z } from "zod";
 
 import { addDays, startOfUtcDay, toIsoDate } from "@/lib/booking-engine/time";
+import type { Db } from "@/lib/db";
 
 import {
   blockOverlapsBookings,
@@ -59,64 +60,8 @@ function dayUtc(iso: string): Date {
   return startOfUtcDay(new Date(`${iso}T00:00:00.000Z`));
 }
 
-type SeasonRow = {
-  id: string;
-  operatingHoursStart: string;
-  operatingHoursEnd: string;
-};
-
 export type AvailabilityDeps = {
-  prisma: {
-    season: {
-      findFirst(args: {
-        where: { active: true };
-        select: {
-          id: true;
-          operatingHoursStart: true;
-          operatingHoursEnd: true;
-        };
-      }): Promise<SeasonRow | null>;
-    };
-    availabilityBlock: {
-      findMany(args: {
-        where: Record<string, unknown>;
-        select: Record<string, true>;
-      }): Promise<Array<{ startDateTime: Date }>>;
-      findUnique(args: {
-        where: { id: string };
-        select: Record<string, true>;
-      }): Promise<{
-        id: string;
-        instructorId: string;
-        startDateTime: Date;
-        endDateTime: Date;
-      } | null>;
-      createMany(args: {
-        data: Array<{
-          instructorId: string;
-          startDateTime: Date;
-          endDateTime: Date;
-          kind: AvailabilityKind;
-        }>;
-      }): Promise<{ count: number }>;
-      create(args: {
-        data: {
-          instructorId: string;
-          startDateTime: Date;
-          endDateTime: Date;
-          kind: AvailabilityKind;
-        };
-        select: { id: true };
-      }): Promise<{ id: string }>;
-      delete(args: { where: { id: string } }): Promise<{ id: string }>;
-    };
-    booking: {
-      findMany(args: {
-        where: Record<string, unknown>;
-        select: Record<string, true>;
-      }): Promise<BookingInterval[]>;
-    };
-  };
+  prisma: Db;
   instructorId: string;
   now?: Date;
 };

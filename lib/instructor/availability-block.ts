@@ -13,6 +13,7 @@ import {
   createAvailabilityBlockSchema,
   type CreateAvailabilityBlockInput,
 } from "@/lib/schemas/availability-block";
+import type { Db } from "@/lib/db";
 
 /** Booking statuses that occupy a slot for the conflict check (subset of
  * `OCCUPYING_STATUSES` in the engine — COMPLETED can't appear inside a future
@@ -37,7 +38,7 @@ export function bookingOverlapsWindow(
 }
 
 export type CreateBlockDeps = {
-  prisma: CreatePrismaSurface;
+  prisma: Db;
   /** Resolved server-side, never trusted from the client. */
   instructorId: string;
   /** Reference clock — tests inject a fixed Date; production passes new Date(). */
@@ -45,7 +46,7 @@ export type CreateBlockDeps = {
 };
 
 export type DeleteBlockDeps = {
-  prisma: DeletePrismaSurface;
+  prisma: Db;
   instructorId: string;
 };
 
@@ -63,66 +64,6 @@ export type CreateBlockResult =
 export type DeleteBlockResult =
   | { ok: true }
   | { ok: false; error: "NOT_FOUND" | "FORBIDDEN" | "HAS_ACTIVE_BOOKINGS" };
-
-type CreatePrismaSurface = {
-  season: {
-    findFirst(args: {
-      where: { active: true };
-      select: { startDate: true; endDate: true };
-    }): Promise<{ startDate: Date; endDate: Date } | null>;
-  };
-  availabilityBlock: {
-    findFirst(args: {
-      where: {
-        instructorId: string;
-        startDateTime: { lt: Date };
-        endDateTime: { gt: Date };
-      };
-      select: { id: true };
-    }): Promise<{ id: string } | null>;
-    create(args: {
-      data: {
-        instructorId: string;
-        startDateTime: Date;
-        endDateTime: Date;
-        kind: AvailabilityKind;
-      };
-      select: { id: true };
-    }): Promise<{ id: string }>;
-  };
-};
-
-type DeletePrismaSurface = {
-  availabilityBlock: {
-    findUnique(args: {
-      where: { id: string };
-      select: {
-        id: true;
-        instructorId: true;
-        startDateTime: true;
-        endDateTime: true;
-      };
-    }): Promise<{
-      id: string;
-      instructorId: string;
-      startDateTime: Date;
-      endDateTime: Date;
-    } | null>;
-    delete(args: { where: { id: string } }): Promise<{ id: string }>;
-  };
-  booking: {
-    findMany(args: {
-      where: {
-        instructorId: string;
-        status: { in: BookingStatus[] };
-        date: { gte: Date; lte: Date };
-      };
-      select: { date: true; anchorTime: true; duration: true };
-    }): Promise<
-      Array<{ date: Date; anchorTime: string; duration: Duration }>
-    >;
-  };
-};
 
 /**
  * F-072 create. Owner-side validation only — the action layer adds the

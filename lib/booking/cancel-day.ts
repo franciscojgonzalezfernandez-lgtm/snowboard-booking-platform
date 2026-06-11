@@ -1,6 +1,7 @@
-import { BookingStatus, type Duration, type Locale } from "@prisma/client";
+import { BookingStatus, Prisma, type Duration, type Locale } from "@prisma/client";
 
 import { addDays, startOfUtcDay } from "@/lib/booking-engine/time";
+import type { Db } from "@/lib/db";
 
 // Pure ops-cancel-day logic (F-079). The thin Server Action wrapper in
 // `app/admin/actions.ts` resolves the admin session via `requireAdmin()` and
@@ -22,21 +23,27 @@ export const CANCELLABLE_STATUSES = [
   BookingStatus.COMPLETED,
 ] as const;
 
-export type CancelDayBookingRow = {
-  id: string;
-  anchorTime: string;
-  duration: Duration;
-  language: Locale;
-  status: BookingStatus;
-  totalPriceCents: number;
-  chargeAmountCents: number | null;
-  creditsAppliedCents: number | null;
-  stripePaymentIntentId: string | null;
-  paidAt: Date | null;
-  booker: { name: string | null; email: string };
-  instructor: { id: string; user: { name: string | null } };
-  attendees: { id: string }[];
-};
+/** Columns the preview reads per booking. Single source of truth — the row
+ * type below is derived from it, so adding a field here updates both. */
+const ROW_SELECT = {
+  id: true,
+  anchorTime: true,
+  duration: true,
+  language: true,
+  status: true,
+  totalPriceCents: true,
+  chargeAmountCents: true,
+  creditsAppliedCents: true,
+  stripePaymentIntentId: true,
+  paidAt: true,
+  booker: { select: { name: true, email: true } },
+  instructor: { select: { id: true, user: { select: { name: true } } } },
+  attendees: { select: { id: true } },
+} satisfies Prisma.BookingSelect;
+
+export type CancelDayBookingRow = Prisma.BookingGetPayload<{
+  select: typeof ROW_SELECT;
+}>;
 
 export type CancelDayPreviewBooking = {
   id: string;
@@ -78,55 +85,9 @@ export type CancelDayPreviewInput = {
   instructorId?: string;
 };
 
-type PrismaReadSurface = {
-  booking: {
-    findMany(args: {
-      where: {
-        date: { gte: Date; lt: Date };
-        status: { in: readonly BookingStatus[] };
-        instructorId?: string;
-      };
-      orderBy: Array<Record<string, "asc" | "desc">>;
-      select: {
-        id: true;
-        anchorTime: true;
-        duration: true;
-        language: true;
-        status: true;
-        totalPriceCents: true;
-        chargeAmountCents: true;
-        creditsAppliedCents: true;
-        stripePaymentIntentId: true;
-        paidAt: true;
-        booker: { select: { name: true; email: true } };
-        instructor: {
-          select: { id: true; user: { select: { name: true } } };
-        };
-        attendees: { select: { id: true } };
-      };
-    }): Promise<CancelDayBookingRow[]>;
-  };
-};
-
 export type CancelDayDeps = {
-  prisma: PrismaReadSurface;
+  prisma: Db;
 };
-
-const ROW_SELECT = {
-  id: true,
-  anchorTime: true,
-  duration: true,
-  language: true,
-  status: true,
-  totalPriceCents: true,
-  chargeAmountCents: true,
-  creditsAppliedCents: true,
-  stripePaymentIntentId: true,
-  paidAt: true,
-  booker: { select: { name: true, email: true } },
-  instructor: { select: { id: true, user: { select: { name: true } } } },
-  attendees: { select: { id: true } },
-} as const;
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -182,13 +143,9 @@ export async function previewCancelDayWith(
   if (!DATE_RE.test(input.date)) {
     return { ok: false, error: "INVALID_INPUT" };
   }
-  const where: {
-    date: { gte: Date; lt: Date };
-    status: { in: readonly BookingStatus[] };
-    instructorId?: string;
-  } = {
+  const where: Prisma.BookingWhereInput = {
     date: dayRange(input.date),
-    status: { in: CANCELLABLE_STATUSES },
+    status: { in: [...CANCELLABLE_STATUSES] },
   };
   if (input.instructorId) where.instructorId = input.instructorId;
 

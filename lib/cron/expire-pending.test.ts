@@ -114,14 +114,9 @@ function makeDeps(opts: {
   return {
     deps: {
       prisma: {
-        booking: {
-          findMany: findMany as unknown as ExpirePendingDeps["prisma"]["booking"]["findMany"],
-          updateMany: updateMany as unknown as ExpirePendingDeps["prisma"]["booking"]["updateMany"],
-        },
-        accountCredit: {
-          updateMany: creditUpdateMany as unknown as ExpirePendingDeps["prisma"]["accountCredit"]["updateMany"],
-        },
-      },
+        booking: { findMany, updateMany },
+        accountCredit: { updateMany: creditUpdateMany },
+      } as unknown as ExpirePendingDeps["prisma"],
       now: opts.now ?? NOW,
     },
     cutoffs,

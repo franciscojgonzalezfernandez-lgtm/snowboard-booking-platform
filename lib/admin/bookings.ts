@@ -1,6 +1,7 @@
-import type { BookingStatus, Duration, Locale } from "@prisma/client";
+import type { BookingStatus, Prisma } from "@prisma/client";
 
 import type { AdminBookingsFilters } from "@/lib/schemas/admin-bookings";
+import type { Db } from "@/lib/db";
 
 // Pure, dependency-injected loader for the admin bookings list (F-077).
 // Lives in `lib/` so Vitest can drive it without `next/headers` — the page
@@ -11,21 +12,25 @@ import type { AdminBookingsFilters } from "@/lib/schemas/admin-bookings";
 // their clause so the index plan stays clean. Count + page query run in
 // parallel via Promise.all (same `where`).
 
-export type AdminBookingRow = {
-  id: string;
-  date: Date;
-  anchorTime: string;
-  duration: Duration;
-  language: Locale;
-  status: BookingStatus;
-  totalPriceCents: number;
-  chargeAmountCents: number | null;
-  creditsAppliedCents: number | null;
-  createdAt: Date;
-  booker: { name: string | null; email: string };
-  instructor: { user: { name: string | null } };
-  attendees: { id: string }[];
-};
+const ROW_SELECT = {
+  id: true,
+  date: true,
+  anchorTime: true,
+  duration: true,
+  language: true,
+  status: true,
+  totalPriceCents: true,
+  chargeAmountCents: true,
+  creditsAppliedCents: true,
+  createdAt: true,
+  booker: { select: { name: true, email: true } },
+  instructor: { select: { user: { select: { name: true } } } },
+  attendees: { select: { id: true } },
+} satisfies Prisma.BookingSelect;
+
+export type AdminBookingRow = Prisma.BookingGetPayload<{
+  select: typeof ROW_SELECT;
+}>;
 
 export type AdminBookingsPage = {
   rows: AdminBookingRow[];
@@ -47,38 +52,9 @@ type BookingWhereInput = {
   }>;
 };
 
-type BookingDelegate = {
-  count(args: { where: BookingWhereInput }): Promise<number>;
-  findMany(args: {
-    where: BookingWhereInput;
-    orderBy: Array<Record<string, "asc" | "desc">>;
-    skip: number;
-    take: number;
-    select: unknown;
-  }): Promise<AdminBookingRow[]>;
-};
-
 export type AdminBookingsDeps = {
-  prisma: {
-    booking: BookingDelegate;
-  };
+  prisma: Db;
 };
-
-const ROW_SELECT = {
-  id: true,
-  date: true,
-  anchorTime: true,
-  duration: true,
-  language: true,
-  status: true,
-  totalPriceCents: true,
-  chargeAmountCents: true,
-  creditsAppliedCents: true,
-  createdAt: true,
-  booker: { select: { name: true, email: true } },
-  instructor: { select: { user: { select: { name: true } } } },
-  attendees: { select: { id: true } },
-} as const;
 
 function buildWhere(filters: AdminBookingsFilters): BookingWhereInput {
   const where: BookingWhereInput = {};
