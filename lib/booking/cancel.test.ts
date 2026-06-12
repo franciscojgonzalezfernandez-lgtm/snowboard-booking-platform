@@ -1,41 +1,22 @@
 import { describe, expect, test, vi } from "vitest";
-import { BookingStatus, CreditReason, CreditStatus, Duration } from "@prisma/client";
+import { BookingStatus, CreditReason, CreditStatus } from "@prisma/client";
 
 import {
   CREDIT_VALIDITY_MS,
   cancelBookingByUserWith,
   type CancelBookingByUserDeps,
 } from "./cancel";
+import {
+  FIXED_NOW,
+  makeBookingFixture as makeBooking,
+  type BookingFixture,
+} from "./fixtures";
 
-const NOW = new Date("2026-12-01T08:00:00.000Z");
+const NOW = FIXED_NOW;
 // Default booking fixture starts at 2026-12-11 08:00Z. Credit expiry anchors on
 // the lesson start, so a fresh credit should expire 365 days after that.
 const DEFAULT_CLASS_START = new Date("2026-12-11T08:00:00.000Z");
 const OWNER_ID = "user_owner";
-
-type BookingFixture = {
-  id: string;
-  bookerId: string;
-  status: BookingStatus;
-  date: Date;
-  anchorTime: string;
-  duration: Duration;
-  totalPriceCents: number;
-};
-
-function makeBooking(overrides: Partial<BookingFixture> = {}): BookingFixture {
-  return {
-    id: "book_1",
-    bookerId: OWNER_ID,
-    status: BookingStatus.CONFIRMED,
-    // 2026-12-11 08:00Z is 10 days out from NOW → comfortably ≥48h.
-    date: new Date("2026-12-11T00:00:00.000Z"),
-    anchorTime: "08:00",
-    duration: Duration.ONE_HOUR,
-    totalPriceCents: 11000,
-    ...overrides,
-  };
-}
 
 type UsedCreditFixture = { id: string; amountCents: number; expiresAt: Date };
 

@@ -9,6 +9,9 @@ import {
 } from "./sync";
 import { InvalidGrantError } from "./google-oauth";
 
+// Deliberately NOT the shared lib/booking/fixtures.ts shape (F-086f): sync
+// loads booker/instructor relations for the Google Calendar payload, so this
+// fixture is relation-shaped and belongs to this module boundary.
 type BookingFixture = {
   id: string;
   status: BookingStatus;
