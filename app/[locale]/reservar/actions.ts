@@ -1,11 +1,10 @@
 "use server";
 
-import { headers } from "next/headers";
 import { revalidateTag } from "next/cache";
 import * as Sentry from "@sentry/nextjs";
 import { BookingStatus } from "@prisma/client";
 
-import { auth } from "@/lib/auth";
+import { getSessionUser } from "@/lib/auth/session-user";
 import { AVAILABILITY_TAGS } from "@/lib/booking-engine/cache";
 import {
   createBookingDraftWith,
@@ -19,19 +18,17 @@ import type {
   CreateBookingDraftInput,
   CreateBookingDraftResult,
 } from "@/lib/schemas/booking-draft";
+import type { Empty, Result } from "@/lib/types/result";
 
-export type VoidActiveDraftResult =
-  | { ok: true }
-  | {
-      ok: false;
-      error:
-        | "UNAUTHORIZED"
-        | "NOT_FOUND"
-        | "FORBIDDEN"
-        | "PI_NOT_CANCELABLE"
-        | "STRIPE_ERROR"
-        | "ALREADY_CANCELLED";
-    };
+export type VoidActiveDraftResult = Result<
+  Empty,
+  | "UNAUTHORIZED"
+  | "NOT_FOUND"
+  | "FORBIDDEN"
+  | "PI_NOT_CANCELABLE"
+  | "STRIPE_ERROR"
+  | "ALREADY_CANCELLED"
+>;
 
 /** Statuses Stripe allows us to cancel from. */
 const CANCELABLE_PI_STATUSES = new Set([
@@ -56,9 +53,9 @@ const CANCELABLE_PI_STATUSES = new Set([
 export async function createBookingDraft(
   input: CreateBookingDraftInput,
 ): Promise<CreateBookingDraftResult> {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const user = await getSessionUser();
   const deps: CreateDraftDeps = {
-    session: session?.user ? { user: { id: session.user.id } } : null,
+    session: user ? { user } : null,
     prisma,
     stripe: getStripe(),
     // F-060 zero-charge path: a fully-credit-covered booking is created
@@ -112,8 +109,8 @@ export async function createBookingDraft(
 export async function voidActiveDraft(
   bookingId: string,
 ): Promise<VoidActiveDraftResult> {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user) {
+  const user = await getSessionUser();
+  if (!user) {
     return { ok: false, error: "UNAUTHORIZED" };
   }
 
@@ -131,7 +128,7 @@ export async function voidActiveDraft(
   if (!booking) {
     return { ok: false, error: "NOT_FOUND" };
   }
-  if (booking.bookerId !== session.user.id) {
+  if (booking.bookerId !== user.id) {
     return { ok: false, error: "FORBIDDEN" };
   }
   if (booking.status === BookingStatus.CANCELLED_BY_USER) {
