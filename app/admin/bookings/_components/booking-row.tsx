@@ -1,11 +1,7 @@
 import Link from "next/link";
 
-import {
-  DURATION_LABEL,
-  STATUS_LABEL,
-  formatAdminDate,
-  formatAdminTime,
-} from "@/lib/admin/format";
+import { formatAdminDate, formatAdminTime } from "@/lib/admin/format";
+import { DURATION_LABEL, STATUS_LABEL } from "@/lib/labels/booking";
 import type { AdminBookingRow } from "@/lib/admin/bookings";
 import { formatChf } from "@/lib/pricing/format";
 

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { BookingStatus } from "@prisma/client";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -8,6 +7,7 @@ import {
   type CancelDayPreview,
 } from "@/lib/booking/cancel-day";
 import { prisma } from "@/lib/db";
+import { STATUS_LABEL } from "@/lib/labels/booking";
 import { formatChf } from "@/lib/pricing/format";
 
 import { CancelDayConfirm } from "./_components/cancel-day-confirm";
@@ -29,17 +29,6 @@ function firstParam(value: string | string[] | undefined): string | undefined {
 function isValidDate(value: string | undefined): value is string {
   return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
-
-const STATUS_LABEL: Record<BookingStatus, string> = {
-  PENDING_PAYMENT: "Pending payment",
-  CONFIRMED: "Confirmed",
-  COMPLETED: "Completed",
-  CANCELLED_BY_USER: "Cancelled (user)",
-  CANCELLED_BY_OPS: "Cancelled (ops)",
-  CANCELLED_BY_SYSTEM: "Cancelled (system)",
-  PAYMENT_FAILED: "Payment failed",
-  REFUNDED: "Refunded",
-};
 
 export default async function AdminCancelDayPage({ searchParams }: Props) {
   const params = await searchParams;

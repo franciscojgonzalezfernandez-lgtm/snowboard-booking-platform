@@ -4,7 +4,11 @@ import { formatChf } from "@/lib/pricing/format";
 
 import { type AgendaBooking, endTimeHHMM } from "@/lib/instructor/agenda";
 
-import { DURATION_LABEL, LANGUAGE_LABEL, STATUS_LABEL } from "../_lib/labels";
+import {
+  DURATION_LABEL,
+  LANGUAGE_LABEL,
+  STATUS_LABEL,
+} from "@/lib/labels/booking";
 
 const CANCELLED_STATUSES = new Set<BookingStatus>([
   BookingStatus.CANCELLED_BY_USER,
