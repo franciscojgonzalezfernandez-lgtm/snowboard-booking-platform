@@ -16,7 +16,6 @@ export default defineConfig({
       exclude: [
         "lib/booking-engine/**/*.test.ts",
         "lib/booking-engine/fixtures.ts",
-        "lib/booking-engine/index.ts",
         "lib/pricing/**/*.test.ts",
       ],
       thresholds: {
