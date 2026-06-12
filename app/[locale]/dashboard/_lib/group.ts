@@ -1,9 +1,9 @@
-import {
-  BookingStatus,
-  type CreditStatus,
-  type Duration,
-  type Locale as DbLocale,
-} from "@prisma/client";
+import { BookingStatus } from "@prisma/client";
+
+import type {
+  DashboardBookingRow,
+  DashboardCreditRow,
+} from "@/lib/dashboard/overview";
 
 // Mirror of `IDEMPOTENCY_WINDOW_MS` in lib/booking/create-draft.ts. The dashboard
 // uses the same 15-minute window to decide whether a PENDING_PAYMENT row is
@@ -15,35 +15,11 @@ export const PENDING_PAYMENT_WINDOW_MS = 15 * 60 * 1000;
 
 export type SectionKind = "pending" | "upcoming" | "past" | "cancelled";
 
-export type BookingRow = {
-  id: string;
-  date: Date;
-  anchorTime: string;
-  duration: Duration;
-  language: DbLocale;
-  status: BookingStatus;
-  totalPriceCents: number;
-  // F-084: net charge + applied credits, so a PENDING_PAYMENT row shows what is
-  // actually owed (price minus credits) instead of the full lesson price. Null
-  // for legacy rows written before the columns existed.
-  chargeAmountCents: number | null;
-  creditsAppliedCents: number | null;
-  createdAt: Date;
-  cancelledByUserAt: Date | null;
-  cancelledByOpsAt: Date | null;
-  opsReason: string | null;
-  refundedAt: Date | null;
-  refundAmountCents: number | null;
-  instructor: { user: { name: string | null } };
-};
-
-export type CreditRow = {
-  id: string;
-  amountCents: number;
-  sourceBookingId: string;
-  expiresAt: Date;
-  status: CreditStatus;
-};
+// Row shapes are owned by the loader's Prisma selects (F-086d) — these aliases
+// keep the dashboard components' imports stable while making the select the
+// single source of truth for the shape.
+export type BookingRow = DashboardBookingRow;
+export type CreditRow = DashboardCreditRow;
 
 // `Booking.date` is `@db.Date` (UTC midnight). "Today" must be the UTC date
 // midnight so date-only comparisons stay consistent regardless of server TZ.
