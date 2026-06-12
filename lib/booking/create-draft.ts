@@ -12,8 +12,8 @@ import {
   createBookingDraftSchema,
   type CreateBookingDraftInput,
   type CreateBookingDraftResult,
-  type DraftAttendeeInput,
 } from "@/lib/schemas/booking-draft";
+import type { AttendeeInput } from "@/lib/schemas/attendee";
 import type { Db } from "@/lib/db";
 
 const IDEMPOTENCY_WINDOW_MS = 15 * 60 * 1000;
@@ -87,13 +87,13 @@ function approximateBirthDate(age: number, now: Date): Date {
 }
 
 function buildAttendeeRows(
-  attendees: DraftAttendeeInput[],
+  attendees: AttendeeInput[],
   bookerName: string,
   now: Date,
 ): Array<{
   name: string;
   birthDate: Date;
-  level: DraftAttendeeInput["level"];
+  level: AttendeeInput["level"];
   isBooker: boolean;
 }> {
   const normalisedBooker = bookerName.trim().toLowerCase();

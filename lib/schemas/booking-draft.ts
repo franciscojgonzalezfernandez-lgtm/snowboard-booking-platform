@@ -1,15 +1,11 @@
-import { Duration, Level, Locale } from "@prisma/client";
+import { Duration, Locale } from "@prisma/client";
 import { z } from "zod";
+
+import { attendeeSchema } from "./attendee";
+import { E164 } from "./phone";
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const HHMM = /^([01]\d|2[0-3]):([0-5]\d)$/;
-const E164 = /^\+?[1-9]\d{7,14}$/;
-
-export const draftAttendeeSchema = z.object({
-  name: z.string().trim().min(1).max(80),
-  age: z.coerce.number().int().min(4).max(99),
-  level: z.nativeEnum(Level),
-});
 
 export const createBookingDraftSchema = z.object({
   date: z.string().regex(ISO_DATE, { message: "INVALID_DATE" }),
@@ -26,7 +22,7 @@ export const createBookingDraftSchema = z.object({
     .trim()
     .transform((raw) => raw.replace(/\s+/g, ""))
     .pipe(z.string().regex(E164, { message: "INVALID_PHONE" })),
-  attendees: z.array(draftAttendeeSchema).min(1).max(4),
+  attendees: z.array(attendeeSchema).min(1).max(4),
   notes: z.string().trim().max(500).optional().default(""),
   acceptedTerms: z.literal(true),
   // F-060: account credits the booker chose to apply at checkout. Sanity cap of
@@ -38,7 +34,6 @@ export const createBookingDraftSchema = z.object({
 });
 
 export type CreateBookingDraftInput = z.infer<typeof createBookingDraftSchema>;
-export type DraftAttendeeInput = z.infer<typeof draftAttendeeSchema>;
 
 export type CreateBookingDraftError =
   | "UNAUTHORIZED"
