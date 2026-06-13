@@ -1395,7 +1395,7 @@ Critical path: **F-057 + F-067 (paired PR) → F-058 + F-063 → F-059 → F-060
 
 ### Sprint 4 — Vista instructor + Admin (semanas 7-8)
 
-> Sprint más grande del MVP: self-service del instructor + panel ops/admin. `/instructor` y `/admin` viven **fuera de `[locale]`** (EN-only, ver Routing conventions). GCal (F-074 OAuth + F-075 sync) **landed** tras provisionar el owner `ENCRYPTION_KEY` + consent screen (2026-06-05). 1 ticket sigue **blocked-in-progress** (⛔ F-082 Tip) — depende de setup externo del owner (`INSTRUCTOR_TIP_URL` / TWINT), AC escrito, no mergeable hasta provisionar el blocker. Buildable-now core (10): F-071, F-072, F-073, F-065, F-076, F-077, F-078, F-079, F-080, F-081. Si desborda 2 semanas, split en **4a** (instructor + admin core) / **4b** (GCal + Tip al desbloquearse).
+> Sprint más grande del MVP: self-service del instructor + panel ops/admin. `/instructor` y `/admin` viven **fuera de `[locale]`** (EN-only, ver Routing conventions). GCal (F-074 OAuth + F-075 sync) **landed** tras provisionar el owner `ENCRYPTION_KEY` + consent screen (2026-06-05). 1 ticket sigue **blocked-in-progress** (⛔ F-082 Tip) — depende de setup externo del owner (`INSTRUCTOR_TIP_URL` / TWINT), AC escrito, no mergeable hasta provisionar el blocker. Buildable-now core (11): F-071, F-072, F-073, F-065, F-076, F-077, F-078, F-079, F-080, F-081, F-087. Si desborda 2 semanas, split en **4a** (instructor + admin core) / **4b** (GCal + Tip al desbloquearse). F-087 (season management) añadido tras review de PR #118: F-080 lee la Season activa pero nada in-app la crea/activa.
 >
 > **D-TIP resuelto (desglose 2026-05-29):** instructor recibe el **100%** de las propinas en MVP (sin split escuela). Revisable cuando entre un segundo coach.
 
@@ -1406,7 +1406,8 @@ Instructor:  F-071 ─┬─ F-072 (availability CRUD)
                     ├─ F-073 (profile + Blob photo) ── F-074 ── F-075
                     └─ F-065 (feedback)
 Admin:       F-076 ─┬─ F-077 (bookings view) ── F-078 (ops-cancel) ── F-079 (cancel day)
-                    └─ F-080 (pricing editor)
+                    ├─ F-080 (pricing editor)
+                    └─ F-087 (season CRUD + activate) ── precede a F-080 en operación real
              F-081 (no-show re-flip; después de F-077 + F-071)
 Tip:         F-082 ⛔ (paralelo, blocked tail)
 ```
@@ -1625,6 +1626,35 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - Sin tabla nueva — edita el JSON existente (F-039). Money siempre en cents server-side: el form toma CHF, convierte a cents en el único boundary `lib/pricing/chf.ts` (`francsToCents`, redondeo a céntimo), y el server re-valida int>0 antes de persistir.
   - **Dos capas Zod** (`lib/schemas/pricing.ts`): `pricingFormSchema` (francs, cliente RHF) + `updateSeasonPricingSchema` (cents, autoridad servidor). El core `.int()` rechaza cents fraccionarios aunque el cliente los fabrique.
   - **E2E del funnel diferido a la capa DB.** Step 1 lee la misma Season vía `getPriceCents`; persistir los cents correctos prueba el precio del funnel sin arrastrar sesión + selección de duración + credit-aside al smoke. Mismo criterio que F-078/F-079.
+
+##### F-087 — Season management admin UI (CRUD + activate/deactivate)
+
+- Sprint: 4 · Estado: backlog · Prioridad: P1
+- Depende de: F-076 (admin shell + `requireAdmin`), F-020 (schema `Season`), F-039 (`priceCentsByDuration`)
+- Motivación: hoy una `Season` **sólo** se crea vía `prisma/seed.ts` (`upsertSeason`, sobre `Season 26/27`). No existe ninguna UI para crear, activar o desactivar temporadas. El booking-engine, el pricing (F-080) y la disponibilidad del instructor resuelven la "temporada activa" con `prisma.season.findFirst({ where: { active: true } })` — todo el producto asume una Season activa pre-sembrada. Si no hay activa, `/admin/pricing` (F-080) muestra *"No active season. Activate a season before setting prices."* pero ese mensaje es un **callejón sin salida**: nada in-app permite crear ni activar una. Este ticket cierra el gap para operar multi-temporada (cada invierno una nueva) sin tocar DB ni seed. Detectado en review de PR #118 (F-080).
+- AC routing/auth:
+  - [ ] `app/admin/seasons/page.tsx` + `_components/`. EN-only, fuera de `[locale]`. Gating server-side vía `requireAdmin()` (mismo patrón que F-080); nunca confiar en rol client-side.
+  - [ ] Link "Seasons" en `app/admin/layout.tsx` nav (junto a Pricing).
+- AC server (cores puros en `lib/admin/seasons.ts` con DI sobre `prisma`, wrappers `"use server"` en `app/admin/actions.ts` con `requireAdmin` + Zod):
+  - [ ] `createSeason(input)` — Zod en `lib/schemas/season.ts`: `name`, `startDate`/`endDate` (`YYYY-MM-DD`, `start < end`), `anchorTimes` (`HH:MM[]`, ≥1, ordenado/dedup en transform), `operatingHoursStart`/`operatingHoursEnd` (`HH:MM`, `start < end`, y cada `anchorTime` dentro del rango), `active` opcional (default `false`). `priceCentsByDuration` arranca `{}` — el owner lo puebla en `/admin/pricing` (F-080) tras activar.
+  - [ ] `updateSeason(id, input)` — edita los mismos campos. Rechaza editar fechas/anchors si la Season tiene bookings `CONFIRMED`/`PENDING_PAYMENT` fuera del nuevo rango (`HAS_BOOKINGS_OUT_OF_RANGE`) para no dejar clases huérfanas.
+  - [ ] `activateSeason(id)` — **invariante de una sola activa**: pone `active=true` en la Season target y `active=false` en todas las demás, **atómico en `$transaction`** (el `findFirst({where:{active:true}})` de todo el producto da resultado no determinista con >1 activa). Rechaza activar (`INCOMPLETE_PRICING`) si `priceCentsByDuration` no tiene las 4 keys del enum `Duration` pobladas (`getPriceCents` throwea en booking time — fail fast aquí, ver invariante schema F-039).
+  - [ ] `deactivateSeason(id)` — pone `active=false`. Permitido dejar 0 activas (off-season); el booking-engine ya degrada a "fuera de temporada" cuando no hay activa (cubierto F-022).
+  - [ ] Revalida `/admin/seasons` + `/admin/pricing` + `/[locale]/reservar` (Step 1 lee la Season activa).
+- AC UI:
+  - [ ] Lista de seasons (orden `startDate` desc): nombre, rango de fechas, badge "Active", nº de anchors, operating hours, estado de pricing (4/4 keys o "incomplete"). Editorial / tokens design-system (cream/ink/border, `font-display`, borders-not-shadows), shadcn `Button`/`Input`/`Dialog`.
+  - [ ] Form crear/editar (RHF + Zod resolver, patrón form-fix PR #100: submit nunca disabled por `!isValid`, `focusFirstError` en el primer error). Inputs nativos `<input type="date">` + tag-input de anchors (mismo patrón hand-rolled que specialties en F-073).
+  - [ ] Activate/deactivate inline con confirm `Dialog`. Activar muestra warning si pricing incompleto y enlaza a `/admin/pricing`.
+  - [ ] **Sustituir el dead-end de F-080**: el empty-state "No active season" en `/admin/pricing` añade CTA "Manage seasons →" a `/admin/seasons`.
+- Tests:
+  - [ ] Vitest `lib/admin/seasons.test.ts`: create happy + `start>=end` + anchor fuera de ops + ops invertidas; activate desactiva las demás (1 sola activa post-tx) + `INCOMPLETE_PRICING` con keys faltantes; update rechaza fechas con bookings fuera de rango; deactivate deja 0 activas; rol no-admin rechazado en todos.
+  - [ ] Playwright `e2e/f-087-seasons.spec.ts`: no-admin → 404; crear season → aparece en lista; activar season B → A pierde el badge (1 sola activa); activar con pricing incompleto → bloqueado + hint; con 0 activas `/admin/pricing` muestra el empty-state + CTA a seasons.
+- Notas:
+  - **Sin schema change** — `Season` (F-020) ya tiene todos los campos (`name`, `startDate`, `endDate`, `active`, `anchorTimes`, `operatingHoursStart/End`, `priceCentsByDuration`). Este ticket es puramente UI + server actions sobre el modelo existente.
+  - **Invariante "una sola activa"** es de facto hoy (el seed mantiene 1 row) pero **no** está enforced a nivel DB. F-087 lo enforced en el `activateSeason` `$transaction`. Un partial-unique-index (`@@unique` sobre `active` where `active=true`) es post-MVP si el owner quiere garantía a nivel DB — requiere migración + manejo del race.
+  - **No recurrencia / no auto-rollover** de temporada. El owner crea+activa la del invierno siguiente a mano. Auto-archivar la anterior es opcional (queda en deactivate manual).
+  - **Availability blocks** de la nueva Season **no** se auto-siembran (el seed lo hace para `Season 26/27`); el owner abre disponibilidad vía el calendario instructor (F-083 `openAvailabilityRange`) sobre el rango de la nueva temporada. Documentar en el empty-state.
+  - **MVP single-instructor / single-active-season**: F-080 puede mergear sin F-087 (su empty-state es honesto sobre la precondición); F-087 desbloquea la operación real multi-temporada antes del segundo invierno.
 
 ##### F-081 — No-show re-flip (autoCompletedAt → CANCELLED_BY_USER)
 
