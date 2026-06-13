@@ -232,6 +232,12 @@ model Booking {
   cancellationEmailSentAt    DateTime?
   opsCancellationNotifSentAt DateTime?
   autoCompletedAt            DateTime?
+  /// F-065: instructor's private, internal-only note on a COMPLETED class
+  /// (progress, real level observed, preferences, warnings). Never shown to
+  /// the booker. `instructorNoteSetAt` tracks the last edit; both are cleared
+  /// together when the note is emptied.
+  instructorNote          String?       @db.Text
+  instructorNoteSetAt     DateTime?
   createdAt               DateTime      @default(now())
 
   booker          User            @relation(fields: [bookerId], references: [id], onDelete: Restrict)

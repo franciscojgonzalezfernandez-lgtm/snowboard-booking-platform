@@ -18,12 +18,14 @@ function makeBooking(args: {
 }): AgendaBooking {
   return {
     id: args.id,
+    bookerId: "u_pat",
     date: new Date(`${args.date}T00:00:00.000Z`),
     anchorTime: args.anchorTime,
     duration: args.duration ?? Duration.ONE_HOUR,
     language: "en" as Locale,
     status: args.status ?? BookingStatus.CONFIRMED,
     totalPriceCents: 11000,
+    instructorNote: null,
     attendees: [{ name: "Pat", isBooker: true }],
   };
 }

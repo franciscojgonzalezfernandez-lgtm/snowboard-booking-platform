@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { BookingStatus } from "@prisma/client";
+
 import { requireInstructor } from "@/lib/auth/require-instructor";
 import { addDays, startOfUtcDay, toIsoDate } from "@/lib/booking-engine/time";
+import { prisma } from "@/lib/db";
 
 import { AGENDA_WINDOW_DAYS, getInstructorAgenda } from "@/lib/instructor/agenda";
+import { getBookerNoteHistories } from "@/lib/instructor/instructor-note";
 
 import { AgendaDaySection } from "./_components/agenda-day";
 
@@ -57,6 +61,17 @@ export default async function InstructorAgendaPage({ searchParams }: Props) {
     from: fromDay,
     includeCancelled,
   });
+
+  // F-065: load prior note history once for every booker with a COMPLETED class
+  // in this window, so each row can show cross-booking context without N queries.
+  const completedBookerIds = days
+    .flatMap((day) => day.bookings)
+    .filter((booking) => booking.status === BookingStatus.COMPLETED)
+    .map((booking) => booking.bookerId);
+  const histories = await getBookerNoteHistories(
+    { prisma, instructorId },
+    completedBookerIds,
+  );
 
   const fromIso = toIsoDate(fromDay);
   const prevIso = toIsoDate(addDays(fromDay, -AGENDA_WINDOW_DAYS));
@@ -160,6 +175,7 @@ export default async function InstructorAgendaPage({ searchParams }: Props) {
             key={day.isoDate}
             day={day}
             isToday={day.isoDate === todayIso}
+            histories={histories}
           />
         ))}
       </div>
