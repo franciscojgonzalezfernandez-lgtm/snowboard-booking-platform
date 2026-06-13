@@ -29,6 +29,9 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "."),
+      // The real package throws outside a React Server environment; marked
+      // lib/ modules have colocated tests, so stub it (F-086g).
+      "server-only": path.resolve(__dirname, "tests/stubs/server-only.ts"),
     },
   },
 });

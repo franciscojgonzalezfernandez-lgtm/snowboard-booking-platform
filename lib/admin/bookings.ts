@@ -1,3 +1,5 @@
+import "server-only";
+
 import type { BookingStatus, Prisma } from "@prisma/client";
 
 import type { AdminBookingsFilters } from "@/lib/schemas/admin-bookings";

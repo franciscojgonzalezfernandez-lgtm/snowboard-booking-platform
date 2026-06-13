@@ -1,3 +1,5 @@
+import "server-only";
+
 // Google Calendar OAuth: a *separate* flow from Better Auth login. Better Auth
 // owns sign-in (login-only Google scopes); this flow asks for offline access to
 // the instructor's calendar (`calendar.events`) and yields a long-lived refresh

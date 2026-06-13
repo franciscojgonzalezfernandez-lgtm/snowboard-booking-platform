@@ -1966,7 +1966,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - [x] **F-086d** — `lib/dashboard/overview.ts` loader (patrón `lib/admin/bookings.ts`); elimina los casts `as Promise<BookingRow[]>` de `dashboard/page.tsx` (único agujero select↔type del repo).
   - [x] **F-086e** — actions: `lib/auth/session-user.ts` (`getSessionUser`, retorna null — no redirect — para actions de booker), `lib/types/result.ts` alias `Result<TOk, TErr>` solo donde el shape coincide exacto, paridad Sentry en `app/instructor/actions.ts`.
   - [x] **F-086f** — fixtures: `lib/booking/fixtures.ts` (superset `BookingFixture` + `makeBooking`); `sync.test.ts` mantiene fixture local (relation-shaped).
-  - [ ] **F-086g** — hardening: `server-only` como dep explícita (hoy phantom) + markers en módulos con secrets/DB + stub en vitest.
+  - [x] **F-086g** — hardening: `server-only` como dep explícita (hoy phantom) + markers en módulos con secrets/DB + stub en vitest.
   - Decisiones registradas: (1) `lib/types/` + `lib/labels/` sin underscore — ningún dir de `lib/` usa prefijo `_`, esa convención solo significa algo bajo `app/`; (2) helpers `ok()`/`err()` considerados y **rechazados** — la codebase construye `{ ok: ... }` inline en todas partes y los constructores crearían dos estilos coexistentes; alias de tipo only; (3) projections por surface (AdminBookingRow vs AgendaBooking vs dashboard rows) se quedan separadas — select-derived por diseño ("diferente por diseño"); (4) cancel.ts / cancel-by-ops.ts / cancel-day.ts siguen siendo policies auto-contenidas, no se fusionan.
 
 ### F-087 — Admin student directory (booker profiles: bookings + notes + contact + credits)

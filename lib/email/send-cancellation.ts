@@ -1,3 +1,5 @@
+import "server-only";
+
 import React from "react";
 import type { Locale, Prisma } from "@prisma/client";
 

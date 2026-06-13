@@ -1,3 +1,6 @@
+// NOT marked `server-only` (F-086g): scripts/send-test-email.ts imports this
+// chain under plain Node via tsx, where the real package throws. The booking
+// senders that wrap this module are marked instead.
 import { Resend, type CreateEmailOptions } from "resend";
 import { canUseConsoleEmail, getEmailConfig } from "./config";
 
