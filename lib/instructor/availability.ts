@@ -147,12 +147,27 @@ export type InstructorCalendarDay = {
   openBlockId: string | null;
   /** BLOCKED override windows on this day, as HH:MM ranges + their ids. */
   blocked: Array<{ id: string; start: string; end: string }>;
-  /** Occupying bookings on this day (CONFIRMED/PENDING/COMPLETED). */
-  bookings: Array<{ id: string; anchorTime: string; status: BookingStatus }>;
+  /**
+   * Occupying bookings on this day (CONFIRMED/PENDING/COMPLETED). `endTime` is
+   * the wall-clock end (anchorTime + duration) so the Week view can paint each
+   * booking at its real height without re-deriving the duration.
+   */
+  bookings: Array<{
+    id: string;
+    anchorTime: string;
+    endTime: string;
+    status: BookingStatus;
+  }>;
 };
 
 const HHMM = (d: Date): string =>
   `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+
+/** Wall-clock end of a booking: anchorTime advanced by its duration (clamped to the day). */
+function bookingEndTime(anchorTime: string, duration: Duration): string {
+  const endMin = Math.min(parseHHMM(anchorTime) + durationMinutes(duration), 24 * 60 - 1);
+  return `${String(Math.floor(endMin / 60)).padStart(2, "0")}:${String(endMin % 60).padStart(2, "0")}`;
+}
 
 /**
  * Pure grouping: fold availability blocks + bookings into one entry per day in
@@ -200,7 +215,12 @@ export function buildCalendarDays(
     }
     const entry = byIso.get(toIsoDate(startOfUtcDay(b.date)));
     if (!entry) continue;
-    entry.bookings.push({ id: b.id, anchorTime: b.anchorTime, status: b.status });
+    entry.bookings.push({
+      id: b.id,
+      anchorTime: b.anchorTime,
+      endTime: bookingEndTime(b.anchorTime, b.duration),
+      status: b.status,
+    });
   }
   for (const entry of byIso.values()) {
     entry.blocked.sort((a, b) => a.start.localeCompare(b.start));
