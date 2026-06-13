@@ -45,6 +45,9 @@ export type AgendaBooking = {
   // F-065: present on COMPLETED rows for the inline note editor. Null until the
   // instructor writes one.
   instructorNote: string | null;
+  // F-081: set by the F-062 sweep when a past booking was optimistically flipped
+  // to COMPLETED. Non-null = the row offers the "mark no-show" re-flip.
+  autoCompletedAt: Date | null;
   attendees: AgendaAttendee[];
 };
 
@@ -144,6 +147,7 @@ export async function getInstructorAgenda({
       status: true,
       totalPriceCents: true,
       instructorNote: true,
+      autoCompletedAt: true,
       attendees: {
         select: { name: true, isBooker: true },
         orderBy: { isBooker: "desc" },
