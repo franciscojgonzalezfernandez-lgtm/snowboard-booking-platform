@@ -1,4 +1,5 @@
 import { type AgendaDay } from "@/lib/instructor/agenda";
+import { type BookerNoteHistoryEntry } from "@/lib/instructor/instructor-note";
 
 import { formatAgendaDayHeader } from "../_lib/labels";
 import { AgendaBookingItem } from "./agenda-booking";
@@ -6,9 +7,11 @@ import { AgendaBookingItem } from "./agenda-booking";
 type Props = {
   day: AgendaDay;
   isToday: boolean;
+  // F-065: prior COMPLETED notes keyed by bookerId, loaded once on the page.
+  histories: Map<string, BookerNoteHistoryEntry[]>;
 };
 
-export function AgendaDaySection({ day, isToday }: Props) {
+export function AgendaDaySection({ day, isToday, histories }: Props) {
   const count = day.bookings.length;
 
   return (
@@ -42,7 +45,11 @@ export function AgendaDaySection({ day, isToday }: Props) {
       ) : (
         <ul className="mt-2 divide-y divide-input">
           {day.bookings.map((booking) => (
-            <AgendaBookingItem key={booking.id} booking={booking} />
+            <AgendaBookingItem
+              key={booking.id}
+              booking={booking}
+              history={histories.get(booking.bookerId)}
+            />
           ))}
         </ul>
       )}

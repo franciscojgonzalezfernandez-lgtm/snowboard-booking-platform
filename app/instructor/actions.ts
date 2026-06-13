@@ -23,6 +23,10 @@ import {
   type DeleteBlockResult,
 } from "@/lib/instructor/availability-block";
 import {
+  setInstructorNoteWith,
+  type SetInstructorNoteResult,
+} from "@/lib/instructor/instructor-note";
+import {
   removeInstructorPhoto,
   updateInstructorProfile as updateInstructorProfileImpl,
   uploadInstructorPhoto,
@@ -243,6 +247,28 @@ export async function disconnectCalendar(): Promise<DisconnectCalendarResult> {
   }
   revalidatePath("/instructor/calendar");
   return { ok: true };
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// F-065: instructor feedback per booking
+
+/**
+ * Set or clear the instructor's private note on a COMPLETED booking. The pure
+ * helper re-checks ownership + status; this wrapper only adds the session guard
+ * and revalidates the agenda so the persisted value (and booker history) is
+ * fresh on next render. Internal-only — never surfaced to the booker.
+ */
+export async function setInstructorNote(
+  bookingId: string,
+  note: string | null,
+): Promise<SetInstructorNoteResult> {
+  const { instructorId } = await requireInstructor();
+  const result = await setInstructorNoteWith(
+    { prisma, instructorId, now: new Date() },
+    { bookingId, note },
+  );
+  if (result.ok) revalidatePath("/instructor");
+  return result;
 }
 
 export async function removeInstructorPhotoAction(): Promise<RemovePhotoResult> {

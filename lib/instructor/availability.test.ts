@@ -185,7 +185,12 @@ describe("buildCalendarDays", () => {
     });
     // Only the CONFIRMED booking surfaces; cancelled is ignored.
     expect(result[1]!.bookings).toEqual([
-      { id: "bk-21", anchorTime: "09:00", status: BookingStatus.CONFIRMED },
+      {
+        id: "bk-21",
+        anchorTime: "09:00",
+        endTime: "10:00",
+        status: BookingStatus.CONFIRMED,
+      },
     ]);
     expect(result[2]).toMatchObject({
       isoDate: "2026-12-22",
