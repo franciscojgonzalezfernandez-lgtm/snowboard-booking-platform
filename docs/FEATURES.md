@@ -1658,17 +1658,18 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-081 — No-show re-flip (autoCompletedAt → CANCELLED_BY_USER)
 
-- Sprint: 4 · Estado: backlog · Prioridad: P2
+- Sprint: 4 · Estado: done · Prioridad: P2 — core `lib/booking/mark-no-show.ts` + wrappers admin/instructor + `NoShowButton` en ambas surfaces.
 - Depende de: F-062 (autoCompletedAt), F-077 / F-071
 - Motivación: F-062 auto-flippea bookings pasadas a `COMPLETED` (optimista). Si fue no-show real, el owner re-flippea a `CANCELLED_BY_USER` con `cancelledByUserAt = startDateTime`, **sin emitir credit** (forfeit alineado F-039b).
 - AC:
-  - [ ] Row action (admin bookings F-077 + agenda instructor F-071) visible solo si `autoCompletedAt != null`.
-  - [ ] `markNoShow(bookingId)` server action: rol admin/instructor + ownership, status → `CANCELLED_BY_USER`, `cancelledByUserAt = startDateTime`, sin `AccountCredit`. Revalida.
+  - [x] Row action visible solo si `autoCompletedAt != null`: admin bookings (F-077, ya tenía el placeholder `showNoShow = status===COMPLETED && autoCompletedAt!==null`) + agenda instructor (F-071, `AgendaBooking` ampliado con `autoCompletedAt`; prompt "Was this a no-show?" en filas auto-completadas). Componente compartido `components/booking/no-show-button.tsx` (confirm `Dialog`, error inline + `router.refresh`).
+  - [x] `markNoShow({ bookingId })` server action: core puro DI `markNoShowWith` con guard de ownership opcional (`instructorId: string | null`). Wrappers: `app/admin/actions.ts` (`requireAdmin`, sin constraint) + `app/instructor/actions.ts` (`requireInstructor`, ownership scoped → `FORBIDDEN` si ajeno). Flip gated `updateMany(where:{ id, status:COMPLETED, autoCompletedAt:{ not:null } })` → `CANCELLED_BY_USER` + `cancelledByUserAt = startDateTime`, **sin** `AccountCredit`. `autoCompletedAt` se conserva (audit); el guard de status corta el doble-flip. Revalida `/admin*` + `/instructor`.
 - Tests:
-  - Vitest: re-flip solo si `autoCompletedAt != null`, no emite credit, rol rechazado.
-  - Playwright: booking auto-completada → row action no-show → status flip, sin credit.
+  - [x] Vitest `lib/booking/mark-no-show.test.ts` (7 specs): flip al class-start sin credit; rechaza no-auto-completed / non-COMPLETED; `FORBIDDEN` por ownership; admin (null) cruza instructores; `NOT_FOUND`; segundo flip = `NOT_AUTO_COMPLETED`. Suite global 458/458.
+  - [x] Playwright `e2e/f-081-no-show-reflip.spec.ts` (2 specs, verde): admin detail → no-show → status `CANCELLED_BY_USER`, `cancelledByUserAt` == class start, 0 credits; instructor agenda → no-show → idem. Regresión guard: `f-065`/`f-071`/`f-077` 6/6 verde.
 - Notas:
   - Inverso del optimismo de F-062. No email al booker (decisión interna).
+  - `NoShowButton` recibe la `action` por prop (server action) — el mismo island sirve admin e instructor sin acoplar a un `actions.ts`. No depende de `<Toaster>` (no montado fuera de `[locale]`): el feedback fiable es el confirm dialog + `router.refresh`; el `toast` es bonus inocuo.
 
 ##### F-082 — Tip flow (post-class tip, instructor keeps 100%) ⛔
 

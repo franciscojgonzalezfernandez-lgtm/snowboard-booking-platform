@@ -26,6 +26,7 @@ function makeBooking(args: {
     status: args.status ?? BookingStatus.CONFIRMED,
     totalPriceCents: 11000,
     instructorNote: null,
+    autoCompletedAt: null,
     attendees: [{ name: "Pat", isBooker: true }],
   };
 }
