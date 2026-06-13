@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Duration } from "@prisma/client";
 
 import { getActiveSeasonPricingWith } from "@/lib/admin/pricing";
-import { DURATION_LABEL } from "@/lib/admin/format";
+import { DURATION_LABEL } from "@/lib/labels/booking";
 import { prisma } from "@/lib/db";
 import { centsToFrancs } from "@/lib/pricing/chf";
 import { formatChf } from "@/lib/pricing/format";
