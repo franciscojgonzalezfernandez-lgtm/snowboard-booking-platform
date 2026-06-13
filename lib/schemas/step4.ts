@@ -1,22 +1,16 @@
-import { Level } from "@prisma/client";
 import { z } from "zod";
 
-// E.164: optional leading +, 8-15 digits, no spaces. Browser-level validation is
-// loose to keep paste-friendly UX; the strict version runs on the server (F-042).
-const PHONE_REGEX = /^\+?[1-9]\d{7,14}$/;
-
-export const attendeeSchema = z.object({
-  name: z.string().trim().min(1).max(80),
-  age: z.coerce.number().int().min(4).max(99),
-  level: z.nativeEnum(Level),
-});
+import { attendeeSchema, type AttendeeInput } from "./attendee";
+import { E164 } from "./phone";
 
 export const step4FormSchema = z.object({
   bookerName: z.string().trim().min(1).max(80),
   bookerPhone: z
     .string()
     .trim()
-    .refine((raw) => PHONE_REGEX.test(raw.replace(/\s+/g, "")), {
+    // Browser-level validation strips spaces to keep paste-friendly UX; the
+    // strict version runs on the server (F-042).
+    .refine((raw) => E164.test(raw.replace(/\s+/g, "")), {
       message: "PHONE_INVALID",
     }),
   attendees: z.array(attendeeSchema).min(1).max(4),
@@ -25,7 +19,6 @@ export const step4FormSchema = z.object({
 });
 
 export type Step4FormValues = z.infer<typeof step4FormSchema>;
-export type AttendeeInput = z.infer<typeof attendeeSchema>;
 
 /** Encode the attendees array for forwarding to step-5 via the URL. */
 export function encodeAttendees(attendees: AttendeeInput[]): string {

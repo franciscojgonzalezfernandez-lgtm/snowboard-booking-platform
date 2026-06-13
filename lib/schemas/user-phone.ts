@@ -1,11 +1,6 @@
 import { z } from "zod";
 
-/**
- * E.164-ish phone rule: optional leading `+`, a non-zero first digit, and 8–15
- * digits in total. Mirrors the booker-phone rule in `booking-draft.ts` so the
- * dashboard edit (F-064b) and the booking form (F-041) accept the same shape.
- */
-export const E164 = /^\+?[1-9]\d{7,14}$/;
+import { E164 } from "./phone";
 
 /**
  * Dashboard phone edit (F-064b). Accepts a raw form string, strips all
