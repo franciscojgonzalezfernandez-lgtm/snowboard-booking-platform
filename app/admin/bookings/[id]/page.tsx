@@ -1,18 +1,23 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { CreditReason, CreditStatus } from "@prisma/client";
 
 import { Button } from "@/components/ui/button";
 import { OpsCancelButton } from "./_components/ops-cancel-button";
 import {
-  DURATION_LABEL,
-  LANGUAGE_LABEL,
-  LEVEL_LABEL,
-  STATUS_LABEL,
   formatAdminDate,
   formatAdminDateTime,
   formatAdminTime,
 } from "@/lib/admin/format";
+import {
+  CREDIT_REASON_LABEL,
+  CREDIT_STATUS_LABEL,
+  DURATION_LABEL,
+  LANGUAGE_LABEL,
+  LEVEL_LABEL,
+  STATUS_LABEL,
+} from "@/lib/labels/booking";
 import {
   loadAdminBookingDetail,
   type AdminBookingDetailDeps,
@@ -29,18 +34,6 @@ export const metadata: Metadata = {
 };
 
 type Props = { params: Promise<{ id: string }> };
-
-const CREDIT_REASON_LABEL: Record<string, string> = {
-  USER_CANCEL: "User cancelled",
-  OPS_CANCEL: "Ops cancelled",
-};
-
-const CREDIT_STATUS_LABEL: Record<string, string> = {
-  ACTIVE: "Active",
-  LOCKED: "Locked",
-  USED: "Used",
-  EXPIRED: "Expired",
-};
 
 function birthDate(date: Date): string {
   return new Intl.DateTimeFormat("en-CH", { dateStyle: "medium", timeZone: "UTC" }).format(date);
@@ -254,8 +247,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 type LedgerRow = {
   id: string;
   amountCents: number;
-  reason: string;
-  status: string;
+  reason: CreditReason;
+  status: CreditStatus;
   expiresAt: Date;
   usedAt: Date | null;
   createdAt: Date;
@@ -294,8 +287,8 @@ function LedgerList({
             >
               <span className="font-medium tabular-nums">{formatChf(r.amountCents)}</span>
               <span className="text-xs text-muted-foreground">
-                {CREDIT_REASON_LABEL[r.reason] ?? r.reason} ·{" "}
-                {CREDIT_STATUS_LABEL[r.status] ?? r.status} · expires{" "}
+                {CREDIT_REASON_LABEL[r.reason]} ·{" "}
+                {CREDIT_STATUS_LABEL[r.status]} · expires{" "}
                 {formatAdminDateTime(r.expiresAt)}
               </span>
             </li>

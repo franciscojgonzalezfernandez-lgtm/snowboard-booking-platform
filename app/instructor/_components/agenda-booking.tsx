@@ -9,8 +9,8 @@ import {
   DURATION_LABEL,
   LANGUAGE_LABEL,
   STATUS_LABEL,
-  formatBookerHistoryDate,
-} from "../_lib/labels";
+} from "@/lib/labels/booking";
+import { formatBookerHistoryDate } from "../_lib/labels";
 import { InstructorNoteField } from "./instructor-note-field";
 
 const CANCELLED_STATUSES = new Set<BookingStatus>([

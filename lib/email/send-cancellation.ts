@@ -1,8 +1,9 @@
 import React from "react";
-import type { Duration, Locale, Prisma } from "@prisma/client";
+import type { Locale, Prisma } from "@prisma/client";
 
 import { formatChf } from "@/lib/pricing/format";
 import type { Db } from "@/lib/db";
+import { DURATION_LABELS, INTL_TAG } from "./labels";
 import { sendEmail, type EmailClient } from "./send-email";
 import {
   CancellationOpsNotifEmail,
@@ -25,33 +26,6 @@ const APP_BASE_URL = "https://rideflumserberg.ch";
 const OPS_EMAIL = "franciscojgonzalezfernandez@gmail.com";
 const CONTACT_PHONE = "+41 76 638 18 70";
 const OPS_LOCALE: Locale = "en" as Locale;
-
-const DURATION_LABELS: Record<Locale, Record<Duration, string>> = {
-  en: {
-    ONE_HOUR: "1 hour",
-    TWO_HOURS: "2 hours",
-    INTENSIVE: "4 hours · intensive",
-    FULL_DAY: "6 hours · full day",
-  },
-  de: {
-    ONE_HOUR: "1 Stunde",
-    TWO_HOURS: "2 Stunden",
-    INTENSIVE: "4 Stunden · Intensiv",
-    FULL_DAY: "6 Stunden · Ganztags",
-  },
-  es: {
-    ONE_HOUR: "1 hora",
-    TWO_HOURS: "2 horas",
-    INTENSIVE: "4 horas · intensivo",
-    FULL_DAY: "6 horas · jornada completa",
-  },
-};
-
-const INTL_TAG: Record<Locale, string> = {
-  en: "en-CH",
-  de: "de-CH",
-  es: "es-CH",
-};
 
 const BOOKING_SELECT = {
   id: true,

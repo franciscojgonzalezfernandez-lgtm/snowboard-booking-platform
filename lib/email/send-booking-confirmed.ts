@@ -1,12 +1,13 @@
 import React from "react";
 import type { CreateEmailOptions } from "resend";
-import type { Duration, Locale, Prisma, PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 
 import { durationMinutes } from "@/lib/booking-engine/duration";
 import { setUtcTime, zurichWallClockToUtc } from "@/lib/booking-engine/time";
 import { buildBookingIcs } from "@/lib/ics/build-event";
 import { formatChf } from "@/lib/pricing/format";
 import type { Db } from "@/lib/db";
+import { DURATION_LABELS, INTL_TAG } from "./labels";
 import { sendEmail, type EmailClient } from "./send-email";
 import {
   BookingConfirmedEmail,
@@ -18,33 +19,6 @@ const ORGANIZER_EMAIL = "booking@rideflumserberg.ch";
 const ORGANIZER_NAME = "Ride Flumserberg";
 const LOCATION = "Flumserberg, Switzerland";
 const APP_BASE_URL = "https://rideflumserberg.ch";
-
-const DURATION_LABELS: Record<Locale, Record<Duration, string>> = {
-  en: {
-    ONE_HOUR: "1 hour",
-    TWO_HOURS: "2 hours",
-    INTENSIVE: "4 hours · intensive",
-    FULL_DAY: "6 hours · full day",
-  },
-  de: {
-    ONE_HOUR: "1 Stunde",
-    TWO_HOURS: "2 Stunden",
-    INTENSIVE: "4 Stunden · Intensiv",
-    FULL_DAY: "6 Stunden · Ganztags",
-  },
-  es: {
-    ONE_HOUR: "1 hora",
-    TWO_HOURS: "2 horas",
-    INTENSIVE: "4 horas · intensivo",
-    FULL_DAY: "6 horas · jornada completa",
-  },
-};
-
-const INTL_TAG: Record<Locale, string> = {
-  en: "en-CH",
-  de: "de-CH",
-  es: "es-CH",
-};
 
 const BOOKING_SELECT = {
   id: true,

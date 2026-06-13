@@ -4,7 +4,7 @@ import { BookingStatus } from "@prisma/client";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { STATUS_LABEL } from "@/lib/admin/format";
+import { STATUS_LABEL } from "@/lib/labels/booking";
 import type { InstructorOption } from "../../_components/instructor-selector";
 
 // Server-rendered <form method="get"> — no JS island. Filtering submits the
