@@ -1960,6 +1960,46 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - **No** romper la regla `lib/` no importa de `app/`. Si labels viven en `lib/_labels/`, app las consume pasando i18n strings — no al revés.
   - Estimación: análisis ~1 día, migration ~3-5 días según hallazgos. Empezar por result-type (más universal y menos polémico) antes que projections.
 
+### F-087 — Admin student directory (booker profiles: bookings + notes + contact + credits)
+
+- Sprint: post-Sprint 5 · Estado: backlog · Prioridad: P2 (admin CRM-lite, pedido por owner)
+- Depende de: F-065 (instructor note + booker-history query), F-076 (admin shell + `requireAdmin`), F-077 (admin bookings list — patrones de tabla/filtro/paginación + `lib/admin/`), F-020 (schema: `Booking.bookerId` index)
+- Motivación: el owner pidió poder ver a cada alumno con todo su historial de clases y todas las notas internas que los instructores le han escrito. Hoy las notas F-065 sólo se ven inline en la agenda del instructor, una por booking y dispersas por la ventana de fechas; no hay vista agregada por persona. Para preparar una clase con un alumno recurrente el owner tiene que cazar bookings sueltos. Falta un directorio admin tipo CRM-lite centrado en el booker (cuenta `User`), reusando las notas que F-065 ya persiste.
+- Decisiones (sesión 2026-06-13):
+  - **Unidad = booker (`User`)**, no attendee. No hay `Person` model; los attendees (p. ej. hijos que un padre inscribe) se listan dentro de cada booking pero no tienen identidad cross-booking — F-065 evitó deliberadamente el fingerprint de attendee. Identidad de attendee = followup separado si el owner lo pide.
+  - **Ubicación = nuevo `/admin/students`** (lista) + `/admin/students/[id]` (perfil). Mismo patrón que `/admin/bookings`, `/admin/instructors`, `/admin/pricing`.
+  - **Perfil incluye los 4 bloques:** bookings history (todos los status) + notes timeline + contact info + credits & lifetime stats.
+  - **Notas read-only aquí.** La autoría/edición sigue en la agenda del instructor (F-065 `setInstructorNote`); este surface sólo presenta.
+- AC data layer:
+  - [ ] `lib/admin/students.ts` (deps-inyectado, patrón F-065/F-077):
+    - `listStudents({ search?, page?, pageSize? })` → `{ rows: AdminStudentRow[]; total }`. `AdminStudentRow = { id, name, email, phone, locale, bookingsCount, lastBookingDate, activeCreditCents }`. Origen: bookers distintos (`User` con ≥1 `Booking`). Search por `name`/`email` (case-insensitive), paginación + count (reusar el patrón de `lib/admin/bookings.ts` + `lib/schemas/admin-bookings.ts`). Sin N+1 (agregados via `groupBy`/`_count`, no loop por user).
+    - `getStudentProfile(userId)` → contact (`name, email, phone, locale, roles, createdAt`) + **todos** los bookings (sin filtro de status, newest-first, tie-break `anchorTime` desc) con `attendees` + `instructor.user.name` + `status`/`totalPriceCents`/`duration`/`anchorTime`/`date` + notes timeline + credits + stats. `null` si el `User` no existe.
+  - [ ] **Notas cross-instructor:** a diferencia de `getBookerNoteHistories` (scoped a un `instructorId`, F-065), aquí el admin ve las notas de **todos** los instructores para ese booker. Nueva query (o generalizar la de F-065 con `instructorId` opcional) con `status: COMPLETED` + `instructorNote: { not: null }`, `orderBy date desc`, **incluyendo el autor** (`instructor.user.name`) — multi-instructor lo exige; no hardcodear "Javi".
+  - [ ] **Credit balance helper:** no existe hoy (`lib/credit/` sólo tiene `expire.ts`). Extraer `lib/credit/balance.ts` `getActiveCreditCents(userId)` (sum `amountCents` where `status = ACTIVE`) — reusable por el credits-aside del dashboard (F-059) para no duplicar.
+  - [ ] **Lifetime stats:** lessons count = bookings `COMPLETED`; total spend = suma `totalPriceCents` de `CONFIRMED` + `COMPLETED` (excluye cancelled/refunded/pending). Documentar la regla inline.
+- AC UI:
+  - [ ] `app/admin/students/page.tsx` (Server Component, EN-only, bajo `requireAdmin` via `app/admin/layout.tsx`): tabla name/email/phone + bookings count + last booking + active credit. Search box + paginación (reusar `app/admin/bookings/_components/{pagination,filter-bar}.tsx`). Row → `/admin/students/[id]`.
+  - [ ] `app/admin/students/[id]/page.tsx`: perfil con 4 secciones — (1) **Contact header** (name, email, phone, locale, roles); (2) **Lifetime stats** (lessons count, total spend CHF via `Intl.NumberFormat('de-CH')`, active credit); (3) **Notes timeline** read-only, newest-first, cada nota con fecha de la clase + `setAt` + autor (instructor); (4) **Bookings history** (todos los status, date/time/duration/instructor/status/price + attendees). 404 si el `User` no existe; empty states si existe sin bookings/notes.
+  - [ ] Añadir entrada **"Students"** al nav del admin shell (F-076) junto a Bookings/Instructors/Pricing.
+  - [ ] **Read-only:** NO montar `InstructorNoteField` (client island F-065) aquí — render como texto plano.
+  - [ ] Reusar `<StatusBadge>` si F-085 ya aterrizó; si no, status como label simple (no bloquear en F-085).
+- AC seguridad / i18n:
+  - [ ] EN-only (admin fuera de `[locale]`) — sin next-intl.
+  - [ ] `requireAdmin()` cubierto por el layout; read-only (sin server actions). Confirmar que ninguna ruta filtra PII (email/phone) ni notas internas a no-admin.
+  - [ ] `instructorNote` es **internal-only** (F-065): admin-only OK. Nunca exponer en API pública ni en el dashboard del booker.
+- Tests:
+  - [ ] Vitest `lib/admin/students.test.ts`: `listStudents` (paginación, search name/email, count + last booking + active credit correctos) y `getStudentProfile` (agrega bookings de todos los status; notes sólo de `COMPLETED` con note no-null e incluyen autor; spend = suma `CONFIRMED`+`COMPLETED`; credit balance = sum `ACTIVE`). Mock Prisma deps-inyectado.
+  - [ ] Playwright `e2e/f-087-admin-students.spec.ts`: admin → `/admin/students` lista al booker seed; click → perfil muestra bookings + notes timeline (las de F-065); search filtra; non-admin (student) → 403/redirect; **regresión cross-surface**: el booker NO ve esas notas en `/dashboard`.
+  - [ ] Fixtures: extender `prisma/seed.ts` con un "alumno con historial real" (booker + completed bookings + notes) — followup ya anotado en notas de F-021. Mientras tanto reusar el patrón de inyección manual usado para probar F-065.
+- Notas:
+  - **Unidad = booker (`User`).** Sin `Person` model; attendees no agregan a un perfil propio (F-065 evitó fingerprint). Identidad de attendee = followup separado.
+  - **Notas read-only.** Edición sigue en la agenda del instructor (F-065). Editar desde admin ⇒ ampliar authz de `setInstructorNote` (decisión diferida, no en este ticket).
+  - **`AdminStudentRow` entra en el radar de F-086** (type-dedup): comparte shape con `AdminBookingRow`/`AgendaBooking`; documentar el overlap al crearla.
+  - **Multi-instructor:** la timeline DEBE atribuir autor — single-instructor hoy lo hace trivial, no hardcodear.
+  - **No** charts/analytics en MVP — tabla + stats numéricas.
+  - Follow-up opcional: link desde `/admin/bookings/[id]` (booker name → perfil del student). Encaja pero no bloquea.
+- Refs: F-087, F-065, F-077, F-076, Architecture (modelos `User` / `Booking` / `AccountCredit` / `Attendee`)
+
 ---
 
 ## Bloqueantes / decisiones abiertas (consolidadas)
