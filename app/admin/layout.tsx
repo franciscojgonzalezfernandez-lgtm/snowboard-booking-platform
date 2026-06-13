@@ -38,6 +38,13 @@ export default async function AdminLayout({
               Bookings
             </Link>
             <Link
+              href="/admin/students"
+              data-testid="admin-nav-students"
+              className="text-xs font-bold uppercase tracking-[0.18em] underline-offset-4 hover:underline"
+            >
+              Students
+            </Link>
+            <Link
               href="/admin/instructors"
               data-testid="admin-nav-instructors"
               className="text-xs font-bold uppercase tracking-[0.18em] underline-offset-4 hover:underline"
