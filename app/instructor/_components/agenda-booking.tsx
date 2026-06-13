@@ -1,5 +1,6 @@
 import { BookingStatus } from "@prisma/client";
 
+import { NoShowButton } from "@/components/booking/no-show-button";
 import { formatChf } from "@/lib/pricing/format";
 
 import { type AgendaBooking, endTimeHHMM } from "@/lib/instructor/agenda";
@@ -10,6 +11,7 @@ import {
   LANGUAGE_LABEL,
   STATUS_LABEL,
 } from "@/lib/labels/booking";
+import { markNoShow } from "../actions";
 import { formatBookerHistoryDate } from "../_lib/labels";
 import { InstructorNoteField } from "./instructor-note-field";
 
@@ -33,6 +35,8 @@ export function AgendaBookingItem({ booking, history }: Props) {
     booking.attendees.map((attendee) => attendee.name).join(", ") || "—";
   const isCancelled = CANCELLED_STATUSES.has(booking.status);
   const isCompleted = booking.status === BookingStatus.COMPLETED;
+  // F-081: only auto-completed (F-062 sweep) rows offer the no-show re-flip.
+  const isAutoCompleted = isCompleted && booking.autoCompletedAt !== null;
 
   // Previous classes by the same booker — never list the row's own booking.
   const priorNotes = isCompleted
@@ -89,6 +93,15 @@ export function AgendaBookingItem({ booking, history }: Props) {
 
       {isCompleted ? (
         <div className="space-y-4 pt-2 sm:col-span-3">
+          {isAutoCompleted ? (
+            <div className="flex items-center justify-between gap-4 border-b border-input pb-4">
+              <p className="text-xs text-muted-foreground">
+                Auto-marked complete. Was this a no-show?
+              </p>
+              <NoShowButton bookingId={booking.id} action={markNoShow} size="sm" />
+            </div>
+          ) : null}
+
           <InstructorNoteField
             bookingId={booking.id}
             initialNote={booking.instructorNote ?? ""}

@@ -13,6 +13,11 @@ import {
   type StripeRefundFn,
 } from "@/lib/booking/cancel-by-ops";
 import {
+  markNoShowWith,
+  type MarkNoShowResult,
+} from "@/lib/booking/mark-no-show";
+import { revalidateAfterNoShow } from "@/lib/booking/no-show-revalidate";
+import {
   cancelDayByOpsWith,
   previewCancelDayWith,
   type CancelDayBatchResult,
@@ -387,6 +392,22 @@ export async function cancelBookingByOps(input: {
     cashRefundedCents: result.cashRefundedCents,
     creditReEmittedCents: result.creditReEmittedCents,
   };
+}
+
+/**
+ * F-081: re-flip an auto-completed booking to a no-show (CANCELLED_BY_USER, no
+ * credit). Admin scope — no instructor ownership constraint. The instructor
+ * agenda has its own ownership-scoped wrapper in `app/instructor/actions.ts`.
+ */
+export async function markNoShow(input: {
+  bookingId: string;
+}): Promise<MarkNoShowResult> {
+  await requireAdmin();
+
+  const result = await markNoShowWith({ prisma, instructorId: null }, input);
+
+  if (result.ok) revalidateAfterNoShow(input.bookingId);
+  return result;
 }
 
 // --- F-079: ops-cancel-day (batch) ----------------------------------------

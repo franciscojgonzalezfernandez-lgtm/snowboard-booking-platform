@@ -3,8 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { CreditReason, CreditStatus } from "@prisma/client";
 
-import { Button } from "@/components/ui/button";
+import { NoShowButton } from "@/components/booking/no-show-button";
 import { OpsCancelButton } from "./_components/ops-cancel-button";
+import { markNoShow } from "../../actions";
 import {
   formatAdminDate,
   formatAdminDateTime,
@@ -202,14 +203,7 @@ export default async function AdminBookingDetailPage({ params }: Props) {
             />
           ) : null}
           {showNoShow ? (
-            <Button
-              type="button"
-              disabled
-              title="Available in F-081"
-              data-testid="admin-detail-action-no-show"
-            >
-              Mark no-show — F-081
-            </Button>
+            <NoShowButton bookingId={b.id} action={markNoShow} />
           ) : null}
           {!showOpsCancel && !showNoShow ? (
             <p className="text-sm text-muted-foreground">

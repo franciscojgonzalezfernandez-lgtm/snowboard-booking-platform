@@ -23,6 +23,11 @@ import {
   type DeleteBlockResult,
 } from "@/lib/instructor/availability-block";
 import {
+  markNoShowWith,
+  type MarkNoShowResult,
+} from "@/lib/booking/mark-no-show";
+import { revalidateAfterNoShow } from "@/lib/booking/no-show-revalidate";
+import {
   setInstructorNoteWith,
   type SetInstructorNoteResult,
 } from "@/lib/instructor/instructor-note";
@@ -268,6 +273,21 @@ export async function setInstructorNote(
     { bookingId, note },
   );
   if (result.ok) revalidatePath("/instructor");
+  return result;
+}
+
+/**
+ * F-081: re-flip one of *this instructor's* auto-completed bookings to a
+ * no-show (CANCELLED_BY_USER, no credit). Ownership-scoped — the core rejects
+ * (FORBIDDEN) any booking not owned by the session instructor. The admin
+ * surface (F-077) has its own unscoped wrapper in `app/admin/actions.ts`.
+ */
+export async function markNoShow(input: {
+  bookingId: string;
+}): Promise<MarkNoShowResult> {
+  const { instructorId } = await requireInstructor();
+  const result = await markNoShowWith({ prisma, instructorId }, input);
+  if (result.ok) revalidateAfterNoShow(input.bookingId);
   return result;
 }
 
