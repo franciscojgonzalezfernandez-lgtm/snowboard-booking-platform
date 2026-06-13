@@ -16,6 +16,7 @@ import {
   markNoShowWith,
   type MarkNoShowResult,
 } from "@/lib/booking/mark-no-show";
+import { revalidateAfterNoShow } from "@/lib/booking/no-show-revalidate";
 import {
   cancelDayByOpsWith,
   previewCancelDayWith,
@@ -405,12 +406,7 @@ export async function markNoShow(input: {
 
   const result = await markNoShowWith({ prisma, instructorId: null }, input);
 
-  if (result.ok) {
-    revalidatePath("/admin");
-    revalidatePath("/admin/bookings");
-    revalidatePath(`/admin/bookings/${input.bookingId}`);
-    revalidatePath("/instructor");
-  }
+  if (result.ok) revalidateAfterNoShow(input.bookingId);
   return result;
 }
 
