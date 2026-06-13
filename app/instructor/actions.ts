@@ -76,7 +76,17 @@ export async function openAvailabilityRange(input: {
   toDate: string;
 }): Promise<OpenRangeResult> {
   const { instructorId } = await requireInstructor();
-  const result = await openAvailabilityRangeWith(instructorDeps(instructorId), input);
+  let result: OpenRangeResult;
+  try {
+    result = await openAvailabilityRangeWith(instructorDeps(instructorId), input);
+  } catch (err) {
+    // Tagged capture + rethrow, mirroring app/admin/actions.ts: expected
+    // failures come back as { ok: false }; a throw here is an infra error.
+    Sentry.captureException(err, {
+      tags: { source: "open-availability-range" },
+    });
+    throw err;
+  }
   if (result.ok) revalidateInstructor();
   return result;
 }
@@ -87,7 +97,15 @@ export async function blockAvailabilityWindow(input: {
   endTime: string;
 }): Promise<BlockWindowResult> {
   const { instructorId } = await requireInstructor();
-  const result = await blockAvailabilityWindowWith(instructorDeps(instructorId), input);
+  let result: BlockWindowResult;
+  try {
+    result = await blockAvailabilityWindowWith(instructorDeps(instructorId), input);
+  } catch (err) {
+    Sentry.captureException(err, {
+      tags: { source: "block-availability-window" },
+    });
+    throw err;
+  }
   if (result.ok) revalidateInstructor();
   return result;
 }
@@ -96,7 +114,16 @@ export async function clearAvailability(input: {
   blockId: string;
 }): Promise<ClearResult> {
   const { instructorId } = await requireInstructor();
-  const result = await clearAvailabilityWith(instructorDeps(instructorId), input);
+  let result: ClearResult;
+  try {
+    result = await clearAvailabilityWith(instructorDeps(instructorId), input);
+  } catch (err) {
+    Sentry.captureException(err, {
+      tags: { source: "clear-availability" },
+      extra: { blockId: input.blockId },
+    });
+    throw err;
+  }
   if (result.ok) revalidateInstructor();
   return result;
 }
@@ -206,10 +233,18 @@ export type DisconnectCalendarResult = { ok: true };
  */
 export async function disconnectCalendar(): Promise<DisconnectCalendarResult> {
   const { instructorId } = await requireInstructor();
-  await prisma.instructor.update({
-    where: { id: instructorId },
-    data: { googleRefreshToken: null, calendarConnected: false },
-  });
+  try {
+    await prisma.instructor.update({
+      where: { id: instructorId },
+      data: { googleRefreshToken: null, calendarConnected: false },
+    });
+  } catch (err) {
+    Sentry.captureException(err, {
+      tags: { source: "disconnect-calendar" },
+      extra: { instructorId },
+    });
+    throw err;
+  }
   revalidatePath("/instructor/calendar");
   return { ok: true };
 }

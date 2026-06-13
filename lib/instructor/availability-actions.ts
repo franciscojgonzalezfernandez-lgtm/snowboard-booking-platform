@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { addDays, startOfUtcDay, toIsoDate } from "@/lib/booking-engine/time";
 import type { Db } from "@/lib/db";
+import type { Empty, Result } from "@/lib/types/result";
 
 import {
   blockOverlapsBookings,
@@ -46,15 +47,15 @@ export type AvailabilityActionError =
   | "NOT_FOUND"
   | "FORBIDDEN";
 
-export type OpenRangeResult =
-  | { ok: true; created: number }
-  | { ok: false; error: AvailabilityActionError };
-export type BlockWindowResult =
-  | { ok: true; blockId: string }
-  | { ok: false; error: AvailabilityActionError };
-export type ClearResult =
-  | { ok: true }
-  | { ok: false; error: AvailabilityActionError };
+export type OpenRangeResult = Result<
+  { created: number },
+  AvailabilityActionError
+>;
+export type BlockWindowResult = Result<
+  { blockId: string },
+  AvailabilityActionError
+>;
+export type ClearResult = Result<Empty, AvailabilityActionError>;
 
 function dayUtc(iso: string): Date {
   return startOfUtcDay(new Date(`${iso}T00:00:00.000Z`));

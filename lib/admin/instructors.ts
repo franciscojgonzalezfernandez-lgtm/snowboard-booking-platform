@@ -9,6 +9,7 @@ import {
   type UpdateInstructorInput,
 } from "@/lib/schemas/instructor";
 import type { Db } from "@/lib/db";
+import type { Empty, Result } from "@/lib/types/result";
 
 // Pure, dependency-injected cores for admin instructor CRUD. They live in
 // `lib/` (not the `"use server"` module in `app/`) so Vitest can drive them
@@ -25,15 +26,12 @@ export type AdminInstructorError =
   | "ALREADY_INSTRUCTOR"
   | "NOT_FOUND";
 
-export type CreateInstructorResult =
-  | { ok: true; instructorId: string; userId: string }
-  | { ok: false; error: AdminInstructorError };
-export type UpdateInstructorResult =
-  | { ok: true }
-  | { ok: false; error: AdminInstructorError };
-export type DeactivateInstructorResult =
-  | { ok: true }
-  | { ok: false; error: AdminInstructorError };
+export type CreateInstructorResult = Result<
+  { instructorId: string; userId: string },
+  AdminInstructorError
+>;
+export type UpdateInstructorResult = Result<Empty, AdminInstructorError>;
+export type DeactivateInstructorResult = Result<Empty, AdminInstructorError>;
 
 
 export type AdminInstructorDeps = {
