@@ -1611,18 +1611,20 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-080 — Pricing editor (Season.priceCentsByDuration)
 
-- Sprint: 4 · Estado: backlog · Prioridad: P1
+- Sprint: 4 · Estado: done · Prioridad: P1
 - Depende de: F-076, F-039 (schema priceCentsByDuration)
 - Motivación: el owner ajusta precios por duración sin tocar DB/seed. Escribe el JSON `Season.priceCentsByDuration` (D-PRC).
 - AC:
-  - [ ] `app/admin/pricing/page.tsx`: form con 4 inputs (ONE_HOUR, TWO_HOURS, INTENSIVE, FULL_DAY) en CHF (display) → cents (store). Lee Season activa.
-  - [ ] `updateSeasonPricing(input)` server action: Zod (int >0, cents), rol admin, escribe `Season.priceCentsByDuration`. Revalida Step 1 + pricing page.
-  - [ ] Mostrar valores actuales + preview formateado `Intl.NumberFormat('de-CH', { currency: 'CHF' })`.
+  - [x] `app/admin/pricing/page.tsx`: form (`_components/pricing-form.tsx`) con 4 inputs (ONE_HOUR, TWO_HOURS, INTENSIVE, FULL_DAY) en CHF (display) → cents (store). Lee Season activa vía `getActiveSeasonPricingWith`; keys faltantes (`{}` post-migración) renderizan input vacío en vez de throw.
+  - [x] `updateSeasonPricing(input)` server action (`app/admin/actions.ts`, wrapper sobre core puro `lib/admin/pricing.ts`): Zod (`updateSeasonPricingSchema` — int >0, cents, cap 1'000'000 = 10k CHF), `requireAdmin()`, escribe `Season.priceCentsByDuration` de la Season activa (`NO_ACTIVE_SEASON` si no hay). Revalida `/admin/pricing` + `/[locale]/reservar` (Step 1).
+  - [x] Muestra valores actuales (`pricing-current`) + preview live formateado vía `formatChf` (`Intl.NumberFormat('de-CH', { currency: 'CHF' })`).
 - Tests:
-  - Vitest: validación (negativo/float rechazado), persiste cents correctos.
-  - Playwright: editar precio → Step 1 refleja nuevo precio.
+  - [x] Vitest `lib/admin/pricing.test.ts` (10 specs): escribe los 4 cents a la Season activa, rechaza negativo/cero/float/over-cap/key-faltante sin tocar DB, `NO_ACTIVE_SEASON`; loader mapea keys faltantes → null. `lib/pricing/chf.test.ts` (7 specs): francs↔cents round-trip + redondeo sub-cent + guards. Suite global 407/407, `tsc` + `eslint` limpios.
+  - [x] Playwright `e2e/f-080-pricing.spec.ts` (3 specs): no-admin → 404; admin edita los 4 precios → `pricing-current` refleja + Season persiste los cents correctos (snapshot/restore de precios para no contaminar otros specs); precio 0 → `aria-invalid` bloquea submit.
 - Notas:
-  - Sin tabla nueva — edita el JSON existente (F-039). Money siempre en cents server-side.
+  - Sin tabla nueva — edita el JSON existente (F-039). Money siempre en cents server-side: el form toma CHF, convierte a cents en el único boundary `lib/pricing/chf.ts` (`francsToCents`, redondeo a céntimo), y el server re-valida int>0 antes de persistir.
+  - **Dos capas Zod** (`lib/schemas/pricing.ts`): `pricingFormSchema` (francs, cliente RHF) + `updateSeasonPricingSchema` (cents, autoridad servidor). El core `.int()` rechaza cents fraccionarios aunque el cliente los fabrique.
+  - **E2E del funnel diferido a la capa DB.** Step 1 lee la misma Season vía `getPriceCents`; persistir los cents correctos prueba el precio del funnel sin arrastrar sesión + selección de duración + credit-aside al smoke. Mismo criterio que F-078/F-079.
 
 ##### F-081 — No-show re-flip (autoCompletedAt → CANCELLED_BY_USER)
 
