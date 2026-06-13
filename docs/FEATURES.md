@@ -1395,7 +1395,7 @@ Critical path: **F-057 + F-067 (paired PR) → F-058 + F-063 → F-059 → F-060
 
 ### Sprint 4 — Vista instructor + Admin (semanas 7-8)
 
-> Sprint más grande del MVP: self-service del instructor + panel ops/admin. `/instructor` y `/admin` viven **fuera de `[locale]`** (EN-only, ver Routing conventions). GCal (F-074 OAuth + F-075 sync) **landed** tras provisionar el owner `ENCRYPTION_KEY` + consent screen (2026-06-05). 1 ticket sigue **blocked-in-progress** (⛔ F-082 Tip) — depende de setup externo del owner (`INSTRUCTOR_TIP_URL` / TWINT), AC escrito, no mergeable hasta provisionar el blocker. Buildable-now core (10): F-071, F-072, F-073, F-065, F-076, F-077, F-078, F-079, F-080, F-081. Si desborda 2 semanas, split en **4a** (instructor + admin core) / **4b** (GCal + Tip al desbloquearse).
+> Sprint más grande del MVP: self-service del instructor + panel ops/admin. `/instructor` y `/admin` viven **fuera de `[locale]`** (EN-only, ver Routing conventions). GCal (F-074 OAuth + F-075 sync) **landed** tras provisionar el owner `ENCRYPTION_KEY` + consent screen (2026-06-05). 1 ticket sigue **blocked-in-progress** (⛔ F-082 Tip) — depende de setup externo del owner (`INSTRUCTOR_TIP_URL` / TWINT), AC escrito, no mergeable hasta provisionar el blocker. Buildable-now core (11): F-071, F-072, F-073, F-065, F-076, F-077, F-078, F-079, F-080, F-081, F-087. Si desborda 2 semanas, split en **4a** (instructor + admin core) / **4b** (GCal + Tip al desbloquearse). F-087 (season management) añadido tras review de PR #118: F-080 lee la Season activa pero nada in-app la crea/activa.
 >
 > **D-TIP resuelto (desglose 2026-05-29):** instructor recibe el **100%** de las propinas en MVP (sin split escuela). Revisable cuando entre un segundo coach.
 
@@ -1406,7 +1406,8 @@ Instructor:  F-071 ─┬─ F-072 (availability CRUD)
                     ├─ F-073 (profile + Blob photo) ── F-074 ── F-075
                     └─ F-065 (feedback)
 Admin:       F-076 ─┬─ F-077 (bookings view) ── F-078 (ops-cancel) ── F-079 (cancel day)
-                    └─ F-080 (pricing editor)
+                    ├─ F-080 (pricing editor)
+                    └─ F-087 (season CRUD + activate) ── precede a F-080 en operación real
              F-081 (no-show re-flip; después de F-077 + F-071)
 Tip:         F-082 ⛔ (paralelo, blocked tail)
 ```
@@ -1611,18 +1612,49 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-080 — Pricing editor (Season.priceCentsByDuration)
 
-- Sprint: 4 · Estado: backlog · Prioridad: P1
+- Sprint: 4 · Estado: done · Prioridad: P1
 - Depende de: F-076, F-039 (schema priceCentsByDuration)
 - Motivación: el owner ajusta precios por duración sin tocar DB/seed. Escribe el JSON `Season.priceCentsByDuration` (D-PRC).
 - AC:
-  - [ ] `app/admin/pricing/page.tsx`: form con 4 inputs (ONE_HOUR, TWO_HOURS, INTENSIVE, FULL_DAY) en CHF (display) → cents (store). Lee Season activa.
-  - [ ] `updateSeasonPricing(input)` server action: Zod (int >0, cents), rol admin, escribe `Season.priceCentsByDuration`. Revalida Step 1 + pricing page.
-  - [ ] Mostrar valores actuales + preview formateado `Intl.NumberFormat('de-CH', { currency: 'CHF' })`.
+  - [x] `app/admin/pricing/page.tsx`: form (`_components/pricing-form.tsx`) con 4 inputs (ONE_HOUR, TWO_HOURS, INTENSIVE, FULL_DAY) en CHF (display) → cents (store). Lee Season activa vía `getActiveSeasonPricingWith`; keys faltantes (`{}` post-migración) renderizan input vacío en vez de throw.
+  - [x] `updateSeasonPricing(input)` server action (`app/admin/actions.ts`, wrapper sobre core puro `lib/admin/pricing.ts`): Zod (`updateSeasonPricingSchema` — int >0, cents, cap 1'000'000 = 10k CHF), `requireAdmin()`, escribe `Season.priceCentsByDuration` de la Season activa (`NO_ACTIVE_SEASON` si no hay). Revalida `/admin/pricing` + `/[locale]/reservar` (Step 1).
+  - [x] Muestra valores actuales (`pricing-current`) + preview live formateado vía `formatChf` (`Intl.NumberFormat('de-CH', { currency: 'CHF' })`).
 - Tests:
-  - Vitest: validación (negativo/float rechazado), persiste cents correctos.
-  - Playwright: editar precio → Step 1 refleja nuevo precio.
+  - [x] Vitest `lib/admin/pricing.test.ts` (10 specs): escribe los 4 cents a la Season activa, rechaza negativo/cero/float/over-cap/key-faltante sin tocar DB, `NO_ACTIVE_SEASON`; loader mapea keys faltantes → null. `lib/pricing/chf.test.ts` (7 specs): francs↔cents round-trip + redondeo sub-cent + guards. Suite global 407/407, `tsc` + `eslint` limpios.
+  - [x] Playwright `e2e/f-080-pricing.spec.ts` (3 specs): no-admin → 404; admin edita los 4 precios → `pricing-current` refleja + Season persiste los cents correctos (snapshot/restore de precios para no contaminar otros specs); precio 0 → `aria-invalid` bloquea submit.
 - Notas:
-  - Sin tabla nueva — edita el JSON existente (F-039). Money siempre en cents server-side.
+  - Sin tabla nueva — edita el JSON existente (F-039). Money siempre en cents server-side: el form toma CHF, convierte a cents en el único boundary `lib/pricing/chf.ts` (`francsToCents`, redondeo a céntimo), y el server re-valida int>0 antes de persistir.
+  - **Dos capas Zod** (`lib/schemas/pricing.ts`): `pricingFormSchema` (francs, cliente RHF) + `updateSeasonPricingSchema` (cents, autoridad servidor). El core `.int()` rechaza cents fraccionarios aunque el cliente los fabrique.
+  - **E2E del funnel diferido a la capa DB.** Step 1 lee la misma Season vía `getPriceCents`; persistir los cents correctos prueba el precio del funnel sin arrastrar sesión + selección de duración + credit-aside al smoke. Mismo criterio que F-078/F-079.
+
+##### F-087 — Season management admin UI (CRUD + activate/deactivate)
+
+- Sprint: 4 · Estado: backlog · Prioridad: P1
+- Depende de: F-076 (admin shell + `requireAdmin`), F-020 (schema `Season`), F-039 (`priceCentsByDuration`)
+- Motivación: hoy una `Season` **sólo** se crea vía `prisma/seed.ts` (`upsertSeason`, sobre `Season 26/27`). No existe ninguna UI para crear, activar o desactivar temporadas. El booking-engine, el pricing (F-080) y la disponibilidad del instructor resuelven la "temporada activa" con `prisma.season.findFirst({ where: { active: true } })` — todo el producto asume una Season activa pre-sembrada. Si no hay activa, `/admin/pricing` (F-080) muestra *"No active season. Activate a season before setting prices."* pero ese mensaje es un **callejón sin salida**: nada in-app permite crear ni activar una. Este ticket cierra el gap para operar multi-temporada (cada invierno una nueva) sin tocar DB ni seed. Detectado en review de PR #118 (F-080).
+- AC routing/auth:
+  - [ ] `app/admin/seasons/page.tsx` + `_components/`. EN-only, fuera de `[locale]`. Gating server-side vía `requireAdmin()` (mismo patrón que F-080); nunca confiar en rol client-side.
+  - [ ] Link "Seasons" en `app/admin/layout.tsx` nav (junto a Pricing).
+- AC server (cores puros en `lib/admin/seasons.ts` con DI sobre `prisma`, wrappers `"use server"` en `app/admin/actions.ts` con `requireAdmin` + Zod):
+  - [ ] `createSeason(input)` — Zod en `lib/schemas/season.ts`: `name`, `startDate`/`endDate` (`YYYY-MM-DD`, `start < end`), `anchorTimes` (`HH:MM[]`, ≥1, ordenado/dedup en transform), `operatingHoursStart`/`operatingHoursEnd` (`HH:MM`, `start < end`, y cada `anchorTime` dentro del rango), `active` opcional (default `false`). `priceCentsByDuration` arranca `{}` — el owner lo puebla en `/admin/pricing` (F-080) tras activar.
+  - [ ] `updateSeason(id, input)` — edita los mismos campos. Rechaza editar fechas/anchors si la Season tiene bookings `CONFIRMED`/`PENDING_PAYMENT` fuera del nuevo rango (`HAS_BOOKINGS_OUT_OF_RANGE`) para no dejar clases huérfanas.
+  - [ ] `activateSeason(id)` — **invariante de una sola activa**: pone `active=true` en la Season target y `active=false` en todas las demás, **atómico en `$transaction`** (el `findFirst({where:{active:true}})` de todo el producto da resultado no determinista con >1 activa). Rechaza activar (`INCOMPLETE_PRICING`) si `priceCentsByDuration` no tiene las 4 keys del enum `Duration` pobladas (`getPriceCents` throwea en booking time — fail fast aquí, ver invariante schema F-039).
+  - [ ] `deactivateSeason(id)` — pone `active=false`. Permitido dejar 0 activas (off-season); el booking-engine ya degrada a "fuera de temporada" cuando no hay activa (cubierto F-022).
+  - [ ] Revalida `/admin/seasons` + `/admin/pricing` + `/[locale]/reservar` (Step 1 lee la Season activa).
+- AC UI:
+  - [ ] Lista de seasons (orden `startDate` desc): nombre, rango de fechas, badge "Active", nº de anchors, operating hours, estado de pricing (4/4 keys o "incomplete"). Editorial / tokens design-system (cream/ink/border, `font-display`, borders-not-shadows), shadcn `Button`/`Input`/`Dialog`.
+  - [ ] Form crear/editar (RHF + Zod resolver, patrón form-fix PR #100: submit nunca disabled por `!isValid`, `focusFirstError` en el primer error). Inputs nativos `<input type="date">` + tag-input de anchors (mismo patrón hand-rolled que specialties en F-073).
+  - [ ] Activate/deactivate inline con confirm `Dialog`. Activar muestra warning si pricing incompleto y enlaza a `/admin/pricing`.
+  - [ ] **Sustituir el dead-end de F-080**: el empty-state "No active season" en `/admin/pricing` añade CTA "Manage seasons →" a `/admin/seasons`.
+- Tests:
+  - [ ] Vitest `lib/admin/seasons.test.ts`: create happy + `start>=end` + anchor fuera de ops + ops invertidas; activate desactiva las demás (1 sola activa post-tx) + `INCOMPLETE_PRICING` con keys faltantes; update rechaza fechas con bookings fuera de rango; deactivate deja 0 activas; rol no-admin rechazado en todos.
+  - [ ] Playwright `e2e/f-087-seasons.spec.ts`: no-admin → 404; crear season → aparece en lista; activar season B → A pierde el badge (1 sola activa); activar con pricing incompleto → bloqueado + hint; con 0 activas `/admin/pricing` muestra el empty-state + CTA a seasons.
+- Notas:
+  - **Sin schema change** — `Season` (F-020) ya tiene todos los campos (`name`, `startDate`, `endDate`, `active`, `anchorTimes`, `operatingHoursStart/End`, `priceCentsByDuration`). Este ticket es puramente UI + server actions sobre el modelo existente.
+  - **Invariante "una sola activa"** es de facto hoy (el seed mantiene 1 row) pero **no** está enforced a nivel DB. F-087 lo enforced en el `activateSeason` `$transaction`. Un partial-unique-index (`@@unique` sobre `active` where `active=true`) es post-MVP si el owner quiere garantía a nivel DB — requiere migración + manejo del race.
+  - **No recurrencia / no auto-rollover** de temporada. El owner crea+activa la del invierno siguiente a mano. Auto-archivar la anterior es opcional (queda en deactivate manual).
+  - **Availability blocks** de la nueva Season **no** se auto-siembran (el seed lo hace para `Season 26/27`); el owner abre disponibilidad vía el calendario instructor (F-083 `openAvailabilityRange`) sobre el rango de la nueva temporada. Documentar en el empty-state.
+  - **MVP single-instructor / single-active-season**: F-080 puede mergear sin F-087 (su empty-state es honesto sobre la precondición); F-087 desbloquea la operación real multi-temporada antes del segundo invierno.
 
 ##### F-081 — No-show re-flip (autoCompletedAt → CANCELLED_BY_USER)
 
@@ -1657,7 +1689,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-083 — Instructor calendar view (month + week): rangos de disponibilidad + bloqueos sub-día + overlay de bookings
 
-- Sprint: 4 · Estado: ◑ parcial — **vista Month + server actions + data layer hechos**; vista **Week timeline diferida** (ver Notas) · Prioridad: P1
+- Sprint: 4 · Estado: done · Prioridad: P1 — vista Month (PR previa) + vista **Week timeline + toggle Month/Week + drag-select + confirm dialog** completados en el follow-up `f-083-week-timeline`.
 - Depende de: F-071 (`requireInstructor`), F-019 (schema `AvailabilityBlock`), F-022 (engine: BLOCKED gana sobre AVAILABLE), F-079 (cancel-day para días con bookings — **dep blanda**: solo el handoff de cancelar día con clases; el core no lo necesita)
 - **Supersede el surface UI de F-072** (list+form). Reusa y generaliza sus server actions de escritura.
 - Motivación: el owner gestiona disponibilidad por **rangos** (abrir lunes-domingo de una), no bloque a bloque, y necesita carving fino — bloquear 2h sueltas dentro de un día abierto, o cerrar un día entero. Un form lista-por-lista no encaja con ese mental model; un calendario sí. Decisión owner 2026-05-31.
@@ -1672,14 +1704,16 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - [x] Data layer: `lib/instructor/calendar-data.ts` `getInstructorCalendar` + helper puro `buildCalendarDays` (folde blocks + bookings en una entrada por día con `openBlockId`, `blocked[]`, `bookings[]`).
 - AC UI (`app/instructor/calendar/page.tsx` + `_components/month-calendar.tsx`, EN-only fuera de `[locale]`, gating vía `requireInstructor`):
   - [x] **Month** (entregado): grid día-celda Mon-start; cada día codifica estado (abierto / cerrado / con bookings [count] / nº de bloqueos). Nav prev/this-month/next por `?month=YYYY-MM` + link recíproco con la agenda F-071. **Desviación:** apertura por **form de rango** (from/to) + click-día → panel con open/close-day + form de bloqueo + remove; **drag-select diferido** (ver Notas).
-  - [ ] **Week timeline** (diferido — ver Notas): 7 cols × filas horarias, pintar horas, bloques de booking.
+  - [x] **Week timeline** (entregado en `f-083-week-timeline`): toggle Month/Week por `?view=week`. Eje de horas (operating hours de la Season) en `components/calendar/week-calendar.tsx`; 7 cols Mon-start, gridlines por hora, banda "open" por día. Pinta bloqueos (BLOCKED) y bookings ocupantes a su **altura real** (anchorTime→endTime; `InstructorCalendarDay.bookings` ampliado con `endTime`). Nav prev/this/next-week por `?week=YYYY-MM-DD` (cualquier día resuelve a su lunes). Helpers puros en `lib/calendar/week-grid.ts` (`parseWeek`/`weekDays`/`shiftWeek`/`weekLabel`/`hourRows`/`layoutInterval`/`snapMinutes`/`ratioToTime`).
+  - [x] **Drag-select** sobre un día abierto → pre-rellena el diálogo de bloqueo con la ventana arrastrada (snap 30min); click sin arrastrar siembra 1h por defecto. Accesible/testeable: el mismo diálogo expone inputs `time` editables (botón `+ Block` por día = mismo flujo sin drag).
   - [x] Bookings overlay (`getInstructorCalendar` carga blocks + bookings ocupantes; días con clase = locked visual + lista en el panel con hint a ops-cancel). **Nota:** loader propio en vez de `getInstructorAgenda`.
-  - [x] Estados editoriales + tokens design-system (cream/ink/border, `font-display`, borders-not-shadows); **shadcn** `Button`/`Input`. Confirm dialog antes de borrar = **diferido** (de momento delete directo con `pending` lock).
+  - [x] Estados editoriales + tokens design-system (cream/ink/border, `font-display`, borders-not-shadows); **shadcn** `Button`/`Input`/`Dialog`. **Confirm dialog antes de borrar entregado** (Week view): cerrar día y quitar bloqueo pasan por `Dialog` de confirmación (Base UI). `ERROR_COPY` extraído a `components/calendar/availability-errors.ts` (compartido Month/Week).
 - Tests:
   - [x] Vitest: `lib/instructor/availability.test.ts` (helpers: overlap, buildOpenRangeBlocks idempotente, validateBlockWindow, buildCalendarDays) + `availability-actions.test.ts` (los tres cores: happy, idempotente, INVALID_RANGE, RANGE_TOO_LONG, NO_ACTIVE_SEASON, OUT_OF_HOURS, NOT_FOUND, FORBIDDEN, HAS_BOOKINGS). Suite 284/284, tsc + lint limpios.
-  - [ ] Playwright `e2e/f-083-instructor-calendar.spec.ts` — **pendiente** (requiere sesión instructor; va con la verificación manual del owner).
+  - [x] Vitest `lib/calendar/week-grid.test.ts` (21 specs: mondayOf, parseWeek fallback, weekDays, shiftWeek, weekLabel mismo-mes/cross-mes/cross-año, hourRows inclusivo + non-aligned start, layoutInterval clamp/null, snapMinutes, ratioToTime endpoints/snap/clamp) + `availability.test.ts` ampliado para el `endTime` de bookings. Suite global 411/411, tsc + lint limpios.
+  - [x] Playwright `e2e/f-083-instructor-calendar.spec.ts` (3 specs, verde): toggle Month→Week renderiza el timeline + booking pintado + día `locked`; bloqueo de ventana vía diálogo → BLOCKED row 10:00–12:00 en DB; quitar bloqueo pide confirm → block borrado. Regresión guard: `f-076-admin` (MonthCalendar all-mode) 5/5 verde.
 - Notas:
-  - **Week timeline diferida.** El valor central de F-083 (gestión por rangos + overlay de bookings que muestra qué días tienen clase — el gap de F-072) lo cubre la vista Month. La vista Week (timeline horario con pintado de horas) es la pieza interactiva más pesada; se difiere a un follow-up para no entregarla a medias. El toggle Month/Week + drag-select + confirm dialog entran con ella.
+  - **Week timeline entregada.** Cierra el diferido: la pieza interactiva pesada (timeline horario + drag-select + confirm dialog) entró en `f-083-week-timeline` sin tocar el engine ni el schema (solo `InstructorCalendarDay.bookings.endTime`, derivado). El toggle vive en `?view=`; abrir un día sigue siendo full operating-hours (sin recurrencia, post-MVP).
   - **Separación con F-079.** No cancela clases reales. Día con bookings = read-only aquí; cancelar clases (refund/credit/email) vive en ops-cancel F-078/F-079; el calendario solo enlaza/hint a ese flujo.
   - **Supersede F-072 UI.** El `app/instructor/availability/page.tsx` (list+form) de F-072 ya no se construye; este calendario es el surface. Las 3 server actions cubren su CRUD conservando el guard "no borrar con booking activo".
   - **Engine intacto.** No toca `lib/booking-engine`; solo produce rows AVAILABLE/BLOCKED que el engine ya interpreta (F-022 BLOCKED>AVAILABLE, buffer=0 F-036).
@@ -1688,26 +1722,26 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-065 — Instructor feedback per booking + bookerId history view
 
-- Sprint: 4 · Estado: backlog · Prioridad: P1
+- Sprint: 4 · Estado: done · Prioridad: P1
 - Depende de: F-062
 - Motivación: owner pidió poder dejar notas sobre cada clase completada para informar futuras clases del mismo booker (progreso, nivel real observado, preferencias, advertencias). Per-booking single note (no per-attendee), visibilidad sólo interna del instructor — el booker no las ve. Cross-booking visibility se resuelve con lookup por `bookerId` de bookings `COMPLETED` previas (sin schema de Person, sin attendee fingerprint).
 - AC schema:
-  - [ ] Migración `<date>_booking_instructor_note`: añadir `Booking.instructorNote String? @db.Text` + `Booking.instructorNoteSetAt DateTime?`.
+  - [x] Migración `20260611211247_booking_instructor_note`: añade `Booking.instructorNote String? @db.Text` + `Booking.instructorNoteSetAt DateTime?`.
 - AC server:
-  - [ ] Server action `setInstructorNote(bookingId, note: string | null)` en `app/instructor/actions.ts` (`'use server'`). Resolve session, verificar `session.user.roles.includes('instructor')`, verificar `booking.instructorId === session.user.instructor.id`, verificar `booking.status === 'COMPLETED'` (no-op si no, rechaza). Update + `revalidatePath('/instructor')`.
-  - [ ] Note `null` o empty string → clear (`instructorNote=null`, `instructorNoteSetAt=null`).
+  - [x] Server action `setInstructorNote(bookingId, note: string | null)` en `app/instructor/actions.ts`; lógica pura en `lib/instructor/instructor-note.ts` (`setInstructorNoteWith`, mismo split deps-inyectados que profile.ts). `requireInstructor()` resuelve session + rol, la pura re-verifica `booking.instructorId === instructorId` (→ FORBIDDEN) + `status === 'COMPLETED'` (→ NOT_COMPLETED, no-op) + NOT_FOUND. Update + `revalidatePath('/instructor')`.
+  - [x] Note `null` o empty/whitespace-only → clear (`instructorNote=null`, `instructorNoteSetAt=null`); texto se persiste trimmeado con `instructorNoteSetAt = now`. Zod `instructorNoteSchema` (max 5000) en `lib/schemas/instructor-note.ts`.
 - AC UI:
-  - [ ] En la agenda diaria del instructor (Sprint 4 vista principal), row de booking `COMPLETED` muestra textarea inline con valor actual + auto-save debounced (1.5s) → server action.
-  - [ ] Sidebar / panel de "Booker history": al hover/click en bookerId, mostrar lista de bookings `COMPLETED` previas de ese booker con su `instructorNote` (read-only). Orden cronológico inverso. Limit 10.
-  - [ ] **Sin visibilidad para el booker**: dashboard del booker (`/dashboard`) **no** muestra `instructorNote`. Internal-only.
+  - [x] Agenda diaria: row `COMPLETED` monta `<InstructorNoteField>` (client island) con valor actual + auto-save debounced 1.5s (+ flush en blur) → server action, con status `Saving…/Saved/Save failed` aria-live.
+  - [x] Panel "Booker history": `<details>` por row `COMPLETED` (click-to-expand, accesible) lista las bookings `COMPLETED` previas del mismo booker con su `instructorNote` (read-only), orden `date` desc, limit 10, excluyendo la propia row. Histories se cargan una sola vez en `page.tsx` (`getBookerNoteHistories`, un único `findMany` para todos los bookers de la ventana → sin N+1).
+  - [x] **Sin visibilidad para el booker**: dashboard del booker (`/dashboard`) **no** muestra `instructorNote`. Internal-only (aserción explícita en el e2e).
 - Tests:
-  - Vitest sobre `setInstructorNote` — 5 specs: happy, rechaza role!=instructor, rechaza booking ajeno, rechaza status!=COMPLETED, clear con empty string.
-  - Playwright happy path × 1 locale (instructor view) — booking COMPLETED → escribir nota → debounce → reload → nota persistida; hover booker history → 2 bookings previos con sus notes.
+  - [x] Vitest `lib/instructor/instructor-note.test.ts` (9 specs): `setInstructorNoteWith` happy (trim + setAt), FORBIDDEN booking ajeno, NOT_COMPLETED, NOT_FOUND, clear con whitespace, clear con null. `getBookerNoteHistories` empty-ids no-query, bucket por bookerId + scoping/orden, cap a `BOOKER_HISTORY_LIMIT`.
+  - [x] Playwright `e2e/f-065-instructor-note.spec.ts` (1 spec): COMPLETED today → escribir nota → blur/debounce → `Saved` → reload → nota persistida; expandir booker history → 2 notas previas (newest-first), excluye la de hoy; `/dashboard` no contiene la nota.
 - Notas:
   - **No** rich text editor — `<textarea>` plain. Si owner pide formato post-launch, F-XXX post-MVP.
   - **No** attendee-level feedback. Decisión deliberada del desglose Sprint 3: per-booking + lookup por bookerId cubre el use case sin schema de Person/Attendee fingerprint.
   - **No** email del feedback al booker. Internal-only.
-  - Booker history query: `prisma.booking.findMany({ where: { bookerId, status: 'COMPLETED', instructorNote: { not: null } }, orderBy: { date: 'desc' }, take: 10 })`. Sin índice nuevo necesario — `Booking.bookerId` ya indexado por F-020.
+  - Booker history query scoped a `instructorId` además de `bookerId` (multi-instructor-safe: un instructor sólo ve sus propias notas privadas). `findMany({ where: { instructorId, bookerId: { in }, status: 'COMPLETED', instructorNote: { not: null } }, orderBy: { date: 'desc' } })` + cap en memoria por booker. Sin índice nuevo — `Booking.bookerId` ya indexado por F-020.
 
 ### Sprint 5 — Landing + SEO (semanas 9-10)
 
@@ -1934,6 +1968,46 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - [x] **F-086f** — fixtures: `lib/booking/fixtures.ts` (superset `BookingFixture` + `makeBooking`); `sync.test.ts` mantiene fixture local (relation-shaped).
   - [ ] **F-086g** — hardening: `server-only` como dep explícita (hoy phantom) + markers en módulos con secrets/DB + stub en vitest.
   - Decisiones registradas: (1) `lib/types/` + `lib/labels/` sin underscore — ningún dir de `lib/` usa prefijo `_`, esa convención solo significa algo bajo `app/`; (2) helpers `ok()`/`err()` considerados y **rechazados** — la codebase construye `{ ok: ... }` inline en todas partes y los constructores crearían dos estilos coexistentes; alias de tipo only; (3) projections por surface (AdminBookingRow vs AgendaBooking vs dashboard rows) se quedan separadas — select-derived por diseño ("diferente por diseño"); (4) cancel.ts / cancel-by-ops.ts / cancel-day.ts siguen siendo policies auto-contenidas, no se fusionan.
+
+### F-087 — Admin student directory (booker profiles: bookings + notes + contact + credits)
+
+- Sprint: post-Sprint 5 · Estado: backlog · Prioridad: P2 (admin CRM-lite, pedido por owner)
+- Depende de: F-065 (instructor note + booker-history query), F-076 (admin shell + `requireAdmin`), F-077 (admin bookings list — patrones de tabla/filtro/paginación + `lib/admin/`), F-020 (schema: `Booking.bookerId` index)
+- Motivación: el owner pidió poder ver a cada alumno con todo su historial de clases y todas las notas internas que los instructores le han escrito. Hoy las notas F-065 sólo se ven inline en la agenda del instructor, una por booking y dispersas por la ventana de fechas; no hay vista agregada por persona. Para preparar una clase con un alumno recurrente el owner tiene que cazar bookings sueltos. Falta un directorio admin tipo CRM-lite centrado en el booker (cuenta `User`), reusando las notas que F-065 ya persiste.
+- Decisiones (sesión 2026-06-13):
+  - **Unidad = booker (`User`)**, no attendee. No hay `Person` model; los attendees (p. ej. hijos que un padre inscribe) se listan dentro de cada booking pero no tienen identidad cross-booking — F-065 evitó deliberadamente el fingerprint de attendee. Identidad de attendee = followup separado si el owner lo pide.
+  - **Ubicación = nuevo `/admin/students`** (lista) + `/admin/students/[id]` (perfil). Mismo patrón que `/admin/bookings`, `/admin/instructors`, `/admin/pricing`.
+  - **Perfil incluye los 4 bloques:** bookings history (todos los status) + notes timeline + contact info + credits & lifetime stats.
+  - **Notas read-only aquí.** La autoría/edición sigue en la agenda del instructor (F-065 `setInstructorNote`); este surface sólo presenta.
+- AC data layer:
+  - [ ] `lib/admin/students.ts` (deps-inyectado, patrón F-065/F-077):
+    - `listStudents({ search?, page?, pageSize? })` → `{ rows: AdminStudentRow[]; total }`. `AdminStudentRow = { id, name, email, phone, locale, bookingsCount, lastBookingDate, activeCreditCents }`. Origen: bookers distintos (`User` con ≥1 `Booking`). Search por `name`/`email` (case-insensitive), paginación + count (reusar el patrón de `lib/admin/bookings.ts` + `lib/schemas/admin-bookings.ts`). Sin N+1 (agregados via `groupBy`/`_count`, no loop por user).
+    - `getStudentProfile(userId)` → contact (`name, email, phone, locale, roles, createdAt`) + **todos** los bookings (sin filtro de status, newest-first, tie-break `anchorTime` desc) con `attendees` + `instructor.user.name` + `status`/`totalPriceCents`/`duration`/`anchorTime`/`date` + notes timeline + credits + stats. `null` si el `User` no existe.
+  - [ ] **Notas cross-instructor:** a diferencia de `getBookerNoteHistories` (scoped a un `instructorId`, F-065), aquí el admin ve las notas de **todos** los instructores para ese booker. Nueva query (o generalizar la de F-065 con `instructorId` opcional) con `status: COMPLETED` + `instructorNote: { not: null }`, `orderBy date desc`, **incluyendo el autor** (`instructor.user.name`) — multi-instructor lo exige; no hardcodear "Javi".
+  - [ ] **Credit balance helper:** no existe hoy (`lib/credit/` sólo tiene `expire.ts`). Extraer `lib/credit/balance.ts` `getActiveCreditCents(userId)` (sum `amountCents` where `status = ACTIVE`) — reusable por el credits-aside del dashboard (F-059) para no duplicar.
+  - [ ] **Lifetime stats:** lessons count = bookings `COMPLETED`; total spend = suma `totalPriceCents` de `CONFIRMED` + `COMPLETED` (excluye cancelled/refunded/pending). Documentar la regla inline.
+- AC UI:
+  - [ ] `app/admin/students/page.tsx` (Server Component, EN-only, bajo `requireAdmin` via `app/admin/layout.tsx`): tabla name/email/phone + bookings count + last booking + active credit. Search box + paginación (reusar `app/admin/bookings/_components/{pagination,filter-bar}.tsx`). Row → `/admin/students/[id]`.
+  - [ ] `app/admin/students/[id]/page.tsx`: perfil con 4 secciones — (1) **Contact header** (name, email, phone, locale, roles); (2) **Lifetime stats** (lessons count, total spend CHF via `Intl.NumberFormat('de-CH')`, active credit); (3) **Notes timeline** read-only, newest-first, cada nota con fecha de la clase + `setAt` + autor (instructor); (4) **Bookings history** (todos los status, date/time/duration/instructor/status/price + attendees). 404 si el `User` no existe; empty states si existe sin bookings/notes.
+  - [ ] Añadir entrada **"Students"** al nav del admin shell (F-076) junto a Bookings/Instructors/Pricing.
+  - [ ] **Read-only:** NO montar `InstructorNoteField` (client island F-065) aquí — render como texto plano.
+  - [ ] Reusar `<StatusBadge>` si F-085 ya aterrizó; si no, status como label simple (no bloquear en F-085).
+- AC seguridad / i18n:
+  - [ ] EN-only (admin fuera de `[locale]`) — sin next-intl.
+  - [ ] `requireAdmin()` cubierto por el layout; read-only (sin server actions). Confirmar que ninguna ruta filtra PII (email/phone) ni notas internas a no-admin.
+  - [ ] `instructorNote` es **internal-only** (F-065): admin-only OK. Nunca exponer en API pública ni en el dashboard del booker.
+- Tests:
+  - [ ] Vitest `lib/admin/students.test.ts`: `listStudents` (paginación, search name/email, count + last booking + active credit correctos) y `getStudentProfile` (agrega bookings de todos los status; notes sólo de `COMPLETED` con note no-null e incluyen autor; spend = suma `CONFIRMED`+`COMPLETED`; credit balance = sum `ACTIVE`). Mock Prisma deps-inyectado.
+  - [ ] Playwright `e2e/f-087-admin-students.spec.ts`: admin → `/admin/students` lista al booker seed; click → perfil muestra bookings + notes timeline (las de F-065); search filtra; non-admin (student) → 403/redirect; **regresión cross-surface**: el booker NO ve esas notas en `/dashboard`.
+  - [ ] Fixtures: extender `prisma/seed.ts` con un "alumno con historial real" (booker + completed bookings + notes) — followup ya anotado en notas de F-021. Mientras tanto reusar el patrón de inyección manual usado para probar F-065.
+- Notas:
+  - **Unidad = booker (`User`).** Sin `Person` model; attendees no agregan a un perfil propio (F-065 evitó fingerprint). Identidad de attendee = followup separado.
+  - **Notas read-only.** Edición sigue en la agenda del instructor (F-065). Editar desde admin ⇒ ampliar authz de `setInstructorNote` (decisión diferida, no en este ticket).
+  - **`AdminStudentRow` entra en el radar de F-086** (type-dedup): comparte shape con `AdminBookingRow`/`AgendaBooking`; documentar el overlap al crearla.
+  - **Multi-instructor:** la timeline DEBE atribuir autor — single-instructor hoy lo hace trivial, no hardcodear.
+  - **No** charts/analytics en MVP — tabla + stats numéricas.
+  - Follow-up opcional: link desde `/admin/bookings/[id]` (booker name → perfil del student). Encaja pero no bloquea.
+- Refs: F-087, F-065, F-077, F-076, Architecture (modelos `User` / `Booking` / `AccountCredit` / `Attendee`)
 
 ---
 
