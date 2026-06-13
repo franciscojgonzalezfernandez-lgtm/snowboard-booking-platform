@@ -4,18 +4,15 @@ import { redirect } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { auth } from "@/lib/auth";
+import { loadDashboardOverview } from "@/lib/dashboard/overview";
 import { prisma } from "@/lib/db";
 import { cn } from "@/lib/utils";
 
-import {
-  CreditAside,
-  type ActiveCreditRow,
-} from "./_components/credit-aside";
+import { CreditAside } from "./_components/credit-aside";
 import { DashboardSection } from "./_components/dashboard-section";
 import { DashboardTabs, type DashboardTab } from "./_components/dashboard-tabs";
 import { PersonalPhoneField } from "./_components/personal-phone-field";
 import {
-  type BookingRow,
   type CreditRow,
   type SectionKind,
   groupBookings,
@@ -51,54 +48,8 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
   const userId = session.user.id;
   const now = new Date();
 
-  const [bookings, credits, activeCredits, account] = await Promise.all([
-    prisma.booking.findMany({
-      where: { bookerId: userId },
-      orderBy: [{ date: "desc" }, { anchorTime: "desc" }],
-      select: {
-        id: true,
-        date: true,
-        anchorTime: true,
-        duration: true,
-        language: true,
-        status: true,
-        totalPriceCents: true,
-        chargeAmountCents: true,
-        creditsAppliedCents: true,
-        createdAt: true,
-        cancelledByUserAt: true,
-        cancelledByOpsAt: true,
-        opsReason: true,
-        refundedAt: true,
-        refundAmountCents: true,
-        instructor: { select: { user: { select: { name: true } } } },
-      },
-    }) as Promise<BookingRow[]>,
-    prisma.accountCredit.findMany({
-      where: { userId },
-      select: {
-        id: true,
-        amountCents: true,
-        sourceBookingId: true,
-        expiresAt: true,
-        status: true,
-      },
-    }) as Promise<CreditRow[]>,
-    prisma.accountCredit.findMany({
-      where: { userId, status: "ACTIVE", expiresAt: { gt: now } },
-      orderBy: { expiresAt: "asc" },
-      select: {
-        id: true,
-        amountCents: true,
-        expiresAt: true,
-        createdAt: true,
-      },
-    }) as Promise<ActiveCreditRow[]>,
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: { name: true, email: true, phone: true },
-    }),
-  ]);
+  const { bookings, credits, activeCredits, account } =
+    await loadDashboardOverview({ prisma }, { userId, now });
 
   const groups = groupBookings(bookings);
   const creditsBySource = new Map<string, CreditRow>();
