@@ -1,48 +1,34 @@
 import { describe, expect, test, vi } from "vitest";
-import { BookingStatus, CreditReason, CreditStatus, Duration } from "@prisma/client";
+import { BookingStatus, CreditReason, CreditStatus } from "@prisma/client";
 
 import {
   OPS_CREDIT_VALIDITY_MS,
   cancelBookingByOpsWith,
   type CancelBookingByOpsDeps,
 } from "./cancel-by-ops";
+import {
+  FIXED_NOW,
+  makeBookingFixture,
+  type BookingFixture,
+} from "./fixtures";
 
-const NOW = new Date("2026-12-01T08:00:00.000Z");
+const NOW = FIXED_NOW;
 const CLASS_START = new Date("2026-12-11T08:00:00.000Z");
 const BOOKER_ID = "user_booker";
 const ADMIN_ID = "user_admin";
 
-type BookingFixture = {
-  id: string;
-  bookerId: string;
-  status: BookingStatus;
-  date: Date;
-  anchorTime: string;
-  duration: Duration;
-  totalPriceCents: number;
-  chargeAmountCents: number | null;
-  creditsAppliedCents: number | null;
-  stripePaymentIntentId: string | null;
-  paidAt: Date | null;
-  stripeRefundId: string | null;
-};
-
+// Suite defaults on top of the shared fixture: a fully-paid 2h lesson, so the
+// refund paths have real money to work with.
 function makeBooking(overrides: Partial<BookingFixture> = {}): BookingFixture {
-  return {
-    id: "book_1",
+  return makeBookingFixture({
     bookerId: BOOKER_ID,
-    status: BookingStatus.CONFIRMED,
-    date: new Date("2026-12-11T00:00:00.000Z"),
-    anchorTime: "08:00",
-    duration: Duration.ONE_HOUR,
     totalPriceCents: 20000,
     chargeAmountCents: 20000,
     creditsAppliedCents: 0,
     stripePaymentIntentId: "pi_test_1",
     paidAt: new Date("2026-11-20T10:00:00.000Z"),
-    stripeRefundId: null,
     ...overrides,
-  };
+  });
 }
 
 type Captured = {

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { BookingStatus, Duration } from "@prisma/client";
+import { BookingStatus } from "@prisma/client";
 import type Stripe from "stripe";
 
 import {
@@ -7,42 +7,24 @@ import {
   type ResumePaymentDeps,
   resumePaymentWith,
 } from "./resume-payment";
-
-type BookingFixture = {
-  id: string;
-  bookerId: string;
-  instructorId: string;
-  status: BookingStatus;
-  totalPriceCents: number;
-  chargeAmountCents: number | null;
-  creditsAppliedCents: number | null;
-  stripePaymentIntentId: string | null;
-  createdAt: Date;
-  date: Date;
-  anchorTime: string;
-  duration: Duration;
-};
+import { makeBookingFixture, type BookingFixture } from "./fixtures";
 
 const NOW = new Date("2026-12-15T17:00:00.000Z");
 
+// Suite defaults on top of the shared fixture: a 5-minute-old PENDING_PAYMENT
+// draft with a live PaymentIntent. Legacy default: no credit columns written →
+// resume falls back to totalPriceCents; credit scenarios override explicitly.
 function baseBooking(overrides: Partial<BookingFixture> = {}): BookingFixture {
-  return {
+  return makeBookingFixture({
     id: "bk_1",
     bookerId: "user_1",
-    instructorId: "inst_1",
     status: BookingStatus.PENDING_PAYMENT,
-    totalPriceCents: 11000,
-    // Legacy default: no credit columns written → resume falls back to
-    // totalPriceCents. Credit-applied scenarios override these explicitly.
-    chargeAmountCents: null,
-    creditsAppliedCents: null,
     stripePaymentIntentId: "pi_existing",
     createdAt: new Date(NOW.getTime() - 5 * 60_000),
     date: new Date("2027-01-15T00:00:00.000Z"),
     anchorTime: "10:00",
-    duration: Duration.ONE_HOUR,
     ...overrides,
-  };
+  });
 }
 
 function makeDeps(opts: {
