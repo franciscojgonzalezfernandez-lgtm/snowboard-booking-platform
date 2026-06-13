@@ -1934,7 +1934,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ### F-086 — Type duplication audit + shared types extraction
 
-- Sprint: post-MVP · Estado: backlog · Prioridad: P1 (technical debt)
+- Sprint: post-MVP · Estado: in-progress · Prioridad: P1 (technical debt)
 - Depende de: —
 - Motivación: la codebase tiene tipos definidos en múltiples lugares (cada surface re-declara su `BookingRow`, su `Attendee`, etc.). Ejemplos visibles:
   - `lib/admin/bookings.ts` `AdminBookingRow` vs `lib/instructor/agenda.ts` `AgendaBooking` vs `app/[locale]/dashboard/_lib/group.ts` `BookingRow` — los tres son projections del mismo modelo `Booking` con overlap >70%.
@@ -1959,6 +1959,15 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - **No** crear un `types/index.ts` god-module — `lib/_types/{booking,attendee,result,labels}.ts` por dominio, importable per-need.
   - **No** romper la regla `lib/` no importa de `app/`. Si labels viven en `lib/_labels/`, app las consume pasando i18n strings — no al revés.
   - Estimación: análisis ~1 día, migration ~3-5 días según hallazgos. Empezar por result-type (más universal y menos polémico) antes que projections.
+- Ejecución (audit completado 2026-06-13; plan aprobado, 7 sub-tickets, un PR cada uno):
+  - [x] **F-086a** — dead code: borrar `lib/booking-engine/index.ts` (barrel con **cero** importers — los 45 imports usan deep paths; se resuelve por borrado, no por excepción a la regla) + bloque muerto `DURATION_LABEL_KEYS` en `lib/email/send-booking-confirmed.ts`.
+  - [ ] **F-086b** — schemas: `lib/schemas/attendee.ts` compartido (hoy `draftAttendeeSchema` ≡ `attendeeSchema` de step4) + `lib/schemas/phone.ts` con regex E164 única (hoy 3 copias).
+  - [ ] **F-086c** — labels: `lib/labels/booking.ts` (STATUS/DURATION/LANGUAGE/LEVEL + credit maps tipados `Record<CreditReason|CreditStatus, string>`) y `lib/email/labels.ts` (dedupe de los 3 senders). Converge el drift de cancel-day ("Cancelled (user)" → "Cancelled · client"). Dashboard i18n-keys intactos.
+  - [ ] **F-086d** — `lib/dashboard/overview.ts` loader (patrón `lib/admin/bookings.ts`); elimina los casts `as Promise<BookingRow[]>` de `dashboard/page.tsx` (único agujero select↔type del repo).
+  - [ ] **F-086e** — actions: `lib/auth/session-user.ts` (`getSessionUser`, retorna null — no redirect — para actions de booker), `lib/types/result.ts` alias `Result<TOk, TErr>` solo donde el shape coincide exacto, paridad Sentry en `app/instructor/actions.ts`.
+  - [ ] **F-086f** — fixtures: `lib/booking/fixtures.ts` (superset `BookingFixture` + `makeBooking`); `sync.test.ts` mantiene fixture local (relation-shaped).
+  - [ ] **F-086g** — hardening: `server-only` como dep explícita (hoy phantom) + markers en módulos con secrets/DB + stub en vitest.
+  - Decisiones registradas: (1) `lib/types/` + `lib/labels/` sin underscore — ningún dir de `lib/` usa prefijo `_`, esa convención solo significa algo bajo `app/`; (2) helpers `ok()`/`err()` considerados y **rechazados** — la codebase construye `{ ok: ... }` inline en todas partes y los constructores crearían dos estilos coexistentes; alias de tipo only; (3) projections por surface (AdminBookingRow vs AgendaBooking vs dashboard rows) se quedan separadas — select-derived por diseño ("diferente por diseño"); (4) cancel.ts / cancel-by-ops.ts / cancel-day.ts siguen siendo policies auto-contenidas, no se fusionan.
 
 ### F-087 — Admin student directory (booker profiles: bookings + notes + contact + credits)
 

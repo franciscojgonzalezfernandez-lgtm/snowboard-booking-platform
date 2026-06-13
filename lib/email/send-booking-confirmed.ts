@@ -19,13 +19,6 @@ const ORGANIZER_NAME = "Ride Flumserberg";
 const LOCATION = "Flumserberg, Switzerland";
 const APP_BASE_URL = "https://rideflumserberg.ch";
 
-const DURATION_LABEL_KEYS: Record<Duration, string> = {
-  ONE_HOUR: "1 hour",
-  TWO_HOURS: "2 hours",
-  INTENSIVE: "4 hours · intensive",
-  FULL_DAY: "6 hours · full day",
-};
-
 const DURATION_LABELS: Record<Locale, Record<Duration, string>> = {
   en: {
     ONE_HOUR: "1 hour",
@@ -52,8 +45,6 @@ const INTL_TAG: Record<Locale, string> = {
   de: "de-CH",
   es: "es-CH",
 };
-
-void DURATION_LABEL_KEYS;
 
 const BOOKING_SELECT = {
   id: true,

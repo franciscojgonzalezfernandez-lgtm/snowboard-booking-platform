@@ -4,12 +4,9 @@ import { unstable_cache } from "next/cache";
 import type { Duration } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
-import {
-  computeCalendar,
-  computeSlotsForDate,
-  findNearbyDates,
-  DEFAULT_WINDOW_DAYS,
-} from "./index";
+import { computeCalendar } from "./calendar";
+import { computeSlotsForDate } from "./slots";
+import { findNearbyDates, DEFAULT_WINDOW_DAYS } from "./nearby";
 import { addDays, startOfUtcDay } from "./time";
 import { loadEngineContext } from "./load-context";
 import type { CalendarDay, SlotsForDate } from "./types";
