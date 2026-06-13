@@ -1,3 +1,5 @@
+import "server-only";
+
 import React from "react";
 import type { CreateEmailOptions } from "resend";
 import type { Prisma, PrismaClient } from "@prisma/client";
