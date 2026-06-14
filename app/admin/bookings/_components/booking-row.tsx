@@ -21,12 +21,13 @@ export function BookingRow({ row }: { row: AdminBookingRow }) {
       </div>
 
       <div className="min-w-0 space-y-0.5">
-        <p
-          className="truncate font-medium"
+        <Link
+          href={`/admin/students/${row.booker.id}`}
+          className="block truncate font-medium underline-offset-4 hover:underline"
           data-testid="admin-booking-booker-name"
         >
           {row.booker.name ?? row.booker.email}
-        </p>
+        </Link>
         <p
           className="truncate text-xs text-muted-foreground"
           data-testid="admin-booking-booker-email"

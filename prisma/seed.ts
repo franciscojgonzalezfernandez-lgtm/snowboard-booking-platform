@@ -2,6 +2,8 @@ import {
   PrismaClient,
   AvailabilityKind,
   BookingStatus,
+  CreditReason,
+  CreditStatus,
   Duration,
   Level,
   Locale,
@@ -17,9 +19,15 @@ const prisma = new PrismaClient();
 const OWNER_EMAIL = "franciscojgonzalezfernandez@gmail.com";
 const LARA_EMAIL = "lara@rideflumserberg.ch";
 const SEED_BOOKER_EMAIL = "student+seed@rideflumserberg.ch";
+// A second booker with a *finished* history — completed classes carrying
+// instructor notes (from both coaches), a future booking, and a cancellation
+// with leftover credit. Feeds the admin student directory (F-087) so the list,
+// the profile's notes timeline, and the lifetime stats all have real content.
+const HISTORY_BOOKER_EMAIL = "student+history@rideflumserberg.ch";
 const SEASON_NAME = "Season 26/27";
 const SEED_WEEKS = 8;
 const SEED_BOOKING_PREFIX = "seed-f036-";
+const SEED_HISTORY_PREFIX = "seed-f087-";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -373,6 +381,164 @@ async function reseedBookings(
   return { created: plan.length, confirmed, pendingPayment };
 }
 
+async function upsertHistoryBooker(): Promise<User> {
+  return prisma.user.upsert({
+    where: { email: HISTORY_BOOKER_EMAIL },
+    update: {
+      name: "Mia Veteran",
+      locale: Locale.de,
+      phone: "+41 79 555 01 02",
+      roles: [Role.student],
+      emailVerified: true,
+    },
+    create: {
+      email: HISTORY_BOOKER_EMAIL,
+      name: "Mia Veteran",
+      locale: Locale.de,
+      phone: "+41 79 555 01 02",
+      roles: [Role.student],
+      emailVerified: true,
+    },
+  });
+}
+
+type HistoryPlanEntry = {
+  instructor: Instructor;
+  date: Date;
+  anchorTime: string;
+  duration: Duration;
+  language: Locale;
+  status: BookingStatus;
+  note?: string;
+};
+
+// Real student history for the F-087 directory. Past, COMPLETED classes carry
+// notes from both coaches (so the timeline must attribute authors), plus one
+// future CONFIRMED class and one cancellation that leaves an ACTIVE credit.
+async function reseedStudentHistory(
+  javi: Instructor,
+  lara: Instructor,
+  booker: User,
+): Promise<{ created: number; completed: number; notes: number; creditCents: number }> {
+  // Credits FK-reference bookings, so wipe credits before the bookings they
+  // point at. Both are scoped to this fixture's icsUid prefix (idempotent).
+  await prisma.accountCredit.deleteMany({
+    where: { sourceBooking: { icsUid: { startsWith: SEED_HISTORY_PREFIX } } },
+  });
+  await prisma.booking.deleteMany({
+    where: { icsUid: { startsWith: SEED_HISTORY_PREFIX } },
+  });
+
+  const plan: HistoryPlanEntry[] = [
+    {
+      instructor: lara,
+      date: dateOnly("2026-02-10"),
+      anchorTime: "10:00",
+      duration: Duration.ONE_HOUR,
+      language: Locale.de,
+      status: BookingStatus.COMPLETED,
+      note: "Solid toeside; next time work on switch riding.",
+    },
+    {
+      instructor: javi,
+      date: dateOnly("2026-03-05"),
+      anchorTime: "13:00",
+      duration: Duration.TWO_HOURS,
+      language: Locale.en,
+      status: BookingStatus.COMPLETED,
+      note: "Linked turns on red runs — confidence clearly up.",
+    },
+    {
+      instructor: lara,
+      date: dateOnly("2026-03-20"),
+      anchorTime: "09:00",
+      duration: Duration.INTENSIVE,
+      language: Locale.de,
+      status: BookingStatus.COMPLETED,
+      note: "Carving clean; ready for steeper terrain.",
+    },
+    {
+      instructor: javi,
+      date: dateOnly("2026-12-09"),
+      anchorTime: "11:00",
+      duration: Duration.ONE_HOUR,
+      language: Locale.en,
+      status: BookingStatus.CONFIRMED,
+    },
+    {
+      instructor: lara,
+      date: dateOnly("2026-01-15"),
+      anchorTime: "14:00",
+      duration: Duration.ONE_HOUR,
+      language: Locale.de,
+      status: BookingStatus.CANCELLED_BY_USER,
+    },
+  ];
+
+  let completed = 0;
+  let notes = 0;
+  let cancelledBookingId: string | null = null;
+
+  for (const [index, entry] of plan.entries()) {
+    const icsUid = [
+      SEED_HISTORY_PREFIX,
+      isoDate(entry.date),
+      "-",
+      entry.anchorTime.replace(":", ""),
+      "-",
+      String(index),
+    ].join("");
+
+    const created = await prisma.booking.create({
+      data: {
+        bookerId: booker.id,
+        instructorId: entry.instructor.id,
+        date: entry.date,
+        anchorTime: entry.anchorTime,
+        duration: entry.duration,
+        language: entry.language,
+        status: entry.status,
+        totalPriceCents: INITIAL_PRICE_CENTS[entry.duration],
+        instructorNote: entry.note ?? null,
+        instructorNoteSetAt: entry.note ? setUtcTime(entry.date, "18:00") : null,
+        icsUid,
+        attendees: {
+          create: [
+            {
+              name: "Mia Veteran",
+              birthDate: dateOnly("1998-03-22"),
+              level: Level.ADVANCED,
+              isBooker: true,
+            },
+          ],
+        },
+      },
+      select: { id: true },
+    });
+
+    if (entry.status === BookingStatus.COMPLETED) completed += 1;
+    if (entry.note) notes += 1;
+    if (entry.status === BookingStatus.CANCELLED_BY_USER) cancelledBookingId = created.id;
+  }
+
+  let creditCents = 0;
+  if (cancelledBookingId) {
+    creditCents = INITIAL_PRICE_CENTS.ONE_HOUR;
+    await prisma.accountCredit.create({
+      data: {
+        userId: booker.id,
+        amountCents: creditCents,
+        sourceBookingId: cancelledBookingId,
+        reason: CreditReason.USER_CANCEL,
+        status: CreditStatus.ACTIVE,
+        expiresAt: new Date(Date.now() + 365 * DAY_MS),
+      },
+    });
+  }
+
+  return { created: plan.length, completed, notes, creditCents };
+}
+
 // Production-seed guard (added after the main branch was seeded by accident).
 // This seed is destructive: it deleteMany's AvailabilityBlock/Booking rows and
 // overwrites the owner/instructor profiles. It must NEVER hit the Neon `main`
@@ -414,11 +580,13 @@ async function main() {
   const laraUser = await upsertLaraUser();
   const lara = await upsertLaraInstructor(laraUser.id);
   const booker = await upsertSeedBooker();
+  const historyBooker = await upsertHistoryBooker();
   const season = await upsertSeason();
 
   const javiBlocks = await reseedAvailability(javi, season);
   const laraBlocks = await reseedAvailability(lara, season);
   const bookings = await reseedBookings(javi, lara, booker);
+  const studentHistory = await reseedStudentHistory(javi, lara, historyBooker);
 
   console.log(
     JSON.stringify(
@@ -428,6 +596,7 @@ async function main() {
             owner: { id: owner.id, email: owner.email },
             lara: { id: laraUser.id, email: laraUser.email },
             booker: { id: booker.id, email: booker.email },
+            historyBooker: { id: historyBooker.id, email: historyBooker.email },
           },
           instructors: {
             javi: {
@@ -451,6 +620,7 @@ async function main() {
             lara: laraBlocks.length,
           },
           bookings,
+          studentHistory,
         },
       },
       null,

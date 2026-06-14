@@ -106,7 +106,15 @@ export default async function AdminBookingDetailPage({ params }: Props) {
       </Section>
 
       <Section title="Booker">
-        <Field label="Name">{b.booker.name ?? "—"}</Field>
+        <Field label="Name">
+          <Link
+            href={`/admin/students/${b.booker.id}`}
+            className="underline-offset-4 hover:underline"
+            data-testid="admin-detail-booker-link"
+          >
+            {b.booker.name ?? b.booker.email}
+          </Link>
+        </Field>
         <Field label="Email">
           <span data-testid="admin-detail-booker-email">{b.booker.email}</span>
         </Field>
