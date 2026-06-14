@@ -1786,6 +1786,80 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - Default copy inicial alineado con request del owner: CTA team building → linkea a F-054 cuando aterrice (`/contacto`), fallback a `tel:` mientras tanto
   - **No** A/B testing de copy en MVP. Owner edita `messages/*.json` directo en PR
 
+#### Brand & retheme foundation — wave 1 (F-088–F-091)
+
+> Wave de fundación del Sprint 5 (crítico para conversión). Define la marca "The Drop", flipea la paleta pastel a dark-alpine contrastada, instala el sistema de motion y cablea el logo. Las superficies de marketing (home, pricing, instructores…) se recomponen en wave 2 (F-092+) **consumiendo** los tokens, la voz y los primitives que produce esta wave. Decisiones de dirección tomadas con el owner: dark-alpine (charcoal/snow), glacier blue `#1E7FBF` **solid** como signature, alpine red → solo `destructive`, motion coreografiado vía `motion` con gate `prefers-reduced-motion`, refactor = retoken global + recompose de superficies clave.
+
+##### F-088 — Brand identity & voice system "The Drop"
+
+- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Depende de: — (raíz de la wave; bloquea F-089, F-090, F-091, F-092+)
+- Motivación: la marca no tiene sistema — sin voz documentada, sin tagline, sin principios de color/tipografía/motion. Antes de rethemear (F-089) y recomponer superficies (F-092+) hace falta una fuente de verdad de marca para que las 3 páginas (en/de/es) conviertan con una voz consistente y diferenciada. CRO: el copy convierte cuando la voz es nítida y propia, no genérica
+- AC:
+  - [ ] Expandir `docs/PRD.md` con **§Brand**: nombre "The Drop" (doble sentido — gota de nieve/agua + *drop in*, el término de snowboard de entrar en pista/pipe), positioning, tagline ×3 locales, arquetipo de voz (confident · warm · mountain-native · anti-corporate), reglas do/don't de copy
+  - [ ] `docs/brand/voice.md` — guía de voz: 5-7 principios, ejemplos por superficie (hero, pricing card, error state, email transaccional), glosario de términos de marca (rider, session, drop-in, the drop) y lista de términos prohibidos (genéricos/corporativos)
+  - [ ] Tokens de marca **documentados** (implementación en F-089): paleta dark-alpine en `oklch` — `background` charcoal, `foreground` snow, `primary`/`ring` glacier blue `#1E7FBF`, `destructive` alpine red `#C7361C` — con contrast ratio WCAG AA por par anotado
+  - [ ] Principios de **motion** (consumidos por F-090): "intentional · physical · snow-like"; gestos permitidos (reveal on scroll, drop-fall, parallax sutil, stagger) vs prohibidos (spin gratuito, bounce, glow, glassmorphism)
+  - [ ] **Naming de clases** (hybrid duration-heading + branded kicker, decisión owner): kickers EN `The Fix` (1h) · `First Tracks` (2h) · `The Session` (4h) · `The Full Drop` (6h), traducidos a DE/ES en `messages/{en,de,es}.json` namespace `pricing.tier.*.kicker`. El heading sigue siendo la duración (SEO: "2-hour snowboard lesson")
+- Tests: N/A (sistema de diseño + docs). Review manual con skills `impeccable` (visual/voz) + `cro` (conversión)
+- Notas:
+  - Draftear §Brand con skill `to-prd` pero **escribir en `docs/PRD.md`** (nuestro flujo es PRD + FEATURES, no un issue tracker externo)
+  - La voz **no** se localiza palabra a palabra — DE/ES adaptan tono, no traducen literal
+  - Bloquea toda la wave: F-089 (tokens), F-090 (principios motion), F-091 (logo + tagline OG), F-092+ (voz + naming)
+
+##### F-089 — Dark-alpine retheme (`globals.css` + shadcn primitives)
+
+- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Depende de: F-088
+- Motivación: la paleta actual es cream/pastel por diseño — `--background` cream `#FAF6F0`, `--foreground` ink `#1F1A14`, y el `--accent` token es literalmente cream-alt pálido `#F1EAD9` (no un accent real). El único color saturado es alpine red `#C7361C`, usado con cuentagotas. Lee suave, no impacta. El owner quiere dark-alpine contrastada y cinematográfica con glacier blue como signature
+- AC:
+  - [ ] `app/globals.css` `:root` → dark-alpine como **tema base** (no como `.dark` opcional): `--background` charcoal `oklch(0.16 0.01 60)`, `--foreground` snow `oklch(0.97 0.01 75)`, cards/popover en charcoal-alt
+  - [ ] `--primary` + `--ring` = glacier blue `oklch(0.55 0.15 235)` (`#1E7FBF`). Retirar el `--accent` cream pálido → glacier-blue tint. Alpine red `#C7361C` queda **solo** en `--destructive` (errores/cancelación)
+  - [ ] Auditar cada par de tokens (bg/fg, primary/primary-fg, muted/muted-fg, border, destructive/dest-fg) ≥ 4.5:1 texto / 3:1 UI (WCAG AA). Anotar ratios en comentario junto a cada token
+  - [ ] Retune de primitives en `components/ui/` que asuman cream/borders claros: `button`, `card`, `input`, `dialog`, `badge`, `select`. Cards con borde hairline glacier-blue-tint, **sin** drop-shadow (regla CLAUDE)
+  - [ ] Decidir el bloque `.dark` existente: MVP es **dark-only** → invertir/retirar el duplicado light para no mantener dos temas. Si se conserva light como toggle, documentar por qué
+  - [ ] Focus ring glacier-blue claramente visible sobre charcoal (a11y, no depende solo de color)
+- Tests: Playwright visual snapshot de home / login / dashboard / pricing en dark × viewport mobile+desktop. Contrast check automatizado (axe o script oklch→WCAG). Vitest N/A
+- Notas:
+  - **El flip es global vía tokens** → dashboard, booking funnel (`reservar/`) y admin heredan dark automáticamente aunque F-092 solo recomponga marketing. AC de QA: pasada visual de esas superficies para detectar contrastes rotos (texto hardcoded, bordes asumidos claros)
+  - Glacier blue **SOLID** — gradientes azules siguen prohibidos (CLAUDE.md)
+  - Si hay `next-themes` montado, reconfigurar default a dark; si no, dark-only sin provider
+
+##### F-090 — Motion system (`motion` lib + `lib/motion/` primitives)
+
+- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Depende de: F-088
+- Motivación: hoy no hay animación coordinada (grep confirma `motion`/`framer-motion` no instalado). El owner quiere "animaciones modernas con motion" coreografiadas. Instalar `motion` (sucesor de framer-motion) con primitives reutilizables + gate de accesibilidad, para que home/pricing/hero (F-092+) tengan reveal/parallax/drop-fall sin reinventar por página
+- AC:
+  - [ ] `npm i motion`. Crear `lib/motion/` (sin barrel): `reveal.tsx` (fade/slide on scroll vía `useInView`), `stagger.tsx`, `parallax.tsx`, `drop-fall.tsx` (anima el símbolo "drop" del logo cayendo/llenándose), `view-transition.ts` (wrapper de transiciones de página)
+  - [ ] **Todos** los primitives respetan `prefers-reduced-motion`: hook `useReducedMotion` → si `reduce`, render estático sin transform/opacity-anim (a11y obligatorio, no opcional)
+  - [ ] `'use client'` aislado en los primitives; los server components los montan como islands. **Cero motion en el critical-path del LCP** — el copy del hero es SSR estático, solo se anima la decoración
+  - [ ] **Actualizar `CLAUDE.md`**: la regla "Subtle, intentional animations only" pasa a "Choreographed motion via `motion`, always gated behind `prefers-reduced-motion`; no gratuitous spin/bounce/glow" (alinea con principios F-088, elimina la contradicción con esta wave)
+  - [ ] Budget: `motion` tree-shaken/lazy donde se pueda; no romper el budget home < 200KB gz (CLAUDE perf). Medir con skill `booking-platform-perf` antes de cerrar
+- Tests: Playwright con `page.emulateMedia({ reducedMotion: 'reduce' })` → sin transforms; default → reveal/stagger aplican. Vitest sobre la rama de `useReducedMotion`
+- Notas:
+  - Paquete `motion` (antes `framer-motion`) — **no** instalar ambos
+  - LCP no depende de JS de motion (hero copy SSR). Gate de perf budget obligatorio (skill `booking-platform-perf`)
+  - `view-transition.ts` puede apoyarse en la View Transitions API nativa donde el browser la soporte, con fallback a `motion`
+
+##### F-091 — Logo "The Drop" integration (favicon · header · hero · footer · OG)
+
+- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Depende de: F-088 (tagline/voz), F-089 (tokens), F-090 (drop-fall anim). Desbloquea D-LOGO
+- Motivación: la marca no tiene logo montado (D-LOGO). El owner produce los assets; este ticket entrega la **spec de assets** y cablea todos los slots con placeholders para no bloquear el sprint mientras se producen las piezas finales
+- AC:
+  - [ ] `docs/brand/logo-assets.md` — spec de entrega para el owner: favicon set, header lockup, hero SVG animable, footer mark, OG template; con tamaños, variantes de color (full-color / all-ink / all-paper / 1-color), clear-space (= altura del símbolo drop) y min-size
+  - [ ] Favicon: `app/icon.svg` (símbolo drop, legible a 16px), `app/apple-icon.png` 180×180 (opaco, ~12% padding), `app/icon-192.png` + `app/icon-512.png`, maskable 512 (20% safe padding), `app/manifest.ts` con `theme_color` charcoal + glacier blue. Placeholder hasta assets reales
+  - [ ] Header: `SiteNav` monta lockup SVG (`currentColor` hereda el token de tema), height ~28px desktop / 24px mobile, link a home, clear-space respetado. Reemplaza el wordmark de texto si existe
+  - [ ] Hero: símbolo drop como **SVG inline** animado vía `lib/motion/drop-fall` (F-090); light/dark vía token; estático bajo `prefers-reduced-motion`
+  - [ ] Footer: mark monocromo pequeño (~20-24px) en `SiteFooter`, color single-token
+  - [ ] OG: `app/[locale]/(marketing)/opengraph-image.tsx` dinámica (`next/og`) con logo + tagline **localizada** (consume F-088). Solo home en este ticket; F-101 generaliza la OG dinámica por ruta
+- Tests: Playwright — favicon + manifest links presentes; logo visible en nav y footer × 3 locales; `opengraph-image` responde 200 con dimensiones 1200×630; `prefers-reduced-motion` → drop del hero estático
+- Notas:
+  - Los assets finales los produce el owner (D-LOGO). Placeholders SVG simples (wordmark "the drop") hasta entonces — el ticket **no** queda bloqueado por D-LOGO
+  - **No Lottie** (CLAUDE) — el drop se anima como SVG vía `motion`
+  - OG dinámica por locale: la tagline sale de `messages/{en,de,es}.json`, no se hornea en la imagen
+
 #### Bullets generales del sprint
 
 - Home editorial completa (sections, instructor teaser, narrative) — la home **minimal** ya existe desde F-032 (Sprint 0.5); aquí se expande.
