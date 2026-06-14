@@ -217,6 +217,32 @@ test("admin browses the directory, opens a profile with cross-instructor notes, 
   // Bookings history shows every status (4 rows).
   await expect(page.getByTestId("admin-student-booking")).toHaveCount(4);
 
+  // Interconnection: a booking row in the profile links to that booking's
+  // detail page.
+  await page
+    .getByTestId("admin-student-booking")
+    .first()
+    .getByTestId("admin-student-booking-link")
+    .click();
+  await page.waitForURL(/\/admin\/bookings\/[^/?]+$/);
+  await expect(page.getByTestId("admin-booking-detail-status")).toBeVisible({
+    timeout: 15_000,
+  });
+
+  // Interconnection: the bookings list links the booker name back to the
+  // student profile.
+  await page.goto(`/admin/bookings?q=${encodeURIComponent(bookerEmail)}`);
+  const bookerLink = page
+    .getByTestId("admin-booking-row")
+    .first()
+    .getByTestId("admin-booking-booker-name");
+  await expect(bookerLink).toHaveAttribute("href", `/admin/students/${bookerId}`);
+  await bookerLink.click();
+  await page.waitForURL(new RegExp(`/admin/students/${bookerId}$`));
+  await expect(page.getByTestId("admin-student-contact")).toBeVisible({
+    timeout: 15_000,
+  });
+
   // A non-matching search yields the empty state.
   await page.goto("/admin/students?q=zzz-no-such-student-zzz");
   await expect(page.getByTestId("admin-students-empty")).toBeVisible();

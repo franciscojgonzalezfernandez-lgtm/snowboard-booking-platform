@@ -178,7 +178,7 @@ export default async function AdminStudentProfilePage({ params }: Props) {
                 key={b.id}
                 data-testid="admin-student-booking"
                 data-status={b.status}
-                className="grid gap-3 border-b border-input px-4 py-4 last:border-b-0 sm:grid-cols-[9rem,1fr,8rem,7rem] sm:items-baseline"
+                className="grid gap-3 border-b border-input px-4 py-4 last:border-b-0 sm:grid-cols-[9rem,1fr,8rem,6rem,5rem] sm:items-baseline"
               >
                 <div className="font-display text-base tracking-tight tabular-nums">
                   <p>{formatAdminDate(b.date)}</p>
@@ -204,8 +204,18 @@ export default async function AdminStudentProfilePage({ params }: Props) {
                   </p>
                 </div>
 
-                <div className="text-sm tabular-nums sm:text-right">
+                <div className="text-sm tabular-nums">
                   {formatChf(b.totalPriceCents)}
+                </div>
+
+                <div className="sm:text-right">
+                  <Link
+                    href={`/admin/bookings/${b.id}`}
+                    className="text-xs font-bold uppercase tracking-[0.18em] underline-offset-4 hover:underline"
+                    data-testid="admin-student-booking-link"
+                  >
+                    Open →
+                  </Link>
                 </div>
               </li>
             ))}

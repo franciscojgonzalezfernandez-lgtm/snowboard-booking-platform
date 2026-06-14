@@ -2006,7 +2006,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - **`AdminStudentRow` entra en el radar de F-086** (type-dedup): comparte shape con `AdminBookingRow`/`AgendaBooking`; documentar el overlap al crearla.
   - **Multi-instructor:** la timeline DEBE atribuir autor — single-instructor hoy lo hace trivial, no hardcodear.
   - **No** charts/analytics en MVP — tabla + stats numéricas.
-  - Follow-up opcional: link desde `/admin/bookings/[id]` (booker name → perfil del student). Encaja pero no bloquea.
+  - ✅ Interconexión booker ↔ reservas (pedido por el owner al revisar PR #132): el booker name enlaza al perfil del student desde la lista `/admin/bookings` **y** el detalle `/admin/bookings/[id]`; cada fila del bookings-history del perfil enlaza a `/admin/bookings/[id]`. Bidireccional para navegar de la persona a la reserva concreta y de vuelta.
 - Refs: F-087, F-065, F-077, F-076, Architecture (modelos `User` / `Booking` / `AccountCredit` / `Attendee`)
 
 ---

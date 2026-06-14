@@ -31,7 +31,7 @@ function makeRow(overrides: Partial<{ id: string; status: BookingStatus; date: D
     chargeAmountCents: null,
     creditsAppliedCents: null,
     createdAt: new Date("2026-12-01T00:00:00.000Z"),
-    booker: { name: "Jane", email: "jane@example.com" },
+    booker: { id: "usr_1", name: "Jane", email: "jane@example.com" },
     instructor: { user: { name: "Javi" } },
     attendees: [{ id: "att_1" }],
   };

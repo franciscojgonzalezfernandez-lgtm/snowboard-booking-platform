@@ -25,7 +25,7 @@ const ROW_SELECT = {
   chargeAmountCents: true,
   creditsAppliedCents: true,
   createdAt: true,
-  booker: { select: { name: true, email: true } },
+  booker: { select: { id: true, name: true, email: true } },
   instructor: { select: { user: { select: { name: true } } } },
   attendees: { select: { id: true } },
 } satisfies Prisma.BookingSelect;
