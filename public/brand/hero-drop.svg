@@ -1,0 +1,9 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="the drop">
+  <!-- Full brand mark. currentColor lets the consumer set glacier blue (text-primary)
+       or snow/charcoal via token. Static state is complete (prefers-reduced-motion safe).
+       F-090 targets #drop-body (fall/fill) and #carve-trail (draw-in). -->
+  <path id="drop-body" fill="currentColor"
+    d="M32 8 C 37 18, 46 24, 46 33 A 14 14 0 1 1 18 33 C 18 24, 27 18, 32 8 Z"/>
+  <path id="carve-trail" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"
+    d="M11 57 C 20 53, 26 57, 33 53 C 40 49, 47 50, 54 47"/>
+</svg>
