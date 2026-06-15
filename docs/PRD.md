@@ -49,6 +49,29 @@ Las plataformas de reserva genéricas (Bókun, Peek, FareHarbor) son funcionales
 - No incluye reservas de glaciar verano ni indoor (solo invierno)
 - No incluye app móvil nativa (web responsive PWA-ready)
 
+### 2.4 Identidad de marca — «The Drop»
+
+> Fuente de verdad de marca. El detalle operativo vive en `docs/brand/` (voz, tokens, motion, logo). Aquí queda lo canónico. Territorio elegido con el owner (2026-06-15): **«Your coach» — personal, cálido, en primera persona**.
+
+**Nombre:** *the drop* (en minúsculas). Doble sentido: la **gota** de nieve/agua y el **drop in** del snowboard (entrar en la pista/el pipe). Es una marca **personal** del owner-instructor (Javi), no una escuela genérica.
+
+**Posicionamiento:** coaching privado de snowboard en Flumserberg y el norte de Suiza, impartido por un rider de verdad. No son monitores intercambiables: es *un* coach que te lleva de los primeros giros a tus primeros drops, con videocorrección real, en grupos de 1 a 4 personas. Vende **progreso y confianza**, no "actividad de ocio".
+
+**Tagline (×3 locales):**
+- EN — *Learn with someone who lives it.*
+- DE — *Lern mit jemandem, der's lebt.*
+- ES — *Aprende con quien lo vive.*
+
+**Arquetipo de voz:** el coach que conoces. Cálido, directo, humano, en **primera persona** ("I'm Javi…"). Tranquiliza, quita el miedo, habla como un rider — no como un folleto. Premium por la confianza y el criterio, no por el lujo. Detalle + ejemplos por superficie en `docs/brand/voice.md`.
+
+**Do / Don't (resumen):**
+- **Do:** primera persona; frases cortas y concretas; nombrar la montaña; reconocer el miedo y resolverlo; términos de rider reales; honestidad sobre lo que no incluye (forfait, equipo).
+- **Don't:** jerga corporativa, "experiencias inolvidables", exclamaciones huecas, promesas vacías, emojis decorativos, hablar de Javi en tercera persona, traducir literal (DE/ES adaptan tono).
+
+**Sistema visual:** dark-alpine (charcoal/snow) + glacier blue `#1E7FBF` **solid** como signature, serif display editorial. Tokens en `docs/brand/tokens.md` (impl. F-089), motion en `docs/brand/motion.md` (impl. F-090), logo en `docs/brand/logo-assets.md` (impl. F-091).
+
+**Naming de clases (hybrid):** kicker de marca + heading de duración (SEO). Kickers: **Confidence** (1h) · **First Day** (2h) · **Go Deep** (4h) · **All Day** (6h). Copy en `messages/*.json` namespace `pricing.tier.*`.
+
 ---
 
 ## 3. Usuarios y Roles

@@ -384,5 +384,21 @@
       "apply_cta": "Aplicar al pagar",
       "empty": "Sin saldo disponible"
     }
+  },
+  "pricing": {
+    "tier": {
+      "oneHour": {
+        "kicker": "Confianza"
+      },
+      "twoHours": {
+        "kicker": "Primer día"
+      },
+      "intensive": {
+        "kicker": "A fondo"
+      },
+      "fullDay": {
+        "kicker": "Día completo"
+      }
+    }
   }
 }
