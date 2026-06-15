@@ -2,8 +2,13 @@
 
 > Feature spec for producing the brand mark and every logo asset the platform needs.
 > Self-contained and **AI-generation-ready** — §7 has paste-ready prompts. Implementation
-> ticket: **F-091**. Brand/voice/tokens source of truth: **F-105**. Retheme: **F-089**.
+> ticket: **F-091**. Brand/voice/tokens source of truth: **F-105**.
 > Motion (hero animation): **F-090**.
+>
+> **⚠ Color scheme under review (2026-06-15):** the dark-alpine palette referenced below predates the
+> owner's pivot back to the **cream/editorial** theme (the dark-alpine retheme was discarded). The
+> already-built F-091 assets are glacier-on-charcoal. **Owner to decide** whether the logo re-colors
+> for cream before these assets are finalized — the color sections below are not yet authoritative.
 
 ---
 
@@ -15,7 +20,7 @@
   (the snowboard term for dropping into a run or the pipe).
 - **Aesthetic:** editorial / premium — references **Aesop, Cereal magazine, Monocle, Outdoor
   Voices**. **Dark-alpine**, cinematic, high-contrast. NOT sporty-extreme, NOT loud, NOT playful.
-- **Palette (source of truth = `oklch` in `app/globals.css`, F-089):**
+- **Palette (source of truth = `app/globals.css`):**
   - Charcoal (background) — `oklch(0.16 0.01 60)` ≈ `#201E1B`
   - Snow (foreground) — `oklch(0.97 0.01 75)` ≈ `#FAF7F1`
   - **Glacier blue (signature)** — `oklch(0.55 0.15 235)` = **`#1E7FBF`**, used **solid** (never gradient)
@@ -149,5 +154,5 @@ per locale by `next/og`):
 
 ---
 
-**Refs:** F-091 (integration), F-105 (brand/voice/tagline), F-089 (tokens), F-090 (motion),
+**Refs:** F-091 (integration), F-105 (brand/voice/tagline), F-090 (motion),
 F-101 (dynamic OG), D-LOGO (owner-produced asset blocker), `CLAUDE.md` §Design direction.

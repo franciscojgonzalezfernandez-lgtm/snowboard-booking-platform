@@ -68,7 +68,7 @@ Las plataformas de reserva genéricas (Bókun, Peek, FareHarbor) son funcionales
 - **Do:** primera persona; frases cortas y concretas; nombrar la montaña; reconocer el miedo y resolverlo; términos de rider reales; honestidad sobre lo que no incluye (forfait, equipo).
 - **Don't:** jerga corporativa, "experiencias inolvidables", exclamaciones huecas, promesas vacías, emojis decorativos, hablar de Javi en tercera persona, traducir literal (DE/ES adaptan tono).
 
-**Sistema visual:** dark-alpine (charcoal/snow) + glacier blue `#1E7FBF` **solid** como signature, serif display editorial. Tokens en `docs/brand/tokens.md` (impl. F-089), motion en `docs/brand/motion.md` (impl. F-090), logo en `docs/brand/logo-assets.md` (impl. F-091).
+**Sistema visual:** paleta **cream/editorial** existente (Patagonia-editorial) con **alpine red `#C7361C`** como signature (el retheme dark-alpine se descartó, 2026-06-15). Tokens en `docs/brand/tokens.md` (ya implementados en `app/globals.css`), motion en `docs/brand/motion.md` (impl. F-090), logo en `docs/brand/logo-assets.md` (impl. F-091).
 
 **Naming de clases (hybrid):** kicker de marca + heading de duración (SEO). Kickers: **Confidence** (1h) · **First Day** (2h) · **Go Deep** (4h) · **All Day** (6h). Copy en `messages/*.json` namespace `pricing.tier.*`.
 
