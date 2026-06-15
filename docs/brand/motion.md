@@ -7,7 +7,7 @@
 
 1. **Physical, not flashy.** Ease like real momentum — snappy in, settle out. No linear robot motion.
 2. **Reveal, don't perform.** Content fades + slides up **once** on scroll. No looping attention-grabbers.
-3. **The drop is the hero gesture.** The logo drop falls and fills with glacier blue on the home hero;
+3. **The drop is the hero gesture.** The logo drop falls and fills with the brand red on the home hero;
    everything else stays quieter so that one moment lands.
 4. **Calm under load.** Micro-interactions are subtle. No bounce, no glow pulse, at most **one** tasteful
    parallax on the whole site.

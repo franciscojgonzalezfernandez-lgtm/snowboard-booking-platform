@@ -1787,47 +1787,29 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - Default copy inicial alineado con request del owner: CTA team building → linkea a F-054 cuando aterrice (`/contacto`), fallback a `tel:` mientras tanto
   - **No** A/B testing de copy en MVP. Owner edita `messages/*.json` directo en PR
 
-#### Brand & retheme foundation — wave 1 (F-089–F-091 + F-105)
+#### Brand foundation — wave 1 (F-090–F-091 + F-105)
 
-> Nota de numeración: el ticket de marca nació como `F-088` pero ese ID lo ocupa la feature **Season management admin UI** (shipped, PR #133). Renumerado a **F-105** para resolver la colisión; F-089–F-091 conservan su ID.
+> Nota de numeración: el ticket de marca nació como `F-088` pero ese ID lo ocupa la feature **Season management admin UI** (shipped, PR #133). Renumerado a **F-105** para resolver la colisión; F-090–F-091 conservan su ID.
 
-> Wave de fundación del Sprint 5 (crítico para conversión). Define la marca "The Drop", flipea la paleta pastel a dark-alpine contrastada, instala el sistema de motion y cablea el logo. Las superficies de marketing (home, pricing, instructores…) se recomponen en wave 2 (F-092+) **consumiendo** los tokens, la voz y los primitives que produce esta wave. Decisiones de dirección tomadas con el owner: dark-alpine (charcoal/snow), glacier blue `#1E7FBF` **solid** como signature, alpine red → solo `destructive`, motion coreografiado vía `motion` con gate `prefers-reduced-motion`, refactor = retoken global + recompose de superficies clave.
+> Wave de fundación del Sprint 5 (crítico para conversión). Define la marca "The Drop" (voz, motion, logo). Las superficies de marketing (home, pricing, instructores…) se recomponen en wave 2 (F-092+) **consumiendo** la voz y los primitives que produce esta wave. Decisión de dirección tomada con el owner (2026-06-15): se **mantiene la paleta cream/editorial existente** (Patagonia-editorial, alpine red `#C7361C` como signature) — el retheme dark-alpine se descartó; motion coreografiado vía `motion` con gate `prefers-reduced-motion`.
 
 ##### F-105 — Brand identity & voice system "The Drop"
 
 - Sprint: 5 · Estado: **done** (2026-06-15) · Prioridad: P1
-- Depende de: — (raíz de la wave; bloquea F-089, F-090, F-091, F-092+)
-- Motivación: la marca no tiene sistema — sin voz documentada, sin tagline, sin principios de color/tipografía/motion. Antes de rethemear (F-089) y recomponer superficies (F-092+) hace falta una fuente de verdad de marca para que las 3 páginas (en/de/es) conviertan con una voz consistente y diferenciada. CRO: el copy convierte cuando la voz es nítida y propia, no genérica
+- Depende de: — (raíz de la wave; bloquea F-090, F-091, F-092+)
+- Motivación: la marca no tiene sistema — sin voz documentada, sin tagline, sin principios de color/tipografía/motion. Antes de recomponer superficies (F-092+) hace falta una fuente de verdad de marca para que las 3 páginas (en/de/es) conviertan con una voz consistente y diferenciada. CRO: el copy convierte cuando la voz es nítida y propia, no genérica
 - AC:
   - [x] Expandir `docs/PRD.md` con **§2.4 Identidad de marca**: nombre "The Drop" (doble sentido — gota de nieve/agua + *drop in*), positioning, tagline ×3 locales, arquetipo de voz, reglas do/don't de copy
   - [x] `docs/brand/voice.md` — guía de voz territorio «Your coach»: 6 principios, ejemplos por superficie (hero, pricing card, error, email, FAQ), glosario de términos de rider y lista de términos prohibidos
-  - [x] Tokens de marca **documentados** en `docs/brand/tokens.md` (implementación en F-089): paleta dark-alpine en `oklch` — `background` charcoal, `foreground` snow, `primary`/`ring` glacier blue `#1E7FBF`, `destructive` alpine red `#C7361C` — con targets de contraste WCAG AA por par
+  - [x] Tokens de marca **documentados** en `docs/brand/tokens.md`: la paleta **cream/editorial** existente (Patagonia-editorial) — `background` cream `#FAF6F0`, `foreground` ink `#1F1A14`, `primary`/`ring` alpine red `#C7361C` — ya implementada en `app/globals.css`
   - [x] Principios de **motion** en `docs/brand/motion.md` (consumidos por F-090): "physical · intentional · snow-like"; gestos permitidos (reveal, drop-fall, parallax sutil, stagger, view transitions) vs prohibidos (spin, bounce, glow, glassmorphism)
   - [x] **Naming de clases** (hybrid duration-heading + branded kicker): kickers EN `Confidence` (1h) · `First Day` (2h) · `Go Deep` (4h) · `All Day` (6h), traducidos a DE/ES en `messages/{en,de,es}.json` namespace `pricing.tier.*.kicker`. El heading sigue siendo la duración (SEO: "2-hour snowboard lesson")
 - Tests: N/A (sistema de diseño + docs). Review manual con skills `impeccable` (visual/voz) + `cro` (conversión)
 - Notas:
   - Draftear §Brand con skill `to-prd` pero **escribir en `docs/PRD.md`** (nuestro flujo es PRD + FEATURES, no un issue tracker externo)
   - La voz **no** se localiza palabra a palabra — DE/ES adaptan tono, no traducen literal
-  - Bloquea toda la wave: F-089 (tokens), F-090 (principios motion), F-091 (logo + tagline OG), F-092+ (voz + naming)
-  - **Entregado (2026-06-15):** territorio de voz **«Your coach»** (personal, primera persona, Javi) elegido por el owner. PRD §2.4 + `docs/brand/{voice,tokens,motion}.md` + kickers en `messages/*.json`. Tagline EN *"Learn with someone who lives it."* Kickers finales (Confidence/First Day/Go Deep/All Day) sustituyen el draft inicial. Tokens y motion quedan **documentados**; su implementación es F-089/F-090
-
-##### F-089 — Dark-alpine retheme (`globals.css` + shadcn primitives)
-
-- Sprint: 5 · Estado: backlog · Prioridad: P1
-- Depende de: F-105
-- Motivación: la paleta actual es cream/pastel por diseño — `--background` cream `#FAF6F0`, `--foreground` ink `#1F1A14`, y el `--accent` token es literalmente cream-alt pálido `#F1EAD9` (no un accent real). El único color saturado es alpine red `#C7361C`, usado con cuentagotas. Lee suave, no impacta. El owner quiere dark-alpine contrastada y cinematográfica con glacier blue como signature
-- AC:
-  - [ ] `app/globals.css` `:root` → dark-alpine como **tema base** (no como `.dark` opcional): `--background` charcoal `oklch(0.16 0.01 60)`, `--foreground` snow `oklch(0.97 0.01 75)`, cards/popover en charcoal-alt
-  - [ ] `--primary` + `--ring` = glacier blue `oklch(0.55 0.15 235)` (`#1E7FBF`). Retirar el `--accent` cream pálido → glacier-blue tint. Alpine red `#C7361C` queda **solo** en `--destructive` (errores/cancelación)
-  - [ ] Auditar cada par de tokens (bg/fg, primary/primary-fg, muted/muted-fg, border, destructive/dest-fg) ≥ 4.5:1 texto / 3:1 UI (WCAG AA). Anotar ratios en comentario junto a cada token
-  - [ ] Retune de primitives en `components/ui/` que asuman cream/borders claros: `button`, `card`, `input`, `dialog`, `badge`, `select`. Cards con borde hairline glacier-blue-tint, **sin** drop-shadow (regla CLAUDE)
-  - [ ] Decidir el bloque `.dark` existente: MVP es **dark-only** → invertir/retirar el duplicado light para no mantener dos temas. Si se conserva light como toggle, documentar por qué
-  - [ ] Focus ring glacier-blue claramente visible sobre charcoal (a11y, no depende solo de color)
-- Tests: Playwright visual snapshot de home / login / dashboard / pricing en dark × viewport mobile+desktop. Contrast check automatizado (axe o script oklch→WCAG). Vitest N/A
-- Notas:
-  - **El flip es global vía tokens** → dashboard, booking funnel (`reservar/`) y admin heredan dark automáticamente aunque F-092 solo recomponga marketing. AC de QA: pasada visual de esas superficies para detectar contrastes rotos (texto hardcoded, bordes asumidos claros)
-  - Glacier blue **SOLID** — gradientes azules siguen prohibidos (CLAUDE.md)
-  - Si hay `next-themes` montado, reconfigurar default a dark; si no, dark-only sin provider
+  - Bloquea toda la wave: F-090 (principios motion), F-091 (logo + tagline OG), F-092+ (voz + naming)
+  - **Entregado (2026-06-15):** territorio de voz **«Your coach»** (personal, primera persona, Javi) elegido por el owner. PRD §2.4 + `docs/brand/{voice,tokens,motion}.md` + kickers en `messages/*.json`. Tagline EN *"Learn with someone who lives it."* Kickers finales (Confidence/First Day/Go Deep/All Day) sustituyen el draft inicial. La voz/tagline/kickers quedan **documentados**; el motion lo implementa F-090 (la paleta cream/editorial ya está en `app/globals.css`)
 
 ##### F-090 — Motion system (`motion` lib + `lib/motion/` primitives)
 
@@ -1849,7 +1831,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 ##### F-091 — Logo "The Drop" integration (favicon · header · hero · footer · OG)
 
 - Sprint: 5 · Estado: backlog · Prioridad: P1
-- Depende de: F-105 (tagline/voz), F-089 (tokens), F-090 (drop-fall anim). Desbloquea D-LOGO
+- Depende de: F-105 (tagline/voz), F-090 (drop-fall anim). Desbloquea D-LOGO
 - Motivación: la marca no tiene logo montado (D-LOGO). El owner produce los assets; este ticket entrega la **spec de assets** y cablea todos los slots con placeholders para no bloquear el sprint mientras se producen las piezas finales
 - AC:
   - [ ] `docs/brand/logo-assets.md` — spec de entrega para el owner: favicon set, header lockup, hero SVG animable, footer mark, OG template; con tamaños, variantes de color (full-color / all-ink / all-paper / 1-color), clear-space (= altura del símbolo drop) y min-size
@@ -1866,15 +1848,15 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 #### Marketing surfaces + SEO — wave 2 (F-092–F-104)
 
-> Wave 2 consume la fundación de wave 1 (tokens dark-alpine F-089, voz/marca F-105, motion F-090, logo F-091) para construir las superficies que convierten: home editorial, pricing, instructores, estáticas, blog y todo el SEO trilingüe. Las antiguas viñetas generales del sprint quedan **formalizadas** como los tickets de abajo. Pendientes externos: **D-LOGO** (logo + hero photography, los produce el owner) y **D-PLACE** (Google Place ID, reabre el CTA de review en F-100/F-101).
+> Wave 2 consume la fundación de wave 1 (paleta cream/editorial existente, voz/marca F-105, motion F-090, logo F-091) para construir las superficies que convierten: home editorial, pricing, instructores, estáticas, blog y todo el SEO trilingüe. Las antiguas viñetas generales del sprint quedan **formalizadas** como los tickets de abajo. Pendientes externos: **D-LOGO** (logo + hero photography, los produce el owner) y **D-PLACE** (Google Place ID, reabre el CTA de review en F-100/F-101).
 
-##### F-092 — Home editorial recompose (dark hero + animated drop + scroll choreography)
+##### F-092 — Home editorial recompose (editorial hero + animated drop + scroll choreography)
 
 - Sprint: 5 · Estado: backlog · Prioridad: P1
-- Depende de: F-105, F-089, F-090, F-091, F-032
-- Motivación: la home **minimal** existe desde F-032 (Sprint 0.5) — hero + CTA. Sprint 5 la expande a una home editorial con alma de marca: narrativa, teaser de instructor, prueba social, secciones de las clases. Es la primera impresión y el LCP del market — tiene que impactar (dark-alpine) y convertir en los 3 idiomas
+- Depende de: F-105, F-090, F-091, F-032
+- Motivación: la home **minimal** existe desde F-032 (Sprint 0.5) — hero + CTA. Sprint 5 la expande a una home editorial con alma de marca: narrativa, teaser de instructor, prueba social, secciones de las clases. Es la primera impresión y el LCP del market — tiene que impactar (editorial, paleta cream) y convertir en los 3 idiomas
 - AC:
-  - [ ] Recompose `app/[locale]/(marketing)/page.tsx`: hero dark con el **drop animado** (`lib/motion/drop-fall`, F-090), copy editorial SSR (no depende de JS para el LCP), CTA primario `Book a lesson` → `/reservar`
+  - [ ] Recompose `app/[locale]/(marketing)/page.tsx`: hero editorial con el **drop animado** (`lib/motion/drop-fall`, F-090), copy editorial SSR (no depende de JS para el LCP), CTA primario `Book a lesson` → `/reservar`
   - [ ] Secciones con `reveal`/`stagger` on scroll (F-090): qué es "The Drop" (voz F-105), teaser de las 4 clases con cross-link a `/precios`, teaser de instructor (foto Blob F-068 + idiomas), prueba social (placeholder hasta D-PLACE Google reviews)
   - [ ] `HeroAnnouncement` (F-053) + `phone CTA` (F-052) ya montados — verificar que conviven con el nuevo hero sin romper LCP/CLS
   - [ ] Fotografía vía `next/image` (AVIF/WebP), placeholders hasta D-LOGO/hero photography; `priority` solo en el hero
@@ -1888,7 +1870,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 ##### F-093 — Pricing page (value-prop por duración, trilingüe, CRO)
 
 - Sprint: 5 · Estado: backlog · Prioridad: P1
-- Depende de: F-105 (kickers/voz), F-089, F-090, F-039/F-080 (precios en DB), F-068 (funnel `/reservar`)
+- Depende de: F-105 (kickers/voz), F-090, F-039/F-080 (precios en DB), F-068 (funnel `/reservar`)
 - Motivación: la pricing page convierte cuando explica **el "qué"**, no solo el "cuánto". Cada duración tiene un valor diferencial confirmado por el owner; hay que contarlo con alma de marca y SEO, en 3 idiomas. Precios **se leen de DB** (`Season.priceCentsByDuration`), nunca hardcoded
 - AC:
   - [ ] `app/[locale]/(marketing)/precios/page.tsx` (slug traducido F-102): server component, lee la `Season` activa y renderiza 4 tarjetas de clase con precio formateado `Intl.NumberFormat('de-CH', { currency: 'CHF' })`
@@ -2007,8 +1989,8 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 - Depende de: F-091 (logo), F-105 (taglines)
 - Motivación: share-rate + CTR social. OG dinámica por ruta y locale (logo + título/tagline localizada) en vez de una imagen estática. F-091 montó la de home; aquí se generaliza
 - AC:
-  - [ ] `opengraph-image.tsx` (y `twitter-image.tsx`) por ruta marketing relevante, vía `next/og` (`ImageResponse`), 1200×630, dark-alpine + logo (F-091) + texto desde `messages` del locale
-  - [ ] Plantilla reutilizable `lib/seo/og-template.tsx` (charcoal bg, glacier-blue accent, serif display) parametrizada por title/kicker/locale
+  - [ ] `opengraph-image.tsx` (y `twitter-image.tsx`) por ruta marketing relevante, vía `next/og` (`ImageResponse`), 1200×630, cream/editorial + logo (F-091) + texto desde `messages` del locale
+  - [ ] Plantilla reutilizable `lib/seo/og-template.tsx` (cream bg, alpine-red accent, serif display) parametrizada por title/kicker/locale
   - [ ] Fuentes serif embebidas para el render (no system); cache de `ImageResponse`
 - Tests: HTTP — cada `opengraph-image` 200 con `content-type: image/png` y 1200×630; smoke por locale
 - Notas: texto **no** horneado por idioma a mano — sale de `messages/{en,de,es}.json`
@@ -2040,12 +2022,12 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 ##### F-104 — Accessibility audit de superficies Sprint 5 (WCAG 2.1 AA)
 
 - Sprint: 5 · Estado: backlog · Prioridad: P1
-- Depende de: F-089, F-090, F-092–F-098
-- Motivación: el retheme dark + motion + páginas nuevas tienen que nacer accesibles, no parchearse en Sprint 6. Audit acotado a las superficies de marketing nuevas (el WCAG global completo sigue en Sprint 6)
+- Depende de: F-090, F-092–F-098
+- Motivación: el motion + páginas nuevas tienen que nacer accesibles, no parchearse en Sprint 6. Audit acotado a las superficies de marketing nuevas (el WCAG global completo sigue en Sprint 6)
 - AC:
   - [ ] Pasada `axe`/Playwright en home, precios, instructores, sobre, contacto, faq, blog × 3 locales: 0 violaciones críticas
-  - [ ] Contraste WCAG AA verificado en dark-alpine (texto ≥4.5:1, UI ≥3:1) — cierra el AC de F-089 sobre las superficies reales
-  - [ ] Focus visible glacier-blue en todos los interactivos; orden de tab lógico; navegación por teclado del acordeón FAQ y los CTAs
+  - [ ] Contraste WCAG AA verificado en el tema cream/editorial (texto ≥4.5:1, UI ≥3:1) sobre las superficies reales
+  - [ ] Focus visible (alpine red ring) en todos los interactivos; orden de tab lógico; navegación por teclado del acordeón FAQ y los CTAs
   - [ ] `prefers-reduced-motion` respetado en todas las animaciones (verifica F-090 en contexto real); `alt` en toda la fotografía; jerarquía de headings correcta; `lang` por locale; tap targets ≥44px
 - Tests: Playwright + axe automatizado por ruta/locale; checklist manual de teclado/screen-reader spot-check
 - Notas: overlaps con el WCAG audit de Sprint 6 pero acotado a Sprint 5 para que las páginas lancen accesibles; Sprint 6 hace el barrido producto-wide (dashboard/booking/admin)
