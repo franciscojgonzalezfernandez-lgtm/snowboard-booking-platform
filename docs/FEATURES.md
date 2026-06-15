@@ -1786,11 +1786,13 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - Default copy inicial alineado con request del owner: CTA team building → linkea a F-054 cuando aterrice (`/contacto`), fallback a `tel:` mientras tanto
   - **No** A/B testing de copy en MVP. Owner edita `messages/*.json` directo en PR
 
-#### Brand & retheme foundation — wave 1 (F-088–F-091)
+#### Brand & retheme foundation — wave 1 (F-089–F-091 + F-105)
+
+> Nota de numeración: el ticket de marca nació como `F-088` pero ese ID lo ocupa la feature **Season management admin UI** (shipped, PR #133). Renumerado a **F-105** para resolver la colisión; F-089–F-091 conservan su ID.
 
 > Wave de fundación del Sprint 5 (crítico para conversión). Define la marca "The Drop", flipea la paleta pastel a dark-alpine contrastada, instala el sistema de motion y cablea el logo. Las superficies de marketing (home, pricing, instructores…) se recomponen en wave 2 (F-092+) **consumiendo** los tokens, la voz y los primitives que produce esta wave. Decisiones de dirección tomadas con el owner: dark-alpine (charcoal/snow), glacier blue `#1E7FBF` **solid** como signature, alpine red → solo `destructive`, motion coreografiado vía `motion` con gate `prefers-reduced-motion`, refactor = retoken global + recompose de superficies clave.
 
-##### F-088 — Brand identity & voice system "The Drop"
+##### F-105 — Brand identity & voice system "The Drop"
 
 - Sprint: 5 · Estado: backlog · Prioridad: P1
 - Depende de: — (raíz de la wave; bloquea F-089, F-090, F-091, F-092+)
@@ -1810,7 +1812,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 ##### F-089 — Dark-alpine retheme (`globals.css` + shadcn primitives)
 
 - Sprint: 5 · Estado: backlog · Prioridad: P1
-- Depende de: F-088
+- Depende de: F-105
 - Motivación: la paleta actual es cream/pastel por diseño — `--background` cream `#FAF6F0`, `--foreground` ink `#1F1A14`, y el `--accent` token es literalmente cream-alt pálido `#F1EAD9` (no un accent real). El único color saturado es alpine red `#C7361C`, usado con cuentagotas. Lee suave, no impacta. El owner quiere dark-alpine contrastada y cinematográfica con glacier blue como signature
 - AC:
   - [ ] `app/globals.css` `:root` → dark-alpine como **tema base** (no como `.dark` opcional): `--background` charcoal `oklch(0.16 0.01 60)`, `--foreground` snow `oklch(0.97 0.01 75)`, cards/popover en charcoal-alt
@@ -1828,13 +1830,13 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 ##### F-090 — Motion system (`motion` lib + `lib/motion/` primitives)
 
 - Sprint: 5 · Estado: backlog · Prioridad: P1
-- Depende de: F-088
+- Depende de: F-105
 - Motivación: hoy no hay animación coordinada (grep confirma `motion`/`framer-motion` no instalado). El owner quiere "animaciones modernas con motion" coreografiadas. Instalar `motion` (sucesor de framer-motion) con primitives reutilizables + gate de accesibilidad, para que home/pricing/hero (F-092+) tengan reveal/parallax/drop-fall sin reinventar por página
 - AC:
   - [ ] `npm i motion`. Crear `lib/motion/` (sin barrel): `reveal.tsx` (fade/slide on scroll vía `useInView`), `stagger.tsx`, `parallax.tsx`, `drop-fall.tsx` (anima el símbolo "drop" del logo cayendo/llenándose), `view-transition.ts` (wrapper de transiciones de página)
   - [ ] **Todos** los primitives respetan `prefers-reduced-motion`: hook `useReducedMotion` → si `reduce`, render estático sin transform/opacity-anim (a11y obligatorio, no opcional)
   - [ ] `'use client'` aislado en los primitives; los server components los montan como islands. **Cero motion en el critical-path del LCP** — el copy del hero es SSR estático, solo se anima la decoración
-  - [ ] **Actualizar `CLAUDE.md`**: la regla "Subtle, intentional animations only" pasa a "Choreographed motion via `motion`, always gated behind `prefers-reduced-motion`; no gratuitous spin/bounce/glow" (alinea con principios F-088, elimina la contradicción con esta wave)
+  - [ ] **Actualizar `CLAUDE.md`**: la regla "Subtle, intentional animations only" pasa a "Choreographed motion via `motion`, always gated behind `prefers-reduced-motion`; no gratuitous spin/bounce/glow" (alinea con principios F-105, elimina la contradicción con esta wave)
   - [ ] Budget: `motion` tree-shaken/lazy donde se pueda; no romper el budget home < 200KB gz (CLAUDE perf). Medir con skill `booking-platform-perf` antes de cerrar
 - Tests: Playwright con `page.emulateMedia({ reducedMotion: 'reduce' })` → sin transforms; default → reveal/stagger aplican. Vitest sobre la rama de `useReducedMotion`
 - Notas:
@@ -1845,7 +1847,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 ##### F-091 — Logo "The Drop" integration (favicon · header · hero · footer · OG)
 
 - Sprint: 5 · Estado: backlog · Prioridad: P1
-- Depende de: F-088 (tagline/voz), F-089 (tokens), F-090 (drop-fall anim). Desbloquea D-LOGO
+- Depende de: F-105 (tagline/voz), F-089 (tokens), F-090 (drop-fall anim). Desbloquea D-LOGO
 - Motivación: la marca no tiene logo montado (D-LOGO). El owner produce los assets; este ticket entrega la **spec de assets** y cablea todos los slots con placeholders para no bloquear el sprint mientras se producen las piezas finales
 - AC:
   - [ ] `docs/brand/logo-assets.md` — spec de entrega para el owner: favicon set, header lockup, hero SVG animable, footer mark, OG template; con tamaños, variantes de color (full-color / all-ink / all-paper / 1-color), clear-space (= altura del símbolo drop) y min-size
@@ -1853,7 +1855,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - [ ] Header: `SiteNav` monta lockup SVG (`currentColor` hereda el token de tema), height ~28px desktop / 24px mobile, link a home, clear-space respetado. Reemplaza el wordmark de texto si existe
   - [ ] Hero: símbolo drop como **SVG inline** animado vía `lib/motion/drop-fall` (F-090); light/dark vía token; estático bajo `prefers-reduced-motion`
   - [ ] Footer: mark monocromo pequeño (~20-24px) en `SiteFooter`, color single-token
-  - [ ] OG: `app/[locale]/(marketing)/opengraph-image.tsx` dinámica (`next/og`) con logo + tagline **localizada** (consume F-088). Solo home en este ticket; F-101 generaliza la OG dinámica por ruta
+  - [ ] OG: `app/[locale]/(marketing)/opengraph-image.tsx` dinámica (`next/og`) con logo + tagline **localizada** (consume F-105). Solo home en este ticket; F-101 generaliza la OG dinámica por ruta
 - Tests: Playwright — favicon + manifest links presentes; logo visible en nav y footer × 3 locales; `opengraph-image` responde 200 con dimensiones 1200×630; `prefers-reduced-motion` → drop del hero estático
 - Notas:
   - Los assets finales los produce el owner (D-LOGO). Placeholders SVG simples (wordmark "the drop") hasta entonces — el ticket **no** queda bloqueado por D-LOGO
@@ -1862,16 +1864,16 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 #### Marketing surfaces + SEO — wave 2 (F-092–F-104)
 
-> Wave 2 consume la fundación de wave 1 (tokens dark-alpine F-089, voz/marca F-088, motion F-090, logo F-091) para construir las superficies que convierten: home editorial, pricing, instructores, estáticas, blog y todo el SEO trilingüe. Las antiguas viñetas generales del sprint quedan **formalizadas** como los tickets de abajo. Pendientes externos: **D-LOGO** (logo + hero photography, los produce el owner) y **D-PLACE** (Google Place ID, reabre el CTA de review en F-100/F-101).
+> Wave 2 consume la fundación de wave 1 (tokens dark-alpine F-089, voz/marca F-105, motion F-090, logo F-091) para construir las superficies que convierten: home editorial, pricing, instructores, estáticas, blog y todo el SEO trilingüe. Las antiguas viñetas generales del sprint quedan **formalizadas** como los tickets de abajo. Pendientes externos: **D-LOGO** (logo + hero photography, los produce el owner) y **D-PLACE** (Google Place ID, reabre el CTA de review en F-100/F-101).
 
 ##### F-092 — Home editorial recompose (dark hero + animated drop + scroll choreography)
 
 - Sprint: 5 · Estado: backlog · Prioridad: P1
-- Depende de: F-088, F-089, F-090, F-091, F-032
+- Depende de: F-105, F-089, F-090, F-091, F-032
 - Motivación: la home **minimal** existe desde F-032 (Sprint 0.5) — hero + CTA. Sprint 5 la expande a una home editorial con alma de marca: narrativa, teaser de instructor, prueba social, secciones de las clases. Es la primera impresión y el LCP del market — tiene que impactar (dark-alpine) y convertir en los 3 idiomas
 - AC:
   - [ ] Recompose `app/[locale]/(marketing)/page.tsx`: hero dark con el **drop animado** (`lib/motion/drop-fall`, F-090), copy editorial SSR (no depende de JS para el LCP), CTA primario `Book a lesson` → `/reservar`
-  - [ ] Secciones con `reveal`/`stagger` on scroll (F-090): qué es "The Drop" (voz F-088), teaser de las 4 clases con cross-link a `/precios`, teaser de instructor (foto Blob F-068 + idiomas), prueba social (placeholder hasta D-PLACE Google reviews)
+  - [ ] Secciones con `reveal`/`stagger` on scroll (F-090): qué es "The Drop" (voz F-105), teaser de las 4 clases con cross-link a `/precios`, teaser de instructor (foto Blob F-068 + idiomas), prueba social (placeholder hasta D-PLACE Google reviews)
   - [ ] `HeroAnnouncement` (F-053) + `phone CTA` (F-052) ya montados — verificar que conviven con el nuevo hero sin romper LCP/CLS
   - [ ] Fotografía vía `next/image` (AVIF/WebP), placeholders hasta D-LOGO/hero photography; `priority` solo en el hero
   - [ ] Copy trilingüe `messages/{en,de,es}.json` namespace `home.*`; sin strings hardcoded
@@ -1884,11 +1886,11 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 ##### F-093 — Pricing page (value-prop por duración, trilingüe, CRO)
 
 - Sprint: 5 · Estado: backlog · Prioridad: P1
-- Depende de: F-088 (kickers/voz), F-089, F-090, F-039/F-080 (precios en DB), F-068 (funnel `/reservar`)
+- Depende de: F-105 (kickers/voz), F-089, F-090, F-039/F-080 (precios en DB), F-068 (funnel `/reservar`)
 - Motivación: la pricing page convierte cuando explica **el "qué"**, no solo el "cuánto". Cada duración tiene un valor diferencial confirmado por el owner; hay que contarlo con alma de marca y SEO, en 3 idiomas. Precios **se leen de DB** (`Season.priceCentsByDuration`), nunca hardcoded
 - AC:
   - [ ] `app/[locale]/(marketing)/precios/page.tsx` (slug traducido F-102): server component, lee la `Season` activa y renderiza 4 tarjetas de clase con precio formateado `Intl.NumberFormat('de-CH', { currency: 'CHF' })`
-  - [ ] Naming **hybrid**: heading = duración (SEO "2-hour snowboard lesson"), kicker = nombre de marca (`The Fix`/`First Tracks`/`The Session`/`The Full Drop`, F-088, i18n `pricing.tier.*.kicker`)
+  - [ ] Naming **hybrid**: heading = duración (SEO "2-hour snowboard lesson"), kicker = nombre de marca (`The Fix`/`First Tracks`/`The Session`/`The Full Drop`, F-105, i18n `pricing.tier.*.kicker`)
   - [ ] **Escalera de diferenciadores por tarjeta** (copy en `pricing.*`):
     - 1h — sin perk; "fix one flaw / beat fear / get back riding". Meeting point COLORS restaurant door
     - 2h — primer día / básicos / tune-up técnico; **videocorrección take-home, solo para no-beginners** (copy condicional). Meeting point COLORS
@@ -1906,11 +1908,11 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 ##### F-094 — Instructors index + perfiles individuales
 
 - Sprint: 5 · Estado: backlog · Prioridad: P1
-- Depende de: F-068 (foto Blob), F-021 (seed instructor), F-088
+- Depende de: F-068 (foto Blob), F-021 (seed instructor), F-105
 - Motivación: confianza pre-reserva. El cliente quiere ver quién enseña, su nivel por idioma y specialties antes de pagar. Alimenta también el teaser de Step 3 del funnel y la home. SEO: páginas de instructor capturan búsquedas de nombre/"snowboard instructor Flumserberg"
 - AC:
   - [ ] `app/[locale]/(marketing)/instructores/page.tsx` (slug F-102): grid editorial de instructores activos (hoy 1, el owner) — foto Blob (F-068), nombre, idiomas con nivel (`EN native · DE fluent · ES basic`, PRD §6.2), specialties
-  - [ ] `app/[locale]/(marketing)/instructores/[slug]/page.tsx`: perfil individual — bio (voz F-088), foto, idiomas, specialties, clases que imparte, CTA → `/reservar`
+  - [ ] `app/[locale]/(marketing)/instructores/[slug]/page.tsx`: perfil individual — bio (voz F-105), foto, idiomas, specialties, clases que imparte, CTA → `/reservar`
   - [ ] `generateStaticParams` por instructor activo; `generateMetadata` por perfil (F-103)
   - [ ] Nivel por idioma: requiere persistir niveles en schema si aún no — ver followup de F-022/Step 3 (Sprint 1 notas). Si no está, mostrar idiomas sin nivel y abrir followup explícito
   - [ ] Copy/labels trilingüe namespace `instructors.*`
@@ -1922,10 +1924,10 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 ##### F-095 — About / brand story page
 
 - Sprint: 5 · Estado: backlog · Prioridad: P2
-- Depende de: F-088
+- Depende de: F-105
 - Motivación: el "alma" de la marca. Historia de "The Drop", origen del nombre (gota de nieve + *drop in*), filosofía de enseñanza, por qué Flumserberg. Diferenciador emocional que las escuelas genéricas no tienen; refuerza conversión y SEO de marca
 - AC:
-  - [ ] `app/[locale]/(marketing)/sobre/page.tsx` (slug F-102): narrativa editorial larga con la voz F-088, fotografía (placeholder D-LOGO), motion sutil (reveal)
+  - [ ] `app/[locale]/(marketing)/sobre/page.tsx` (slug F-102): narrativa editorial larga con la voz F-105, fotografía (placeholder D-LOGO), motion sutil (reveal)
   - [ ] Secciones: origen del nombre, filosofía, el instructor, la montaña; CTA suave → `/reservar` o `/instructores`
   - [ ] Copy trilingüe `about.*`; tono adaptado por idioma (no traducción literal)
 - Tests: Playwright — render × 3 locales, secciones presentes, CTA navega
@@ -1934,7 +1936,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 ##### F-096 — Contact page (lean: phone + email + hours + map, sin form)
 
 - Sprint: 5 · Estado: backlog · Prioridad: P1
-- Depende de: F-052 (constantes phone), F-088
+- Depende de: F-052 (constantes phone), F-105
 - Motivación: surface de contacto real y destino del CTA del hero announcement (F-053). MVP sin form — el form de team-building es post-MVP (F-054). Reduce fricción para dudas operativas y da un punto de aterrizaje honesto
 - AC:
   - [ ] `app/[locale]/(marketing)/contacto/page.tsx` (slug F-102): teléfono (`OPERATIONAL_PHONE_DISPLAY`/`_TEL` de F-052), email, horario operativo, ubicación (mapa estático/embed de Flumserberg, lazy)
@@ -1948,7 +1950,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 ##### F-097 — FAQ page (trilingüe, captura objeciones de conversión)
 
 - Sprint: 5 · Estado: backlog · Prioridad: P2
-- Depende de: F-088, F-093 (consistencia de hechos), F-040 (política cancelación)
+- Depende de: F-105, F-093 (consistencia de hechos), F-040 (política cancelación)
 - Motivación: la FAQ mata las objeciones que frenan la reserva. Responde de una las dudas reales: forfait, equipo, edad, idiomas, cancelación, qué llevar. SEO: FAQ structured data (`FAQPage`) gana rich snippets
 - AC:
   - [ ] `app/[locale]/(marketing)/faq/page.tsx`: acordeón accesible (shadcn `accordion`) con preguntas/respuestas trilingüe `faq.*`
@@ -1960,7 +1962,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 ##### F-098 — Blog MDX (3 posts trilingüe al lanzamiento)
 
 - Sprint: 5 · Estado: backlog · Prioridad: P2
-- Depende de: F-088, F-031 (next-intl)
+- Depende de: F-105, F-031 (next-intl)
 - Motivación: SEO de contenido + autoridad. 3 posts trilingües al lanzamiento (decisión owner) capturan long-tail ("learn snowboard Flumserberg", "snowboard vs ski beginner", "carving tips") con hreflang completo
 - AC:
   - [ ] Pipeline MDX: `app/[locale]/(marketing)/blog/page.tsx` (índice) + `[slug]/page.tsx`, content en `content/blog/{en,de,es}/*.mdx` con frontmatter (title, description, date, cover, slug)
@@ -2000,7 +2002,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 ##### F-101 — Dynamic OG images por ruta y locale (`next/og`)
 
 - Sprint: 5 · Estado: backlog · Prioridad: P1
-- Depende de: F-091 (logo), F-088 (taglines)
+- Depende de: F-091 (logo), F-105 (taglines)
 - Motivación: share-rate + CTR social. OG dinámica por ruta y locale (logo + título/tagline localizada) en vez de una imagen estática. F-091 montó la de home; aquí se generaliza
 - AC:
   - [ ] `opengraph-image.tsx` (y `twitter-image.tsx`) por ruta marketing relevante, vía `next/og` (`ImageResponse`), 1200×630, dark-alpine + logo (F-091) + texto desde `messages` del locale
@@ -2024,12 +2026,12 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 ##### F-103 — Conversion metadata por ruta × 3 locales (keyword-tuned)
 
 - Sprint: 5 · Estado: backlog · Prioridad: P1
-- Depende de: F-102 (slugs/canonical), F-088 (voz)
+- Depende de: F-102 (slugs/canonical), F-105 (voz)
 - Motivación: el título + meta description es el anuncio orgánico. Tunear por keyword y mercado (DE/ES/EN) sube CTR. Sprint 2 dejó `<title>`/description básicos; aquí se completa con canonical + hreflang alternates + copy de conversión
 - AC:
   - [ ] `generateMetadata` async por ruta marketing × locale: title + description keyword-tuned ("private snowboard lessons Flumserberg" / "Snowboard Privatstunden Flumserberg" / "clases privadas de snowboard Suiza"), namespace `metadata.*`
   - [ ] `alternates.canonical` + `alternates.languages` (hreflang) por página, derivados del mapa F-102; OG/twitter cards apuntan a F-101
-  - [ ] Sin keyword-stuffing; copy en la voz de marca (F-088)
+  - [ ] Sin keyword-stuffing; copy en la voz de marca (F-105)
 - Tests: Playwright/HTTP — `<title>`, `<meta description>`, `<link rel=canonical>` y `hreflang` correctos por ruta × locale
 - Notas: keywords las valida el owner; coordinar con F-099 (mismas alternates)
 

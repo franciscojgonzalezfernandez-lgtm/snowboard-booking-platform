@@ -2,7 +2,7 @@
 
 > Feature spec for producing the brand mark and every logo asset the platform needs.
 > Self-contained and **AI-generation-ready** — §7 has paste-ready prompts. Implementation
-> ticket: **F-091**. Brand/voice/tokens source of truth: **F-088**. Retheme: **F-089**.
+> ticket: **F-091**. Brand/voice/tokens source of truth: **F-105**. Retheme: **F-089**.
 > Motion (hero animation): **F-090**.
 
 ---
@@ -139,9 +139,9 @@ outside the palette, place on a busy photo without a charcoal scrim.
 
 ---
 
-## 9. Tagline (for OG / hero — finalized in F-088, ×3 locales)
+## 9. Tagline (for OG / hero — finalized in F-105, ×3 locales)
 
-Placeholder direction until F-088 locks copy (do **not** bake text into the image — it's injected
+Placeholder direction until F-105 locks copy (do **not** bake text into the image — it's injected
 per locale by `next/og`):
 
 - EN — *"Private snowboard lessons. Flumserberg & beyond."*
@@ -149,5 +149,5 @@ per locale by `next/og`):
 
 ---
 
-**Refs:** F-091 (integration), F-088 (brand/voice/tagline), F-089 (tokens), F-090 (motion),
+**Refs:** F-091 (integration), F-105 (brand/voice/tagline), F-089 (tokens), F-090 (motion),
 F-101 (dynamic OG), D-LOGO (owner-produced asset blocker), `CLAUDE.md` §Design direction.
