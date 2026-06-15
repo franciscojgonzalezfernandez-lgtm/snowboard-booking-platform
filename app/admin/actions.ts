@@ -494,7 +494,7 @@ export async function cancelDayByOps(input: {
   return result;
 }
 
-// --- F-088: season management ---------------------------------------------
+// --- F-105: season management ---------------------------------------------
 // Thin wrappers over the pure season cores. Every action re-checks the admin
 // session and revalidates the surfaces that read "the active season": the
 // seasons page, the pricing editor (gated on an active season) and — for

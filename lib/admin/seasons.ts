@@ -4,7 +4,7 @@ import type { Db } from "@/lib/db";
 import { assertSeasonPricesComplete } from "@/lib/pricing/get-price";
 import { seasonInputSchema, type SeasonInput } from "@/lib/schemas/season";
 
-// Pure, dependency-injected cores for the season management admin UI (F-088).
+// Pure, dependency-injected cores for the season management admin UI (F-105).
 // They live in `lib/` (not the `"use server"` module in `app/`) so Vitest can
 // drive them with a fake Prisma; the thin wrappers in `app/admin/actions.ts`
 // gate on `requireAdmin()` + revalidate around them.
