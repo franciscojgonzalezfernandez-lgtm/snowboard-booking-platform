@@ -1,0 +1,6 @@
+- [F-084 resume redesign pending](f-084-resume-redesign-pending.md) — commit 2: impeccable cinema-ticket redesign of resume-payment page
+- [anchorTime is Zurich wall-clock](anchortime-zurich-wallclock.md) — naive local time; convert to true UTC only at .ics/calendar boundaries (offset bug bit twice)
+- [Always push + PR](always-push-and-pr.md) — after a ticket commit, push branch + open PR without asking
+- [Prefer clean code reuse](prefer-clean-code-reuse.md) — proactively extract clean shared helpers / DRY instead of duplicating
+- [Sprint 5 brand direction](sprint-5-brand-direction.md) — dark-alpine + glacier blue #1E7FBF + motion; F-089–F-091 + F-105 locked decisions
+- [Sprint 5 class differentiators](sprint-5-class-differentiators.md) — per-duration perks, no lift/equipment, flat 1–4 price, min age 8
