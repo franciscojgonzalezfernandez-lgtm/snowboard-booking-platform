@@ -384,5 +384,21 @@
       "apply_cta": "Beim Bezahlen einlösen",
       "empty": "Kein Guthaben verfügbar"
     }
+  },
+  "pricing": {
+    "tier": {
+      "oneHour": {
+        "kicker": "Sicherheit"
+      },
+      "twoHours": {
+        "kicker": "Erster Tag"
+      },
+      "intensive": {
+        "kicker": "Intensiv"
+      },
+      "fullDay": {
+        "kicker": "Ganzer Tag"
+      }
+    }
   }
 }

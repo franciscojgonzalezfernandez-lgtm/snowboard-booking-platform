@@ -1794,20 +1794,21 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-105 — Brand identity & voice system "The Drop"
 
-- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Sprint: 5 · Estado: **done** (2026-06-15) · Prioridad: P1
 - Depende de: — (raíz de la wave; bloquea F-089, F-090, F-091, F-092+)
 - Motivación: la marca no tiene sistema — sin voz documentada, sin tagline, sin principios de color/tipografía/motion. Antes de rethemear (F-089) y recomponer superficies (F-092+) hace falta una fuente de verdad de marca para que las 3 páginas (en/de/es) conviertan con una voz consistente y diferenciada. CRO: el copy convierte cuando la voz es nítida y propia, no genérica
 - AC:
-  - [ ] Expandir `docs/PRD.md` con **§Brand**: nombre "The Drop" (doble sentido — gota de nieve/agua + *drop in*, el término de snowboard de entrar en pista/pipe), positioning, tagline ×3 locales, arquetipo de voz (confident · warm · mountain-native · anti-corporate), reglas do/don't de copy
-  - [ ] `docs/brand/voice.md` — guía de voz: 5-7 principios, ejemplos por superficie (hero, pricing card, error state, email transaccional), glosario de términos de marca (rider, session, drop-in, the drop) y lista de términos prohibidos (genéricos/corporativos)
-  - [ ] Tokens de marca **documentados** (implementación en F-089): paleta dark-alpine en `oklch` — `background` charcoal, `foreground` snow, `primary`/`ring` glacier blue `#1E7FBF`, `destructive` alpine red `#C7361C` — con contrast ratio WCAG AA por par anotado
-  - [ ] Principios de **motion** (consumidos por F-090): "intentional · physical · snow-like"; gestos permitidos (reveal on scroll, drop-fall, parallax sutil, stagger) vs prohibidos (spin gratuito, bounce, glow, glassmorphism)
-  - [ ] **Naming de clases** (hybrid duration-heading + branded kicker, decisión owner): kickers EN `The Fix` (1h) · `First Tracks` (2h) · `The Session` (4h) · `The Full Drop` (6h), traducidos a DE/ES en `messages/{en,de,es}.json` namespace `pricing.tier.*.kicker`. El heading sigue siendo la duración (SEO: "2-hour snowboard lesson")
+  - [x] Expandir `docs/PRD.md` con **§2.4 Identidad de marca**: nombre "The Drop" (doble sentido — gota de nieve/agua + *drop in*), positioning, tagline ×3 locales, arquetipo de voz, reglas do/don't de copy
+  - [x] `docs/brand/voice.md` — guía de voz territorio «Your coach»: 6 principios, ejemplos por superficie (hero, pricing card, error, email, FAQ), glosario de términos de rider y lista de términos prohibidos
+  - [x] Tokens de marca **documentados** en `docs/brand/tokens.md` (implementación en F-089): paleta dark-alpine en `oklch` — `background` charcoal, `foreground` snow, `primary`/`ring` glacier blue `#1E7FBF`, `destructive` alpine red `#C7361C` — con targets de contraste WCAG AA por par
+  - [x] Principios de **motion** en `docs/brand/motion.md` (consumidos por F-090): "physical · intentional · snow-like"; gestos permitidos (reveal, drop-fall, parallax sutil, stagger, view transitions) vs prohibidos (spin, bounce, glow, glassmorphism)
+  - [x] **Naming de clases** (hybrid duration-heading + branded kicker): kickers EN `Confidence` (1h) · `First Day` (2h) · `Go Deep` (4h) · `All Day` (6h), traducidos a DE/ES en `messages/{en,de,es}.json` namespace `pricing.tier.*.kicker`. El heading sigue siendo la duración (SEO: "2-hour snowboard lesson")
 - Tests: N/A (sistema de diseño + docs). Review manual con skills `impeccable` (visual/voz) + `cro` (conversión)
 - Notas:
   - Draftear §Brand con skill `to-prd` pero **escribir en `docs/PRD.md`** (nuestro flujo es PRD + FEATURES, no un issue tracker externo)
   - La voz **no** se localiza palabra a palabra — DE/ES adaptan tono, no traducen literal
   - Bloquea toda la wave: F-089 (tokens), F-090 (principios motion), F-091 (logo + tagline OG), F-092+ (voz + naming)
+  - **Entregado (2026-06-15):** territorio de voz **«Your coach»** (personal, primera persona, Javi) elegido por el owner. PRD §2.4 + `docs/brand/{voice,tokens,motion}.md` + kickers en `messages/*.json`. Tagline EN *"Learn with someone who lives it."* Kickers finales (Confidence/First Day/Go Deep/All Day) sustituyen el draft inicial. Tokens y motion quedan **documentados**; su implementación es F-089/F-090
 
 ##### F-089 — Dark-alpine retheme (`globals.css` + shadcn primitives)
 

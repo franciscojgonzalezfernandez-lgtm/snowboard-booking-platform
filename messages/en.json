@@ -384,5 +384,21 @@
       "apply_cta": "Apply at checkout",
       "empty": "No credits available"
     }
+  },
+  "pricing": {
+    "tier": {
+      "oneHour": {
+        "kicker": "Confidence"
+      },
+      "twoHours": {
+        "kicker": "First Day"
+      },
+      "intensive": {
+        "kicker": "Go Deep"
+      },
+      "fullDay": {
+        "kicker": "All Day"
+      }
+    }
   }
 }
