@@ -1395,7 +1395,7 @@ Critical path: **F-057 + F-067 (paired PR) → F-058 + F-063 → F-059 → F-060
 
 ### Sprint 4 — Vista instructor + Admin (semanas 7-8)
 
-> Sprint más grande del MVP: self-service del instructor + panel ops/admin. `/instructor` y `/admin` viven **fuera de `[locale]`** (EN-only, ver Routing conventions). GCal (F-074 OAuth + F-075 sync) **landed** tras provisionar el owner `ENCRYPTION_KEY` + consent screen (2026-06-05). 1 ticket sigue **blocked-in-progress** (⛔ F-082 Tip) — depende de setup externo del owner (`INSTRUCTOR_TIP_URL` / TWINT), AC escrito, no mergeable hasta provisionar el blocker. Buildable-now core (11): F-071, F-072, F-073, F-065, F-076, F-077, F-078, F-079, F-080, F-081, F-088. Si desborda 2 semanas, split en **4a** (instructor + admin core) / **4b** (GCal + Tip al desbloquearse). F-088 (season management) añadido tras review de PR #118: F-080 lee la Season activa pero nada in-app la crea/activa.
+> Sprint más grande del MVP: self-service del instructor + panel ops/admin. `/instructor` y `/admin` viven **fuera de `[locale]`** (EN-only, ver Routing conventions). GCal (F-074 OAuth + F-075 sync) **landed** tras provisionar el owner `ENCRYPTION_KEY` + consent screen (2026-06-05). **Sprint cerrado (2026-06-15):** los 11 tickets core mergeados — F-071, F-072, F-073, F-065, F-076, F-077, F-078, F-079, F-080, F-081, F-105 (season management). Único pendiente: ⛔ **F-082 Tip**, **aplazado** hasta que el owner formalice la empresa + provisione `INSTRUCTOR_TIP_URL` (TWINT) — fuera del scope del cierre de Sprint 4, se retoma post-constitución. F-105 (season management, **renumerado desde F-088** para liberar F-088 a la wave de marca "The Drop" del Sprint 5) añadido tras review de PR #118: F-080 lee la Season activa pero nada in-app la crea/activa.
 >
 > **D-TIP resuelto (desglose 2026-05-29):** instructor recibe el **100%** de las propinas en MVP (sin split escuela). Revisable cuando entre un segundo coach.
 
@@ -1407,12 +1407,12 @@ Instructor:  F-071 ─┬─ F-072 (availability CRUD)
                     └─ F-065 (feedback)
 Admin:       F-076 ─┬─ F-077 (bookings view) ── F-078 (ops-cancel) ── F-079 (cancel day)
                     ├─ F-080 (pricing editor)
-                    └─ F-088 (season CRUD + activate) ── precede a F-080 en operación real
+                    └─ F-105 (season CRUD + activate) ── precede a F-080 en operación real
              F-081 (no-show re-flip; después de F-077 + F-071)
 Tip:         F-082 ⛔ (paralelo, blocked tail)
 ```
 
-Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — **done**. La cadena instructor **F-071 → F-073 → F-074 → F-075** (GCal tail) — **done**. ⛔ = blocked-in-progress (solo F-082).
+Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — **done**. La cadena instructor **F-071 → F-073 → F-074 → F-075** (GCal tail) — **done**. ⛔ = blocked-in-progress (solo F-082, **aplazado** a post-constitución de empresa).
 
 #### Tickets
 
@@ -1627,9 +1627,9 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - **Dos capas Zod** (`lib/schemas/pricing.ts`): `pricingFormSchema` (francs, cliente RHF) + `updateSeasonPricingSchema` (cents, autoridad servidor). El core `.int()` rechaza cents fraccionarios aunque el cliente los fabrique.
   - **E2E del funnel diferido a la capa DB.** Step 1 lee la misma Season vía `getPriceCents`; persistir los cents correctos prueba el precio del funnel sin arrastrar sesión + selección de duración + credit-aside al smoke. Mismo criterio que F-078/F-079.
 
-##### F-088 — Season management admin UI (CRUD + activate/deactivate)
+##### F-105 — Season management admin UI (CRUD + activate/deactivate)
 
-- Sprint: 4 · Estado: done · Prioridad: P1 — renumerado desde F-087 (colisión con "Admin student directory"); F-087 queda para el student directory.
+- Sprint: 4 · Estado: done (PR #133) · Prioridad: P1 — renumerado **F-087 → F-088 → F-105**: F-087 quedó para "Admin student directory" (#132), F-088 para la wave de marca Sprint 5 "The Drop" (#134); este ticket (season management) es **F-105**.
 - Depende de: F-076 (admin shell + `requireAdmin`), F-020 (schema `Season`), F-039 (`priceCentsByDuration`)
 - Motivación: hoy una `Season` **sólo** se crea vía `prisma/seed.ts` (`upsertSeason`, sobre `Season 26/27`). No existe ninguna UI para crear, activar o desactivar temporadas. El booking-engine, el pricing (F-080) y la disponibilidad del instructor resuelven la "temporada activa" con `prisma.season.findFirst({ where: { active: true } })` — todo el producto asume una Season activa pre-sembrada. Si no hay activa, `/admin/pricing` (F-080) muestra *"No active season. Activate a season before setting prices."* pero ese mensaje es un **callejón sin salida**: nada in-app permite crear ni activar una. Este ticket cierra el gap para operar multi-temporada (cada invierno una nueva) sin tocar DB ni seed. Detectado en review de PR #118 (F-080).
 - AC routing/auth:
@@ -1648,13 +1648,13 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - [ ] **Sustituir el dead-end de F-080**: el empty-state "No active season" en `/admin/pricing` añade CTA "Manage seasons →" a `/admin/seasons`.
 - Tests:
   - [ ] Vitest `lib/admin/seasons.test.ts`: create happy + `start>=end` + anchor fuera de ops + ops invertidas; activate desactiva las demás (1 sola activa post-tx) + `INCOMPLETE_PRICING` con keys faltantes; update rechaza fechas con bookings fuera de rango; deactivate deja 0 activas; rol no-admin rechazado en todos.
-  - [ ] Playwright `e2e/f-088-seasons.spec.ts`: no-admin → 404; crear season → aparece en lista; activar season B → A pierde el badge (1 sola activa); activar con pricing incompleto → bloqueado + hint; con 0 activas `/admin/pricing` muestra el empty-state + CTA a seasons.
+  - [ ] Playwright `e2e/f-105-seasons.spec.ts`: no-admin → 404; crear season → aparece en lista; activar season B → A pierde el badge (1 sola activa); activar con pricing incompleto → bloqueado + hint; con 0 activas `/admin/pricing` muestra el empty-state + CTA a seasons.
 - Notas:
   - **Sin schema change** — `Season` (F-020) ya tiene todos los campos (`name`, `startDate`, `endDate`, `active`, `anchorTimes`, `operatingHoursStart/End`, `priceCentsByDuration`). Este ticket es puramente UI + server actions sobre el modelo existente.
-  - **Invariante "una sola activa"** es de facto hoy (el seed mantiene 1 row) pero **no** está enforced a nivel DB. F-088 lo enforced en el `activateSeason` `$transaction`. Un partial-unique-index (`@@unique` sobre `active` where `active=true`) es post-MVP si el owner quiere garantía a nivel DB — requiere migración + manejo del race.
+  - **Invariante "una sola activa"** es de facto hoy (el seed mantiene 1 row) pero **no** está enforced a nivel DB. F-105 lo enforced en el `activateSeason` `$transaction`. Un partial-unique-index (`@@unique` sobre `active` where `active=true`) es post-MVP si el owner quiere garantía a nivel DB — requiere migración + manejo del race.
   - **No recurrencia / no auto-rollover** de temporada. El owner crea+activa la del invierno siguiente a mano. Auto-archivar la anterior es opcional (queda en deactivate manual).
   - **Availability blocks** de la nueva Season **no** se auto-siembran (el seed lo hace para `Season 26/27`); el owner abre disponibilidad vía el calendario instructor (F-083 `openAvailabilityRange`) sobre el rango de la nueva temporada. Documentar en el empty-state.
-  - **MVP single-instructor / single-active-season**: F-080 puede mergear sin F-088 (su empty-state es honesto sobre la precondición); F-088 desbloquea la operación real multi-temporada antes del segundo invierno.
+  - **MVP single-instructor / single-active-season**: F-080 puede mergear sin F-105 (su empty-state es honesto sobre la precondición); F-105 desbloquea la operación real multi-temporada antes del segundo invierno.
 
 ##### F-081 — No-show re-flip (autoCompletedAt → CANCELLED_BY_USER)
 
@@ -1673,7 +1673,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-082 — Tip flow (post-class tip, instructor keeps 100%) ⛔
 
-- Sprint: 4 · Estado: backlog (blocked-in-progress) · Prioridad: P2
+- Sprint: 4 · Estado: **aplazado a post-constitución de empresa** (blocked-in-progress) · Prioridad: P2
 - Depende de: F-062 (COMPLETED), F-045 (email infra)
 - Bloqueado por: `INSTRUCTOR_TIP_URL` env (TWINT / formalización empresa). **D-TIP resuelto: instructor 100%** (sin split escuela en MVP) — elimina el blocker de política; queda el de env/medio de pago.
 - Motivación: permitir propina post-clase. Email tras `COMPLETED` con CTA de tip; pago → `Tip` row. El instructor recibe el 100%.
@@ -1686,6 +1686,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - Playwright: manual (requiere Stripe + tip URL).
 - Notas:
   - ⛔ No mergeable hasta `INSTRUCTOR_TIP_URL` + decisión Stripe-vs-TWINT.
+  - **Aplazado (2026-06-15):** sacado del cierre de Sprint 4 por decisión del owner — se retoma cuando la empresa esté constituida y exista el medio de pago de propinas (`INSTRUCTOR_TIP_URL` / TWINT). El ticket queda con sus AC escritos para retomar sin re-contexto.
   - Si el owner prefiere TWINT externo (no Stripe), el `Tip` model (Stripe-PI-based) necesitaría revisión — confirmar al desbloquear.
 
 ##### F-083 — Instructor calendar view (month + week): rangos de disponibilidad + bloqueos sub-día + overlay de bookings

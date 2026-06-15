@@ -8,7 +8,7 @@ loadDotenv({ path: ".env" });
 const prisma = new PrismaClient();
 
 const EMAIL_PREFIX = "f088-";
-const SEASON_PREFIX = "F088 ";
+const SEASON_PREFIX = "F105 ";
 
 const COMPLETE_PRICING = {
   ONE_HOUR: 11_000,
@@ -40,7 +40,7 @@ async function signUp(page: Page, name: string): Promise<{ userId: string }> {
 }
 
 async function signUpAsAdmin(page: Page): Promise<void> {
-  const { userId } = await signUp(page, "F088 Admin");
+  const { userId } = await signUp(page, "F105 Admin");
   await prisma.user.update({
     where: { id: userId },
     data: { roles: [Role.student, Role.admin] },
@@ -101,9 +101,9 @@ test.afterAll(async () => {
 
 test.describe.configure({ mode: "serial" });
 
-test.describe("F-088 season management", () => {
+test.describe("F-105 season management", () => {
   test("non-admin gets 404 on /admin/seasons", async ({ page }) => {
-    await signUp(page, "F088 Student");
+    await signUp(page, "F105 Student");
     const res = await page.goto("/admin/seasons");
     expect(res?.status()).toBe(404);
   });

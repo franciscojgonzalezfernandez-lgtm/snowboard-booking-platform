@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-// Shared Zod contract for the season management admin UI (F-088). One schema
+// Shared Zod contract for the season management admin UI (F-105). One schema
 // drives both layers: the React Hook Form resolver on the client and the
 // `"use server"` wrappers in `app/admin/actions.ts` (which re-validate before
 // the dependency-injected cores in `lib/admin/seasons.ts` run). Unlike pricing
