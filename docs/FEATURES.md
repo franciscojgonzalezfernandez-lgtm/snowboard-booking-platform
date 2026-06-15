@@ -1799,10 +1799,10 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 - Depende de: — (raíz de la wave; bloquea F-090, F-091, F-092+)
 - Motivación: la marca no tiene sistema — sin voz documentada, sin tagline, sin principios de color/tipografía/motion. Antes de recomponer superficies (F-092+) hace falta una fuente de verdad de marca para que las 3 páginas (en/de/es) conviertan con una voz consistente y diferenciada. CRO: el copy convierte cuando la voz es nítida y propia, no genérica
 - AC:
-  - [x] Expandir `docs/PRD.md` con **§2.4 Identidad de marca**: nombre "The Drop" (doble sentido — gota de nieve/agua + *drop in*), positioning, tagline ×3 locales, arquetipo de voz, reglas do/don't de copy
+  - [x] Expandir `docs/PRD.md` con **§2.4 Identidad de marca**: nombre "The Drop" (del término de snowboard *drop in*), positioning, tagline ×3 locales, arquetipo de voz, reglas do/don't de copy
   - [x] `docs/brand/voice.md` — guía de voz territorio «Your coach»: 6 principios, ejemplos por superficie (hero, pricing card, error, email, FAQ), glosario de términos de rider y lista de términos prohibidos
   - [x] Tokens de marca **documentados** en `docs/brand/tokens.md`: la paleta **cream/editorial** existente (Patagonia-editorial) — `background` cream `#FAF6F0`, `foreground` ink `#1F1A14`, `primary`/`ring` alpine red `#C7361C` — ya implementada en `app/globals.css`
-  - [x] Principios de **motion** en `docs/brand/motion.md` (consumidos por F-090): "physical · intentional · snow-like"; gestos permitidos (reveal, drop-fall, parallax sutil, stagger, view transitions) vs prohibidos (spin, bounce, glow, glassmorphism)
+  - [x] Principios de **motion** en `docs/brand/motion.md` (consumidos por F-090): "physical · intentional · snow-like"; gestos permitidos (reveal, wordmark-reveal, parallax sutil, stagger, view transitions) vs prohibidos (spin, bounce, glow, glassmorphism)
   - [x] **Naming de clases** (hybrid duration-heading + branded kicker): kickers EN `Confidence` (1h) · `First Day` (2h) · `Go Deep` (4h) · `All Day` (6h), traducidos a DE/ES en `messages/{en,de,es}.json` namespace `pricing.tier.*.kicker`. El heading sigue siendo la duración (SEO: "2-hour snowboard lesson")
 - Tests: N/A (sistema de diseño + docs). Review manual con skills `impeccable` (visual/voz) + `cro` (conversión)
 - Notas:
@@ -1815,9 +1815,9 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 - Sprint: 5 · Estado: backlog · Prioridad: P1
 - Depende de: F-105
-- Motivación: hoy no hay animación coordinada (grep confirma `motion`/`framer-motion` no instalado). El owner quiere "animaciones modernas con motion" coreografiadas. Instalar `motion` (sucesor de framer-motion) con primitives reutilizables + gate de accesibilidad, para que home/pricing/hero (F-092+) tengan reveal/parallax/drop-fall sin reinventar por página
+- Motivación: hoy no hay animación coordinada (grep confirma `motion`/`framer-motion` no instalado). El owner quiere "animaciones modernas con motion" coreografiadas. Instalar `motion` (sucesor de framer-motion) con primitives reutilizables + gate de accesibilidad, para que home/pricing/hero (F-092+) tengan reveal/parallax/wordmark-reveal sin reinventar por página
 - AC:
-  - [ ] `npm i motion`. Crear `lib/motion/` (sin barrel): `reveal.tsx` (fade/slide on scroll vía `useInView`), `stagger.tsx`, `parallax.tsx`, `drop-fall.tsx` (anima el símbolo "drop" del logo cayendo/llenándose), `view-transition.ts` (wrapper de transiciones de página)
+  - [ ] `npm i motion`. Crear `lib/motion/` (sin barrel): `reveal.tsx` (fade/slide on scroll vía `useInView`), `stagger.tsx`, `parallax.tsx`, `wordmark-reveal.tsx` (anima el wordmark 3D "The Drop" asentándose/extruyéndose al cargar), `view-transition.ts` (wrapper de transiciones de página)
   - [ ] **Todos** los primitives respetan `prefers-reduced-motion`: hook `useReducedMotion` → si `reduce`, render estático sin transform/opacity-anim (a11y obligatorio, no opcional)
   - [ ] `'use client'` aislado en los primitives; los server components los montan como islands. **Cero motion en el critical-path del LCP** — el copy del hero es SSR estático, solo se anima la decoración
   - [ ] **Actualizar `CLAUDE.md`**: la regla "Subtle, intentional animations only" pasa a "Choreographed motion via `motion`, always gated behind `prefers-reduced-motion`; no gratuitous spin/bounce/glow" (alinea con principios F-105, elimina la contradicción con esta wave)
@@ -1831,13 +1831,13 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 ##### F-091 — Logo "The Drop" integration (favicon · header · hero · footer · OG)
 
 - Sprint: 5 · Estado: backlog · Prioridad: P1
-- Depende de: F-105 (tagline/voz), F-090 (drop-fall anim). Desbloquea D-LOGO
+- Depende de: F-105 (tagline/voz), F-090 (wordmark-reveal anim). Desbloquea D-LOGO
 - Motivación: la marca no tiene logo montado (D-LOGO). El owner produce los assets; este ticket entrega la **spec de assets** y cablea todos los slots con placeholders para no bloquear el sprint mientras se producen las piezas finales
 - AC:
-  - [ ] `docs/brand/logo-assets.md` — spec de entrega para el owner: favicon set, header lockup, hero SVG animable, footer mark, OG template; con tamaños, variantes de color (full-color / all-ink / all-paper / 1-color), clear-space (= altura del símbolo drop) y min-size
-  - [ ] Favicon: `app/icon.svg` (símbolo drop, legible a 16px), `app/apple-icon.png` 180×180 (opaco, ~12% padding), `app/icon-192.png` + `app/icon-512.png`, maskable 512 (20% safe padding), `app/manifest.ts` con `theme_color` charcoal + glacier blue. Placeholder hasta assets reales
+  - [ ] `docs/brand/logo-assets.md` — spec de entrega para el owner: favicon set (snowflake), header lockup (wordmark 3D), hero SVG animable, footer mark, OG template; con tamaños, variantes de color (ink-3D / reverse / flat-ink / flat-cream), clear-space (= cap-height del wordmark) y min-size
+  - [ ] Favicon: `app/icon.svg` (símbolo **copo de nieve**, legible a 16px), `app/apple-icon.png` 180×180 (opaco, ~12% padding), `app/icon-192.png` + `app/icon-512.png`, maskable 512 (20% safe padding), `app/manifest.ts` con `theme_color` cream + ink/red. Placeholder hasta assets reales
   - [ ] Header: `SiteNav` monta lockup SVG (`currentColor` hereda el token de tema), height ~28px desktop / 24px mobile, link a home, clear-space respetado. Reemplaza el wordmark de texto si existe
-  - [ ] Hero: símbolo drop como **SVG inline** animado vía `lib/motion/drop-fall` (F-090); light/dark vía token; estático bajo `prefers-reduced-motion`
+  - [ ] Hero: wordmark 3D "The Drop" como **SVG inline** animado vía `lib/motion/wordmark-reveal` (F-090); estático bajo `prefers-reduced-motion`
   - [ ] Footer: mark monocromo pequeño (~20-24px) en `SiteFooter`, color single-token
   - [ ] OG: `app/[locale]/(marketing)/opengraph-image.tsx` dinámica (`next/og`) con logo + tagline **localizada** (consume F-105). Solo home en este ticket; F-101 generaliza la OG dinámica por ruta
 - Tests: Playwright — favicon + manifest links presentes; logo visible en nav y footer × 3 locales; `opengraph-image` responde 200 con dimensiones 1200×630; `prefers-reduced-motion` → drop del hero estático
@@ -1850,13 +1850,13 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 > Wave 2 consume la fundación de wave 1 (paleta cream/editorial existente, voz/marca F-105, motion F-090, logo F-091) para construir las superficies que convierten: home editorial, pricing, instructores, estáticas, blog y todo el SEO trilingüe. Las antiguas viñetas generales del sprint quedan **formalizadas** como los tickets de abajo. Pendientes externos: **D-LOGO** (logo + hero photography, los produce el owner) y **D-PLACE** (Google Place ID, reabre el CTA de review en F-100/F-101).
 
-##### F-092 — Home editorial recompose (editorial hero + animated drop + scroll choreography)
+##### F-092 — Home editorial recompose (editorial hero + animated wordmark + scroll choreography)
 
 - Sprint: 5 · Estado: backlog · Prioridad: P1
 - Depende de: F-105, F-090, F-091, F-032
 - Motivación: la home **minimal** existe desde F-032 (Sprint 0.5) — hero + CTA. Sprint 5 la expande a una home editorial con alma de marca: narrativa, teaser de instructor, prueba social, secciones de las clases. Es la primera impresión y el LCP del market — tiene que impactar (editorial, paleta cream) y convertir en los 3 idiomas
 - AC:
-  - [ ] Recompose `app/[locale]/(marketing)/page.tsx`: hero editorial con el **drop animado** (`lib/motion/drop-fall`, F-090), copy editorial SSR (no depende de JS para el LCP), CTA primario `Book a lesson` → `/reservar`
+  - [ ] Recompose `app/[locale]/(marketing)/page.tsx`: hero editorial con el **wordmark 3D animado** (`lib/motion/wordmark-reveal`, F-090), copy editorial SSR (no depende de JS para el LCP), CTA primario `Book a lesson` → `/reservar`
   - [ ] Secciones con `reveal`/`stagger` on scroll (F-090): qué es "The Drop" (voz F-105), teaser de las 4 clases con cross-link a `/precios`, teaser de instructor (foto Blob F-068 + idiomas), prueba social (placeholder hasta D-PLACE Google reviews)
   - [ ] `HeroAnnouncement` (F-053) + `phone CTA` (F-052) ya montados — verificar que conviven con el nuevo hero sin romper LCP/CLS
   - [ ] Fotografía vía `next/image` (AVIF/WebP), placeholders hasta D-LOGO/hero photography; `priority` solo en el hero
@@ -1909,7 +1909,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 - Sprint: 5 · Estado: backlog · Prioridad: P2
 - Depende de: F-105
-- Motivación: el "alma" de la marca. Historia de "The Drop", origen del nombre (gota de nieve + *drop in*), filosofía de enseñanza, por qué Flumserberg. Diferenciador emocional que las escuelas genéricas no tienen; refuerza conversión y SEO de marca
+- Motivación: el "alma" de la marca. Historia de "The Drop", origen del nombre (*drop in*, el término de snowboard), filosofía de enseñanza, por qué Flumserberg. Diferenciador emocional que las escuelas genéricas no tienen; refuerza conversión y SEO de marca
 - AC:
   - [ ] `app/[locale]/(marketing)/sobre/page.tsx` (slug F-102): narrativa editorial larga con la voz F-105, fotografía (placeholder D-LOGO), motion sutil (reveal)
   - [ ] Secciones: origen del nombre, filosofía, el instructor, la montaña; CTA suave → `/reservar` o `/instructores`

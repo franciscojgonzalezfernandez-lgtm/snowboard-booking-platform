@@ -53,7 +53,7 @@ Las plataformas de reserva genéricas (Bókun, Peek, FareHarbor) son funcionales
 
 > Fuente de verdad de marca. El detalle operativo vive en `docs/brand/` (voz, tokens, motion, logo). Aquí queda lo canónico. Territorio elegido con el owner (2026-06-15): **«Your coach» — personal, cálido, en primera persona**.
 
-**Nombre:** *the drop* (en minúsculas). Doble sentido: la **gota** de nieve/agua y el **drop in** del snowboard (entrar en la pista/el pipe). Es una marca **personal** del owner-instructor (Javi), no una escuela genérica.
+**Nombre:** *The Drop* — del término de snowboard **drop in** (entrar en la pista/el pipe). **Sin glifo de gota** en la identidad: el logo es el **wordmark 3D «The Drop»** (decisión owner 2026-06-15; ver `docs/brand/logo-assets.md`). Es una marca **personal** del owner-instructor (Javi), no una escuela genérica.
 
 **Posicionamiento:** coaching privado de snowboard en Flumserberg y el norte de Suiza, impartido por un rider de verdad. No son monitores intercambiables: es *un* coach que te lleva de los primeros giros a tus primeros drops, con videocorrección real, en grupos de 1 a 4 personas. Vende **progreso y confianza**, no "actividad de ocio".
 
