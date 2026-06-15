@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Duration } from "@prisma/client";
 
 import { getActiveSeasonPricingWith } from "@/lib/admin/pricing";
@@ -34,12 +35,21 @@ export default async function AdminPricingPage() {
             Lesson pricing
           </h1>
         </header>
-        <p
-          data-testid="pricing-no-season"
-          className="py-8 text-sm text-muted-foreground"
-        >
-          No active season. Activate a season before setting prices.
-        </p>
+        <div className="space-y-4 py-8">
+          <p
+            data-testid="pricing-no-season"
+            className="text-sm text-muted-foreground"
+          >
+            No active season. Activate a season before setting prices.
+          </p>
+          <Link
+            href="/admin/seasons"
+            data-testid="pricing-manage-seasons"
+            className="inline-block text-xs font-bold uppercase tracking-[0.18em] underline underline-offset-4"
+          >
+            Manage seasons →
+          </Link>
+        </div>
       </div>
     );
   }

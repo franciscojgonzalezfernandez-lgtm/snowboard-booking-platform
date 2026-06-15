@@ -43,6 +43,18 @@ import {
   type UpdateSeasonPricingResult,
 } from "@/lib/admin/pricing";
 import type { UpdateSeasonPricingInput } from "@/lib/schemas/pricing";
+import {
+  activateSeasonWith,
+  createSeasonWith,
+  deactivateSeasonWith,
+  updateSeasonWith,
+  type AdminSeasonsDeps,
+  type ActivateSeasonResult,
+  type CreateSeasonResult,
+  type DeactivateSeasonResult,
+  type UpdateSeasonResult,
+} from "@/lib/admin/seasons";
+import type { SeasonInput } from "@/lib/schemas/season";
 import { sendCancellationEmails } from "@/lib/email/send-cancellation";
 import {
   blockAvailabilityWindowWith,
@@ -479,5 +491,62 @@ export async function cancelDayByOps(input: {
   revalidatePath("/admin");
   revalidatePath("/admin/bookings");
 
+  return result;
+}
+
+// --- F-088: season management ---------------------------------------------
+// Thin wrappers over the pure season cores. Every action re-checks the admin
+// session and revalidates the surfaces that read "the active season": the
+// seasons page, the pricing editor (gated on an active season) and — for
+// activate/deactivate/edit — the booking funnel (Step 1) + availability cache,
+// since the active season drives engine pricing and slot generation.
+
+function seasonsDeps(): AdminSeasonsDeps {
+  return { prisma };
+}
+
+function revalidateActiveSeasonSurfaces() {
+  revalidatePath("/admin/seasons");
+  revalidatePath("/admin/pricing");
+  revalidatePath("/[locale]/reservar", "page");
+  revalidateTag(AVAILABILITY_TAGS.root);
+}
+
+export async function createSeason(
+  input: SeasonInput,
+): Promise<CreateSeasonResult> {
+  await requireAdmin();
+  const result = await createSeasonWith(seasonsDeps(), input);
+  if (result.ok) revalidatePath("/admin/seasons");
+  return result;
+}
+
+export async function updateSeason(
+  input: SeasonInput & { id: string },
+): Promise<UpdateSeasonResult> {
+  await requireAdmin();
+  const { id, ...rest } = input;
+  const result = await updateSeasonWith(seasonsDeps(), id, rest);
+  // An edit can change the dates/anchors the active season exposes, so refresh
+  // the active-season surfaces too (the edited row may be the active one).
+  if (result.ok) revalidateActiveSeasonSurfaces();
+  return result;
+}
+
+export async function activateSeason(input: {
+  id: string;
+}): Promise<ActivateSeasonResult> {
+  await requireAdmin();
+  const result = await activateSeasonWith(seasonsDeps(), input.id);
+  if (result.ok) revalidateActiveSeasonSurfaces();
+  return result;
+}
+
+export async function deactivateSeason(input: {
+  id: string;
+}): Promise<DeactivateSeasonResult> {
+  await requireAdmin();
+  const result = await deactivateSeasonWith(seasonsDeps(), input.id);
+  if (result.ok) revalidateActiveSeasonSurfaces();
   return result;
 }
