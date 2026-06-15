@@ -1860,16 +1860,191 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - **No Lottie** (CLAUDE) — el drop se anima como SVG vía `motion`
   - OG dinámica por locale: la tagline sale de `messages/{en,de,es}.json`, no se hornea en la imagen
 
-#### Bullets generales del sprint
+#### Marketing surfaces + SEO — wave 2 (F-092–F-104)
 
-- Home editorial completa (sections, instructor teaser, narrative) — la home **minimal** ya existe desde F-032 (Sprint 0.5); aquí se expande.
-- Página de instructores + perfiles individuales.
-- Página de precios — value-prop por duración: qué incluye cada clase (nivel target, ratio instructor/alumno, equipo incluido/excluido, ubicación de meeting point, idiomas disponibles), beneficios diferenciales (p. ej. `INTENSIVE` = mejor curva de aprendizaje vs hora suelta; `FULL_DAY` = lunch break + 2 bloques). Cross-link a `/reservar` con `duration` preseleccionada. CRO: pricing page convierte cuando explica el "qué", no sólo el "cuánto". Contenido trilingüe vía `messages/{en,de,es}.json` namespace `pricing.*`.
-- Blog MDX (2-3 posts iniciales).
-- Estáticas: sobre, contacto, FAQ, T&C, privacidad.
-- SEO completo: sitemap dinámico con hreflang, structured data Schema.org/LocalBusiness, OG images dinámicas, robots.txt.
-- next-intl ya scaffolded en F-031 (Sprint 0.5); aquí se añaden **slugs traducidos** vía `pathnames` (`/es/iniciar-sesion`, `/de/anmelden`, etc.) y mensajes para el resto del producto.
-- **Decisión pendiente:** logo, hero photography, Place ID Google Business.
+> Wave 2 consume la fundación de wave 1 (tokens dark-alpine F-089, voz/marca F-088, motion F-090, logo F-091) para construir las superficies que convierten: home editorial, pricing, instructores, estáticas, blog y todo el SEO trilingüe. Las antiguas viñetas generales del sprint quedan **formalizadas** como los tickets de abajo. Pendientes externos: **D-LOGO** (logo + hero photography, los produce el owner) y **D-PLACE** (Google Place ID, reabre el CTA de review en F-100/F-101).
+
+##### F-092 — Home editorial recompose (dark hero + animated drop + scroll choreography)
+
+- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Depende de: F-088, F-089, F-090, F-091, F-032
+- Motivación: la home **minimal** existe desde F-032 (Sprint 0.5) — hero + CTA. Sprint 5 la expande a una home editorial con alma de marca: narrativa, teaser de instructor, prueba social, secciones de las clases. Es la primera impresión y el LCP del market — tiene que impactar (dark-alpine) y convertir en los 3 idiomas
+- AC:
+  - [ ] Recompose `app/[locale]/(marketing)/page.tsx`: hero dark con el **drop animado** (`lib/motion/drop-fall`, F-090), copy editorial SSR (no depende de JS para el LCP), CTA primario `Book a lesson` → `/reservar`
+  - [ ] Secciones con `reveal`/`stagger` on scroll (F-090): qué es "The Drop" (voz F-088), teaser de las 4 clases con cross-link a `/precios`, teaser de instructor (foto Blob F-068 + idiomas), prueba social (placeholder hasta D-PLACE Google reviews)
+  - [ ] `HeroAnnouncement` (F-053) + `phone CTA` (F-052) ya montados — verificar que conviven con el nuevo hero sin romper LCP/CLS
+  - [ ] Fotografía vía `next/image` (AVIF/WebP), placeholders hasta D-LOGO/hero photography; `priority` solo en el hero
+  - [ ] Copy trilingüe `messages/{en,de,es}.json` namespace `home.*`; sin strings hardcoded
+  - [ ] Budget: home < 200KB JS gz, LCP < 2.5s mobile, CLS < 0.1 (CLAUDE perf) — medir con skill `booking-platform-perf`
+- Tests: Playwright — render × 3 locales, CTA navega a `/reservar`, reduced-motion → drop estático, secciones presentes. Lighthouse/perf gate
+- Notas:
+  - Reusa el `BookingHeader`/`SiteNav` contract existente; la home es la única superficie con `HeroAnnouncement`
+  - Prueba social degradada mientras D-PLACE null (sin rating fake)
+
+##### F-093 — Pricing page (value-prop por duración, trilingüe, CRO)
+
+- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Depende de: F-088 (kickers/voz), F-089, F-090, F-039/F-080 (precios en DB), F-068 (funnel `/reservar`)
+- Motivación: la pricing page convierte cuando explica **el "qué"**, no solo el "cuánto". Cada duración tiene un valor diferencial confirmado por el owner; hay que contarlo con alma de marca y SEO, en 3 idiomas. Precios **se leen de DB** (`Season.priceCentsByDuration`), nunca hardcoded
+- AC:
+  - [ ] `app/[locale]/(marketing)/precios/page.tsx` (slug traducido F-102): server component, lee la `Season` activa y renderiza 4 tarjetas de clase con precio formateado `Intl.NumberFormat('de-CH', { currency: 'CHF' })`
+  - [ ] Naming **hybrid**: heading = duración (SEO "2-hour snowboard lesson"), kicker = nombre de marca (`The Fix`/`First Tracks`/`The Session`/`The Full Drop`, F-088, i18n `pricing.tier.*.kicker`)
+  - [ ] **Escalera de diferenciadores por tarjeta** (copy en `pricing.*`):
+    - 1h — sin perk; "fix one flaw / beat fear / get back riding". Meeting point COLORS restaurant door
+    - 2h — primer día / básicos / tune-up técnico; **videocorrección take-home, solo para no-beginners** (copy condicional). Meeting point COLORS
+    - 4h INTENSIVE — freestyle/carving + drills; **videocorrección en vivo + enviada a casa**; meeting point a elegir
+    - 6h FULL_DAY — todo lo de 4h + **elegir estación** (norte de Suiza, con admin) + pausa 30-45 min
+  - [ ] Cada tarjeta: precio **plano 1–4 personas** (`CHF X · up to 4`), **forfait NO incluido** (cada rider compra el suyo), **equipo NO incluido** (alquiler en estación, se indica la tienda), idiomas **EN · DE · ES**, **edad mínima 8** (adultos + niños), CTA → `/reservar?duration=<enum>` preseleccionado
+  - [ ] Facets "best for" como chips (SEO + scan): freestyle, carving, beginner/first day, technique, fear, multi-resort
+  - [ ] Motion: `reveal`/`stagger` en las tarjetas (F-090), reduced-motion safe
+- Tests: Playwright — 4 tarjetas × 3 locales, precio desde DB, CTA preselecciona `duration` en el funnel, copy condicional 2h. Vitest sobre el formateo de precio/locale
+- Notas:
+  - Video correction se entrega por **WhatsApp link tras la clase** (default, owner puede vetar)
+  - Si la `Season` activa no existe → empty-state honesto (igual que F-080)
+  - `priceRange` + `Offer` alimentan structured data (F-100)
+
+##### F-094 — Instructors index + perfiles individuales
+
+- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Depende de: F-068 (foto Blob), F-021 (seed instructor), F-088
+- Motivación: confianza pre-reserva. El cliente quiere ver quién enseña, su nivel por idioma y specialties antes de pagar. Alimenta también el teaser de Step 3 del funnel y la home. SEO: páginas de instructor capturan búsquedas de nombre/"snowboard instructor Flumserberg"
+- AC:
+  - [ ] `app/[locale]/(marketing)/instructores/page.tsx` (slug F-102): grid editorial de instructores activos (hoy 1, el owner) — foto Blob (F-068), nombre, idiomas con nivel (`EN native · DE fluent · ES basic`, PRD §6.2), specialties
+  - [ ] `app/[locale]/(marketing)/instructores/[slug]/page.tsx`: perfil individual — bio (voz F-088), foto, idiomas, specialties, clases que imparte, CTA → `/reservar`
+  - [ ] `generateStaticParams` por instructor activo; `generateMetadata` por perfil (F-103)
+  - [ ] Nivel por idioma: requiere persistir niveles en schema si aún no — ver followup de F-022/Step 3 (Sprint 1 notas). Si no está, mostrar idiomas sin nivel y abrir followup explícito
+  - [ ] Copy/labels trilingüe namespace `instructors.*`
+- Tests: Playwright — index lista instructor(es) × 3 locales, perfil resuelve por slug, CTA navega a funnel, 404 en slug inexistente
+- Notas:
+  - Foto estática (`/instructors/javi.png`) hasta que F-068 popule `Instructor.photo` en Blob
+  - Multi-instructor ready (grid escala); MVP single-instructor
+
+##### F-095 — About / brand story page
+
+- Sprint: 5 · Estado: backlog · Prioridad: P2
+- Depende de: F-088
+- Motivación: el "alma" de la marca. Historia de "The Drop", origen del nombre (gota de nieve + *drop in*), filosofía de enseñanza, por qué Flumserberg. Diferenciador emocional que las escuelas genéricas no tienen; refuerza conversión y SEO de marca
+- AC:
+  - [ ] `app/[locale]/(marketing)/sobre/page.tsx` (slug F-102): narrativa editorial larga con la voz F-088, fotografía (placeholder D-LOGO), motion sutil (reveal)
+  - [ ] Secciones: origen del nombre, filosofía, el instructor, la montaña; CTA suave → `/reservar` o `/instructores`
+  - [ ] Copy trilingüe `about.*`; tono adaptado por idioma (no traducción literal)
+- Tests: Playwright — render × 3 locales, secciones presentes, CTA navega
+- Notas: contenido lo refina el owner con skill `impeccable`/`cro`; este ticket entrega estructura + copy base
+
+##### F-096 — Contact page (lean: phone + email + hours + map, sin form)
+
+- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Depende de: F-052 (constantes phone), F-088
+- Motivación: surface de contacto real y destino del CTA del hero announcement (F-053). MVP sin form — el form de team-building es post-MVP (F-054). Reduce fricción para dudas operativas y da un punto de aterrizaje honesto
+- AC:
+  - [ ] `app/[locale]/(marketing)/contacto/page.tsx` (slug F-102): teléfono (`OPERATIONAL_PHONE_DISPLAY`/`_TEL` de F-052), email, horario operativo, ubicación (mapa estático/embed de Flumserberg, lazy)
+  - [ ] **Sin** form (F-054 lo añade post-MVP); CTA `tel:`/`mailto:` nativos
+  - [ ] Copy trilingüe `contact.*`
+- Tests: Playwright — phone `tel:` exacto, email `mailto:`, render × 3 locales
+- Notas:
+  - F-053 CTA team-building apunta aquí cuando el owner active el toggle; F-054 (form) reemplaza el placeholder más adelante
+  - Mapa: embed sin cookies de tracking para no disparar requisito de banner (ver F-045 notas)
+
+##### F-097 — FAQ page (trilingüe, captura objeciones de conversión)
+
+- Sprint: 5 · Estado: backlog · Prioridad: P2
+- Depende de: F-088, F-093 (consistencia de hechos), F-040 (política cancelación)
+- Motivación: la FAQ mata las objeciones que frenan la reserva. Responde de una las dudas reales: forfait, equipo, edad, idiomas, cancelación, qué llevar. SEO: FAQ structured data (`FAQPage`) gana rich snippets
+- AC:
+  - [ ] `app/[locale]/(marketing)/faq/page.tsx`: acordeón accesible (shadcn `accordion`) con preguntas/respuestas trilingüe `faq.*`
+  - [ ] Cubre como mínimo: **forfait no incluido** (compras el tuyo), **equipo no incluido** (alquiler en estación), **edad mínima 8**, idiomas EN/DE/ES, **política cancelación/crédito** (F-039b/F-040), qué llevar, meteo, dónde quedamos (COLORS), nivel necesario por clase, métodos de pago (Card/TWINT/Apple/Google Pay), entrega de la videocorrección (WhatsApp)
+  - [ ] `FAQPage` JSON-LD (coordinado con F-100) para rich results
+- Tests: Playwright — acordeón expande/colapsa con teclado, × 3 locales; validar JSON-LD `FAQPage`
+- Notas: fuente de verdad de los hechos = F-093 + memory de class differentiators; no duplicar precios (link a `/precios`)
+
+##### F-098 — Blog MDX (3 posts trilingüe al lanzamiento)
+
+- Sprint: 5 · Estado: backlog · Prioridad: P2
+- Depende de: F-088, F-031 (next-intl)
+- Motivación: SEO de contenido + autoridad. 3 posts trilingües al lanzamiento (decisión owner) capturan long-tail ("learn snowboard Flumserberg", "snowboard vs ski beginner", "carving tips") con hreflang completo
+- AC:
+  - [ ] Pipeline MDX: `app/[locale]/(marketing)/blog/page.tsx` (índice) + `[slug]/page.tsx`, content en `content/blog/{en,de,es}/*.mdx` con frontmatter (title, description, date, cover, slug)
+  - [ ] 3 posts iniciales × 3 locales (9 ficheros). Topics propuestos (owner confirma): (1) primer día en snowboard, (2) freestyle vs carving — qué clase elegir, (3) por qué Flumserberg / norte de Suiza
+  - [ ] `generateStaticParams` + `generateMetadata` por post (F-103); `Article`/`BlogPosting` JSON-LD (F-100)
+  - [ ] Estilo editorial (tipografía serif display, motion sutil), `next/image` en covers
+- Tests: Playwright — índice lista posts, post resuelve por slug × 3 locales, hreflang alterna; build MDX sin error
+- Notas:
+  - Trilingüe day-one = 3× copywriting; los borra/edita el owner. Slugs traducidos por locale
+  - **No** CMS en MVP — MDX en repo, PR por post
+
+##### F-099 — Dynamic sitemap + hreflang + robots
+
+- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Depende de: F-102 (slugs traducidos para las URLs alternas)
+- Motivación: indexación correcta multi-idioma. Sin sitemap + hreflang, Google canibaliza locales y pierde el mercado DE/ES. Hoy no existen `sitemap.ts` ni `robots.ts`
+- AC:
+  - [ ] `app/sitemap.ts`: genera URLs de todas las rutas públicas × 3 locales (home, precios, instructores + perfiles, sobre, contacto, faq, blog + posts, terms, privacy) con `alternates.languages` (hreflang) por entrada, incluyendo `x-default`
+  - [ ] EN sin prefijo, DE/ES con prefijo + slug traducido (F-102). Lastmod de blog/instructores desde datos
+  - [ ] `app/robots.ts`: allow público, disallow `/admin`, `/instructor`, `/dashboard`, `/reservar` (funnel), `/api`; `Sitemap:` apunta al sitemap
+- Tests: Playwright/HTTP — `/sitemap.xml` 200 con entradas + hreflang correctos; `/robots.txt` 200 con disallows esperados. Vitest sobre el generador de alternates
+- Notas: rutas autenticadas/funnel fuera del índice; mantener en sync con F-102
+
+##### F-100 — Structured data Schema.org (LocalBusiness + Course/Offer + Person)
+
+- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Depende de: F-093 (precios/offers), F-094 (instructor), F-021, F-097 (FAQPage)
+- Motivación: rich results + Knowledge Panel. `LocalBusiness`/`SportsActivityLocation` con dirección Flumserberg, horario, priceRange, geo; `Course`+`Offer` por clase; `Person` por instructor. Mejora CTR orgánico, base para el review CTA cuando D-PLACE aterrice
+- AC:
+  - [ ] JSON-LD `SportsActivityLocation`/`LocalBusiness` (name "The Drop", address, geo Flumserberg, openingHours, priceRange, areaServed norte de Suiza, `sameAs` social/Google) en layout marketing
+  - [ ] `Course` + `Offer` por duración (precio DB, currency CHF, availability) en `/precios`; `Person` en perfiles de instructor (F-094); `FAQPage` en `/faq` (F-097); `BlogPosting` en posts (F-098)
+  - [ ] `aggregateRating` **solo** cuando D-PLACE/Google reviews existan (no rating fake); gate condicional
+  - [ ] Helper `lib/seo/structured-data.ts` tipado (sin barrel), reutilizado por ruta
+- Tests: Vitest sobre los builders JSON-LD (shape válido); validación manual con Rich Results Test
+- Notas: `aggregateRating` y review CTA bloqueados por **D-PLACE** (Google Place ID, verificación postal del negocio); degradan limpio mientras null
+
+##### F-101 — Dynamic OG images por ruta y locale (`next/og`)
+
+- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Depende de: F-091 (logo), F-088 (taglines)
+- Motivación: share-rate + CTR social. OG dinámica por ruta y locale (logo + título/tagline localizada) en vez de una imagen estática. F-091 montó la de home; aquí se generaliza
+- AC:
+  - [ ] `opengraph-image.tsx` (y `twitter-image.tsx`) por ruta marketing relevante, vía `next/og` (`ImageResponse`), 1200×630, dark-alpine + logo (F-091) + texto desde `messages` del locale
+  - [ ] Plantilla reutilizable `lib/seo/og-template.tsx` (charcoal bg, glacier-blue accent, serif display) parametrizada por title/kicker/locale
+  - [ ] Fuentes serif embebidas para el render (no system); cache de `ImageResponse`
+- Tests: HTTP — cada `opengraph-image` 200 con `content-type: image/png` y 1200×630; smoke por locale
+- Notas: texto **no** horneado por idioma a mano — sale de `messages/{en,de,es}.json`
+
+##### F-102 — Translated slugs (next-intl `pathnames`)
+
+- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Depende de: F-031 (next-intl scaffolded)
+- Motivación: SEO local — las URLs traducidas (`/de/preise`, `/es/precios`) rankean mejor en cada mercado que un slug EN compartido. next-intl ya está scaffolded; aquí se añade el mapa `pathnames` para todo el producto público
+- AC:
+  - [ ] Definir `pathnames` en la config de routing de next-intl para: precios (`/pricing` · `/preise` · `/precios`), instructores (`/instructors` · `/instruktoren` · `/instructores`), sobre (`/about` · `/ueber-uns` · `/sobre`), contacto (`/contact` · `/kontakt` · `/contacto`), faq, blog, login/register/verify (auth), terms, privacy
+  - [ ] EN sin prefijo; DE/ES con prefijo + slug. `Link`/`redirect` internos usan los helpers tipados de next-intl (no strings crudos)
+  - [ ] Middleware de locale respeta los slugs; 308 de slug viejo→nuevo si aplica
+- Tests: Playwright — navegar por slug en cada locale resuelve la página correcta; `Link` genera el slug del locale activo
+- Notas: el sitemap (F-099) y metadata/hreflang (F-103) consumen este mapa — mantener una sola fuente de verdad
+
+##### F-103 — Conversion metadata por ruta × 3 locales (keyword-tuned)
+
+- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Depende de: F-102 (slugs/canonical), F-088 (voz)
+- Motivación: el título + meta description es el anuncio orgánico. Tunear por keyword y mercado (DE/ES/EN) sube CTR. Sprint 2 dejó `<title>`/description básicos; aquí se completa con canonical + hreflang alternates + copy de conversión
+- AC:
+  - [ ] `generateMetadata` async por ruta marketing × locale: title + description keyword-tuned ("private snowboard lessons Flumserberg" / "Snowboard Privatstunden Flumserberg" / "clases privadas de snowboard Suiza"), namespace `metadata.*`
+  - [ ] `alternates.canonical` + `alternates.languages` (hreflang) por página, derivados del mapa F-102; OG/twitter cards apuntan a F-101
+  - [ ] Sin keyword-stuffing; copy en la voz de marca (F-088)
+- Tests: Playwright/HTTP — `<title>`, `<meta description>`, `<link rel=canonical>` y `hreflang` correctos por ruta × locale
+- Notas: keywords las valida el owner; coordinar con F-099 (mismas alternates)
+
+##### F-104 — Accessibility audit de superficies Sprint 5 (WCAG 2.1 AA)
+
+- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Depende de: F-089, F-090, F-092–F-098
+- Motivación: el retheme dark + motion + páginas nuevas tienen que nacer accesibles, no parchearse en Sprint 6. Audit acotado a las superficies de marketing nuevas (el WCAG global completo sigue en Sprint 6)
+- AC:
+  - [ ] Pasada `axe`/Playwright en home, precios, instructores, sobre, contacto, faq, blog × 3 locales: 0 violaciones críticas
+  - [ ] Contraste WCAG AA verificado en dark-alpine (texto ≥4.5:1, UI ≥3:1) — cierra el AC de F-089 sobre las superficies reales
+  - [ ] Focus visible glacier-blue en todos los interactivos; orden de tab lógico; navegación por teclado del acordeón FAQ y los CTAs
+  - [ ] `prefers-reduced-motion` respetado en todas las animaciones (verifica F-090 en contexto real); `alt` en toda la fotografía; jerarquía de headings correcta; `lang` por locale; tap targets ≥44px
+- Tests: Playwright + axe automatizado por ruta/locale; checklist manual de teclado/screen-reader spot-check
+- Notas: overlaps con el WCAG audit de Sprint 6 pero acotado a Sprint 5 para que las páginas lancen accesibles; Sprint 6 hace el barrido producto-wide (dashboard/booking/admin)
 
 ### Sprint 6 — Polish + QA (semanas 11-12)
 
