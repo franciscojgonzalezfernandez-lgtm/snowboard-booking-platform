@@ -48,12 +48,15 @@ export function PaymentBlock({
       options={{
         clientSecret,
         appearance: {
-          theme: "flat",
+          // Dark-alpine (F-089): Stripe "night" base + brand tokens. Hex required by
+          // Stripe appearance API — mirror app/globals.css (charcoal/snow/glacier blue).
+          theme: "night",
           variables: {
-            colorPrimary: "#dc2626",
-            colorBackground: "#ffffff",
-            colorText: "#0f0f0f",
-            colorDanger: "#dc2626",
+            colorPrimary: "#1E7FBF",
+            colorBackground: "#2A2724",
+            colorText: "#FAF7F1",
+            colorTextSecondary: "#B4AEA6",
+            colorDanger: "#C7361C",
             fontFamily:
               'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif',
             spacingUnit: "4px",
@@ -61,11 +64,11 @@ export function PaymentBlock({
           },
           rules: {
             ".Input": {
-              border: "1px solid #d4d4d4",
+              border: "1px solid #6E6860",
               boxShadow: "none",
             },
             ".Input:focus": {
-              border: "1px solid #0f0f0f",
+              border: "1px solid #1E7FBF",
               boxShadow: "none",
             },
             ".Label": {
@@ -73,7 +76,7 @@ export function PaymentBlock({
               fontWeight: "600",
               letterSpacing: "0.04em",
               textTransform: "uppercase",
-              color: "#525252",
+              color: "#B4AEA6",
             },
           },
         },

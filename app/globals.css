@@ -52,83 +52,46 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* —— Patagonia-editorial (F-029 Variant B) tokens —— */
-/* Lifted from docs/design-exploration/variant-B/index.html. See docs/design-system.md. */
+/* —— The Drop · dark-alpine (F-089) —— */
+/* Single base theme. MVP is dark-only: the former cream :root + .dark duplicate are retired.
+   `<html class="dark">` (app/layout.tsx) keeps shadcn `dark:` variant refinements firing.
+   Contrast verified WCAG 2.1 AA via OKLCH→sRGB; ratios annotated per pair. Brand: docs/brand/tokens.md. */
 :root {
-  --background: oklch(0.96 0.013 75);            /* cream  #FAF6F0 */
-  --foreground: oklch(0.18 0.012 60);            /* ink    #1F1A14 */
-  --card: oklch(0.96 0.013 75);
-  --card-foreground: oklch(0.18 0.012 60);
-  --popover: oklch(0.96 0.013 75);
-  --popover-foreground: oklch(0.18 0.012 60);
-  --primary: oklch(0.54 0.18 35);                /* alpine red #C7361C */
-  --primary-foreground: oklch(0.96 0.013 75);
-  --secondary: oklch(0.92 0.025 85);             /* bg-alt #F1EAD9 */
-  --secondary-foreground: oklch(0.18 0.012 60);
-  --muted: oklch(0.92 0.025 85);
-  --muted-foreground: oklch(0.46 0.013 70);      /* mute   #6B6258 */
-  --accent: oklch(0.92 0.025 85);                /* hover bg = bg-alt */
-  --accent-foreground: oklch(0.18 0.012 60);
-  --destructive: oklch(0.42 0.16 33);            /* accent-deep #952B18 (hover state of brand red) */
-  --border: oklch(0.82 0.025 80);                /* hairline #D4C9B3 */
-  --input: oklch(0.82 0.025 80);
-  --ring: oklch(0.54 0.18 35);                   /* focus ring = primary red */
-  --chart-1: oklch(0.54 0.18 35);
-  --chart-2: oklch(0.42 0.06 130);               /* moss reserved */
-  --chart-3: oklch(0.46 0.013 70);
-  --chart-4: oklch(0.30 0.013 65);
-  --chart-5: oklch(0.18 0.012 60);
-  --radius: 0.375rem;                            /* rounded-md / 6px */
-  --brand-ink: oklch(0.18 0.012 60);             /* explicit dark-surface token for "btn-dark" */
-  --brand-ink-foreground: oklch(0.96 0.013 75);
-  --brand-bg-alt: oklch(0.92 0.025 85);          /* warm cream-alt for section backgrounds */
-  --sidebar: oklch(0.96 0.013 75);
-  --sidebar-foreground: oklch(0.18 0.012 60);
-  --sidebar-primary: oklch(0.54 0.18 35);
-  --sidebar-primary-foreground: oklch(0.96 0.013 75);
-  --sidebar-accent: oklch(0.92 0.025 85);
-  --sidebar-accent-foreground: oklch(0.18 0.012 60);
-  --sidebar-border: oklch(0.82 0.025 80);
-  --sidebar-ring: oklch(0.54 0.18 35);
-}
-
-/* Dark mode: invert canvas. Variant B uses dark surfaces as section overrides (e.g. login on ink),
-   not as a global dark mode, but we keep .dark functional for shadcn primitives. */
-.dark {
-  --background: oklch(0.18 0.012 60);
-  --foreground: oklch(0.96 0.013 75);
-  --card: oklch(0.22 0.012 60);
-  --card-foreground: oklch(0.96 0.013 75);
-  --popover: oklch(0.22 0.012 60);
-  --popover-foreground: oklch(0.96 0.013 75);
-  --primary: oklch(0.62 0.18 35);
-  --primary-foreground: oklch(0.18 0.012 60);
-  --secondary: oklch(0.25 0.012 60);
-  --secondary-foreground: oklch(0.96 0.013 75);
-  --muted: oklch(0.25 0.012 60);
-  --muted-foreground: oklch(0.65 0.020 75);
-  --accent: oklch(0.25 0.012 60);
-  --accent-foreground: oklch(0.96 0.013 75);
-  --destructive: oklch(0.50 0.18 35);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.62 0.18 35);
-  --chart-1: oklch(0.62 0.18 35);
-  --chart-2: oklch(0.55 0.07 130);
-  --chart-3: oklch(0.65 0.020 75);
+  --background: oklch(0.16 0.01 60);             /* charcoal #201E1B */
+  --foreground: oklch(0.97 0.01 75);             /* snow #FAF7F1 · on bg 17.8:1 ✓ */
+  --card: oklch(0.20 0.012 60);                  /* charcoal-alt */
+  --card-foreground: oklch(0.97 0.01 75);        /* on card 16.6:1 ✓ */
+  --popover: oklch(0.20 0.012 60);
+  --popover-foreground: oklch(0.97 0.01 75);
+  --primary: oklch(0.60 0.13 235);               /* glacier blue ~#1E7FBF (SOLID) · on bg 5.05:1 ✓ */
+  --primary-foreground: oklch(0.16 0.01 60);     /* charcoal on glacier 5.05:1 ✓ */
+  --secondary: oklch(0.24 0.012 60);
+  --secondary-foreground: oklch(0.97 0.01 75);
+  --muted: oklch(0.24 0.012 60);
+  --muted-foreground: oklch(0.74 0.012 75);      /* on bg 8.4:1 ✓ */
+  --accent: oklch(0.27 0.04 240);                /* glacier-tinted surface (hover/highlight) */
+  --accent-foreground: oklch(0.97 0.01 75);      /* on accent 13.7:1 ✓ */
+  --destructive: oklch(0.54 0.20 28);            /* alpine red — errors/cancellation only · white text 5.1:1 ✓ */
+  --border: oklch(0.30 0.012 60);                /* hairline — decorative (cards/dividers), exempt from 3:1 */
+  --input: oklch(0.50 0.012 60);                 /* functional field border · on bg 3.2:1 ✓ */
+  --ring: oklch(0.60 0.13 235);                  /* focus ring = glacier · on bg 5.05:1 ✓ */
+  --chart-1: oklch(0.60 0.13 235);               /* glacier */
+  --chart-2: oklch(0.55 0.07 160);               /* alpine teal */
+  --chart-3: oklch(0.74 0.012 75);
   --chart-4: oklch(0.45 0.013 65);
-  --chart-5: oklch(0.30 0.012 60);
-  --brand-ink: oklch(0.96 0.013 75);
-  --brand-ink-foreground: oklch(0.18 0.012 60);
-  --brand-bg-alt: oklch(0.25 0.012 60);
-  --sidebar: oklch(0.22 0.012 60);
-  --sidebar-foreground: oklch(0.96 0.013 75);
-  --sidebar-primary: oklch(0.62 0.18 35);
-  --sidebar-primary-foreground: oklch(0.18 0.012 60);
-  --sidebar-accent: oklch(0.25 0.012 60);
-  --sidebar-accent-foreground: oklch(0.96 0.013 75);
-  --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: oklch(0.62 0.18 35);
+  --chart-5: oklch(0.97 0.01 75);
+  --radius: 0.375rem;                            /* rounded-md / 6px */
+  --brand-ink: oklch(0.97 0.01 75);              /* inverted: high-contrast "dark" button = snow surface */
+  --brand-ink-foreground: oklch(0.16 0.01 60);   /* charcoal text · 17.8:1 ✓ */
+  --brand-bg-alt: oklch(0.20 0.012 60);          /* section alt surface */
+  --sidebar: oklch(0.20 0.012 60);
+  --sidebar-foreground: oklch(0.97 0.01 75);
+  --sidebar-primary: oklch(0.60 0.13 235);
+  --sidebar-primary-foreground: oklch(0.16 0.01 60);
+  --sidebar-accent: oklch(0.27 0.04 240);
+  --sidebar-accent-foreground: oklch(0.97 0.01 75);
+  --sidebar-border: oklch(0.30 0.012 60);
+  --sidebar-ring: oklch(0.60 0.13 235);
 }
 
 @layer base {
@@ -139,6 +102,7 @@
     @apply bg-background text-foreground;
   }
   html {
+    color-scheme: dark;
     font-family: var(--font-archivo), system-ui, -apple-system, sans-serif;
   }
   h1, h2, h3 {

@@ -39,6 +39,10 @@ lighten toward `oklch(0.66 0.13 235)` if the ratio falls under 4.5:1.
 
 ## Type
 
-- **Display:** editorial **serif** (high-contrast / Didone-ish) — NOT Inter, Geist, DM Sans (CLAUDE).
-- **Body / UI:** legible humanist sans for small text; never set long body in the display serif.
-- Concrete font families are wired in F-089 alongside the token flip; this doc fixes the *roles*.
+> **Owner decision (2026-06-15):** keep the established **Archivo Black** display + **Archivo** body —
+> no serif swap in F-089 (colors-only retheme). This **deviates** from the "serif display" guideline
+> in `CLAUDE.md` §Design direction; flagged there for reconciliation.
+
+- **Display / headings:** **Archivo Black**, uppercase, tight tracking (`--font-archivo-black`,
+  wired in `app/layout.tsx`).
+- **Body / UI:** **Archivo** (`--font-archivo`).

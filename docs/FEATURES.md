@@ -1813,21 +1813,25 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-089 — Dark-alpine retheme (`globals.css` + shadcn primitives)
 
-- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Sprint: 5 · Estado: **done** (2026-06-15) · Prioridad: P1
 - Depende de: F-105
 - Motivación: la paleta actual es cream/pastel por diseño — `--background` cream `#FAF6F0`, `--foreground` ink `#1F1A14`, y el `--accent` token es literalmente cream-alt pálido `#F1EAD9` (no un accent real). El único color saturado es alpine red `#C7361C`, usado con cuentagotas. Lee suave, no impacta. El owner quiere dark-alpine contrastada y cinematográfica con glacier blue como signature
 - AC:
-  - [ ] `app/globals.css` `:root` → dark-alpine como **tema base** (no como `.dark` opcional): `--background` charcoal `oklch(0.16 0.01 60)`, `--foreground` snow `oklch(0.97 0.01 75)`, cards/popover en charcoal-alt
-  - [ ] `--primary` + `--ring` = glacier blue `oklch(0.55 0.15 235)` (`#1E7FBF`). Retirar el `--accent` cream pálido → glacier-blue tint. Alpine red `#C7361C` queda **solo** en `--destructive` (errores/cancelación)
-  - [ ] Auditar cada par de tokens (bg/fg, primary/primary-fg, muted/muted-fg, border, destructive/dest-fg) ≥ 4.5:1 texto / 3:1 UI (WCAG AA). Anotar ratios en comentario junto a cada token
-  - [ ] Retune de primitives en `components/ui/` que asuman cream/borders claros: `button`, `card`, `input`, `dialog`, `badge`, `select`. Cards con borde hairline glacier-blue-tint, **sin** drop-shadow (regla CLAUDE)
-  - [ ] Decidir el bloque `.dark` existente: MVP es **dark-only** → invertir/retirar el duplicado light para no mantener dos temas. Si se conserva light como toggle, documentar por qué
-  - [ ] Focus ring glacier-blue claramente visible sobre charcoal (a11y, no depende solo de color)
+  - [x] `app/globals.css` `:root` → dark-alpine como **tema base**: `--background` charcoal `oklch(0.16 0.01 60)`, `--foreground` snow `oklch(0.97 0.01 75)`, cards/popover charcoal-alt. `.dark` duplicado retirado; `<html class="dark">` (`app/layout.tsx`) mantiene activos los refinements `dark:` de shadcn + `color-scheme: dark`
+  - [x] `--primary` + `--ring` = glacier blue `oklch(0.60 0.13 235)` (`#1E7FBF`). `--accent` cream retirado → glacier-blue tint. Alpine red queda **solo** en `--destructive`
+  - [x] Auditado cada par con script OKLCH→sRGB WCAG: body 17.8:1, muted 8.4:1, botón glacier 5.05:1, error 5.1:1, ring 5.05:1, input border 3.2:1 — todos AA. Ratios anotados en `globals.css`. Border de cards/dividers = hairline decorativo (exento de 3:1)
+  - [x] Primitives `components/ui/` son **token-based** (heredan dark): `card` sin shadow ✓, shadow solo en overlays (permitido). `<html class="dark">` activa sus variantes `dark:`. Sin retune por-fichero necesario
+  - [x] **dark-only**: `:root` es el único tema; el light duplicado se retira (no toggle)
+  - [x] Focus ring glacier-blue visible sobre charcoal (5.05:1, no depende solo de color)
 - Tests: Playwright visual snapshot de home / login / dashboard / pricing en dark × viewport mobile+desktop. Contrast check automatizado (axe o script oklch→WCAG). Vitest N/A
 - Notas:
   - **El flip es global vía tokens** → dashboard, booking funnel (`reservar/`) y admin heredan dark automáticamente aunque F-092 solo recomponga marketing. AC de QA: pasada visual de esas superficies para detectar contrastes rotos (texto hardcoded, bordes asumidos claros)
   - Glacier blue **SOLID** — gradientes azules siguen prohibidos (CLAUDE.md)
   - Si hay `next-themes` montado, reconfigurar default a dark; si no, dark-only sin provider
+  - **Entregado (2026-06-15):** `globals.css` dark-alpine + `html.dark` + `color-scheme: dark`. Contraste verificado AA (script OKLCH→sRGB). `docs/brand/tokens.md` §Type reconciliado: el owner mantiene **Archivo Black** (no serif) — desviación de `CLAUDE.md` §Design, marcada para reconciliar
+  - **Fix de regresión del flip:** `app/[locale]/reservar/payment-block.tsx` — el Stripe Payment Element pasaba `#ffffff`/texto oscuro; migrado a theme `"night"` + tokens de marca (glacier/charcoal/snow)
+  - **Follow-up (no bloqueante):** `app/instructor/profile/_components/photo-uploader.tsx` usa `bg-amber-50/amber-900` (callout claro sobre dark) — superficie instructor-only; ajustar en F-104 (a11y) o polish admin
+  - Verificación visual: **preview de Vercel del PR** (dev local con turbopack no arranca en worktree por el symlink de `node_modules`)
 
 ##### F-090 — Motion system (`motion` lib + `lib/motion/` primitives)
 
