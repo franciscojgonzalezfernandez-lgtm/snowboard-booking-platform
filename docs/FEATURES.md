@@ -1813,20 +1813,21 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-090 — Motion system (`motion` lib + `lib/motion/` primitives)
 
-- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Sprint: 5 · Estado: **done** (2026-06-15) · Prioridad: P1
 - Depende de: F-105
-- Motivación: hoy no hay animación coordinada (grep confirma `motion`/`framer-motion` no instalado). El owner quiere "animaciones modernas con motion" coreografiadas. Instalar `motion` (sucesor de framer-motion) con primitives reutilizables + gate de accesibilidad, para que home/pricing/hero (F-092+) tengan reveal/parallax/drop-fall sin reinventar por página
+- Motivación: hoy no hay animación coordinada (grep confirma `motion`/`framer-motion` no instalado). El owner quiere "animaciones modernas con motion" coreografiadas. Instalar `motion` (sucesor de framer-motion) con primitives reutilizables + gate de accesibilidad, para que home/pricing/hero (F-092+) tengan reveal/parallax/wordmark-reveal sin reinventar por página
 - AC:
-  - [ ] `npm i motion`. Crear `lib/motion/` (sin barrel): `reveal.tsx` (fade/slide on scroll vía `useInView`), `stagger.tsx`, `parallax.tsx`, `drop-fall.tsx` (anima el símbolo "drop" del logo cayendo/llenándose), `view-transition.ts` (wrapper de transiciones de página)
-  - [ ] **Todos** los primitives respetan `prefers-reduced-motion`: hook `useReducedMotion` → si `reduce`, render estático sin transform/opacity-anim (a11y obligatorio, no opcional)
-  - [ ] `'use client'` aislado en los primitives; los server components los montan como islands. **Cero motion en el critical-path del LCP** — el copy del hero es SSR estático, solo se anima la decoración
-  - [ ] **Actualizar `CLAUDE.md`**: la regla "Subtle, intentional animations only" pasa a "Choreographed motion via `motion`, always gated behind `prefers-reduced-motion`; no gratuitous spin/bounce/glow" (alinea con principios F-105, elimina la contradicción con esta wave)
-  - [ ] Budget: `motion` tree-shaken/lazy donde se pueda; no romper el budget home < 200KB gz (CLAUDE perf). Medir con skill `booking-platform-perf` antes de cerrar
-- Tests: Playwright con `page.emulateMedia({ reducedMotion: 'reduce' })` → sin transforms; default → reveal/stagger aplican. Vitest sobre la rama de `useReducedMotion`
+  - [x] `npm i motion`. Crear `lib/motion/` (sin barrel): `reveal.tsx` (fade/slide on scroll vía `whileInView`), `stagger.tsx` (`Stagger` + `StaggerItem`), `parallax.tsx` (`useScroll`/`useTransform`), `wordmark-reveal.tsx` (hero gesture — rise-and-settle del wordmark; el drop glyph se descartó, owner 2026-06-15), `view-transition.ts` (wrapper de transiciones de página)
+  - [x] **Todos** los primitives respetan `prefers-reduced-motion`: hook `useReducedMotion` de `motion/react` → si `reduce`, render estático sin transform/opacity-anim (a11y obligatorio, no opcional)
+  - [x] `"use client"` aislado en los primitives; los server components los montan como islands. **Cero motion en el critical-path del LCP** — el copy del hero es SSR estático, solo se anima la decoración
+  - [x] **Actualizar `CLAUDE.md`**: la regla "Subtle, intentional animations only" pasa a "Choreographed motion via `motion`, always gated behind `prefers-reduced-motion`; no gratuitous spin/bounce/glow" (alinea con principios F-105, elimina la contradicción con esta wave)
+  - [x] Budget: `motion` importado vía `motion/react` (tree-shakeable), primitives lazy donde se monten; no romper el budget home < 200KB gz (CLAUDE perf). Medir con skill `booking-platform-perf` cuando F-092 monte las primeras superficies que las consumen
+- Tests: [x] Vitest sobre la rama de `useReducedMotion` (`lib/motion/reveal.test.tsx` — reduced = estático, default = entrada animada). La verificación Playwright `emulateMedia({ reducedMotion: 'reduce' })` la lleva F-092, primer surface que monta los primitives (este ticket no entrega UI visible)
 - Notas:
-  - Paquete `motion` (antes `framer-motion`) — **no** instalar ambos
-  - LCP no depende de JS de motion (hero copy SSR). Gate de perf budget obligatorio (skill `booking-platform-perf`)
-  - `view-transition.ts` puede apoyarse en la View Transitions API nativa donde el browser la soporte, con fallback a `motion`
+  - Paquete `motion` (antes `framer-motion`) — **no** instalar ambos. Import desde `motion/react`
+  - LCP no depende de JS de motion (hero copy SSR). Gate de perf budget se mide en F-092 (skill `booking-platform-perf`)
+  - `view-transition.ts` usa la View Transitions API nativa (`document.startViewTransition`) con fallback directo — sin dep extra; `motion`/`AnimatePresence` solo si una ruta necesita coreografía que el browser no cubre
+  - **Desviación del spec**: `drop-fall.tsx` → `wordmark-reveal.tsx`. El owner descartó el drop glyph (2026-06-15, ver `docs/brand/motion.md` + `logo-assets.md`); el gesto hero pasa a ser el reveal del wordmark
 
 ##### F-091 — Logo "The Drop" integration (favicon · header · hero · footer · OG)
 

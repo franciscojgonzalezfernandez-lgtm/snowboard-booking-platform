@@ -86,7 +86,7 @@
 - Generous whitespace
 - High contrast, low color saturation
 - Photography-led (not illustration-led)
-- Subtle, intentional animations only
+- Choreographed motion via `motion` (the `lib/motion/` primitives), always gated behind `prefers-reduced-motion`; no gratuitous spin/bounce/glow. Principles in `docs/brand/motion.md`.
 
 **Forbidden:**
 - Purple/blue gradients
