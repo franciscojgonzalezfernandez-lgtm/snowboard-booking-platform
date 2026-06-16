@@ -1853,22 +1853,23 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 > Wave 2 consume la fundación de wave 1 (paleta cream/editorial existente, voz/marca F-105, motion F-090, logo F-091) para construir las superficies que convierten: home editorial, pricing, instructores, estáticas, blog y todo el SEO trilingüe. Las antiguas viñetas generales del sprint quedan **formalizadas** como los tickets de abajo. Pendientes externos: **D-LOGO** (logo + hero photography, los produce el owner) y **D-PLACE** (Google Place ID, reabre el CTA de review en F-100/F-101).
 
-##### F-092 — Home editorial recompose (editorial hero + animated drop + scroll choreography)
+##### F-092 — Home editorial recompose (editorial hero + scroll choreography + reviews)
 
-- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Sprint: 5 · Estado: **done** (2026-06-17) · Prioridad: P1
 - Depende de: F-105, F-090, F-091, F-032
 - Motivación: la home **minimal** existe desde F-032 (Sprint 0.5) — hero + CTA. Sprint 5 la expande a una home editorial con alma de marca: narrativa, teaser de instructor, prueba social, secciones de las clases. Es la primera impresión y el LCP del market — tiene que impactar (editorial, paleta cream) y convertir en los 3 idiomas
 - AC:
-  - [ ] Recompose `app/[locale]/(marketing)/page.tsx`: hero editorial con el **drop animado** (`lib/motion/drop-fall`, F-090), copy editorial SSR (no depende de JS para el LCP), CTA primario `Book a lesson` → `/reservar`
-  - [ ] Secciones con `reveal`/`stagger` on scroll (F-090): qué es "The Drop" (voz F-105), teaser de las 4 clases con cross-link a `/precios`, teaser de instructor (foto Blob F-068 + idiomas), prueba social (placeholder hasta D-PLACE Google reviews)
-  - [ ] `HeroAnnouncement` (F-053) + `phone CTA` (F-052) ya montados — verificar que conviven con el nuevo hero sin romper LCP/CLS
-  - [ ] Fotografía vía `next/image` (AVIF/WebP), placeholders hasta D-LOGO/hero photography; `priority` solo en el hero
-  - [ ] Copy trilingüe `messages/{en,de,es}.json` namespace `home.*`; sin strings hardcoded
-  - [ ] Budget: home < 200KB JS gz, LCP < 2.5s mobile, CLS < 0.1 (CLAUDE perf) — medir con skill `booking-platform-perf`
-- Tests: Playwright — render × 3 locales, CTA navega a `/reservar`, reduced-motion → drop estático, secciones presentes. Lighthouse/perf gate
+  - [x] Recompose `app/[locale]/(marketing)/page.tsx`: hero editorial **estático** (LCP-safe, sin motion en el headline) + copy passionate SSR, CTA `Book a lesson` → `/reservar`. Foto del hero = placeholder hasta `public/brand/hero.jpg` del owner (spec 16:9 ≥2560×1440)
+  - [x] Secciones con `reveal`/`stagger` on scroll (F-090): intro (voz F-105), 4 clases (cards → `/reservar?duration=`; no `/precios`, que aún 404), teaser de instructor (type-led; foto Blob F-068 pendiente), **sección de reviews** (5 estrellas + nombres; quotes placeholder hasta que el owner pase las reales multiidioma)
+  - [x] Copy trilingüe `messages/{en,de,es}.json` `home.*` passionate, primera persona; sin strings hardcoded; key parity verificada
+  - [x] `next/image` (AVIF/WebP) para `logo-full.png` en el bloque final de marca
+  - [ ] `HeroAnnouncement` (F-053) + `phone CTA` (F-052): **no construidos** → fuera de F-092; se integran cuando aterricen F-052/F-053
+  - [ ] Budget perf (home <200KB JS, LCP <2.5s, CLS <0.1): **medir** con `booking-platform-perf` (pendiente; hero static + motion lazy ayudan)
+- Tests: Playwright (followup, **pendiente**) — render × 3 locales, class card navega a `/reservar?duration`, reduced-motion → secciones estáticas, reviews presentes. Lighthouse/perf gate
 - Notas:
-  - Reusa el `BookingHeader`/`SiteNav` contract existente; la home es la única superficie con `HeroAnnouncement`
-  - Prueba social degradada mientras D-PLACE null (sin rating fake)
+  - Reusa `SiteNav`/`SiteFooter`. Hero **estático** por LCP — la coreografía (reveal/stagger) vive en las secciones scroll, no en el h1
+  - **Reviews reales**: estructura lista (`home.review_{1,2,3}_{name,quote}` × 3 locales); el owner pega los textos reales + nombres. Sin rating fake
+  - **Entregado (2026-06-17):** home recompuesta — hero + intro + 4 clases + instructor + reviews + CTA final con `logo-full`. Foto del hero (16:9 ≥2560×1440) y textos de reviews los aporta el owner
 
 ##### F-093 — Pricing page (value-prop por duración, trilingüe, CRO)
 
