@@ -14,7 +14,8 @@
     "sign_out": "Sign out",
     "utility": "Flumserberg · Heidiland · Open Nov 27 → Apr 26",
     "open_menu": "Open menu",
-    "switch_language_aria": "Switch language"
+    "switch_language_aria": "Switch language",
+    "phone_label": "Call us"
   },
   "home": {
     "utility": "Flumserberg · Heidiland · Open Nov 27 → Apr 26",
@@ -31,7 +32,8 @@
   "footer": {
     "terms_link": "Terms",
     "privacy_link": "Privacy",
-    "nav_aria": "Legal"
+    "nav_aria": "Legal",
+    "phone_label": "Phone"
   },
   "terms": {
     "metadata_title": "Terms and Conditions — The Drop",

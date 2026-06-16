@@ -14,7 +14,8 @@
     "sign_out": "Abmelden",
     "utility": "Flumserberg · Heidiland · Saison 27. Nov – 26. Apr",
     "open_menu": "Menü öffnen",
-    "switch_language_aria": "Sprache wechseln"
+    "switch_language_aria": "Sprache wechseln",
+    "phone_label": "Anrufen"
   },
   "home": {
     "utility": "Flumserberg · Heidiland · Saison 27. Nov – 26. Apr",
@@ -31,7 +32,8 @@
   "footer": {
     "terms_link": "AGB",
     "privacy_link": "Datenschutz",
-    "nav_aria": "Rechtliches"
+    "nav_aria": "Rechtliches",
+    "phone_label": "Telefon"
   },
   "terms": {
     "metadata_title": "Allgemeine Geschäftsbedingungen — The Drop",

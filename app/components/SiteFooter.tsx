@@ -1,6 +1,10 @@
 import { getTranslations } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
+import {
+  OPERATIONAL_PHONE_DISPLAY,
+  OPERATIONAL_PHONE_TEL,
+} from "@/lib/contact/phone";
 
 export async function SiteFooter() {
   const tHome = await getTranslations("home");
@@ -37,6 +41,17 @@ export async function SiteFooter() {
             <span className="text-primary">·</span> ES
           </span>
         </nav>
+      </div>
+
+      <div className="mx-auto max-w-[1320px] px-7 pb-12 text-[11px] font-bold tracking-[0.1em]">
+        <a
+          href={`tel:${OPERATIONAL_PHONE_TEL}`}
+          data-testid="footer-phone-link"
+          aria-label={`${tFooter("phone_label")} ${OPERATIONAL_PHONE_DISPLAY}`}
+          className="hover:text-primary"
+        >
+          {OPERATIONAL_PHONE_DISPLAY}
+        </a>
       </div>
     </footer>
   );

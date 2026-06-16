@@ -21,11 +21,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { OPERATIONAL_PHONE_DISPLAY } from "@/lib/contact/phone";
 import { cancelBookingByUser } from "../actions";
-
-// F-052 (Sprint 5) lifts this to lib/contact/phone.ts and replaces all usages;
-// until then it lives where it is consumed. Locale-independent on purpose.
-const CONTACT_PHONE = "+41 76 638 18 70";
 
 type Props = {
   bookingId: string;
@@ -91,7 +88,7 @@ export function CancelModal({ bookingId, earnsCredit, creditAmountLabel }: Props
             <DialogDescription data-testid="cancel-dialog-body">
               {earnsCredit
                 ? t("body_credit", { amount: creditAmountLabel })
-                : t("body_forfeit", { phone: CONTACT_PHONE })}
+                : t("body_forfeit", { phone: OPERATIONAL_PHONE_DISPLAY })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
