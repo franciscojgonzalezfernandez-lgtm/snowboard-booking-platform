@@ -25,7 +25,7 @@
     "sub": "Clases privadas de snowboard en Flumserberg — de 1 a 4 personas, cuatro duraciones, tres idiomas, un instructor local que monta de verdad las líneas que vas a aprender.",
     "cta_primary": "Reservar clase",
     "cta_signin": "Iniciar sesión",
-    "footer_copy": "© 2026 Adlerhorst SBS",
+    "footer_copy": "© 2026 The Drop",
     "footer_loc": "Flumserberg · St. Gallen · Suiza"
   },
   "footer": {
@@ -34,8 +34,8 @@
     "nav_aria": "Legal"
   },
   "terms": {
-    "metadata_title": "Términos y Condiciones — Adlerhorst SBS",
-    "metadata_description": "Términos y condiciones generales para clases privadas de snowboard reservadas en Adlerhorst SBS.",
+    "metadata_title": "Términos y Condiciones — The Drop",
+    "metadata_description": "Términos y condiciones generales para clases privadas de snowboard reservadas en The Drop.",
     "heading": "Términos y Condiciones",
     "last_updated": "Última actualización: 19 de mayo de 2026",
     "intro": "Estas condiciones rigen las reservas hechas en rideflumserberg.ch. Al confirmar una reserva las aceptas en su totalidad.",
@@ -58,13 +58,13 @@
     "section_jurisdiction_body": "El fuero exclusivo es Mels (Sarganserland, cantón de St. Gallen, Suiza). Se aplica el derecho federal suizo."
   },
   "privacy": {
-    "metadata_title": "Política de Privacidad — Adlerhorst SBS",
-    "metadata_description": "Cómo Adlerhorst SBS recoge, utiliza y protege tus datos personales.",
+    "metadata_title": "Política de Privacidad — The Drop",
+    "metadata_description": "Cómo The Drop recoge, utiliza y protege tus datos personales.",
     "heading": "Política de Privacidad",
     "last_updated": "Última actualización: 19 de mayo de 2026",
     "intro": "Esta página explica qué datos personales recogemos cuando reservas una clase, quién los trata por cuenta nuestra y cómo ejercer tus derechos bajo la nLPD suiza y el RGPD europeo.",
     "section_controller_title": "Responsable del tratamiento",
-    "section_controller_body": "Adlerhorst SBS, operador de este sitio web. Contacto: franciscojgonzalezfernandez@gmail.com. Operamos desde Flumserberg, cantón de St. Gallen, Suiza.",
+    "section_controller_body": "The Drop, operador de este sitio web. Contacto: franciscojgonzalezfernandez@gmail.com. Operamos desde Flumserberg, cantón de St. Gallen, Suiza.",
     "section_data_title": "Datos que recogemos",
     "section_data_body": "Nombre, dirección de correo electrónico, número de teléfono y los datos necesarios para completar el pago. Los datos de tarjeta los gestiona directamente Stripe y no pasan nunca por nuestros servidores. Además, almacenamos una cookie de sesión emitida por nuestra librería de autenticación; es estrictamente necesaria para mantenerte autenticado y no contiene información de rastreo.",
     "section_processors_title": "Proveedores de servicio",

@@ -25,7 +25,7 @@
     "sub": "Private Snowboardstunden in Flumserberg — 1 bis 4 Personen, vier Stundenlängen, drei Sprachen, ein lokaler Lehrer, der die Hänge wirklich kennt.",
     "cta_primary": "Stunde buchen",
     "cta_signin": "Anmelden",
-    "footer_copy": "© 2026 Adlerhorst SBS",
+    "footer_copy": "© 2026 The Drop",
     "footer_loc": "Flumserberg · St. Gallen · Schweiz"
   },
   "footer": {
@@ -34,8 +34,8 @@
     "nav_aria": "Rechtliches"
   },
   "terms": {
-    "metadata_title": "Allgemeine Geschäftsbedingungen — Adlerhorst SBS",
-    "metadata_description": "Allgemeine Geschäftsbedingungen für private Snowboardstunden bei Adlerhorst SBS.",
+    "metadata_title": "Allgemeine Geschäftsbedingungen — The Drop",
+    "metadata_description": "Allgemeine Geschäftsbedingungen für private Snowboardstunden bei The Drop.",
     "heading": "Allgemeine Geschäftsbedingungen",
     "last_updated": "Zuletzt aktualisiert am 19. Mai 2026",
     "intro": "Diese Bedingungen gelten für alle Buchungen auf rideflumserberg.ch. Mit der Bestätigung einer Buchung werden sie vollumfänglich akzeptiert.",
@@ -58,13 +58,13 @@
     "section_jurisdiction_body": "Ausschliesslicher Gerichtsstand ist Mels (Sarganserland, Kanton St. Gallen, Schweiz). Es gilt schweizerisches Bundesrecht."
   },
   "privacy": {
-    "metadata_title": "Datenschutzerklärung — Adlerhorst SBS",
-    "metadata_description": "Wie Adlerhorst SBS Ihre personenbezogenen Daten erhebt, verwendet und schützt.",
+    "metadata_title": "Datenschutzerklärung — The Drop",
+    "metadata_description": "Wie The Drop Ihre personenbezogenen Daten erhebt, verwendet und schützt.",
     "heading": "Datenschutzerklärung",
     "last_updated": "Zuletzt aktualisiert am 19. Mai 2026",
     "intro": "Diese Seite erklärt, welche personenbezogenen Daten wir bei einer Buchung erheben, wer sie in unserem Auftrag verarbeitet und wie Sie Ihre Rechte nach Schweizer revidiertem Datenschutzgesetz (revDSG) und EU-DSGVO ausüben können.",
     "section_controller_title": "Verantwortlicher",
-    "section_controller_body": "Adlerhorst SBS, Betreiber dieser Website. Kontakt: franciscojgonzalezfernandez@gmail.com. Tätigkeitsort: Flumserberg, Kanton St. Gallen, Schweiz.",
+    "section_controller_body": "The Drop, Betreiber dieser Website. Kontakt: franciscojgonzalezfernandez@gmail.com. Tätigkeitsort: Flumserberg, Kanton St. Gallen, Schweiz.",
     "section_data_title": "Welche Daten wir erheben",
     "section_data_body": "Name, E-Mail-Adresse, Telefonnummer sowie die zur Zahlungsabwicklung notwendigen Angaben. Kartendaten werden direkt von Stripe verarbeitet und gelangen nie auf unsere Server. Zusätzlich speichern wir ein Sitzungscookie unserer Authentifizierungsbibliothek; es ist strikt notwendig, um Sie eingeloggt zu halten, und enthält keine Tracking-Informationen.",
     "section_processors_title": "Dienstleister",
