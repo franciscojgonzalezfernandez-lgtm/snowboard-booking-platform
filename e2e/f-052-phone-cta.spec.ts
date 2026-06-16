@@ -20,6 +20,8 @@ test.describe("F-052 — operational phone CTA", () => {
       const phone = page.getByTestId("site-nav-phone");
       await expect(phone).toBeVisible();
       await expect(phone).toHaveAttribute("href", TEL_HREF);
+      // Number is shown directly (readable), not a "Call us" label.
+      await expect(phone).toContainText("+41 76 638 18 70");
     });
 
     test(`footer phone link has exact tel href (${locale})`, async ({
@@ -47,6 +49,7 @@ test.describe("F-052 — operational phone CTA", () => {
       const phone = page.getByTestId("mobile-nav-phone");
       await expect(phone).toBeVisible();
       await expect(phone).toHaveAttribute("href", TEL_HREF);
+      await expect(phone).toContainText("+41 76 638 18 70");
     });
   }
 });

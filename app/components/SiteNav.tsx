@@ -80,10 +80,10 @@ export async function SiteNav({ utility }: SiteNavProps) {
               href={`tel:${OPERATIONAL_PHONE_TEL}`}
               data-testid="site-nav-phone"
               aria-label={`${tNav("phone_label")} ${OPERATIONAL_PHONE_DISPLAY}`}
-              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.15em] text-foreground transition-colors hover:text-primary"
+              className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.05em] text-foreground transition-colors hover:text-primary"
             >
               <PhoneIcon className="h-4 w-4" aria-hidden />
-              {tNav("phone_label")}
+              {OPERATIONAL_PHONE_DISPLAY}
             </a>
             {!utility ? <LanguageSwitcher tone="light" /> : null}
             {signedIn ? (

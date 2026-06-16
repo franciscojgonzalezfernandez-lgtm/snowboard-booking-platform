@@ -43,13 +43,14 @@ export async function SiteFooter() {
         </nav>
       </div>
 
-      <div className="mx-auto max-w-[1320px] px-7 pb-12 text-[11px] font-bold uppercase tracking-[0.2em]">
+      <div className="mx-auto max-w-[1320px] px-7 pb-12 text-[11px] font-bold tracking-[0.1em]">
         <a
           href={`tel:${OPERATIONAL_PHONE_TEL}`}
           data-testid="footer-phone-link"
+          aria-label={`${tFooter("phone_label")} ${OPERATIONAL_PHONE_DISPLAY}`}
           className="hover:text-primary"
         >
-          {tFooter("phone_label")} <span className="normal-case">{OPERATIONAL_PHONE_DISPLAY}</span>
+          {OPERATIONAL_PHONE_DISPLAY}
         </a>
       </div>
     </footer>

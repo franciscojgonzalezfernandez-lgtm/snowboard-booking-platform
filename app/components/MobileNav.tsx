@@ -57,10 +57,11 @@ export function MobileNav({ signedIn }: MobileNavProps) {
             href={`tel:${OPERATIONAL_PHONE_TEL}`}
             onClick={close}
             data-testid="mobile-nav-phone"
-            className="mb-3 inline-flex min-h-11 items-center justify-center gap-2 rounded-md border-2 border-foreground px-5 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-foreground transition-colors hover:bg-foreground hover:text-background"
+            aria-label={`${t("phone_label")} ${OPERATIONAL_PHONE_DISPLAY}`}
+            className="mb-3 inline-flex min-h-11 items-center justify-center gap-2 rounded-md border-2 border-foreground px-5 py-3 text-sm font-bold tracking-[0.05em] text-foreground transition-colors hover:bg-foreground hover:text-background"
           >
             <PhoneIcon className="h-4 w-4" aria-hidden />
-            {t("phone_label")} {OPERATIONAL_PHONE_DISPLAY}
+            {OPERATIONAL_PHONE_DISPLAY}
           </a>
           <Link href="/" onClick={close} className={linkClass}>
             {t("about")}
