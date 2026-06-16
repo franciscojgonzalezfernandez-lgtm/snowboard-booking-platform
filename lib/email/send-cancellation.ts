@@ -4,6 +4,7 @@ import React from "react";
 import type { Locale, Prisma } from "@prisma/client";
 
 import { formatChf } from "@/lib/pricing/format";
+import { OPERATIONAL_PHONE_DISPLAY } from "@/lib/contact/phone";
 import type { Db } from "@/lib/db";
 import { DURATION_LABELS, INTL_TAG } from "./labels";
 import { sendEmail, type EmailClient } from "./send-email";
@@ -26,7 +27,6 @@ import {
 
 const APP_BASE_URL = "https://rideflumserberg.ch";
 const OPS_EMAIL = "franciscojgonzalezfernandez@gmail.com";
-const CONTACT_PHONE = "+41 76 638 18 70";
 const OPS_LOCALE: Locale = "en" as Locale;
 
 const BOOKING_SELECT = {
@@ -111,7 +111,7 @@ export async function sendCancellationEmailsWith(
     booking.instructor.user.name ?? "Ride Flumserberg instructor";
   const baseUrl = deps.appBaseUrl ?? APP_BASE_URL;
   const opsEmail = deps.opsEmail ?? OPS_EMAIL;
-  const contactPhone = deps.contactPhone ?? CONTACT_PHONE;
+  const contactPhone = deps.contactPhone ?? OPERATIONAL_PHONE_DISPLAY;
 
   const bookerDateLabel = formatDateLabel(booking.date, locale);
   const bookerDurationLabel = DURATION_LABELS[locale][booking.duration];

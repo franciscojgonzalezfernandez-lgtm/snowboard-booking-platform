@@ -1751,21 +1751,22 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-052 — Operational phone CTA (nav desktop + footer + mobile sheet)
 
-- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Sprint: 5 · Estado: done · Prioridad: P1
 - Depende de: F-051
 - Motivación: el teléfono operativo del owner (`+41 76 638 18 70`, ver seed F-021) sólo aparece en copy de cancelación (F-040 T&C). Surface global como atajo de contacto reduce fricción para casos no resueltos por el flujo digital (team building, dudas operativas, excepciones de cancelación). CRO: phone visible = signal de trust + escape hatch para usuarios indecisos
 - AC:
-  - [ ] `lib/contact/phone.ts` exporta constantes `OPERATIONAL_PHONE_DISPLAY = "+41 76 638 18 70"` + `OPERATIONAL_PHONE_TEL = "+41766381870"`. Single source of truth; T&C / Privacy / email templates consumen las mismas constantes en lugar de re-escribir
-  - [ ] `app/components/SiteNav.tsx` desktop: link `<a href="tel:+41766381870">` con icono `Phone` (lucide-react) a la izquierda del LanguageSwitcher. Tap nativo dial mobile, popup `tel:` handler en desktop
-  - [ ] `SiteNav.tsx` mobile Sheet (F-051): phone CTA destacado como primer item del sheet (variant `outline` con icono), por encima de los nav links
-  - [ ] `app/components/SiteFooter.tsx`: phone como línea independiente bajo el bloque legal (no mezclado con email). Display format con espacios (`+41 76 638 18 70`), `href` E.164 sin espacios
-  - [ ] i18n keys `nav.phone_label` (`Call us` / `Anrufen` / `Llamar`) + `footer.phone_label`. El número no se localiza — formato CH es universal
-  - [ ] Audit T&C cancellation copy (F-040) + magic-link email (F-017) + booking-confirmed email (F-045): reemplazar hardcoded number por `OPERATIONAL_PHONE_DISPLAY` import
-- Tests: Playwright `e2e/f-052-phone-cta.spec.ts` — phone link presente en nav desktop, mobile sheet (open con hamburguesa F-051) y footer × 3 locales. `href="tel:+41766381870"` exacto. Vitest unit sobre `lib/contact/phone.ts` constantes
+  - [x] `lib/contact/phone.ts` exporta constantes `OPERATIONAL_PHONE_DISPLAY = "+41 76 638 18 70"` + `OPERATIONAL_PHONE_TEL = "+41766381870"`. Single source of truth; T&C / Privacy / email templates consumen las mismas constantes en lugar de re-escribir. (`_TEL` se deriva de `_DISPLAY` con `.replace(/\s+/g,"")` para que no puedan divergir.)
+  - [x] `app/components/SiteNav.tsx` desktop: link `<a href="tel:+41766381870">` con icono `Phone` (lucide-react) a la izquierda del LanguageSwitcher. Tap nativo dial mobile, popup `tel:` handler en desktop
+  - [x] `SiteNav.tsx` mobile Sheet (F-051): phone CTA destacado como primer item del sheet (botón `outline` con icono + número), por encima de los nav links
+  - [x] `app/components/SiteFooter.tsx`: phone como línea independiente bajo el bloque legal (no mezclado con email). Display format con espacios (`+41 76 638 18 70`), `href` E.164 sin espacios
+  - [x] i18n keys `nav.phone_label` (`Call us` / `Anrufen` / `Llamar`) + `footer.phone_label` (`Phone` / `Telefon` / `Teléfono`). El número no se localiza — formato CH es universal
+  - [x] Audit T&C cancellation copy (F-040): `cancel-modal.tsx` + `send-cancellation.ts` ahora importan `OPERATIONAL_PHONE_DISPLAY`. Magic-link (F-017) y booking-confirmed (F-045) **no** surfacean teléfono hoy — nada que reemplazar ahí.
+- Tests: Playwright `e2e/f-052-phone-cta.spec.ts` — phone link presente en nav desktop, mobile sheet (open con hamburguesa F-051) y footer × 3 locales. `href="tel:+41766381870"` exacto. Vitest unit sobre `lib/contact/phone.ts` constantes. (9 e2e + 2 unit verdes.)
 - Notas:
   - Number hardcoded para MVP single-instructor. Cuando el owner contrate segundo coach o cambie número, edit en `lib/contact/phone.ts` propaga global (incluyendo emails)
   - **No** WhatsApp link en MVP — el owner valida si conviene cuando llegue la primera lead inbound por phone. Si se añade post-launch, mismo patrón (constante en `lib/contact/whatsapp.ts`)
   - **No** click-tracking en MVP. Sprint 6+ puede añadir `data-vercel-analytics` event si el owner quiere medir conversion del CTA
+  - Desktop nav muestra icono + label `Call us` (compacto, el número va en footer + mobile sheet). El `aria-label` incluye el número para lectores de pantalla.
 
 ##### F-053 — Hero announcement banner (i18n copy, dismissible, no admin)
 

@@ -1,9 +1,14 @@
 import { headers } from "next/headers";
+import { PhoneIcon } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
 import { auth } from "@/lib/auth";
 import { signOutAction } from "@/lib/auth/actions";
+import {
+  OPERATIONAL_PHONE_DISPLAY,
+  OPERATIONAL_PHONE_TEL,
+} from "@/lib/contact/phone";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { MobileNav } from "./MobileNav";
 
@@ -71,6 +76,15 @@ export async function SiteNav({ utility }: SiteNavProps) {
           </nav>
 
           <div className="hidden items-center gap-5 lg:flex">
+            <a
+              href={`tel:${OPERATIONAL_PHONE_TEL}`}
+              data-testid="site-nav-phone"
+              aria-label={`${tNav("phone_label")} ${OPERATIONAL_PHONE_DISPLAY}`}
+              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.15em] text-foreground transition-colors hover:text-primary"
+            >
+              <PhoneIcon className="h-4 w-4" aria-hidden />
+              {tNav("phone_label")}
+            </a>
             {!utility ? <LanguageSwitcher tone="light" /> : null}
             {signedIn ? (
               <>

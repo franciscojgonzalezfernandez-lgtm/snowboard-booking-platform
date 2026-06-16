@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MenuIcon } from "lucide-react";
+import { MenuIcon, PhoneIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Link } from "@/i18n/navigation";
@@ -13,6 +13,10 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { signOutAction } from "@/lib/auth/actions";
+import {
+  OPERATIONAL_PHONE_DISPLAY,
+  OPERATIONAL_PHONE_TEL,
+} from "@/lib/contact/phone";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 
 type MobileNavProps = {
@@ -49,6 +53,15 @@ export function MobileNav({ signedIn }: MobileNavProps) {
         </SheetHeader>
 
         <nav className="flex flex-1 flex-col gap-1 px-7 py-6">
+          <a
+            href={`tel:${OPERATIONAL_PHONE_TEL}`}
+            onClick={close}
+            data-testid="mobile-nav-phone"
+            className="mb-3 inline-flex min-h-11 items-center justify-center gap-2 rounded-md border-2 border-foreground px-5 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-foreground transition-colors hover:bg-foreground hover:text-background"
+          >
+            <PhoneIcon className="h-4 w-4" aria-hidden />
+            {t("phone_label")} {OPERATIONAL_PHONE_DISPLAY}
+          </a>
           <Link href="/" onClick={close} className={linkClass}>
             {t("about")}
           </Link>

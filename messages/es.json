@@ -14,7 +14,8 @@
     "sign_out": "Cerrar sesión",
     "utility": "Flumserberg · Heidiland · Abierto del 27 nov al 26 abr",
     "open_menu": "Abrir menú",
-    "switch_language_aria": "Cambiar idioma"
+    "switch_language_aria": "Cambiar idioma",
+    "phone_label": "Llamar"
   },
   "home": {
     "utility": "Flumserberg · Heidiland · Abierto del 27 nov al 26 abr",
@@ -31,7 +32,8 @@
   "footer": {
     "terms_link": "Términos",
     "privacy_link": "Privacidad",
-    "nav_aria": "Legal"
+    "nav_aria": "Legal",
+    "phone_label": "Teléfono"
   },
   "terms": {
     "metadata_title": "Términos y Condiciones — Adlerhorst SBS",
