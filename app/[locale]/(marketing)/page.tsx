@@ -17,7 +17,7 @@ const TIERS = [
   { key: "fullDay", duration: "FULL_DAY" },
 ] as const;
 
-const REVIEW_IDS = ["1", "2", "3"] as const;
+const REVIEW_IDS = ["1", "2", "3", "4"] as const;
 
 export default async function HomePage({ params }: HomePageProps) {
   const { locale } = await params;
@@ -28,16 +28,15 @@ export default async function HomePage({ params }: HomePageProps) {
 
   return (
     <>
-      {/* HERO — static (LCP-safe per F-090). Photo is a placeholder until the
-          owner's hero.jpg lands; swap the bg div for next/image then. */}
+      {/* HERO — static (LCP-safe per F-090). Owner's photo via next/image. */}
       <section className="relative h-[86vh] min-h-[600px] max-h-[880px] overflow-hidden bg-foreground text-background">
-        <div
-          aria-hidden
-          className="absolute inset-0 bg-cover bg-center opacity-[0.78]"
-          style={{
-            backgroundImage:
-              "url(https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=2400&q=80)",
-          }}
+        <Image
+          src="/brand/hero.jpg"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center"
         />
         <div
           aria-hidden
@@ -182,7 +181,7 @@ export default async function HomePage({ params }: HomePageProps) {
             </h2>
           </Reveal>
 
-          <Stagger className="mt-12 grid gap-4 md:grid-cols-3">
+          <Stagger className="mt-12 grid gap-4 md:grid-cols-2">
             {REVIEW_IDS.map((id) => (
               <StaggerItem key={id}>
                 <figure className="flex h-full flex-col border-2 border-foreground bg-background p-7">
