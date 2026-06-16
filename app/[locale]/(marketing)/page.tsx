@@ -2,6 +2,7 @@ import Image from "next/image";
 import { Star } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
+import { HeroAnnouncement } from "@/app/components/HeroAnnouncement";
 import { Link } from "@/i18n/navigation";
 import { Reveal } from "@/lib/motion/reveal";
 import { Stagger, StaggerItem } from "@/lib/motion/stagger";
@@ -28,6 +29,9 @@ export default async function HomePage({ params }: HomePageProps) {
 
   return (
     <>
+      {/* Home-only promo band (F-053); renders nothing when disabled/dismissed. */}
+      <HeroAnnouncement />
+
       {/* HERO — static (LCP-safe per F-090). Owner's photo via next/image. */}
       <section className="relative h-[86vh] min-h-[600px] max-h-[880px] overflow-hidden bg-foreground text-background">
         <Image
