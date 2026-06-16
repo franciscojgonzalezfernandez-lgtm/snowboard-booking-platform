@@ -5,6 +5,7 @@ import { MenuIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Link } from "@/i18n/navigation";
+import { Wordmark } from "./Wordmark";
 import {
   Sheet,
   SheetContent,
@@ -44,7 +45,7 @@ export function MobileNav({ signedIn }: MobileNavProps) {
       >
         <SheetHeader className="border-b-2 border-foreground p-7">
           <SheetTitle className="font-display text-[22px] uppercase tracking-tight text-foreground">
-            Adlerhorst<span className="text-primary">·</span>SBS
+            <Wordmark />
           </SheetTitle>
         </SheetHeader>
 

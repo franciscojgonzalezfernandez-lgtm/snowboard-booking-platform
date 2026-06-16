@@ -262,7 +262,7 @@ export default async function ReservarPage({
     areaServed: { "@type": "Place", name: "Flumserberg, Switzerland" },
     provider: {
       "@type": "LocalBusiness",
-      name: "Adlerhorst Snowboard School",
+      name: "The Drop",
       address: {
         "@type": "PostalAddress",
         addressLocality: "Flumserberg",

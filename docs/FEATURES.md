@@ -1831,21 +1831,23 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-091 — Logo "The Drop" integration (favicon · header · hero · footer · OG)
 
-- Sprint: 5 · Estado: backlog · Prioridad: P1
-- Depende de: F-105 (tagline/voz), F-090 (drop-fall anim). Desbloquea D-LOGO
+- Sprint: 5 · Estado: **done** (2026-06-16) · Prioridad: P1
+- Depende de: F-105 (tagline/voz), F-090 (wordmark-reveal anim). Desbloquea D-LOGO
 - Motivación: la marca no tiene logo montado (D-LOGO). El owner produce los assets; este ticket entrega la **spec de assets** y cablea todos los slots con placeholders para no bloquear el sprint mientras se producen las piezas finales
 - AC:
-  - [ ] `docs/brand/logo-assets.md` — spec de entrega para el owner: favicon set, header lockup, hero SVG animable, footer mark, OG template; con tamaños, variantes de color (full-color / all-ink / all-paper / 1-color), clear-space (= altura del símbolo drop) y min-size
-  - [ ] Favicon: `app/icon.svg` (símbolo drop, legible a 16px), `app/apple-icon.png` 180×180 (opaco, ~12% padding), `app/icon-192.png` + `app/icon-512.png`, maskable 512 (20% safe padding), `app/manifest.ts` con `theme_color` charcoal + glacier blue. Placeholder hasta assets reales
-  - [ ] Header: `SiteNav` monta lockup SVG (`currentColor` hereda el token de tema), height ~28px desktop / 24px mobile, link a home, clear-space respetado. Reemplaza el wordmark de texto si existe
-  - [ ] Hero: símbolo drop como **SVG inline** animado vía `lib/motion/drop-fall` (F-090); light/dark vía token; estático bajo `prefers-reduced-motion`
-  - [ ] Footer: mark monocromo pequeño (~20-24px) en `SiteFooter`, color single-token
-  - [ ] OG: `app/[locale]/(marketing)/opengraph-image.tsx` dinámica (`next/og`) con logo + tagline **localizada** (consume F-105). Solo home en este ticket; F-101 generaliza la OG dinámica por ruta
-- Tests: Playwright — favicon + manifest links presentes; logo visible en nav y footer × 3 locales; `opengraph-image` responde 200 con dimensiones 1200×630; `prefers-reduced-motion` → drop del hero estático
+  - [x] `docs/brand/logo-assets.md` actualizado a la **identidad real** (logo provisto por el owner, `image.jpeg`): "THE DROP" slab con inline-3D + montaña/rider + flag rojo, sobre cream. Sin glifo de gota
+  - [x] Favicon **pico de montaña + bandera roja** (no copo): `app/icon.svg` (vector, legible 16px), `app/favicon.ico` (16/32), `app/apple-icon.png` 180 (cream), `public/icon-192.png` + `icon-512.png` (transparente) + `icon-512-maskable.png` (cream, safe area), `app/safari-pinned-tab.svg`. `app/manifest.ts` con `theme_color` cream `#FAF6F0`
+  - [x] Header/footer/funnel: componente DRY `app/components/Wordmark.tsx` (lockup pico + "The Drop", `currentColor`) montado en `SiteNav`, `MobileNav`, `booking-header`. Reemplaza el placeholder **"Adlerhorst·SBS"**
+  - [x] **Rename de marca**: `Adlerhorst SBS` / `Adlerhorst Snowboard School` → **The Drop** en `messages/{en,de,es}` (footer, metadata T&C/privacy, controller) + structured data del funnel
+  - [x] Logo grande: `public/brand/logo-full.png` (el `image.jpeg` recortado + cream keyed a transparente, 1200w) para hero/about/OG
+  - [x] OG home: `app/[locale]/(marketing)/opengraph-image.tsx` (`next/og`, node runtime) con el logo sobre cream, 1200×630. F-101 generaliza por ruta + tagline localizada
+  - [ ] Hero con animación del wordmark (`lib/motion/wordmark-reveal`) → **diferido a F-092** (la home es hero-foto hoy; se recompone en wave 2)
+- Tests: Playwright (followup, **pendiente de escribir**) — favicon/manifest presentes; `Wordmark` visible en nav/footer/funnel × 3 locales; `opengraph-image` 200 @ 1200×630
 - Notas:
-  - Los assets finales los produce el owner (D-LOGO). Placeholders SVG simples (wordmark "the drop") hasta entonces — el ticket **no** queda bloqueado por D-LOGO
-  - **No Lottie** (CLAUDE) — el drop se anima como SVG vía `motion`
-  - OG dinámica por locale: la tagline sale de `messages/{en,de,es}.json`, no se hornea en la imagen
+  - **D-LOGO desbloqueado**: el owner produjo el logo (`image.jpeg`); F-091 lo integró y generó los formatos vía script `sharp` (pico→PNG/ICO; logo cream-keyed + trim). Para cambiar el logo: reemplazar `public/brand/logo-full.png` + re-generar
+  - Decisión de favicon: copo de nieve → **pico + bandera roja** (más cohesivo con el logo elegido)
+  - El concepto "drop glyph" queda **descartado** — sin gota en ningún asset
+  - **Entregado (2026-06-16):** assets + `Wordmark` + manifest + OG + rename de marca. La animación del hero se hace en F-092
 
 #### Marketing surfaces + SEO — wave 2 (F-092–F-104)
 

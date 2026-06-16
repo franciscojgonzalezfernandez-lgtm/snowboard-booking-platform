@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
 import { LanguageSwitcher } from "@/app/components/LanguageSwitcher";
+import { Wordmark } from "@/app/components/Wordmark";
 
 // Minimal in-flow header for /reservar/* — replaces the marketing SiteNav
 // chrome with a single brand row + language switcher + exit link, so the
@@ -21,7 +22,7 @@ export async function BookingHeader() {
           className="min-w-0 truncate font-display text-[15px] uppercase tracking-tight sm:text-[20px]"
           data-testid="booking-header-brand"
         >
-          Adlerhorst<span className="text-primary">·</span>SBS
+          <Wordmark />
         </Link>
 
         <div className="flex shrink-0 items-center gap-2 sm:gap-5">

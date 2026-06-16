@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth";
 import { signOutAction } from "@/lib/auth/actions";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { MobileNav } from "./MobileNav";
+import { Wordmark } from "./Wordmark";
 
 type SiteNavProps = {
   utility?: string;
@@ -40,7 +41,7 @@ export async function SiteNav({ utility }: SiteNavProps) {
             href="/"
             className="font-display text-[18px] uppercase tracking-tight lg:text-[22px]"
           >
-            Adlerhorst<span className="text-primary">·</span>SBS
+            <Wordmark />
           </Link>
 
           <nav className="hidden gap-8 lg:flex">

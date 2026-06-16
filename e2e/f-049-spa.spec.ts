@@ -114,7 +114,7 @@ test.describe("F-049 — single-page booking shell", () => {
     page,
   }) => {
     // No login — anonymous browsing context. The instructor id is the seed's
-    // Adlerhorst owner; pricing/season covers December 2026.
+    // The Drop owner; pricing/season covers December 2026.
     const url = new URL("http://localhost/en/reservar");
     url.searchParams.set("d", "ONE_HOUR");
     url.searchParams.set("dt", DEEP_LINK_DATE);
