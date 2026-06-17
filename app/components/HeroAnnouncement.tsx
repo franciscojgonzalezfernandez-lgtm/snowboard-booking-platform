@@ -2,7 +2,11 @@ import { cookies } from "next/headers";
 import { getTranslations } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
-import { HERO_ANNOUNCEMENT_COOKIE, isAllowedCtaHref } from "@/lib/hero-announcement";
+import {
+  HERO_ANNOUNCEMENT_COOKIE,
+  isAllowedCtaHref,
+  resolveCtaHref,
+} from "@/lib/hero-announcement";
 
 import { HeroAnnouncementClose } from "./HeroAnnouncementClose";
 
@@ -24,7 +28,7 @@ export async function HeroAnnouncement() {
 
   const body = t("body");
   const ctaLabel = t("cta_label");
-  const ctaHref = t("cta_href");
+  const ctaHref = resolveCtaHref(t("cta_href"));
   const showCta = ctaLabel.length > 0 && isAllowedCtaHref(ctaHref);
   const isInternalCta = ctaHref.startsWith("/");
 

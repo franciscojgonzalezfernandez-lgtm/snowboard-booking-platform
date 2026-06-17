@@ -1,6 +1,19 @@
 import { describe, expect, test } from "vitest";
 
-import { isAllowedCtaHref } from "./hero-announcement";
+import { OPERATIONAL_PHONE_TEL } from "@/lib/contact/phone";
+
+import { isAllowedCtaHref, resolveCtaHref } from "./hero-announcement";
+
+describe("resolveCtaHref", () => {
+  test("maps the 'phone' sentinel to the F-052 operational phone tel:", () => {
+    expect(resolveCtaHref("phone")).toBe(`tel:${OPERATIONAL_PHONE_TEL}`);
+  });
+
+  test("passes other hrefs through unchanged", () => {
+    expect(resolveCtaHref("/contacto")).toBe("/contacto");
+    expect(resolveCtaHref("https://example.test")).toBe("https://example.test");
+  });
+});
 
 describe("isAllowedCtaHref", () => {
   test("allows internal paths and tel/mailto/https schemes", () => {
