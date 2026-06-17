@@ -39,7 +39,7 @@ A great rider who happens to be a good coach: **warm, direct, first-person, alle
 - **Availability empty:** *"Nothing free that day — here are the closest dates I can ride with you."*
 - **Error:** *"That didn't go through. Try again, or just call me: +41 76 638 18 70."*
 - **Post-class email:** *"Good session today. Here's your video — watch the toe-edge bit at 0:42."*
-- **FAQ — lift pass:** *"No, you buy your own day pass. I'll point you to the right counter."*
+- **FAQ — lift pass:** *"If you're starting out we stay in the free beginner zone, so no pass needed. Heading up the mountain? You buy your own day pass — I'll point you to the right counter."*
 
 ## Per locale (adapt tone — never translate literally)
 

@@ -13,16 +13,16 @@ Per-tier signature ladder (video correction is the spine):
 - **1h** — no perk. Sell: fix one concrete flaw, or beat fear / get back riding after a break. Meeting point: **COLORS restaurant door** (Flumserberg).
 - **2h** — first day on snow / basics / beginner slopes, OR technique tune-up. Video correction **take-home only, and only for non-beginners**. Meeting point: COLORS (assumed default).
 - **4h INTENSIVE** — freestyle or carving focus, time for support drills. Video correction **live + sent home**. **Choose meeting point** (can go to harder slopes).
-- **6h FULL_DAY** — everything in 4h **plus choose the resort** among nearby northern-Switzerland stations (arranged with admin). 30–45min break.
+- **6h FULL_DAY** — everything in 4h **plus choose the resort** among other stations in the **canton of St. Gallen** (arranged with admin). 30–45min break.
 
 Global facts:
-- **No tier includes equipment.** Answer to "no gear": rent at resort, instructor points to the Flumserberg rental shop.
-- **Lift pass / forfait NOT included** — each rider buys their own day pass; instructor points to ticket office. (Critical pricing-page line.)
+- **No tier includes equipment.** Answer to "no gear": rent at the resort; coach can help by pointing to a few rental shops.
+- **Lift pass / forfait NOT included** — each rider buys their own day pass; coach points to the ticket office. **Exception: beginners** ride the **free beginner zone**, so they need no pass at all. (Critical pricing-page line.)
 - **Flat group price 1–4 people** (`CHF X · up to 4`), not per-person.
 - **Min age 8** (adults + kids; family line ok).
 - Cards show available languages **EN · DE · ES** (from instructor profile).
-- Class naming = **hybrid**: duration heading (SEO) + branded kicker. EN kickers: The Fix (1h) / First Tracks (2h) / The Session (4h) / The Full Drop (6h); DE/ES in `messages/*` namespace `pricing.tier.*.kicker`.
+- Class naming = **hybrid**: duration heading (SEO) + value kicker. **Shipped kickers** (i18n `pricing.tier.*.kicker`): Confidence (1h) / First Day (2h) / Go Deep (4h) / All Day (6h). The earlier draft names (The Fix / First Tracks / The Session / The Full Drop) were dropped in favour of the value-based set used on the home + `docs/brand/voice.md`.
 
-Polish defaults (owner can veto): video delivered via **WhatsApp link after class**; 6h SEO resort examples = Laax/Pizol/Davos/Arosa/Elm "& nearby".
+Polish defaults (owner can veto): video delivered via **WhatsApp link after class**; 6h resort options = stations in the **canton of St. Gallen** (e.g. Flumserberg, Pizol).
 
 Related: [[sprint-5-brand-direction]].
