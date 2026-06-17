@@ -1913,15 +1913,18 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-095 — About / brand story page
 
-- Sprint: 5 · Estado: backlog · Prioridad: P2
+- Sprint: 5 · Estado: done · Prioridad: P2
 - Depende de: F-105
-- Motivación: el "alma" de la marca. Historia de "The Drop", origen del nombre (gota de nieve + *drop in*), filosofía de enseñanza, por qué Flumserberg. Diferenciador emocional que las escuelas genéricas no tienen; refuerza conversión y SEO de marca
+- Motivación: el "alma" de la marca. Historia de "The Drop", origen del nombre (*drop in* — el medio segundo de compromiso antes de bajar; sin gota de agua/nieve, decisión del owner), filosofía de enseñanza, por qué Flumserberg. Diferenciador emocional que las escuelas genéricas no tienen; refuerza conversión y SEO de marca
 - AC:
-  - [ ] `app/[locale]/(marketing)/sobre/page.tsx` (slug F-102): narrativa editorial larga con la voz F-105, fotografía (placeholder D-LOGO), motion sutil (reveal)
-  - [ ] Secciones: origen del nombre, filosofía, el instructor, la montaña; CTA suave → `/reservar` o `/instructores`
-  - [ ] Copy trilingüe `about.*`; tono adaptado por idioma (no traducción literal)
-- Tests: Playwright — render × 3 locales, secciones presentes, CTA navega
-- Notas: contenido lo refina el owner con skill `impeccable`/`cro`; este ticket entrega estructura + copy base
+  - [x] `app/[locale]/(marketing)/sobre/page.tsx` (slug F-102): narrativa editorial larga con la voz F-105, fotografía (placeholder D-PHOTO), motion sutil (reveal)
+  - [x] Secciones: origen del nombre, el instructor (con vídeo placeholder D-VIDEO), filosofía, la montaña; CTA suave → `/reservar` y `/instructores`
+  - [x] Copy trilingüe `about.*`; tono adaptado por idioma (no traducción literal)
+- Tests: Playwright — render × 3 locales, secciones presentes, vídeo, CTA navega (`e2e/f-095-about.spec.ts`, 4/4)
+- Notas:
+  - Contenido lo refina el owner con skill `impeccable`/`cro`; este ticket entrega estructura + copy base
+  - Vídeo: el owner sube el clip real a `/public/about/javi-riding.mp4`; hasta entonces el `<video>` muestra solo el poster (blocker D-VIDEO)
+  - Link de nav "About" → `/sobre` (SiteNav + MobileNav)
 
 ##### F-096 — Contact page (lean: phone + email + hours + map, sin form)
 
