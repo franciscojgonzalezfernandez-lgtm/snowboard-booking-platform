@@ -46,7 +46,10 @@ export default async function HomePage({ params }: HomePageProps) {
         <div className="relative flex h-full flex-col justify-end px-7 pb-14 pt-8">
           <div className="mx-auto w-full max-w-[1320px]">
             <div className="mb-7 inline-flex items-center gap-4 text-[12px] font-bold uppercase tracking-[0.28em]">
-              <span className="block h-[2px] w-12 bg-primary" aria-hidden></span>
+              <span
+                className="block h-[2px] w-12 bg-primary"
+                aria-hidden
+              ></span>
               <span>{t("eyebrow")}</span>
             </div>
 
@@ -121,7 +124,7 @@ export default async function HomePage({ params }: HomePageProps) {
             {TIERS.map(({ key, duration }) => (
               <StaggerItem key={key}>
                 <Link
-                  href={{ pathname: "/reservar", query: { duration } }}
+                  href={{ pathname: "/reservar", query: { d: duration } }}
                   className="group flex h-full flex-col justify-between border-2 border-foreground bg-background p-7 transition-colors hover:bg-foreground hover:text-background"
                 >
                   <div>
