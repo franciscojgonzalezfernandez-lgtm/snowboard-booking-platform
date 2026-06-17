@@ -1873,24 +1873,24 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-093 — Pricing page (value-prop por duración, trilingüe, CRO)
 
-- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Sprint: 5 · Estado: done · Prioridad: P1
 - Depende de: F-105 (kickers/voz), F-090, F-039/F-080 (precios en DB), F-068 (funnel `/reservar`)
 - Motivación: la pricing page convierte cuando explica **el "qué"**, no solo el "cuánto". Cada duración tiene un valor diferencial confirmado por el owner; hay que contarlo con alma de marca y SEO, en 3 idiomas. Precios **se leen de DB** (`Season.priceCentsByDuration`), nunca hardcoded
 - AC:
-  - [ ] `app/[locale]/(marketing)/precios/page.tsx` (slug traducido F-102): server component, lee la `Season` activa y renderiza 4 tarjetas de clase con precio formateado `Intl.NumberFormat('de-CH', { currency: 'CHF' })`
-  - [ ] Naming **hybrid**: heading = duración (SEO "2-hour snowboard lesson"), kicker = nombre de marca (`The Fix`/`First Tracks`/`The Session`/`The Full Drop`, F-105, i18n `pricing.tier.*.kicker`)
-  - [ ] **Escalera de diferenciadores por tarjeta** (copy en `pricing.*`):
+  - [x] `app/[locale]/(marketing)/precios/page.tsx` (slug traducido F-102): server component, lee la `Season` activa y renderiza 4 tarjetas de clase con precio formateado `Intl.NumberFormat('de-CH', { currency: 'CHF' })` (vía `formatChf` + `getPriceCents`; ISR `revalidate=3600`)
+  - [x] Naming **hybrid**: heading = duración (SEO "2-hour snowboard lesson"), kicker = valor de marca. **Se reusaron los kickers ya seedeados** (`Confidence`/`First Day`/`Go Deep`/`All Day`, i18n `pricing.tier.*.kicker`) en vez de los nombres-draft (`The Fix`/…) — consistencia con `docs/brand/voice.md` y el namespace existente
+  - [x] **Escalera de diferenciadores por tarjeta** (copy en `pricing.*`):
     - 1h — sin perk; "fix one flaw / beat fear / get back riding". Meeting point COLORS restaurant door
     - 2h — primer día / básicos / tune-up técnico; **videocorrección take-home, solo para no-beginners** (copy condicional). Meeting point COLORS
     - 4h INTENSIVE — freestyle/carving + drills; **videocorrección en vivo + enviada a casa**; meeting point a elegir
     - 6h FULL_DAY — todo lo de 4h + **elegir estación** (norte de Suiza, con admin) + pausa 30-45 min
-  - [ ] Cada tarjeta: precio **plano 1–4 personas** (`CHF X · up to 4`), **forfait NO incluido** (cada rider compra el suyo), **equipo NO incluido** (alquiler en estación, se indica la tienda), idiomas **EN · DE · ES**, **edad mínima 8** (adultos + niños), CTA → `/reservar?duration=<enum>` preseleccionado
-  - [ ] Facets "best for" como chips (SEO + scan): freestyle, carving, beginner/first day, technique, fear, multi-resort
-  - [ ] Motion: `reveal`/`stagger` en las tarjetas (F-090), reduced-motion safe
-- Tests: Playwright — 4 tarjetas × 3 locales, precio desde DB, CTA preselecciona `duration` en el funnel, copy condicional 2h. Vitest sobre el formateo de precio/locale
+  - [x] Cada tarjeta: precio **plano 1–4 personas** (`CHF X · up to 4`), **forfait NO incluido** (cada rider compra el suyo), **equipo NO incluido** (alquiler en estación, se indica la tienda), idiomas **EN · DE · ES**, **edad mínima 8** (adultos + niños), CTA → `/reservar?d=<enum>` preseleccionado (key real del funnel = `d`, no `duration`)
+  - [x] Facets "best for" como chips (SEO + scan): freestyle, carving, beginner/first day, technique, fear, multi-resort
+  - [x] Motion: `reveal`/`stagger` en las tarjetas (F-090), reduced-motion safe
+- Tests: Playwright `e2e/f-093-pricing.spec.ts` — 4 tarjetas × 3 locales, precio desde DB, CTA preselecciona `d` en el funnel, copy condicional 2h. Vitest del formateo CHF ya cubierto por `lib/pricing/format.test.ts`
 - Notas:
   - Video correction se entrega por **WhatsApp link tras la clase** (default, owner puede vetar)
-  - Si la `Season` activa no existe → empty-state honesto (igual que F-080)
+  - Si la `Season` activa no existe (o precios malformados) → empty-state honesto (igual que F-080)
   - `priceRange` + `Offer` alimentan structured data (F-100)
 
 ##### F-094 — Instructors index + perfiles individuales

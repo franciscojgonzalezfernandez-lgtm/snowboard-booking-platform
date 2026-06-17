@@ -388,19 +388,78 @@
     }
   },
   "pricing": {
+    "metadata_title": "Snowboard-Lektionen & Preise — The Drop, Flumserberg",
+    "metadata_description": "Private Snowboard-Lektionen in Flumserberg mit Javi: von einer Stunde bis zum ganzen Tag, fixer Preis für bis zu vier Personen, auf Englisch, Deutsch oder Spanisch. Ab 8 Jahren.",
+    "eyebrow": "Die Lektionen",
+    "heading": "Wähl, wie lang wir fahren.",
+    "intro": "Vier Arten, mit mir zu fahren. Nimm die, die zu deinem Stand passt — der Preis bleibt gleich, ob du allein kommst oder drei Kollegen mitbringst.",
+    "price_suffix": "bis zu 4 Personen",
+    "best_for_label": "Ideal für",
+    "meeting_label": "Wir treffen uns",
+    "cta": "Diese Lektion buchen",
     "tier": {
       "oneHour": {
-        "kicker": "Sicherheit"
+        "kicker": "Sicherheit",
+        "name": "1-stündige Snowboard-Lektion",
+        "blurb": "Eine Sache fixen oder den Mut zurückholen. Eine fokussierte Stunde, nur wir zwei.",
+        "points": [
+          "Ein Fehler, behoben — die Frontside-Kante, das Zittern auf der Heelside, was dich auch stört.",
+          "Nervös vor einer steileren Abfahrt? Genau dafür ist diese Stunde da.",
+          "Länger nicht auf dem Board gestanden? Der schnellste Weg zurück."
+        ],
+        "facets": ["Angst überwinden", "Technik"],
+        "meeting": "an der Tür des Restaurants COLORS"
       },
       "twoHours": {
-        "kicker": "Erster Tag"
+        "kicker": "Erster Tag",
+        "name": "2-stündige Snowboard-Lektion",
+        "blurb": "Dein erster Tag oder die Basics richtig gelernt. Genug Zeit, dass es wirklich klickt.",
+        "points": [
+          "Zum ersten Mal auf dem Board? Du fährst mit verbundenen Turns nach Hause.",
+          "Basics schon drauf? Ein sauberer technischer Feinschliff.",
+          "Zwei Stunden sind, wo die Grundlagen sitzen."
+        ],
+        "perk": "Über dem Anfänger-Level? Ich filme dich und schicke dir die Clips danach aufs Handy.",
+        "facets": ["Erster Tag", "Technik"],
+        "meeting": "an der Tür des Restaurants COLORS"
       },
       "intensive": {
-        "kicker": "Intensiv"
+        "kicker": "Intensiv",
+        "name": "4-stündige Intensiv-Lektion",
+        "blurb": "Freestyle oder Carving — vier Stunden, um wirklich zu verändern, wie du fährst.",
+        "points": [
+          "Wähl deine Linie: Freestyle im Park oder harte Carving-Turns.",
+          "Drills, die sitzen — nicht einfach Laps fahren.",
+          "Ich filme dich unterwegs und schicke es dir danach aufs Handy."
+        ],
+        "facets": ["Freestyle", "Carving", "Technik"],
+        "meeting": "an einem Treffpunkt, den wir zusammen wählen"
       },
       "fullDay": {
-        "kicker": "Ganzer Tag"
+        "kicker": "Ganzer Tag",
+        "name": "Ganztägige Snowboard-Lektion",
+        "blurb": "Alles aus der Intensiv-Lektion, mit dem ganzen Berg und Zeit zum Durchatmen.",
+        "points": [
+          "Alles aus der 4-Stunden-Intensiv-Lektion — Freestyle oder Carving, gefilmt.",
+          "Wähl das Skigebiet: Wir können in der Nordschweiz fahren (vorher mit mir abgesprochen).",
+          "Eine echte Pause von 30–45 Minuten zum Auftanken."
+        ],
+        "facets": ["Freestyle", "Carving", "Mehrere Gebiete"],
+        "meeting": "an einem Treffpunkt, den wir zusammen wählen"
       }
+    },
+    "included": {
+      "title": "Ehrlich, was die Sache angeht",
+      "lift_pass": "Der Skipass ist nicht inbegriffen — du kaufst dein eigenes Tagesticket. Ich zeig dir den richtigen Schalter.",
+      "gear": "Die Ausrüstung ist auch nicht dabei. Board und Boots kannst du am Berg mieten, und ich sag dir, in welchem Shop.",
+      "ages": "Ab 8 Jahren — Kinder und Erwachsene.",
+      "video": "Nach der Lektion schicke ich dir dein Video über WhatsApp.",
+      "languages_label": "Lektionen auf",
+      "languages": "English · Deutsch · Español"
+    },
+    "empty": {
+      "title": "Die Preise sind zwischen den Saisons.",
+      "body": "Ich richte gerade die Lektionen für diese Saison ein. Schau bald wieder vorbei — die neuen Daten kommen."
     }
   }
 }

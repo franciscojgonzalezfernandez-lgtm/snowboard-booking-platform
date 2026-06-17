@@ -388,19 +388,78 @@
     }
   },
   "pricing": {
+    "metadata_title": "Clases de snowboard y precios — The Drop, Flumserberg",
+    "metadata_description": "Clases privadas de snowboard en Flumserberg con Javi: de una hora a un día entero, precio único hasta cuatro personas, en inglés, alemán o español. Desde los 8 años.",
+    "eyebrow": "Las clases",
+    "heading": "Elige cuánto rato bajamos.",
+    "intro": "Cuatro formas de salir conmigo. Elige la que encaje con tu nivel — el precio es el mismo vengas solo o traigas a tres colegas.",
+    "price_suffix": "hasta 4 personas",
+    "best_for_label": "Ideal para",
+    "meeting_label": "Quedamos en",
+    "cta": "Reservar esta clase",
     "tier": {
       "oneHour": {
-        "kicker": "Confianza"
+        "kicker": "Confianza",
+        "name": "Clase de snowboard de 1 hora",
+        "blurb": "Corrige una cosa o recupera el valor. Una hora centrada, solo tú y yo.",
+        "points": [
+          "Un fallo, resuelto — el canto de punta, ese temblor en el de talón, lo que te esté frenando.",
+          "¿Nervioso con una bajada más empinada? Para eso es justo esta hora.",
+          "¿Tiempo sin subirte a la tabla? La forma más rápida de volver."
+        ],
+        "facets": ["Vencer el miedo", "Técnica"],
+        "meeting": "la puerta del restaurante COLORS"
       },
       "twoHours": {
-        "kicker": "Primer día"
+        "kicker": "Primer día",
+        "name": "Clase de snowboard de 2 horas",
+        "blurb": "Tu primer día, o las bases bien hechas. Tiempo de sobra para que te haga clic.",
+        "points": [
+          "¿Primera vez en la tabla? Te vas enlazando los giros.",
+          "¿Ya tienes las bases? Un buen repaso técnico.",
+          "Dos horas es donde se asientan los fundamentos."
+        ],
+        "perk": "¿Ya pasaste el nivel principiante? Te grabo y te paso los clips al móvil después.",
+        "facets": ["Primer día", "Técnica"],
+        "meeting": "la puerta del restaurante COLORS"
       },
       "intensive": {
-        "kicker": "A fondo"
+        "kicker": "A fondo",
+        "name": "Clase intensiva de 4 horas",
+        "blurb": "Freestyle o carving — cuatro horas para cambiar de verdad cómo bajas.",
+        "points": [
+          "Elige tu línea: freestyle en el park o carving de giros fuertes.",
+          "Ejercicios que se quedan, no bajar por bajar.",
+          "Te grabo sobre la marcha y te lo paso al móvil después."
+        ],
+        "facets": ["Freestyle", "Carving", "Técnica"],
+        "meeting": "un punto de encuentro que elegimos juntos"
       },
       "fullDay": {
-        "kicker": "Día completo"
+        "kicker": "Día completo",
+        "name": "Clase de snowboard de día completo",
+        "blurb": "Todo lo de la intensiva, con la montaña entera y tiempo para respirar.",
+        "points": [
+          "Todo lo de la intensiva de 4 horas — freestyle o carving, grabado.",
+          "Elige la estación: podemos bajar por el norte de Suiza (hablándolo antes conmigo).",
+          "Una pausa de verdad de 30–45 minutos para recargar."
+        ],
+        "facets": ["Freestyle", "Carving", "Varias estaciones"],
+        "meeting": "un punto de encuentro que elegimos juntos"
       }
+    },
+    "included": {
+      "title": "Claro con el trato",
+      "lift_pass": "El forfait no está incluido — compras tu propio pase de día. Te indico la taquilla correcta.",
+      "gear": "El equipo tampoco va incluido. Puedes alquilar tabla y botas en la estación, y te digo en qué tienda.",
+      "ages": "Desde los 8 años — niños y adultos.",
+      "video": "Después de la clase te paso tu vídeo por WhatsApp.",
+      "languages_label": "Clases en",
+      "languages": "English · Deutsch · Español"
+    },
+    "empty": {
+      "title": "Los precios están entre temporadas.",
+      "body": "Estoy montando las clases de esta temporada. Vuelve pronto — las nuevas fechas están al caer."
     }
   }
 }
