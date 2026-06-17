@@ -500,5 +500,25 @@
       "title": "Die Preise sind zwischen den Saisons.",
       "body": "Ich richte gerade die Lektionen für diese Saison ein. Schau bald wieder vorbei — die neuen Daten kommen."
     }
+  },
+  "about": {
+    "metadata_title": "Über uns — The Drop",
+    "metadata_description": "The Drop ist ein Rider, der in Flumserberg coacht. Die Geschichte hinter dem Namen, wie ich Snowboarden gelernt habe und warum ich mehr Leute aufs Board bringen will.",
+    "eyebrow": "Über uns",
+    "heading": "Ich bin Javi. The Drop, das sind nur ich und ein Board.",
+    "lede": "Tagsüber schreibe ich Software. Die restliche Zeit bin ich am Berg — weil Snowboarden das Beste aus mir herausholt, und aus jedem, mit dem ich fahren darf.",
+    "name_title": "Woher der Name kommt",
+    "name_body": "Drop in. Die halbe Sekunde vor der Abfahrt, in der du aufhörst zu denken und einfach gehst — Herz im Hals, dann purer Flow. Genau darum geht es, und daher kommt der Name. Nichts Sanfteres.",
+    "me_title": "Mit wem du fährst",
+    "me_body_1": "Ich habe als Freestyle-Rider angefangen und nie wirklich aufgehört. Alles, was ich kann, habe ich auf die langsame Tour gelernt — von Leuten, die vom Fahren leben und meine Kanten tausendmal korrigiert haben, bis es sass. Das gebe ich jetzt weiter.",
+    "me_body_2": "Snowboarden hat mir die meisten Freunde und die meisten guten Tage geschenkt. So komme ich aus meinem Kopf und aus dem Alltag raus. The Drop habe ich aus einem Grund gestartet: mehr Leute aufs Board bringen und zusehen, wie sie das für sich selbst finden.",
+    "video_caption": "Ich, irgendwo am Hang. (Der echte Clip kommt bald hierhin.)",
+    "philosophy_title": "Worum es in einer Stunde mit mir wirklich geht",
+    "philosophy_body": "Das Beste am Coachen ist nicht das Carven. Es ist der Moment, in dem jemand in etwas reinfährt, das ihm vor einer Stunde Angst gemacht hat — und grinsend rauskommt. Ich bringe dich an die richtige Portion Angst und dann hindurch. Genau da werden Rider gemacht.",
+    "mountain_title": "Warum Flumserberg",
+    "mountain_body": "Mein Hausberg im Norden der Schweiz — breite, ehrliche Pisten zum Lernen und genug darüber, damit es dir jahrelang nicht langweilig wird. Wir treffen uns an der COLORS-Tür und legen los.",
+    "cta_title": "Komm fahren.",
+    "cta_book": "Stunde buchen",
+    "cta_instructors": "Lern deinen Coach kennen"
   }
 }

@@ -64,7 +64,7 @@ export function MobileNav({ signedIn }: MobileNavProps) {
             <PhoneIcon className="h-4 w-4" aria-hidden />
             {OPERATIONAL_PHONE_DISPLAY}
           </a>
-          <Link href="/" onClick={close} className={linkClass}>
+          <Link href="/sobre" onClick={close} className={linkClass}>
             {t("about")}
           </Link>
           <Link href="/" onClick={close} className={linkClass}>

@@ -500,5 +500,25 @@
       "title": "Prices are between seasons.",
       "body": "I'm setting up this season's lessons right now. Check back soon — the new dates are coming."
     }
+  },
+  "about": {
+    "metadata_title": "About — The Drop",
+    "metadata_description": "The Drop is one rider who coaches in Flumserberg. The story behind the name, how I learned, and why I want more people on a board.",
+    "eyebrow": "About",
+    "heading": "I'm Javi. The Drop is just me and a board.",
+    "lede": "By day I write software. The rest of the time I'm on the mountain — because snowboarding is the thing that pulls the best out of me, and out of everyone I get to ride with.",
+    "name_title": "Where the name comes from",
+    "name_body": "Drop in. It's the half-second before a run where you stop thinking and commit — heart in your throat, then pure flow. That moment is the whole point, and the name comes straight from it. Nothing softer.",
+    "me_title": "Who you're riding with",
+    "me_body_1": "I started as a freestyle rider and never really stopped. Everything I know I learned the slow way — from people who ride for a living and corrected my edges a thousand times until it stuck. Now I get to hand that on.",
+    "me_body_2": "Snowboarding gave me most of my friends and most of my best days. It's how I get out of my own head and out of the routine. I started The Drop for one reason: to put more people on a board and watch them find that for themselves.",
+    "video_caption": "Me, somewhere on the hill. (Real clip drops in here soon.)",
+    "philosophy_title": "What a lesson with me is actually about",
+    "philosophy_body": "The best part of coaching isn't the carving. It's the moment someone drops into something that scared them an hour ago and comes out grinning. I'm here to get you the right amount of exposed to that fear, then through it — that's where riders are made.",
+    "mountain_title": "Why Flumserberg",
+    "mountain_body": "It's my home hill in the north of Switzerland — wide, honest runs to learn on, and enough above them to keep you hungry for years. We meet at the COLORS door and go from there.",
+    "cta_title": "Come ride.",
+    "cta_book": "Book a lesson",
+    "cta_instructors": "Meet your coach"
   }
 }
