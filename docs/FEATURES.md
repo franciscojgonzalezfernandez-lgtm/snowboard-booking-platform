@@ -1883,8 +1883,8 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
     - 1h — sin perk; "fix one flaw / beat fear / get back riding". Meeting point COLORS restaurant door
     - 2h — primer día / básicos / tune-up técnico; **videocorrección take-home, solo para no-beginners** (copy condicional). Meeting point COLORS
     - 4h INTENSIVE — freestyle/carving + drills; **videocorrección en vivo + enviada a casa**; meeting point a elegir
-    - 6h FULL_DAY — todo lo de 4h + **elegir estación** (norte de Suiza, con admin) + pausa 30-45 min
-  - [x] Cada tarjeta: precio **plano 1–4 personas** (`CHF X · up to 4`), **forfait NO incluido** (cada rider compra el suyo), **equipo NO incluido** (alquiler en estación, se indica la tienda), idiomas **EN · DE · ES**, **edad mínima 8** (adultos + niños), CTA → `/reservar?d=<enum>` preseleccionado (key real del funnel = `d`, no `duration`)
+    - 6h FULL_DAY — todo lo de 4h + **elegir estación** (otras estaciones del **cantón de St. Gallen**, con admin) + pausa 30-45 min
+  - [x] Cada tarjeta: precio **plano 1–4 personas** (`CHF X · up to 4`), **forfait NO incluido** (cada rider compra el suyo) **salvo principiantes** — la **zona de principiantes es gratuita**, no necesitan forfait; **equipo NO incluido** (alquiler en estación, el coach puede indicar algunas tiendas), idiomas **EN · DE · ES**, **edad mínima 8** (adultos + niños), CTA → `/reservar?d=<enum>` preseleccionado (key real del funnel = `d`, no `duration`)
   - [x] Facets "best for" como chips (SEO + scan): freestyle, carving, beginner/first day, technique, fear, multi-resort
   - [x] Motion: `reveal`/`stagger` en las tarjetas (F-090), reduced-motion safe
 - Tests: Playwright `e2e/f-093-pricing.spec.ts` — 4 tarjetas × 3 locales, precio desde DB, CTA preselecciona `d` en el funnel, copy condicional 2h. Vitest del formateo CHF ya cubierto por `lib/pricing/format.test.ts`
@@ -1942,7 +1942,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 - Motivación: la FAQ mata las objeciones que frenan la reserva. Responde de una las dudas reales: forfait, equipo, edad, idiomas, cancelación, qué llevar. SEO: FAQ structured data (`FAQPage`) gana rich snippets
 - AC:
   - [ ] `app/[locale]/(marketing)/faq/page.tsx`: acordeón accesible (shadcn `accordion`) con preguntas/respuestas trilingüe `faq.*`
-  - [ ] Cubre como mínimo: **forfait no incluido** (compras el tuyo), **equipo no incluido** (alquiler en estación), **edad mínima 8**, idiomas EN/DE/ES, **política cancelación/crédito** (F-039b/F-040), qué llevar, meteo, dónde quedamos (COLORS), nivel necesario por clase, métodos de pago (Card/TWINT/Apple/Google Pay), entrega de la videocorrección (WhatsApp)
+  - [ ] Cubre como mínimo: **forfait no incluido** (compras el tuyo) **salvo principiantes** (la **zona de principiantes es gratuita**, no necesitan forfait), **equipo no incluido** (alquiler en estación, el coach indica algunas tiendas), **edad mínima 8**, idiomas EN/DE/ES, **política cancelación/crédito** (F-039b/F-040), qué llevar, meteo, dónde quedamos (COLORS), nivel necesario por clase, **6h: elegir estación en el cantón de St. Gallen**, métodos de pago (Card/TWINT/Apple/Google Pay), entrega de la videocorrección (WhatsApp)
   - [ ] `FAQPage` JSON-LD (coordinado con F-100) para rich results
 - Tests: Playwright — acordeón expande/colapsa con teclado, × 3 locales; validar JSON-LD `FAQPage`
 - Notas: fuente de verdad de los hechos = F-093 + memory de class differentiators; no duplicar precios (link a `/precios`)

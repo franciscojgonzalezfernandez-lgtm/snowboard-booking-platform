@@ -441,7 +441,7 @@
         "blurb": "Alles aus der Intensiv-Lektion, mit dem ganzen Berg und Zeit zum Durchatmen.",
         "points": [
           "Alles aus der 4-Stunden-Intensiv-Lektion — Freestyle oder Carving, gefilmt.",
-          "Wähl das Skigebiet: Wir können in der Nordschweiz fahren (vorher mit mir abgesprochen).",
+          "Wähl das Skigebiet: Wir können andere Gebiete im Kanton St. Gallen fahren (vorher mit mir abgesprochen).",
           "Eine echte Pause von 30–45 Minuten zum Auftanken."
         ],
         "facets": ["Freestyle", "Carving", "Mehrere Gebiete"],
@@ -449,9 +449,10 @@
       }
     },
     "included": {
-      "title": "Ehrlich, was die Sache angeht",
+      "title": "Gut zu wissen",
       "lift_pass": "Der Skipass ist nicht inbegriffen — du kaufst dein eigenes Tagesticket. Ich zeig dir den richtigen Schalter.",
-      "gear": "Die Ausrüstung ist auch nicht dabei. Board und Boots kannst du am Berg mieten, und ich sag dir, in welchem Shop.",
+      "beginner_zone": "Ganz am Anfang? Wir bleiben im Anfängerbereich — der ist gratis, du brauchst also gar keinen Skipass.",
+      "gear": "Die Ausrüstung ist auch nicht dabei. Board und Boots kannst du am Berg mieten, und ich helfe dir gern mit ein paar Shop-Tipps.",
       "ages": "Ab 8 Jahren — Kinder und Erwachsene.",
       "video": "Nach der Lektion schicke ich dir dein Video über WhatsApp.",
       "languages_label": "Lektionen auf",

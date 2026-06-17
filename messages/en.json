@@ -441,7 +441,7 @@
         "blurb": "Everything the intensive is, with the whole mountain and time to breathe.",
         "points": [
           "All of the 4-hour intensive — freestyle or carving, filmed.",
-          "Choose the resort: we can ride the north of Switzerland (sorted with me first).",
+          "Choose the resort: we can ride other spots in the canton of St. Gallen (sorted with me first).",
           "A real 30–45 minute break to refuel."
         ],
         "facets": ["Freestyle", "Carving", "Multiple resorts"],
@@ -449,9 +449,10 @@
       }
     },
     "included": {
-      "title": "Honest about the deal",
+      "title": "Good to know",
       "lift_pass": "The lift pass isn't included — you buy your own day pass. I'll point you to the right counter.",
-      "gear": "Gear isn't included either. You can rent a board and boots at the resort, and I'll tell you which shop.",
+      "beginner_zone": "Just starting out? We stay in the beginner zone — it's free, so you won't need a lift pass at all.",
+      "gear": "Gear isn't included either. You can rent a board and boots at the resort, and I can help by pointing you to a few shops.",
       "ages": "From age 8 — kids and adults.",
       "video": "After class I send your video over WhatsApp.",
       "languages_label": "Lessons in",

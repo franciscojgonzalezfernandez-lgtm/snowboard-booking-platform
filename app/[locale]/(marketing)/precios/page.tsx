@@ -98,6 +98,7 @@ export default async function PricingPage({ params }: Props) {
           <h2 className="font-display text-2xl tracking-tight">{t("included.title")}</h2>
           <ul className="mt-6 grid gap-4 text-sm leading-relaxed text-foreground/80 sm:grid-cols-2">
             <li className="flex gap-3 border-l-2 border-primary pl-4">{t("included.lift_pass")}</li>
+            <li className="flex gap-3 border-l-2 border-primary pl-4">{t("included.beginner_zone")}</li>
             <li className="flex gap-3 border-l-2 border-primary pl-4">{t("included.gear")}</li>
             <li className="flex gap-3 border-l-2 border-primary pl-4">{t("included.ages")}</li>
             <li className="flex gap-3 border-l-2 border-primary pl-4">{t("included.video")}</li>

@@ -441,7 +441,7 @@
         "blurb": "Todo lo de la intensiva, con la montaña entera y tiempo para respirar.",
         "points": [
           "Todo lo de la intensiva de 4 horas — freestyle o carving, grabado.",
-          "Elige la estación: podemos bajar por el norte de Suiza (hablándolo antes conmigo).",
+          "Elige la estación: podemos bajar por otras estaciones del cantón de St. Gallen (hablándolo antes conmigo).",
           "Una pausa de verdad de 30–45 minutos para recargar."
         ],
         "facets": ["Freestyle", "Carving", "Varias estaciones"],
@@ -449,9 +449,10 @@
       }
     },
     "included": {
-      "title": "Claro con el trato",
+      "title": "Aclaraciones importantes",
       "lift_pass": "El forfait no está incluido — compras tu propio pase de día. Te indico la taquilla correcta.",
-      "gear": "El equipo tampoco va incluido. Puedes alquilar tabla y botas en la estación, y te digo en qué tienda.",
+      "beginner_zone": "¿Vas empezando? Nos quedamos en la zona de principiantes — es gratuita, así que no necesitas forfait.",
+      "gear": "El equipo tampoco va incluido. Puedes alquilar tabla y botas en la estación, y puedo ayudarte indicándote algunas tiendas.",
       "ages": "Desde los 8 años — niños y adultos.",
       "video": "Después de la clase te paso tu vídeo por WhatsApp.",
       "languages_label": "Clases en",
