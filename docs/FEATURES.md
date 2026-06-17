@@ -1770,22 +1770,23 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-053 — Hero announcement banner (i18n copy, dismissible, no admin)
 
-- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Sprint: 5 · Estado: **done** (2026-06-17) · Prioridad: P1
 - Depende de: F-032, F-051
 - Motivación: slot configurable sobre el hero para ofertas estacionales / mensajes promo (Black Friday, early-bird de temporada, días de cierre operativo, CTA team building). MVP sin admin CMS — copy editable vía `messages/*.json`; el toggle `enabled` también vive en i18n para activar/desactivar sin redeploy de código (solo translations PR)
 - AC:
-  - [ ] `app/components/HeroAnnouncement.tsx` (server component). Lee `t('hero_announcement.enabled')` (string `"true"` / `"false"`); render condicional, sin DOM si `false`
-  - [ ] Render: banda full-width sobre el hero (background `accent` token, foreground `accent-foreground`), copy + CTA opcional. Cerrable con `X` (cookie `hero_announcement_dismissed_v${VERSION}` con TTL 30 días). Botón close es client island mínimo (`'use client'` con `useTransition` + Server Action que set-cookies)
-  - [ ] Versionado vía constante `HERO_ANNOUNCEMENT_VERSION` en source. Bump al cambiar copy importante para reset dismissal global (cookie con sufijo nuevo no matchea las viejas)
-  - [ ] CTA href configurable vía i18n key `hero_announcement.cta_href`. Soporta interno `/contacto`, externo `tel:` / `mailto:` / `https://`. Validación server-side rechaza esquemas no whitelisted (XSS guard)
-  - [ ] i18n keys: `hero_announcement.{enabled, body, cta_label, cta_href}` × 3 locales
-  - [ ] Mount en `app/[locale]/page.tsx` arriba de `<section>` hero. NO en `[locale]/layout.tsx` — banner es home-only, no global (evita ruido en booking flow y dashboard)
-  - [ ] Mobile-first: banda responsive, copy truncate en `<375px` con CTA wrap below. Tap target del close ≥44px (F-051 audit aplica)
-- Tests: Playwright `e2e/f-053-hero-announcement.spec.ts` — `enabled=true` renderiza banda + CTA con href correcto × 3 locales; click X esconde + persiste cookie; segundo load no muestra banda; `enabled=false` no renderiza nada. Mock translation override para testear las dos ramas
+  - [x] `app/components/HeroAnnouncement.tsx` (server component). Lee `t('hero_announcement.enabled')` (string `"true"` / `"false"`); render condicional, sin DOM si `false`
+  - [x] Render: banda full-width sobre el hero, copy + CTA opcional. Cerrable con `X` (cookie `hero_announcement_dismissed_v${VERSION}`, TTL 30 días). Botón close es client island mínimo (`HeroAnnouncementClose`, `"use client"` con `useTransition` → Server Action `dismissHeroAnnouncement` + `router.refresh()`)
+  - [x] Versionado vía constante `HERO_ANNOUNCEMENT_VERSION` en `lib/hero-announcement.ts`. Bump al cambiar copy importante para reset dismissal global (cookie con sufijo nuevo no matchea las viejas)
+  - [x] CTA href configurable vía i18n key `hero_announcement.cta_href`. Soporta interno `/...`, externo `tel:` / `mailto:` / `https://`, y el sentinel `"phone"` → `resolveCtaHref` lo mapea al `OPERATIONAL_PHONE_TEL` de F-052 (`lib/contact/phone.ts`, single source of truth — el número **no** se re-declara en `messages/*`). `isAllowedCtaHref` (server-side) rechaza esquemas no whitelisted + protocol-relative `//host` (XSS / open-redirect guard); ambos cubiertos por Vitest
+  - [x] i18n keys: `hero_announcement.{enabled, body, cta_label, cta_href, close_label}` × 3 locales
+  - [x] Mount en `app/[locale]/(marketing)/page.tsx` arriba de `<section>` hero. NO en `[locale]/layout.tsx` — banner es home-only, no global (evita ruido en booking flow y dashboard)
+  - [x] Mobile-first: banda responsive, copy truncate + CTA wrap below en `<375px`. Tap target del close 44px (`size-11`, F-051 audit aplica)
+- Tests: [x] Vitest `lib/hero-announcement.test.ts` (whitelist CTA href, security). [x] Playwright `e2e/f-053-hero-announcement.spec.ts` — banda + CTA href correcto × 3 locales; click X esconde + persiste cookie; reload no muestra banda. El branch `enabled=false` (early return) no se cubre en e2e: es un toggle de una línea en `messages/*` y mockear messages de next-intl server en Playwright es desproporcionado
 - Notas:
+  - **Desviación del spec (token de color):** el AC pedía `accent`/`accent-foreground`, pero ese token es un cream casi idéntico al `background` (≈ banda invisible). Para una banda promo visible y on-brand se usa `primary`/`primary-foreground` (alpine red, signature de marca) — alineado con impeccable (alto contraste) y la dirección de marca cream/editorial
+  - **Desviación menor:** `cta_href` por defecto = `"phone"` (team building → teléfono del owner vía constante F-052); cuando aterrice `/contacto` (F-054) el owner cambia la key i18n a `/contacto` sin tocar código
   - Schema `Announcement` table queda fuera de MVP. Post-launch si el owner pide múltiples banners simultáneos / scheduling / segmentación por locale / A/B test, F-053b migra a DB-backed con admin editor
   - Performance: server component zero JS extra excepto el botón close. Hero LCP no degrada (banner sirve con el mismo SSR)
-  - Default copy inicial alineado con request del owner: CTA team building → linkea a F-054 cuando aterrice (`/contacto`), fallback a `tel:` mientras tanto
   - **No** A/B testing de copy en MVP. Owner edita `messages/*.json` directo en PR
 
 #### Brand foundation — wave 1 (F-090–F-091 + F-105)

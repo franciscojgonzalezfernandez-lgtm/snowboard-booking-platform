@@ -17,6 +17,13 @@
     "switch_language_aria": "Sprache wechseln",
     "phone_label": "Anrufen"
   },
+  "hero_announcement": {
+    "enabled": "true",
+    "body": "Team- oder Gruppentag am Berg geplant? Den ganzen Winter gebe ich private Kurse.",
+    "cta_label": "Melde dich",
+    "cta_href": "phone",
+    "close_label": "Hinweis schließen"
+  },
   "home": {
     "utility": "Flumserberg · Heidiland · Saison 27. Nov – 26. Apr",
     "eyebrow": "Flumserberg · Privates Snowboard-Coaching",

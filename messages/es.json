@@ -17,6 +17,13 @@
     "switch_language_aria": "Cambiar idioma",
     "phone_label": "Llamar"
   },
+  "hero_announcement": {
+    "enabled": "true",
+    "body": "¿Un día de equipo o grupo en la montaña? Doy clases privadas todo el invierno.",
+    "cta_label": "Escríbeme",
+    "cta_href": "phone",
+    "close_label": "Cerrar aviso"
+  },
   "home": {
     "utility": "Flumserberg · Heidiland · Abierto del 27 nov al 26 abr",
     "eyebrow": "Flumserberg · Coaching privado de snowboard",

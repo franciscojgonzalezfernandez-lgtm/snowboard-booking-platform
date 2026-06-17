@@ -17,6 +17,13 @@
     "switch_language_aria": "Switch language",
     "phone_label": "Call us"
   },
+  "hero_announcement": {
+    "enabled": "true",
+    "body": "Planning a team or group day on the mountain? I run private sessions all winter.",
+    "cta_label": "Get in touch",
+    "cta_href": "phone",
+    "close_label": "Dismiss announcement"
+  },
   "home": {
     "utility": "Flumserberg · Heidiland · Open Nov 27 → Apr 26",
     "eyebrow": "Flumserberg · Private snowboard coaching",
