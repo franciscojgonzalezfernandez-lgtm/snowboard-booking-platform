@@ -1895,19 +1895,23 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-094 — Instructors index + perfiles individuales
 
-- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Sprint: 5 · Estado: **done** (2026-06-17, PR pendiente) · Prioridad: P1
 - Depende de: F-068 (foto Blob), F-021 (seed instructor), F-105
 - Motivación: confianza pre-reserva. El cliente quiere ver quién enseña, su nivel por idioma y specialties antes de pagar. Alimenta también el teaser de Step 3 del funnel y la home. SEO: páginas de instructor capturan búsquedas de nombre/"snowboard instructor Flumserberg"
 - AC:
-  - [ ] `app/[locale]/(marketing)/instructores/page.tsx` (slug F-102): grid editorial de instructores activos (hoy 1, el owner) — foto Blob (F-068), nombre, idiomas con nivel (`EN native · DE fluent · ES basic`, PRD §6.2), specialties
-  - [ ] `app/[locale]/(marketing)/instructores/[slug]/page.tsx`: perfil individual — bio (voz F-105), foto, idiomas, specialties, clases que imparte, CTA → `/reservar`
-  - [ ] `generateStaticParams` por instructor activo; `generateMetadata` por perfil (F-103)
-  - [ ] Nivel por idioma: requiere persistir niveles en schema si aún no — ver followup de F-022/Step 3 (Sprint 1 notas). Si no está, mostrar idiomas sin nivel y abrir followup explícito
-  - [ ] Copy/labels trilingüe namespace `instructors.*`
-- Tests: Playwright — index lista instructor(es) × 3 locales, perfil resuelve por slug, CTA navega a funnel, 404 en slug inexistente
+  - [x] `app/[locale]/(marketing)/instructores/page.tsx`: grid editorial de instructores activos — foto, nombre, idiomas, specialties (borde, sin sombra)
+  - [x] `app/[locale]/(marketing)/instructores/[slug]/page.tsx`: perfil individual — bio (voz F-105, free-text DB), foto, idiomas, specialties, clases que imparte (kickers F-105), CTA → `/reservar`
+  - [x] `generateStaticParams` por instructor activo (locale × slug); `generateMetadata` por perfil (name en title/description)
+  - [~] Nivel por idioma: **fallback aplicado** — el schema no persiste nivel por idioma (`Instructor.languages` es `Locale[]`), así que se muestran los idiomas sin nivel. Followup abierto abajo
+  - [x] Copy/labels trilingüe namespace `instructors.*` (en/de/es)
+- Tests: [x] Playwright `e2e/f-094-instructores.spec.ts` — index lista instructores × 3 locales, perfil resuelve por slug, card navega, CTA → funnel, 404 en slug inexistente. Vitest `lib/instructor/slugify.test.ts` (slug derivado + folding de diacríticos)
 - Notas:
-  - Foto estática (`/instructors/javi.png`) hasta que F-068 popule `Instructor.photo` en Blob
-  - Multi-instructor ready (grid escala); MVP single-instructor
+  - Foto estática (`/instructors/javi.png`) hasta que F-068 popule `Instructor.photo` en Blob; instructores sin foto (Lara) caen a placeholder con inicial
+  - Multi-instructor ready (grid escala); el seed dev ya trae 3 activos (javi, lara-muller, alejandra-gracia)
+  - **Slug derivado del nombre** (`slugifyName`, `lib/instructor/slugify.ts`), no hay columna `slug`. Colisión de nombres = primer match gana — añadir `Instructor.slug` si el onboarding self-service permite nombres duplicados
+  - Nav `instructors` (SiteNav + MobileNav) ahora apunta a `/instructores` (antes `/`)
+  - **Slug F-102 pendiente**: la ruta es `instructores` en los 3 locales hasta que F-102 añada el mapa `pathnames` (`/instructors` · `/instruktoren` · `/instructores`)
+  - **Followup nivel-por-idioma**: si el owner quiere `EN native · DE fluent · ES basic` (PRD §6.2) en la UI, requiere persistir niveles — columna `languageLevels Json` en `Instructor` + edición en `/instructor/profile`. Diferido (1 instructor MVP, sin UI de edición); el punto natural es el onboarding multi-instructor
 
 ##### F-095 — About / brand story page
 

@@ -51,13 +51,13 @@ export async function SiteNav({ utility }: SiteNavProps) {
 
           <nav className="hidden gap-8 lg:flex">
             <Link
-              href="/"
+              href="/sobre"
               className="text-xs font-bold uppercase tracking-[0.15em] hover:text-primary"
             >
               {tNav("about")}
             </Link>
             <Link
-              href="/"
+              href="/instructores"
               className="text-xs font-bold uppercase tracking-[0.15em] hover:text-primary"
             >
               {tNav("instructors")}

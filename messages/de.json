@@ -402,5 +402,56 @@
         "kicker": "Ganzer Tag"
       }
     }
+  },
+  "instructors": {
+    "metadata_title": "Instruktoren — The Drop",
+    "metadata_description": "Lerne die Snowboardlehrer von The Drop in Flumserberg kennen — welche Sprachen sie sprechen, was sie am liebsten fahren und wie du eine Stunde buchst.",
+    "eyebrow": "Dein Coach",
+    "heading": "Wer dir das Riden beibringt",
+    "intro": "Eine Schule, echte Menschen. Sieh, wer unterrichtet, welche Sprachen er spricht und was er am liebsten fährt — bevor du buchst.",
+    "languages_label": "Sprachen",
+    "specialties_label": "Schwerpunkte",
+    "teaches_label": "Was ihr zusammen lernt",
+    "view_profile": "Profil ansehen",
+    "cta": "Stunde buchen",
+    "back": "Alle Instruktoren",
+    "profile_metadata_title": "{name} — Snowboardlehrer bei The Drop",
+    "profile_metadata_description": "{name} unterrichtet Snowboarden bei The Drop in Flumserberg. Sprachen, Schwerpunkte und wie du eine Stunde buchst.",
+    "lang": {
+      "en": "Englisch",
+      "de": "Deutsch",
+      "es": "Spanisch"
+    },
+    "specialty": {
+      "beginner-friendly": "Anfängerfreundlich",
+      "freestyle": "Freestyle",
+      "powder": "Powder",
+      "race-carving": "Race-Carving",
+      "kids-4-12": "Kinder 4–12",
+      "special-needs": "Adaptiver Unterricht",
+      "intermediate-progression": "Fortgeschrittene",
+      "carving": "Carving",
+      "freeride": "Freeride"
+    }
+  },
+  "about": {
+    "metadata_title": "Über uns — The Drop",
+    "metadata_description": "The Drop ist ein Rider, der in Flumserberg coacht. Die Geschichte hinter dem Namen, wie ich Snowboarden gelernt habe und warum ich mehr Leute aufs Board bringen will.",
+    "eyebrow": "Über uns",
+    "heading": "Ich bin Javi. The Drop, das sind nur ich und ein Board.",
+    "lede": "Tagsüber schreibe ich Software. Die restliche Zeit bin ich am Berg — weil Snowboarden das Beste aus mir herausholt, und aus jedem, mit dem ich fahren darf.",
+    "name_title": "Woher der Name kommt",
+    "name_body": "Drop in. Die halbe Sekunde vor der Abfahrt, in der du aufhörst zu denken und einfach gehst — Herz im Hals, dann purer Flow. Genau darum geht es, und daher kommt der Name. Nichts Sanfteres.",
+    "me_title": "Mit wem du fährst",
+    "me_body_1": "Ich habe als Freestyle-Rider angefangen und nie wirklich aufgehört. Alles, was ich kann, habe ich auf die langsame Tour gelernt — von Leuten, die vom Fahren leben und meine Kanten tausendmal korrigiert haben, bis es sass. Das gebe ich jetzt weiter.",
+    "me_body_2": "Snowboarden hat mir die meisten Freunde und die meisten guten Tage geschenkt. So komme ich aus meinem Kopf und aus dem Alltag raus. The Drop habe ich aus einem Grund gestartet: mehr Leute aufs Board bringen und zusehen, wie sie das für sich selbst finden.",
+    "video_caption": "Ich, irgendwo am Hang. (Der echte Clip kommt bald hierhin.)",
+    "philosophy_title": "Worum es in einer Stunde mit mir wirklich geht",
+    "philosophy_body": "Das Beste am Coachen ist nicht das Carven. Es ist der Moment, in dem jemand in etwas reinfährt, das ihm vor einer Stunde Angst gemacht hat — und grinsend rauskommt. Ich bringe dich an die richtige Portion Angst und dann hindurch. Genau da werden Rider gemacht.",
+    "mountain_title": "Warum Flumserberg",
+    "mountain_body": "Mein Hausberg im Norden der Schweiz — breite, ehrliche Pisten zum Lernen und genug darüber, damit es dir jahrelang nicht langweilig wird. Wir treffen uns an der COLORS-Tür und legen los.",
+    "cta_title": "Komm fahren.",
+    "cta_book": "Stunde buchen",
+    "cta_instructors": "Lern deinen Coach kennen"
   }
 }
