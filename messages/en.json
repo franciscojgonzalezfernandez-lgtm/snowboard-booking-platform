@@ -501,6 +501,37 @@
       "body": "I'm setting up this season's lessons right now. Check back soon — the new dates are coming."
     }
   },
+  "instructors": {
+    "metadata_title": "Instructors — The Drop",
+    "metadata_description": "Meet the snowboard instructors at The Drop in Flumserberg — the languages they speak, what they love riding, and how to book a lesson.",
+    "eyebrow": "Your coach",
+    "heading": "Who you'll ride with",
+    "intro": "One school, real people. See who teaches, the languages they speak, and what they love riding — before you book.",
+    "languages_label": "Languages",
+    "specialties_label": "Specialties",
+    "teaches_label": "What you'll learn together",
+    "view_profile": "View profile",
+    "cta": "Book a lesson",
+    "back": "All instructors",
+    "profile_metadata_title": "{name} — Snowboard instructor at The Drop",
+    "profile_metadata_description": "{name} teaches snowboarding at The Drop in Flumserberg. Languages, specialties, and how to book a lesson.",
+    "lang": {
+      "en": "English",
+      "de": "German",
+      "es": "Spanish"
+    },
+    "specialty": {
+      "beginner-friendly": "Beginner-friendly",
+      "freestyle": "Freestyle",
+      "powder": "Powder",
+      "race-carving": "Race carving",
+      "kids-4-12": "Kids 4–12",
+      "special-needs": "Adaptive lessons",
+      "intermediate-progression": "Intermediate progression",
+      "carving": "Carving",
+      "freeride": "Freeride"
+    }
+  },
   "about": {
     "metadata_title": "About — The Drop",
     "metadata_description": "The Drop is one rider who coaches in Flumserberg. The story behind the name, how I learned, and why I want more people on a board.",

@@ -501,6 +501,37 @@
       "body": "Ich richte gerade die Lektionen für diese Saison ein. Schau bald wieder vorbei — die neuen Daten kommen."
     }
   },
+  "instructors": {
+    "metadata_title": "Instruktoren — The Drop",
+    "metadata_description": "Lerne die Snowboardlehrer von The Drop in Flumserberg kennen — welche Sprachen sie sprechen, was sie am liebsten fahren und wie du eine Stunde buchst.",
+    "eyebrow": "Dein Coach",
+    "heading": "Wer dir das Riden beibringt",
+    "intro": "Eine Schule, echte Menschen. Sieh, wer unterrichtet, welche Sprachen er spricht und was er am liebsten fährt — bevor du buchst.",
+    "languages_label": "Sprachen",
+    "specialties_label": "Schwerpunkte",
+    "teaches_label": "Was ihr zusammen lernt",
+    "view_profile": "Profil ansehen",
+    "cta": "Stunde buchen",
+    "back": "Alle Instruktoren",
+    "profile_metadata_title": "{name} — Snowboardlehrer bei The Drop",
+    "profile_metadata_description": "{name} unterrichtet Snowboarden bei The Drop in Flumserberg. Sprachen, Schwerpunkte und wie du eine Stunde buchst.",
+    "lang": {
+      "en": "Englisch",
+      "de": "Deutsch",
+      "es": "Spanisch"
+    },
+    "specialty": {
+      "beginner-friendly": "Anfängerfreundlich",
+      "freestyle": "Freestyle",
+      "powder": "Powder",
+      "race-carving": "Race-Carving",
+      "kids-4-12": "Kinder 4–12",
+      "special-needs": "Adaptiver Unterricht",
+      "intermediate-progression": "Fortgeschrittene",
+      "carving": "Carving",
+      "freeride": "Freeride"
+    }
+  },
   "about": {
     "metadata_title": "Über uns — The Drop",
     "metadata_description": "The Drop ist ein Rider, der in Flumserberg coacht. Die Geschichte hinter dem Namen, wie ich Snowboarden gelernt habe und warum ich mehr Leute aufs Board bringen will.",

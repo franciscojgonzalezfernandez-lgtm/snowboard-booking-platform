@@ -67,7 +67,7 @@ export function MobileNav({ signedIn }: MobileNavProps) {
           <Link href="/sobre" onClick={close} className={linkClass}>
             {t("about")}
           </Link>
-          <Link href="/" onClick={close} className={linkClass}>
+          <Link href="/instructores" onClick={close} className={linkClass}>
             {t("instructors")}
           </Link>
           <Link href="/" onClick={close} className={linkClass}>

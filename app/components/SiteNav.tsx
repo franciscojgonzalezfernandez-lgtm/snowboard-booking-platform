@@ -57,7 +57,7 @@ export async function SiteNav({ utility }: SiteNavProps) {
               {tNav("about")}
             </Link>
             <Link
-              href="/"
+              href="/instructores"
               className="text-xs font-bold uppercase tracking-[0.15em] hover:text-primary"
             >
               {tNav("instructors")}
