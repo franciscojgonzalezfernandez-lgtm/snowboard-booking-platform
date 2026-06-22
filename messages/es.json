@@ -500,5 +500,56 @@
       "title": "Los precios están entre temporadas.",
       "body": "Estoy montando las clases de esta temporada. Vuelve pronto — las nuevas fechas están al caer."
     }
+  },
+  "instructors": {
+    "metadata_title": "Instructores — The Drop",
+    "metadata_description": "Conoce a los instructores de snowboard de The Drop en Flumserberg: los idiomas que hablan, lo que más les gusta montar y cómo reservar una clase.",
+    "eyebrow": "Tu coach",
+    "heading": "Con quién vas a montar",
+    "intro": "Una escuela, gente de verdad. Mira quién enseña, qué idiomas habla y qué le gusta montar — antes de reservar.",
+    "languages_label": "Idiomas",
+    "specialties_label": "Especialidades",
+    "teaches_label": "Lo que aprenderéis juntos",
+    "view_profile": "Ver perfil",
+    "cta": "Reservar clase",
+    "back": "Todos los instructores",
+    "profile_metadata_title": "{name} — Instructor de snowboard en The Drop",
+    "profile_metadata_description": "{name} enseña snowboard en The Drop en Flumserberg. Idiomas, especialidades y cómo reservar una clase.",
+    "lang": {
+      "en": "Inglés",
+      "de": "Alemán",
+      "es": "Español"
+    },
+    "specialty": {
+      "beginner-friendly": "Para principiantes",
+      "freestyle": "Freestyle",
+      "powder": "Nieve polvo",
+      "race-carving": "Carving de competición",
+      "kids-4-12": "Niños 4–12",
+      "special-needs": "Clases adaptadas",
+      "intermediate-progression": "Progresión intermedia",
+      "carving": "Carving",
+      "freeride": "Freeride"
+    }
+  },
+  "about": {
+    "metadata_title": "Sobre nosotros — The Drop",
+    "metadata_description": "The Drop es un rider que da clases en Flumserberg. La historia detrás del nombre, cómo aprendí y por qué quiero a más gente sobre una tabla.",
+    "eyebrow": "Sobre nosotros",
+    "heading": "Soy Javi. The Drop somos yo y una tabla.",
+    "lede": "De día escribo software. El resto del tiempo estoy en la montaña — porque el snowboard saca lo mejor de mí, y de cualquiera con quien me toque bajar.",
+    "name_title": "De dónde viene el nombre",
+    "name_body": "Drop in. Es el medio segundo antes de bajar en el que dejas de pensar y te lanzas — el corazón en la garganta y luego puro flow. De eso va todo, y de ahí sale el nombre. De nada más blando.",
+    "me_title": "Con quién bajas",
+    "me_body_1": "Empecé como rider de freestyle y nunca lo dejé del todo. Todo lo que sé lo aprendí despacio — de gente que vive de esto y que me corrigió los cantos mil veces hasta que se quedó. Ahora me toca pasarlo.",
+    "me_body_2": "El snowboard me ha dado casi todos mis amigos y casi todos mis mejores días. Es como salgo de mi cabeza y de la rutina. Monté The Drop por una sola razón: poner a más gente sobre una tabla y verla encontrar eso por sí misma.",
+    "video_caption": "Yo, en algún punto de la montaña. (El clip de verdad va aquí muy pronto.)",
+    "philosophy_title": "De qué va de verdad una clase conmigo",
+    "philosophy_body": "Lo mejor de enseñar no es el carving. Es el momento en que alguien se lanza a algo que hace una hora le daba miedo y sale sonriendo. Estoy para ponerte la dosis justa de ese miedo y luego cruzarla contigo — ahí es donde se hacen los riders.",
+    "mountain_title": "Por qué Flumserberg",
+    "mountain_body": "Es mi montaña en el norte de Suiza — pistas anchas y honestas para aprender, y suficiente por encima para no aburrirte en años. Quedamos en la puerta de COLORS y salimos de ahí.",
+    "cta_title": "Vente a bajar.",
+    "cta_book": "Reservar clase",
+    "cta_instructors": "Conoce a tu coach"
   }
 }
