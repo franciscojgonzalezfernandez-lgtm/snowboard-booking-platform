@@ -553,5 +553,67 @@
     "cta_title": "Come ride.",
     "cta_book": "Book a lesson",
     "cta_instructors": "Meet your coach"
+  },
+  "faq": {
+    "metadata_title": "FAQ — snowboard lessons in Flumserberg | The Drop",
+    "metadata_description": "Lift pass, gear, age limits, languages, cancellation and what to bring — everything you need to know before booking a private snowboard lesson in Flumserberg with The Drop.",
+    "eyebrow": "Before you book",
+    "heading": "Questions, answered.",
+    "intro": "The things people ask me most — gear, age, languages, weather, what happens if plans change. If something's still unclear, just call.",
+    "aria_label": "Frequently asked questions",
+    "items": [
+      {
+        "q": "Is the lift pass included?",
+        "a": "No — you buy your own day pass, and I'll point you to the right counter when we meet. The one exception is complete beginners: we stay in the free beginner zone, so you won't need a pass at all."
+      },
+      {
+        "q": "Do I need my own gear?",
+        "a": "Bring warm layers, gloves and goggles if you have them. The board and boots aren't included — you rent them at the resort, and I'm happy to point you to a few shops I trust."
+      },
+      {
+        "q": "What's the minimum age?",
+        "a": "Eight, for kids and adults alike. If you're booking for a younger child, call me first and we'll talk it through."
+      },
+      {
+        "q": "Which languages do you teach in?",
+        "a": "English, German and Spanish — all native or fluent. Tell me your preference when you book and the whole lesson runs in that language."
+      },
+      {
+        "q": "What level do I need?",
+        "a": "Any. The 2-hour lesson is built for first-timers and the basics; the 1-hour is a quick fix when one thing's nagging you; the 4- and 6-hour sessions go deep on freestyle or carving. Not sure which fits? Message me."
+      },
+      {
+        "q": "Where do we meet?",
+        "a": "For the 1- and 2-hour lessons, at the COLORS restaurant door in Flumserberg. For the 4- and 6-hour sessions we pick a meeting point together when you book."
+      },
+      {
+        "q": "What should I bring?",
+        "a": "Dress warm — layers, a waterproof jacket and trousers, gloves, goggles and a helmet (rentable with your gear). Add sunscreen and water; the alpine sun is stronger than it looks. Board and boots you rent at the resort."
+      },
+      {
+        "q": "What happens if the weather's bad?",
+        "a": "We ride in most conditions — snow is the point. If I have to cancel because the cable cars are down, the slopes are closed or the avalanche risk is unsafe, you rebook to another date at no charge or take a full cash refund."
+      },
+      {
+        "q": "How does cancellation work?",
+        "a": "Cancel at least 48 hours before the lesson and you get a credit valid for a year, usable on any future booking. Inside 48 hours, or a no-show, forfeits the fee. If you're ill or injured with a medical certificate, call me — I'll sort a credit regardless of the window."
+      },
+      {
+        "q": "Can we ride somewhere other than Flumserberg?",
+        "a": "On the full-day lesson, yes — we can ride other resorts in the canton of St. Gallen. Arrange it with me first so we plan the day and the meeting point together."
+      },
+      {
+        "q": "How can I pay?",
+        "a": "Card, TWINT, Apple Pay or Google Pay — pick your method at checkout. Everything is handled securely, and the booking confirms the moment payment goes through."
+      },
+      {
+        "q": "Do I get my lesson filmed?",
+        "a": "On the 4- and 6-hour sessions I film you as we ride and send the clips to your phone over WhatsApp afterwards. On the 2-hour lesson it's included once you're past the beginner stage."
+      }
+    ],
+    "cta_title": "Still wondering something?",
+    "cta_body": "Have a question I haven't answered here? Call or message me — I'd rather help you pick the right lesson than have you guess.",
+    "cta_book": "Book a lesson",
+    "cta_prices": "See full prices"
   }
 }

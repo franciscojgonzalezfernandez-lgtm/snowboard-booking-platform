@@ -553,5 +553,67 @@
     "cta_title": "Komm fahren.",
     "cta_book": "Stunde buchen",
     "cta_instructors": "Lern deinen Coach kennen"
+  },
+  "faq": {
+    "metadata_title": "FAQ — Snowboardstunden in Flumserberg | The Drop",
+    "metadata_description": "Skiticket, Ausrüstung, Mindestalter, Sprachen, Stornierung und was du mitbringst — alles, was du vor der Buchung einer privaten Snowboardstunde in Flumserberg mit The Drop wissen musst.",
+    "eyebrow": "Vor der Buchung",
+    "heading": "Fragen, beantwortet.",
+    "intro": "Was die Leute mich am häufigsten fragen — Ausrüstung, Alter, Sprachen, Wetter, was passiert, wenn sich Pläne ändern. Ist etwas unklar, ruf einfach an.",
+    "aria_label": "Häufig gestellte Fragen",
+    "items": [
+      {
+        "q": "Ist das Skiticket inbegriffen?",
+        "a": "Nein — die Tageskarte kaufst du selbst, und ich zeige dir beim Treffen den richtigen Schalter. Die einzige Ausnahme sind komplette Anfänger: Wir bleiben im kostenlosen Anfängerbereich, da brauchst du gar kein Ticket."
+      },
+      {
+        "q": "Brauche ich eigene Ausrüstung?",
+        "a": "Bring warme Schichten, Handschuhe und eine Brille mit, falls du hast. Board und Boots sind nicht inbegriffen — die mietest du an der Station, und ich nenne dir gern ein paar Shops, denen ich vertraue."
+      },
+      {
+        "q": "Was ist das Mindestalter?",
+        "a": "Acht Jahre, für Kinder wie Erwachsene. Buchst du für ein jüngeres Kind, ruf mich vorher an und wir besprechen es."
+      },
+      {
+        "q": "In welchen Sprachen unterrichtest du?",
+        "a": "Englisch, Deutsch und Spanisch — alle muttersprachlich oder fliessend. Sag mir bei der Buchung deine Sprache, dann läuft die ganze Stunde darin."
+      },
+      {
+        "q": "Welches Niveau brauche ich?",
+        "a": "Jedes. Die 2-Stunden-Stunde ist für den ersten Tag und die Basics gemacht; die 1-Stunde ist der schnelle Fix, wenn eine Sache klemmt; die 4- und 6-Stunden gehen tief in Freestyle oder Carving. Unsicher, was passt? Schreib mir."
+      },
+      {
+        "q": "Wo treffen wir uns?",
+        "a": "Für die 1- und 2-Stunden-Lektionen an der Tür des Restaurants COLORS in Flumserberg. Für die 4- und 6-Stunden suchen wir den Treffpunkt bei der Buchung gemeinsam aus."
+      },
+      {
+        "q": "Was soll ich mitbringen?",
+        "a": "Zieh dich warm an — Schichten, wasserdichte Jacke und Hose, Handschuhe, Brille und einen Helm (mit der Ausrüstung mietbar). Dazu Sonnencreme und Wasser; die Bergsonne ist stärker, als sie aussieht. Board und Boots mietest du an der Station."
+      },
+      {
+        "q": "Was passiert bei schlechtem Wetter?",
+        "a": "Wir fahren bei fast jedem Wetter — Schnee ist ja der Sinn der Sache. Muss ich absagen, weil die Bahnen stehen, die Pisten gesperrt sind oder die Lawinengefahr zu hoch ist, buchst du kostenlos um oder bekommst den vollen Betrag zurück."
+      },
+      {
+        "q": "Wie funktioniert die Stornierung?",
+        "a": "Sagst du mindestens 48 Stunden vorher ab, erhältst du ein Guthaben, ein Jahr gültig und auf jede künftige Buchung anrechenbar. Innerhalb von 48 Stunden oder bei Nichterscheinen verfällt die Gebühr. Bist du krank oder verletzt und hast ein Attest, ruf mich an — dann gibt es unabhängig von der Frist ein Guthaben."
+      },
+      {
+        "q": "Können wir woanders als in Flumserberg fahren?",
+        "a": "Bei der Ganztageslektion ja — wir können andere Stationen im Kanton St. Gallen fahren. Sprich es vorher mit mir ab, damit wir den Tag und den Treffpunkt gemeinsam planen."
+      },
+      {
+        "q": "Wie kann ich bezahlen?",
+        "a": "Karte, TWINT, Apple Pay oder Google Pay — wähl deine Methode an der Kasse. Alles läuft sicher, und die Buchung ist bestätigt, sobald die Zahlung durch ist."
+      },
+      {
+        "q": "Wird meine Stunde gefilmt?",
+        "a": "Bei den 4- und 6-Stunden filme ich dich während der Fahrt und schicke dir die Clips danach per WhatsApp aufs Handy. Bei der 2-Stunden-Lektion ist es inbegriffen, sobald du über das Anfängerstadium hinaus bist."
+      }
+    ],
+    "cta_title": "Bleibt eine Frage offen?",
+    "cta_body": "Etwas, das ich hier nicht beantwortet habe? Ruf an oder schreib mir — lieber helfe ich dir, die richtige Stunde zu wählen, als dich raten zu lassen.",
+    "cta_book": "Stunde buchen",
+    "cta_prices": "Alle Preise ansehen"
   }
 }
