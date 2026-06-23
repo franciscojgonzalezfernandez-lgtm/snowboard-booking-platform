@@ -553,5 +553,17 @@
     "cta_title": "Komm fahren.",
     "cta_book": "Stunde buchen",
     "cta_instructors": "Lern deinen Coach kennen"
+  },
+  "blog": {
+    "metadata_title": "Feldnotizen — The Drop",
+    "metadata_description": "Snowboarden von jemandem, der es jede Woche am Flumserberg unterrichtet — dein erster Tag, Freestyle oder Carving und warum der Norden der Schweiz.",
+    "eyebrow": "Feldnotizen",
+    "heading": "Notizen vom Berg",
+    "intro": "Was ich den Leuten am Lift erzähle, aufgeschrieben. Keine Theorie, die du nie brauchst — nur das, was dir hilft, besser zu fahren und weniger zu grübeln.",
+    "empty": "Noch nichts hier. Schau bald wieder vorbei.",
+    "read_time": "{minutes} Min. Lesezeit",
+    "back": "Alle Feldnotizen",
+    "cta_heading": "Soll ich es dir am Berg zeigen?",
+    "cta_button": "Stunde buchen"
   }
 }

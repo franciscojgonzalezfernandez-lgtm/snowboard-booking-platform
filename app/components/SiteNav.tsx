@@ -69,7 +69,7 @@ export async function SiteNav({ utility }: SiteNavProps) {
               {tNav("prices")}
             </Link>
             <Link
-              href="/"
+              href="/blog"
               className="text-xs font-bold uppercase tracking-[0.15em] hover:text-primary"
             >
               {tNav("journal")}
