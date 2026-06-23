@@ -2042,6 +2042,19 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 - Tests: Playwright + axe automatizado por ruta/locale; checklist manual de teclado/screen-reader spot-check
 - Notas: overlaps con el WCAG audit de Sprint 6 pero acotado a Sprint 5 para que las páginas lancen accesibles; Sprint 6 hace el barrido producto-wide (dashboard/booking/admin)
 
+##### F-106 — Fix `lib/motion` hydration mismatch bajo `prefers-reduced-motion`
+
+- Sprint: 5 · Estado: **done** (2026-06-23) · Prioridad: P1 (bugfix) · Depende de: F-090
+- Motivación: los 4 primitives de `lib/motion/` (`reveal`, `stagger` [+`StaggerItem`], `parallax`, `wordmark-reveal`) hacían `const reduced = useReducedMotion(); if (reduced) return <div>…`. El server no tiene media query → siempre renderiza el `motion.div` animado (con `opacity:0`/transform inline); el cliente de un usuario `prefers-reduced-motion` renderiza un `<div>` plano sin esos estilos → **hydration mismatch** ("won't be patched up"): React conserva el `opacity:0` del server y el contenido queda **en blanco** hasta que el efecto de `useReducedMotion` fuerza un re-render. Afectaba a **todas** las superficies marketing (home/precios/instructores/terms/contacto). Detectado en review visual de F-096 (screenshot reduced-motion en blanco + badge "1 Issue" de Next).
+- AC:
+  - [x] Quitar el branch `if (reduced) return <div>` de los 4 primitives. Ahora **siempre** renderizan su `motion.div` → server y cliente coinciden (sin mismatch). Cada uno lleva `data-motion="<nombre>"`.
+  - [x] El reduced-motion se aplica en **CSS** (`app/globals.css`, `@layer base`): `@media (prefers-reduced-motion: reduce) { [data-motion] { opacity:1 !important; transform:none !important; filter:none !important } }`. Pin de visible en el primer paint, sin gate de scroll, `!important` gana a los estilos inline de motion. Mejor a11y que el branch viejo (que sí ocultaba hasta scroll en algunos casos).
+  - [x] Eliminar los imports de `useReducedMotion` que quedan sin uso.
+- Tests: [x] `lib/motion/reveal.test.tsx` reescrito — invariante anti-mismatch (markup idéntico con `useReducedMotion` true/false) + presencia del hook `data-motion`. [x] Playwright reduced-motion (`emulateMedia({ reducedMotion: 'reduce' })`) sobre `/contacto`: **0 errores de hydration** en consola + contenido visible.
+- Notas:
+  - Cierra el hallazgo que F-096 había derivado a F-104. F-104 (audit a11y) ya no necesita arreglar el primitive — sólo verificar en contexto.
+  - `view-transition.ts` no usa `motion.div` ni el branch (usa la View Transitions API nativa) → no afectado.
+
 ### Sprint 6 — Polish + QA (semanas 11-12)
 
 - E2E Playwright críticos: happy path booking, cancelación user, redención crédito, cancelación ops, auth flows.

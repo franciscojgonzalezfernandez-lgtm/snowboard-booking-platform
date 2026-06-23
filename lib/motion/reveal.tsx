@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
 import type { ReactNode } from "react";
 
 type RevealProps = {
@@ -13,17 +13,20 @@ type RevealProps = {
 };
 
 /**
- * Fade + slide-up once when scrolled into view. Renders a finished, static
- * element under `prefers-reduced-motion` (no transform/opacity animation) —
- * a11y is non-negotiable (docs/brand/motion.md).
+ * Fade + slide-up once when scrolled into view.
+ *
+ * Reduced motion is handled in CSS, not by swapping the rendered element. The
+ * `data-motion` hook lets `@media (prefers-reduced-motion: reduce)` (globals.css)
+ * pin the element visible (opacity:1, no transform) on first paint. Branching on
+ * `useReducedMotion()` during render caused a server/client hydration mismatch
+ * for reduced-motion users (F-106): the server has no media query, so it always
+ * rendered the animated `motion.div` while the client rendered a plain `<div>`,
+ * and React refused to patch the difference — leaving the content blank.
  */
 export function Reveal({ children, className, y = 12, delay = 0 }: RevealProps) {
-  const reduced = useReducedMotion();
-  if (reduced) {
-    return <div className={className}>{children}</div>;
-  }
   return (
     <motion.div
+      data-motion="reveal"
       className={className}
       initial={{ opacity: 0, y }}
       whileInView={{ opacity: 1, y: 0 }}

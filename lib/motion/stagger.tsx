@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion, type Variants } from "motion/react";
+import { motion, type Variants } from "motion/react";
 import type { ReactNode } from "react";
 
 const itemVariants: Variants = {
@@ -10,7 +10,9 @@ const itemVariants: Variants = {
 
 /**
  * Container that reveals its `<StaggerItem>` children one after another on
- * scroll. Static under `prefers-reduced-motion`.
+ * scroll. Reduced motion is handled in CSS via the `data-motion` hook (see
+ * `Reveal` / globals.css), never by branching on `useReducedMotion()` during
+ * render — that caused a hydration mismatch for reduced-motion users (F-106).
  */
 export function Stagger({
   children,
@@ -22,12 +24,9 @@ export function Stagger({
   /** Seconds between each child's reveal. */
   gap?: number;
 }) {
-  const reduced = useReducedMotion();
-  if (reduced) {
-    return <div className={className}>{children}</div>;
-  }
   return (
     <motion.div
+      data-motion="stagger"
       className={className}
       initial="hidden"
       whileInView="show"
@@ -39,14 +38,10 @@ export function Stagger({
   );
 }
 
-/** A single item inside a `<Stagger>`. Static under `prefers-reduced-motion`. */
+/** A single item inside a `<Stagger>`. Reduced motion handled in CSS (F-106). */
 export function StaggerItem({ children, className }: { children: ReactNode; className?: string }) {
-  const reduced = useReducedMotion();
-  if (reduced) {
-    return <div className={className}>{children}</div>;
-  }
   return (
-    <motion.div className={className} variants={itemVariants}>
+    <motion.div data-motion="stagger-item" className={className} variants={itemVariants}>
       {children}
     </motion.div>
   );

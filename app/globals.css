@@ -147,4 +147,21 @@
     letter-spacing: -0.015em;
     line-height: 0.95;
   }
+
+  /*
+   * Reduced motion (F-106). The lib/motion primitives always render their
+   * animated motion element, so server and client markup match — no hydration
+   * mismatch. For users who prefer reduced motion we neutralise the entrance
+   * here, in CSS: pinned visible with no transform/filter on first paint,
+   * regardless of scroll position. `!important` overrides motion's inline
+   * styles. Replaces the old per-primitive `if (reduced) return <div>` branch,
+   * which diverged server vs client and blanked content for these users.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    [data-motion] {
+      opacity: 1 !important;
+      transform: none !important;
+      filter: none !important;
+    }
+  }
 }
