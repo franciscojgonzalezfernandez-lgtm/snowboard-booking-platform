@@ -68,9 +68,10 @@
     "footer_loc": "Flumserberg · St. Gallen · Suiza"
   },
   "footer": {
+    "faq_link": "FAQ",
     "terms_link": "Términos",
     "privacy_link": "Privacidad",
-    "nav_aria": "Legal",
+    "nav_aria": "Pie de página",
     "phone_label": "Teléfono"
   },
   "terms": {

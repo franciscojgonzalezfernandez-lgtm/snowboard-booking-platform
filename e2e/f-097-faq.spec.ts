@@ -106,4 +106,13 @@ test.describe("F-097 — FAQ page", () => {
     await page.waitForURL("**/precios");
     await expect(page.getByTestId("pricing-page")).toBeVisible();
   });
+
+  test("footer FAQ link reaches the FAQ page", async ({ page }) => {
+    await page.goto("/en");
+    const link = page.getByTestId("footer-faq-link");
+    await expect(link).toHaveAttribute("href", "/en/faq");
+    await link.click();
+    await page.waitForURL("**/faq");
+    await expect(page.getByTestId("faq-page")).toBeVisible();
+  });
 });

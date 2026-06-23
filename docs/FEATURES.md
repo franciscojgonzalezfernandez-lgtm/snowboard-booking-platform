@@ -1957,7 +1957,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 - Notas:
   - fuente de verdad de los hechos = F-093 + memory de class differentiators; no duplicar precios (link a `/precios`)
   - En el mismo commit se cableó el link **Prices** del nav (SiteNav + MobileNav) a `/precios` (F-093 había shippeado la página sin link, igual que el patrón de F-094/F-095)
-  - **FAQ sin link en nav/footer todavía**: el footer es semánticamente legal (`nav_aria` = "Legal") y el nav principal está scopeado a contenido (about/instructors/prices/journal). Decidir placement (¿5º item de nav, o sección de soporte en footer?) es un followup de IA — la página es alcanzable por URL y entra en el sitemap (F-099)
+  - **Link FAQ en el footer** (`SiteFooter`, `footer.faq_link`), decisión del owner (footer > nav principal). Al meter contenido no-legal en esa nav, el `nav_aria` pasó de "Legal" → "Footer"/"Fusszeile"/"Pie de página"
 
 ##### F-098 — Blog MDX (3 posts trilingüe al lanzamiento)
 
