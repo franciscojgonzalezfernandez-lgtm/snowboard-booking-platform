@@ -8,6 +8,7 @@
     "instructors": "Lehrer",
     "prices": "Preise",
     "journal": "Feldnotizen",
+    "contact": "Kontakt",
     "reservar": "Stunde buchen",
     "signin": "Anmelden",
     "dashboard_cta": "Mein Bereich",
@@ -70,6 +71,7 @@
   "footer": {
     "terms_link": "AGB",
     "privacy_link": "Datenschutz",
+    "contact_link": "Kontakt",
     "nav_aria": "Rechtliches",
     "phone_label": "Telefon"
   },
@@ -570,7 +572,9 @@
     "meeting_note": "Flumserberg · Heidiland, Kanton St. Gallen. Den genauen Treffpunkt bestätige ich bei der Buchung.",
     "map_label": "Flumserberg finden",
     "map_caption": "Tannenbodenalp, Flumserberg — Nordostschweiz, etwa eine Stunde von Zürich.",
-    "map_link": "In OpenStreetMap öffnen",
-    "map_aria": "Karte von Flumserberg, Schweiz"
+    "map_link": "In Google Maps öffnen",
+    "map_aria": "Karte von Flumserberg, Schweiz",
+    "map_load": "Karte laden",
+    "map_privacy": "Öffnet Google Maps, das Cookies setzen kann."
   }
 }

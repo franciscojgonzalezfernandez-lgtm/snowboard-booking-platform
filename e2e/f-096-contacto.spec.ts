@@ -35,11 +35,43 @@ test.describe("F-096 — Contact page", () => {
       // Lean page contract (F-096): no form, just the static contact surfaces.
       await expect(page.getByTestId("contact-hours")).toBeVisible();
       await expect(page.getByTestId("contact-meeting")).toBeVisible();
+
+      // Outbound directions link → Google Maps (a plain <a>, sets no cookies).
+      await expect(page.getByTestId("contact-map-link")).toHaveAttribute(
+        "href",
+        /google\.com\/maps/,
+      );
+
+      // Click-to-load map: a cookieless placeholder renders first; the Google
+      // iframe (which sets a tracking cookie) only mounts after an explicit
+      // click — consent-by-action, no banner needed.
+      await expect(page.getByTestId("contact-map")).toHaveCount(0);
+      await page.getByTestId("contact-map-placeholder").click();
       await expect(page.getByTestId("contact-map")).toHaveAttribute(
         "src",
-        /openstreetmap\.org\/export\/embed/,
+        /google\.com\/maps/,
       );
+
       await expect(page.locator("form")).toHaveCount(0);
     });
   }
+
+  test("contact page is reachable from the nav and footer links", async ({
+    page,
+  }) => {
+    await page.goto("/en");
+
+    await expect(page.getByTestId("site-nav-contact")).toHaveAttribute(
+      "href",
+      "/en/contacto",
+    );
+    await expect(page.getByTestId("footer-contact-link")).toHaveAttribute(
+      "href",
+      "/en/contacto",
+    );
+
+    await page.getByTestId("site-nav-contact").click();
+    await page.waitForURL(/\/contacto$/);
+    await expect(page.getByTestId("contact-page")).toBeVisible();
+  });
 });

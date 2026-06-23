@@ -8,11 +8,17 @@ import {
   OPERATIONAL_PHONE_TEL,
 } from "@/lib/contact/phone";
 import { CONTACT_EMAIL, CONTACT_EMAIL_HREF } from "@/lib/contact/email";
+import {
+  MEETING_POINT_MAPS_EMBED_SRC,
+  MEETING_POINT_MAPS_HREF,
+} from "@/lib/contact/location";
+import { MapEmbed } from "./_components/map-embed";
 
 type Props = { params: Promise<{ locale: string }> };
 
-// Static contact info — phone/email constants + a cookieless OSM map. No DB,
-// no per-request work, so prerender for every locale and keep it on the SSG path.
+// Static contact info — phone/email constants + a click-to-load Google map. No
+// DB, no per-request work, so prerender for every locale and keep it on the SSG
+// path (the map iframe only mounts client-side after the visitor opts in).
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
@@ -25,15 +31,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: t("metadata_description"),
   };
 }
-
-// Tannenbodenalp, Flumserberg. OpenStreetMap's embed export sets no tracking
-// cookies (unlike a Google Maps iframe), so it needs no consent banner — see
-// F-096 notes / F-045. bbox frames the resort; marker drops on the meeting area.
-const MAP_MARKER = { lat: 47.0916, lon: 9.2818 } as const;
-const MAP_EMBED_SRC =
-  "https://www.openstreetmap.org/export/embed.html" +
-  `?bbox=9.24%2C47.06%2C9.32%2C47.12&layer=mapnik&marker=${MAP_MARKER.lat}%2C${MAP_MARKER.lon}`;
-const MAP_LINK_HREF = `https://www.openstreetmap.org/?mlat=${MAP_MARKER.lat}&mlon=${MAP_MARKER.lon}#map=14/${MAP_MARKER.lat}/${MAP_MARKER.lon}`;
 
 export default async function ContactPage({ params }: Props) {
   const { locale } = await params;
@@ -137,7 +134,7 @@ export default async function ContactPage({ params }: Props) {
               {t("map_label")}
             </h2>
             <a
-              href={MAP_LINK_HREF}
+              href={MEETING_POINT_MAPS_HREF}
               target="_blank"
               rel="noopener noreferrer"
               data-testid="contact-map-link"
@@ -149,13 +146,11 @@ export default async function ContactPage({ params }: Props) {
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-foreground/70">
             {t("map_caption")}
           </p>
-          <iframe
-            src={MAP_EMBED_SRC}
+          <MapEmbed
+            src={MEETING_POINT_MAPS_EMBED_SRC}
             title={t("map_aria")}
-            data-testid="contact-map"
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            className="mt-6 aspect-[16/9] w-full border border-foreground/15"
+            loadLabel={t("map_load")}
+            privacyNote={t("map_privacy")}
           />
         </section>
       </Reveal>

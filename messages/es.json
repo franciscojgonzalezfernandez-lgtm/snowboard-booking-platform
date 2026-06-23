@@ -8,6 +8,7 @@
     "instructors": "Instructores",
     "prices": "Precios",
     "journal": "Cuaderno",
+    "contact": "Contacto",
     "reservar": "Reservar clase",
     "signin": "Iniciar sesión",
     "dashboard_cta": "Mi cuenta",
@@ -70,6 +71,7 @@
   "footer": {
     "terms_link": "Términos",
     "privacy_link": "Privacidad",
+    "contact_link": "Contacto",
     "nav_aria": "Legal",
     "phone_label": "Teléfono"
   },
@@ -570,7 +572,9 @@
     "meeting_note": "Flumserberg · Heidiland, cantón de St. Gallen. El punto exacto lo confirmo al reservar.",
     "map_label": "Encontrar Flumserberg",
     "map_caption": "Tannenbodenalp, Flumserberg — noreste de Suiza, alrededor de una hora desde Zúrich.",
-    "map_link": "Abrir en OpenStreetMap",
-    "map_aria": "Mapa de Flumserberg, Suiza"
+    "map_link": "Abrir en Google Maps",
+    "map_aria": "Mapa de Flumserberg, Suiza",
+    "map_load": "Cargar el mapa",
+    "map_privacy": "Abre Google Maps, que puede usar cookies."
   }
 }
