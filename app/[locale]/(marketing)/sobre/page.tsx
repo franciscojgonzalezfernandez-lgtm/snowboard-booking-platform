@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
@@ -27,16 +28,18 @@ export default async function AboutPage({ params }: Props) {
 
   return (
     <main data-testid="about-page">
-      {/* Hero — full-bleed photo + editorial overlay. D-PHOTO blocker tracks the
-          owner's real portrait/action shot for Sprint 5. */}
+      {/* Hero — full-bleed owner portrait + editorial overlay. Square source, so
+          crop biases up (object-[center_22%]) to keep face/hoodie in frame on
+          wide viewports; the bottom gradient sits over the cropped legs where the
+          heading reads. */}
       <section className="relative flex min-h-[68vh] items-end overflow-hidden bg-foreground text-background">
-        <div
-          aria-hidden
-          className="absolute inset-0 bg-cover bg-center opacity-[0.72]"
-          style={{
-            backgroundImage:
-              "url(https://images.unsplash.com/photo-1522056615691-da7b8106c665?auto=format&fit=crop&w=2400&q=80)",
-          }}
+        <Image
+          src="/brand/about.png"
+          alt={t("hero_image_alt")}
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-[center_42%] opacity-[0.85]"
         />
         <div
           aria-hidden
@@ -48,7 +51,9 @@ export default async function AboutPage({ params }: Props) {
             {t("eyebrow")}
           </p>
           <h1 className="max-w-[16ch] text-balance font-display text-[clamp(34px,6.5vw,84px)] leading-[0.95] tracking-tight">
-            {t("heading")}
+            {t.rich("heading", {
+              name: (chunks) => <span className="text-primary">{chunks}</span>,
+            })}
           </h1>
           <p className="mt-7 max-w-[52ch] text-lg leading-relaxed text-background/85">
             {t("lede")}
@@ -57,12 +62,15 @@ export default async function AboutPage({ params }: Props) {
       </section>
 
       <div className="mx-auto max-w-[820px] space-y-24 px-6 py-24 lg:px-7">
-        <Reveal className="space-y-5">
+        <Reveal className="space-y-6">
           <h2 className="font-display text-3xl tracking-tight sm:text-4xl">
             {t("name_title")}
           </h2>
           <p className="text-lg leading-relaxed text-foreground/80">
-            {t("name_body")}
+            {t("name_body_1")}
+          </p>
+          <p className="text-lg leading-relaxed text-foreground/80">
+            {t("name_body_2")}
           </p>
         </Reveal>
 
