@@ -6,6 +6,7 @@ import type { Prisma } from "@prisma/client";
 
 import type { Db } from "@/lib/db";
 import { CONTACT_EMAIL } from "@/lib/contact/email";
+import { OPERATIONAL_PHONE_DISPLAY } from "@/lib/contact/phone";
 import { durationMinutes } from "@/lib/booking-engine/duration";
 import { setUtcTime, zurichWallClockToUtc } from "@/lib/booking-engine/time";
 import { buildBookingIcs } from "@/lib/ics/build-event";
@@ -16,7 +17,6 @@ import {
   getBookingReminderCopy,
 } from "./templates/booking-reminder";
 
-const CONTACT_PHONE = "+41 76 000 00 00";
 const ORGANIZER_EMAIL = "booking@rideflumserberg.ch";
 const ORGANIZER_NAME = "Ride Flumserberg";
 const LOCATION = "Flumserberg, Switzerland";
@@ -92,7 +92,7 @@ export async function sendBookingReminderEmailWith(
   }).format(startUtc);
   const timeLabel = booking.anchorTime;
   const contactEmail = deps.contactEmail ?? CONTACT_EMAIL;
-  const contactPhone = deps.contactPhone ?? CONTACT_PHONE;
+  const contactPhone = deps.contactPhone ?? OPERATIONAL_PHONE_DISPLAY;
   const meetingPoint = deps.meetingPoint ?? MEETING_POINT;
   const baseUrl = deps.appBaseUrl ?? APP_BASE_URL;
   const manageBookingUrl = `${baseUrl}/${locale}/dashboard`;

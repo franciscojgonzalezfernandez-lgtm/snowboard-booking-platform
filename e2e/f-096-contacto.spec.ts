@@ -11,7 +11,7 @@ const HEADING = {
 // Single source of truth lives in lib/contact/{phone,email}.ts — the page must
 // render these exact hrefs (F-052 phone, F-096 email).
 const PHONE_HREF = "tel:+41766381870";
-const EMAIL_HREF = "mailto:franciscojgonzalezfernandez@gmail.com";
+const EMAIL_HREF = "mailto:hello@rideflumserberg.ch";
 
 test.describe("F-096 — Contact page", () => {
   for (const locale of LOCALES) {
