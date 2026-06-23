@@ -551,5 +551,26 @@
     "cta_title": "Come ride.",
     "cta_book": "Book a lesson",
     "cta_instructors": "Meet your coach"
+  },
+  "contact": {
+    "metadata_title": "Contact — The Drop",
+    "metadata_description": "Reach The Drop in Flumserberg: call or write, where we meet, and the season we ride.",
+    "eyebrow": "Get in touch",
+    "heading": "Talk to me before you book",
+    "intro": "Questions about which lesson fits, your level, or a team day? Call or write — it's me, Javi, on the other end.",
+    "phone_label": "Call or text",
+    "phone_help": "Fastest for same-day questions and changes up on the mountain.",
+    "email_label": "Email",
+    "email_help": "Best for team days, group inquiries and anything that can wait a few hours.",
+    "hours_label": "When we ride",
+    "hours_value": "Season Nov 27 → Apr 26",
+    "hours_note": "Lessons daily 08:00–17:00 (Europe/Zurich). I answer the phone during these hours.",
+    "meeting_label": "Where we meet",
+    "meeting_value": "COLORS restaurant, Tannenbodenalp",
+    "meeting_note": "Flumserberg · Heidiland, canton St. Gallen. I confirm the exact spot when you book.",
+    "map_label": "Find Flumserberg",
+    "map_caption": "Tannenbodenalp, Flumserberg — northeast Switzerland, about an hour from Zurich.",
+    "map_link": "Open in OpenStreetMap",
+    "map_aria": "Map of Flumserberg, Switzerland"
   }
 }

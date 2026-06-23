@@ -1929,17 +1929,21 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-096 — Contact page (lean: phone + email + hours + map, sin form)
 
-- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Sprint: 5 · Estado: **done** (2026-06-23) · Prioridad: P1
 - Depende de: F-052 (constantes phone), F-105
 - Motivación: surface de contacto real y destino del CTA del hero announcement (F-053). MVP sin form — el form de team-building es post-MVP (F-054). Reduce fricción para dudas operativas y da un punto de aterrizaje honesto
 - AC:
-  - [ ] `app/[locale]/(marketing)/contacto/page.tsx` (slug F-102): teléfono (`OPERATIONAL_PHONE_DISPLAY`/`_TEL` de F-052), email, horario operativo, ubicación (mapa estático/embed de Flumserberg, lazy)
-  - [ ] **Sin** form (F-054 lo añade post-MVP); CTA `tel:`/`mailto:` nativos
-  - [ ] Copy trilingüe `contact.*`
-- Tests: Playwright — phone `tel:` exacto, email `mailto:`, render × 3 locales
+  - [x] `app/[locale]/(marketing)/contacto/page.tsx` (slug F-102 pendiente): teléfono (`OPERATIONAL_PHONE_DISPLAY`/`_TEL` de F-052), email (`CONTACT_EMAIL` de F-096), horario operativo (temporada + ventana 08:00–17:00), punto de encuentro (COLORS, Tannenbodenalp) y mapa embed de Flumserberg (lazy). SSG por locale (`generateStaticParams` + `generateMetadata`)
+  - [x] **Sin** form (F-054 lo añade post-MVP); CTA `tel:`/`mailto:` nativos
+  - [x] Copy trilingüe `contact.*` (en/de/es)
+- Tests: [x] Playwright `e2e/f-096-contacto.spec.ts` — `tel:` exacto, `mailto:` exacto, hours/meeting/map presentes, **sin** `<form>`, 200 × 3 locales (3 verdes). Vitest email senders intactos (40 verdes) tras el dedupe del email.
 - Notas:
-  - F-053 CTA team-building apunta aquí cuando el owner active el toggle; F-054 (form) reemplaza el placeholder más adelante
-  - Mapa: embed sin cookies de tracking para no disparar requisito de banner (ver F-045 notas)
+  - **Email single source of truth (F-096):** `lib/contact/email.ts` (`CONTACT_EMAIL` + `CONTACT_EMAIL_HREF`), espejo del patrón phone de F-052. Dedupe: los 3 senders (`send-booking-confirmed`/`-reminder`/`-post-class`) importaban el mismo literal local → ahora importan la constante. Valor = `franciscojgonzalezfernandez@gmail.com` (el inbox operativo que los emails ya le dicen al cliente que escriba). **Flag owner:** es un gmail personal expuesto ahora en superficie pública crawleable — si prefiere un `hello@rideflumserberg.ch` de marca, cambiar la constante (propaga a emails + página).
+  - **Mapa:** embed OpenStreetMap (`/export/embed.html`, sin cookies de tracking, `loading="lazy"`) centrado en Tannenbodenalp + link "Open in OpenStreetMap". No dispara requisito de banner (ver F-045 notas)
+  - F-053 CTA team-building apunta aquí cuando el owner active el toggle (hoy `cta_href="phone"`); F-054 (form) reemplaza el placeholder más adelante
+  - **Sin** link en nav/footer — consistente con el patrón del sprint (F-093 pricing tampoco cableó nav; `nav.prices`/`nav.journal` siguen apuntando a `/`). La descubribilidad llega con el sitemap (F-099) + el pase de nav/slugs (F-102). Reachable hoy vía URL directa + CTA de F-053
+  - **Hallazgo para F-104 (no corregido aquí, pre-existente de F-090):** `lib/motion/reveal.tsx` produce un **hydration mismatch sólo para usuarios `prefers-reduced-motion`** — el server renderiza `motion.div` (opacity:0) y el cliente reduced devuelve un `<div>` plano; React no parchea el style → flash de contenido en blanco hasta que el efecto de `useReducedMotion` re-renderiza. Afecta a **todas** las páginas marketing mergeadas (precios/home/terms/instructores), no sólo a ésta. F-104 ("verifica F-090 en contexto real") es el sitio para arreglar el primitive (p.ej. render del mismo elemento en server+cliente y gate de la animación por props)
+  - **Datos hardcodeados:** punto de encuentro COLORS/Tannenbodenalp y ventana 08:00–17:00 viven en `messages/*.json` (no hay constante de negocio para horario/dirección). Si el owner formaliza dirección/horario, extraer a `lib/contact/` como las constantes de phone/email
 
 ##### F-097 — FAQ page (trilingüe, captura objeciones de conversión)
 

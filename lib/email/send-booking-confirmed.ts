@@ -8,6 +8,7 @@ import { durationMinutes } from "@/lib/booking-engine/duration";
 import { setUtcTime, zurichWallClockToUtc } from "@/lib/booking-engine/time";
 import { buildBookingIcs } from "@/lib/ics/build-event";
 import { formatChf } from "@/lib/pricing/format";
+import { CONTACT_EMAIL } from "@/lib/contact/email";
 import type { Db } from "@/lib/db";
 import { DURATION_LABELS, INTL_TAG } from "./labels";
 import { sendEmail, type EmailClient } from "./send-email";
@@ -16,7 +17,6 @@ import {
   getBookingConfirmedCopy,
 } from "./templates/booking-confirmed";
 
-const CONTACT_EMAIL = "franciscojgonzalezfernandez@gmail.com";
 const ORGANIZER_EMAIL = "booking@rideflumserberg.ch";
 const ORGANIZER_NAME = "Ride Flumserberg";
 const LOCATION = "Flumserberg, Switzerland";

@@ -4,13 +4,13 @@ import React from "react";
 import type { Prisma } from "@prisma/client";
 
 import type { Db } from "@/lib/db";
+import { CONTACT_EMAIL } from "@/lib/contact/email";
 import { sendEmail, type EmailClient } from "./send-email";
 import {
   PostClassEmail,
   getPostClassCopy,
 } from "./templates/post-class";
 
-const CONTACT_EMAIL = "franciscojgonzalezfernandez@gmail.com";
 const APP_BASE_URL = "https://rideflumserberg.ch";
 
 const BOOKING_SELECT = {
