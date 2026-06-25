@@ -8,6 +8,7 @@
     "instructors": "Instructores",
     "prices": "Precios",
     "journal": "Cuaderno",
+    "contact": "Contacto",
     "reservar": "Reservar clase",
     "signin": "Iniciar sesión",
     "dashboard_cta": "Mi cuenta",
@@ -71,6 +72,7 @@
     "faq_link": "FAQ",
     "terms_link": "Términos",
     "privacy_link": "Privacidad",
+    "contact_link": "Contacto",
     "nav_aria": "Pie de página",
     "phone_label": "Teléfono"
   },
@@ -616,5 +618,28 @@
     "cta_body": "¿Algo que no haya respondido aquí? Llama o escríbeme — prefiero ayudarte a elegir la clase correcta que dejarte adivinar.",
     "cta_book": "Reservar una clase",
     "cta_prices": "Ver todos los precios"
+  },
+  "contact": {
+    "metadata_title": "Contacto — The Drop",
+    "metadata_description": "Contacta con The Drop en Flumserberg: llama o escribe, punto de encuentro y temporada.",
+    "eyebrow": "Contacto",
+    "heading": "Habla conmigo antes de reservar",
+    "intro": "¿Dudas sobre qué clase encaja, tu nivel o un día de equipo? Llama o escribe — al otro lado estoy yo, Javi.",
+    "phone_label": "Llamar o SMS",
+    "phone_help": "Lo más rápido para dudas del mismo día y cambios en la montaña.",
+    "email_label": "Email",
+    "email_help": "Mejor para días de equipo, grupos y todo lo que puede esperar unas horas.",
+    "hours_label": "Cuándo estamos en la nieve",
+    "hours_value": "Temporada 27 nov → 26 abr",
+    "hours_note": "Clases a diario 08:00–17:00 (Europe/Zurich). Atiendo el teléfono en ese horario.",
+    "meeting_label": "Dónde quedamos",
+    "meeting_value": "Restaurante COLORS, Tannenbodenalp",
+    "meeting_note": "Flumserberg · Heidiland, cantón de St. Gallen. El punto exacto lo confirmo al reservar.",
+    "map_label": "Encontrar Flumserberg",
+    "map_caption": "Tannenbodenalp, Flumserberg — noreste de Suiza, alrededor de una hora desde Zúrich.",
+    "map_link": "Abrir en Google Maps",
+    "map_aria": "Mapa de Flumserberg, Suiza",
+    "map_load": "Cargar el mapa",
+    "map_privacy": "Abre Google Maps, que puede usar cookies."
   }
 }

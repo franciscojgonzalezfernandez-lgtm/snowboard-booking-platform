@@ -8,6 +8,7 @@
     "instructors": "Lehrer",
     "prices": "Preise",
     "journal": "Feldnotizen",
+    "contact": "Kontakt",
     "reservar": "Stunde buchen",
     "signin": "Anmelden",
     "dashboard_cta": "Mein Bereich",
@@ -71,6 +72,7 @@
     "faq_link": "FAQ",
     "terms_link": "AGB",
     "privacy_link": "Datenschutz",
+    "contact_link": "Kontakt",
     "nav_aria": "Fusszeile",
     "phone_label": "Telefon"
   },
@@ -616,5 +618,28 @@
     "cta_body": "Etwas, das ich hier nicht beantwortet habe? Ruf an oder schreib mir — lieber helfe ich dir, die richtige Stunde zu wählen, als dich raten zu lassen.",
     "cta_book": "Stunde buchen",
     "cta_prices": "Alle Preise ansehen"
+  },
+  "contact": {
+    "metadata_title": "Kontakt — The Drop",
+    "metadata_description": "Erreiche The Drop in Flumserberg: anrufen oder schreiben, Treffpunkt und Saison.",
+    "eyebrow": "Kontakt",
+    "heading": "Sprich mit mir, bevor du buchst",
+    "intro": "Fragen zur passenden Stunde, zu deinem Niveau oder zu einem Teamtag? Ruf an oder schreib — am anderen Ende bin ich, Javi.",
+    "phone_label": "Anrufen oder SMS",
+    "phone_help": "Am schnellsten für kurzfristige Fragen und Änderungen am Berg.",
+    "email_label": "E-Mail",
+    "email_help": "Ideal für Teamtage, Gruppenanfragen und alles, was ein paar Stunden Zeit hat.",
+    "hours_label": "Wann wir fahren",
+    "hours_value": "Saison 27. Nov → 26. Apr",
+    "hours_note": "Stunden täglich 08:00–17:00 (Europe/Zurich). In dieser Zeit gehe ich ans Telefon.",
+    "meeting_label": "Wo wir uns treffen",
+    "meeting_value": "Restaurant COLORS, Tannenbodenalp",
+    "meeting_note": "Flumserberg · Heidiland, Kanton St. Gallen. Den genauen Treffpunkt bestätige ich bei der Buchung.",
+    "map_label": "Flumserberg finden",
+    "map_caption": "Tannenbodenalp, Flumserberg — Nordostschweiz, etwa eine Stunde von Zürich.",
+    "map_link": "In Google Maps öffnen",
+    "map_aria": "Karte von Flumserberg, Schweiz",
+    "map_load": "Karte laden",
+    "map_privacy": "Öffnet Google Maps, das Cookies setzen kann."
   }
 }

@@ -74,6 +74,13 @@ export async function SiteNav({ utility }: SiteNavProps) {
             >
               {tNav("journal")}
             </Link>
+            <Link
+              href="/contacto"
+              data-testid="site-nav-contact"
+              className="text-xs font-bold uppercase tracking-[0.15em] hover:text-primary"
+            >
+              {tNav("contact")}
+            </Link>
           </nav>
 
           <div className="hidden items-center gap-5 lg:flex">
