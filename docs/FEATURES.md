@@ -2058,6 +2058,30 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - Cierra el hallazgo que F-096 había derivado a F-104. F-104 (audit a11y) ya no necesita arreglar el primitive — sólo verificar en contexto.
   - `view-transition.ts` no usa `motion.div` ni el branch (usa la View Transitions API nativa) → no afectado.
 
+##### F-107 — Bugfix prod: ocultar CTAs sin sentido según sesión/tiempo (hero login + add-to-calendar pasado)
+
+- Sprint: 5 (hotfix) · Estado: backlog · Prioridad: P1 (bugs en producción, owner los reportó 2026-06-24)
+- Depende de: F-092 (home editorial), F-068 (página `exito`), F-047/F-059 (dashboard rows). Sin migración, sin server action — solo gating condicional de render.
+- Motivación: dos botones se renderizan en contextos donde no aplican y confunden al usuario:
+  1. **Hero home muestra "Iniciar sesión" estando ya logueado.** `app/[locale]/(marketing)/page.tsx:76-81` renderiza siempre el `<Link href="/login">` (`cta_signin`), incluso con sesión activa. El `SiteNav` del marketing layout ya es auth-aware (`auth.api.getSession`, `app/components/SiteNav.tsx:29`) pero el CTA del hero no.
+  2. **Página de detalle de clase ofrece "Add to calendar" para clases pasadas.** `app/[locale]/reservar/exito/[id]/page.tsx:237-245` muestra el `<a data-testid="exito-add-to-calendar">` bajo la condición `isConfirmed` (= `CONFIRMED` **o** `COMPLETED`), sin comprobar si la clase ya ocurrió. Una clase ya impartida no se añade al calendario. (El dashboard `booking-row.tsx:135-143` **ya** lo hace bien — sólo monta el ICS en `kind === "upcoming"` — así que este bug es **exclusivo** de la página de detalle.)
+- AC issue 1 — hero login condicional:
+  - [ ] En `app/[locale]/(marketing)/page.tsx`, leer la sesión server-side (`auth.api.getSession({ headers: await headers() })`, mismo patrón que `SiteNav`) y **no** renderizar el `<Link href="/login">` (`cta_signin`) cuando `session?.user`. El `cta_primary` ("Reservar") permanece siempre.
+  - [ ] **Sin regresión de perf (F-090):** el marketing layout ya monta `SiteNav` async con lectura de sesión, de modo que la home ya se renderiza dinámica; añadir la lectura aquí no introduce coste nuevo de LCP ni rompe el contrato F-090. Verificar que el hero sigue siendo el LCP estático (la imagen no se ve afectada).
+  - [ ] Recomendación (no bloqueante, decidir en implementación): para usuario logueado, en lugar de simplemente quitar el botón, sustituir por un CTA secundario a `/dashboard` (mejor UX que dejar sólo "Reservar"). Si se hace, reusar key i18n existente o añadir `home.cta_dashboard` × 3 locales. Por defecto, el AC mínimo es **ocultar**.
+- AC issue 2 — ocultar add-to-calendar en clases pasadas:
+  - [ ] En `app/[locale]/reservar/exito/[id]/page.tsx`, computar `isPast` a partir de `booking.date` + `booking.anchorTime` vs `Date.now()` (reusar `setUtcTime(startOfUtcDay(date), anchorTime)` de `lib/booking-engine/time`, idéntico a `app/[locale]/dashboard/_components/booking-row.tsx:42`). Sólo renderizar el `<a data-testid="exito-add-to-calendar">` cuando `isConfirmed && !isPast`.
+  - [ ] El botón "Go to dashboard" (`exito-go-to-dashboard`) permanece para clases pasadas — sólo desaparece el ICS. La rama `!isConfirmed` (pending/failed) no cambia.
+  - [ ] Cubre ambos casos pasados: `COMPLETED` (siempre pasado) y `CONFIRMED` aún no barrido a completed pero con fecha/hora ya vencida.
+- Tests:
+  - [ ] Playwright issue 1: anónimo en `/` (+ `/de`, `/es`) → `cta_signin` presente; autenticado en `/` → ausente. `cta_primary` presente en ambos.
+  - [ ] Playwright issue 2: detalle de booking confirmado **futuro** → `exito-add-to-calendar` presente; detalle de booking **pasado** (COMPLETED y CONFIRMED-vencido) → ausente, `exito-go-to-dashboard` presente. Regresión cross-surface: el dashboard row pasado sigue sin ICS (`booking-row.tsx`).
+- Notas:
+  - Bug doble pero **un solo ticket / un solo PR** (pedido del owner): dos render-gates condicionales, cero cambios de datos.
+  - **No** tocar el endpoint `/api/booking/[id]/ics` (sigue sirviendo el .ics para cualquier booking — el gate es de UI, no de API; un link directo a una clase pasada sigue devolviendo su .ics, aceptable en MVP).
+  - **No** convertir `SiteNav` ni el hero a client component — gating server-side basta.
+- Refs: F-107, F-092, F-068, F-047
+
 ### Sprint 6 — Polish + QA (semanas 11-12)
 
 - E2E Playwright críticos: happy path booking, cancelación user, redención crédito, cancelación ops, auth flows.
