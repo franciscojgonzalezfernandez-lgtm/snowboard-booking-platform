@@ -1952,15 +1952,18 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-097 — FAQ page (trilingüe, captura objeciones de conversión)
 
-- Sprint: 5 · Estado: backlog · Prioridad: P2
+- Sprint: 5 · Estado: **done** · Prioridad: P2
 - Depende de: F-105, F-093 (consistencia de hechos), F-040 (política cancelación)
 - Motivación: la FAQ mata las objeciones que frenan la reserva. Responde de una las dudas reales: forfait, equipo, edad, idiomas, cancelación, qué llevar. SEO: FAQ structured data (`FAQPage`) gana rich snippets
 - AC:
-  - [ ] `app/[locale]/(marketing)/faq/page.tsx`: acordeón accesible (shadcn `accordion`) con preguntas/respuestas trilingüe `faq.*`
-  - [ ] Cubre como mínimo: **forfait no incluido** (compras el tuyo) **salvo principiantes** (la **zona de principiantes es gratuita**, no necesitan forfait), **equipo no incluido** (alquiler en estación, el coach indica algunas tiendas), **edad mínima 8**, idiomas EN/DE/ES, **política cancelación/crédito** (F-039b/F-040), qué llevar, meteo, dónde quedamos (COLORS), nivel necesario por clase, **6h: elegir estación en el cantón de St. Gallen**, métodos de pago (Card/TWINT/Apple/Google Pay), entrega de la videocorrección (WhatsApp)
-  - [ ] `FAQPage` JSON-LD (coordinado con F-100) para rich results
-- Tests: Playwright — acordeón expande/colapsa con teclado, × 3 locales; validar JSON-LD `FAQPage`
-- Notas: fuente de verdad de los hechos = F-093 + memory de class differentiators; no duplicar precios (link a `/precios`)
+  - [x] `app/[locale]/(marketing)/faq/page.tsx` (server component, SSG ×3 locales) + isla cliente `faq-accordion.tsx`: acordeón accesible (shadcn `accordion`) con preguntas/respuestas trilingüe `faq.*` (12 items)
+  - [x] Cubre como mínimo: **forfait no incluido** (compras el tuyo) **salvo principiantes** (la **zona de principiantes es gratuita**, no necesitan forfait), **equipo no incluido** (alquiler en estación, el coach indica algunas tiendas), **edad mínima 8**, idiomas EN/DE/ES, **política cancelación/crédito** (F-039b/F-040), qué llevar, meteo, dónde quedamos (COLORS), nivel necesario por clase, **6h: elegir estación en el cantón de St. Gallen**, métodos de pago (Card/TWINT/Apple/Google Pay), entrega de la videocorrección (WhatsApp)
+  - [x] `FAQPage` JSON-LD (construido desde el mismo array `faq.items` que el acordeón → sin drift entre datos estructurados y UI; helper compartido `lib/seo/structured-data.ts` lo absorbe en F-100)
+- Tests: [x] Playwright `e2e/f-097-faq.spec.ts` — acordeón expande/colapsa con teclado × 3 locales, JSON-LD `FAQPage` válido (12 questions), CTA → `/reservar` y `/precios`, nav Prices → `/precios`
+- Notas:
+  - fuente de verdad de los hechos = F-093 + memory de class differentiators; no duplicar precios (link a `/precios`)
+  - En el mismo commit se cableó el link **Prices** del nav (SiteNav + MobileNav) a `/precios` (F-093 había shippeado la página sin link, igual que el patrón de F-094/F-095)
+  - **Link FAQ en el footer** (`SiteFooter`, `footer.faq_link`), decisión del owner (footer > nav principal). Al meter contenido no-legal en esa nav, el `nav_aria` pasó de "Legal" → "Footer"/"Fusszeile"/"Pie de página"
 
 ##### F-098 — Blog MDX (3 posts trilingüe al lanzamiento)
 

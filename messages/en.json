@@ -46,8 +46,8 @@
     "class_dur_fullDay": "Full Day",
     "class_blurb_oneHour": "Fix one thing, or get your nerve back. One focused hour, just the two of us.",
     "class_blurb_twoHours": "Your first day on snow — or your next breakthrough. Video feedback to take home.",
-    "class_blurb_intensive": "Go deep on freestyle or carving. Live video coaching, and yours to keep.",
-    "class_blurb_fullDay": "The whole mountain — your choice of resort across northern Switzerland.",
+    "class_blurb_intensive": "Leave riding your linked turns — for sure, in a single day. Or go deep on freestyle and carving. Filmed, yours to keep.",
+    "class_blurb_fullDay": "Six hours on the mountain with a 30-minute break — and your choice of resort across the canton.",
     "class_cta": "Book",
     "instructor_eyebrow": "Your coach",
     "instructor_name": "I'm Javi",
@@ -69,10 +69,11 @@
     "footer_loc": "Flumserberg · St. Gallen · Switzerland"
   },
   "footer": {
+    "faq_link": "FAQ",
     "terms_link": "Terms",
     "privacy_link": "Privacy",
     "contact_link": "Contact",
-    "nav_aria": "Legal",
+    "nav_aria": "Footer",
     "phone_label": "Phone"
   },
   "terms": {
@@ -455,7 +456,7 @@
         "name": "2-hour snowboard lesson",
         "blurb": "Your first day, or the basics done right. Enough time for it to actually click.",
         "points": [
-          "First time on a board? You'll leave linking your turns.",
+          "First time on a board? You'll start linking your turns — the 4-hour intensive is the one you nail them for good.",
           "Already know the basics? A proper technical tune-up.",
           "Two hours is where the fundamentals settle in."
         ],
@@ -464,25 +465,25 @@
         "meeting": "the COLORS restaurant door"
       },
       "intensive": {
-        "kicker": "Go Deep",
+        "kicker": "Turns Nailed",
         "name": "4-hour intensive lesson",
-        "blurb": "Freestyle or carving — four hours to actually change how you ride.",
+        "blurb": "Leave riding your linked turns — for sure, in a single day. Or, past the basics, go deep on freestyle and carving.",
         "points": [
-          "Pick your line: freestyle in the park, or carving hard turns.",
-          "Drills that stick, not just laps for the sake of it.",
+          "First time on a board? This is the one you leave actually riding your linked turns — for sure, not maybe.",
+          "Past the basics? Pick your line: freestyle in the park, or carving hard turns.",
           "I film you as we go, and send it to your phone after."
         ],
-        "facets": ["Freestyle", "Carving", "Technique"],
+        "facets": ["Linked turns", "Freestyle", "Carving"],
         "meeting": "a meeting point we pick together"
       },
       "fullDay": {
         "kicker": "All Day",
         "name": "Full-day snowboard lesson",
-        "blurb": "Everything the intensive is, with the whole mountain and time to breathe.",
+        "blurb": "Everything the 4-hour intensive is — across six hours, the whole mountain, and a real break.",
         "points": [
           "All of the 4-hour intensive — freestyle or carving, filmed.",
           "Choose the resort: we can ride other spots in the canton of St. Gallen (sorted with me first).",
-          "A real 30–45 minute break to refuel."
+          "Six hours in total, with a 30-minute break to refuel."
         ],
         "facets": ["Freestyle", "Carving", "Multiple resorts"],
         "meeting": "a meeting point we pick together"
@@ -555,6 +556,73 @@
     "cta_title": "Come ride.",
     "cta_book": "Book a lesson",
     "cta_instructors": "Meet your coach"
+  },
+  "faq": {
+    "metadata_title": "FAQ — snowboard lessons in Flumserberg | The Drop",
+    "metadata_description": "Lift pass, gear, age limits, languages, cancellation and what to bring — everything you need to know before booking a private snowboard lesson in Flumserberg with The Drop.",
+    "eyebrow": "Before you book",
+    "heading": "Questions, answered.",
+    "intro": "The things people ask me most — gear, age, languages, weather, what happens if plans change. If something's still unclear, just call.",
+    "aria_label": "Frequently asked questions",
+    "items": [
+      {
+        "q": "Is the lift pass included?",
+        "a": "No — you buy your own day pass, and I'll point you to the right counter when we meet. The one exception is complete beginners: we stay in the free beginner zone, so you won't need a pass at all."
+      },
+      {
+        "q": "Do I need my own gear?",
+        "a": "Bring warm layers, gloves and goggles if you have them. The board and boots aren't included — you rent them at the resort, and I'm happy to point you to a few shops I trust."
+      },
+      {
+        "q": "What's the minimum age?",
+        "a": "Eight, for kids and adults alike. If you're booking for a younger child, call me first and we'll talk it through."
+      },
+      {
+        "q": "Which languages do you teach in?",
+        "a": "Spanish, English and German. Spanish is my native language, my English is fluent, and my German is solid and getting stronger every season. Tell me which you'd like when you book and the whole lesson runs in it."
+      },
+      {
+        "q": "What level do I need?",
+        "a": "Any. The 1-hour is a quick fix when one thing's nagging you. The 2-hour gets first-timers started on the basics. The 4-hour intensive is the one you leave actually riding your linked turns — for sure, in a single day — or go deep on freestyle and carving if you're past the basics. The full day adds a second resort and a proper break. Not sure which fits? Message me."
+      },
+      {
+        "q": "How long is the full-day lesson?",
+        "a": "Six hours on the mountain, with a 30-minute break in the middle to rest your legs and refuel. A full day on snow, paced so every run counts."
+      },
+      {
+        "q": "Where do we meet?",
+        "a": "For the 1- and 2-hour lessons, at the COLORS restaurant door in Flumserberg. For the 4- and 6-hour sessions we pick a meeting point together when you book."
+      },
+      {
+        "q": "What should I bring?",
+        "a": "Dress warm — layers, a waterproof jacket and trousers, gloves, goggles and a helmet (rentable with your gear). Add sunscreen and water; the alpine sun is stronger than it looks. Board and boots you rent at the resort."
+      },
+      {
+        "q": "What happens if the weather's bad?",
+        "a": "We ride in most conditions — snow is the point. If I have to cancel because the cable cars are down, the slopes are closed or the avalanche risk is unsafe, you rebook to another date at no charge or take a full cash refund."
+      },
+      {
+        "q": "How does cancellation work?",
+        "a": "Cancel at least 48 hours before the lesson and you get a credit valid for a year, usable on any future booking. Inside 48 hours, or a no-show, forfeits the fee. If you're ill or injured with a medical certificate, call me — I'll sort a credit regardless of the window."
+      },
+      {
+        "q": "Can we ride somewhere other than Flumserberg?",
+        "a": "On the full-day lesson, yes — we can ride other resorts in the canton of St. Gallen. Arrange it with me first so we plan the day and the meeting point together."
+      },
+      {
+        "q": "How can I pay?",
+        "a": "Card, TWINT, Apple Pay or Google Pay — pick your method at checkout. Everything is handled securely, and the booking confirms the moment payment goes through."
+      },
+      {
+        "q": "Do I get my lesson filmed?",
+        "a": "On the 4- and 6-hour sessions I film you as we ride and send the clips to your phone over WhatsApp afterwards. On the 2-hour lesson it's included once you're past the beginner stage."
+      }
+    ],
+    "cta_title": "Still wondering something?",
+    "cta_body": "Have a question I haven't answered here? Call or message me — I'd rather help you pick the right lesson than have you guess.",
+    "cta_book": "Book a lesson",
+    "cta_prices": "See full prices",
+    "cta_contact": "Get in touch"
   },
   "contact": {
     "metadata_title": "Contact — The Drop",

@@ -46,8 +46,8 @@
     "class_dur_fullDay": "Día completo",
     "class_blurb_oneHour": "Corrige un fallo concreto o recupera la confianza. Una hora enfocada, solo tú y yo.",
     "class_blurb_twoHours": "Tu primer día en la nieve — o tu siguiente salto de nivel. Videocorrección para casa.",
-    "class_blurb_intensive": "A fondo con freestyle o carving. Videocorrección en vivo, y te la llevas.",
-    "class_blurb_fullDay": "Toda la montaña — tú eliges la estación del norte de Suiza.",
+    "class_blurb_intensive": "Te vas bajando con tus giros enlazados — seguro, en un solo día. O a fondo con freestyle y carving. Grabado, y te lo llevas.",
+    "class_blurb_fullDay": "Seis horas en la montaña con 30 minutos de descanso — y tú eliges la estación del cantón.",
     "class_cta": "Reservar",
     "instructor_eyebrow": "Tu coach",
     "instructor_name": "Soy Javi",
@@ -69,10 +69,11 @@
     "footer_loc": "Flumserberg · St. Gallen · Suiza"
   },
   "footer": {
+    "faq_link": "FAQ",
     "terms_link": "Términos",
     "privacy_link": "Privacidad",
     "contact_link": "Contacto",
-    "nav_aria": "Legal",
+    "nav_aria": "Pie de página",
     "phone_label": "Teléfono"
   },
   "terms": {
@@ -455,7 +456,7 @@
         "name": "Clase de snowboard de 2 horas",
         "blurb": "Tu primer día, o las bases bien hechas. Tiempo de sobra para que te haga clic.",
         "points": [
-          "¿Primera vez en la tabla? Te vas enlazando los giros.",
+          "¿Primera vez en la tabla? Empiezas a enlazar los giros — la intensiva de 4 horas es donde los dejas clavados.",
           "¿Ya tienes las bases? Un buen repaso técnico.",
           "Dos horas es donde se asientan los fundamentos."
         ],
@@ -464,25 +465,25 @@
         "meeting": "la puerta del restaurante COLORS"
       },
       "intensive": {
-        "kicker": "A fondo",
+        "kicker": "Giros clavados",
         "name": "Clase intensiva de 4 horas",
-        "blurb": "Freestyle o carving — cuatro horas para cambiar de verdad cómo bajas.",
+        "blurb": "Te vas bajando con tus giros enlazados — seguro, en un solo día. O, si ya tienes las bases, a fondo con freestyle y carving.",
         "points": [
-          "Elige tu línea: freestyle en el park o carving de giros fuertes.",
-          "Ejercicios que se quedan, no bajar por bajar.",
+          "¿Primera vez en la tabla? Es la clase de la que te vas bajando de verdad con los giros enlazados — seguro, no quizá.",
+          "¿Ya tienes las bases? Elige tu línea: freestyle en el park o carving de giros fuertes.",
           "Te grabo sobre la marcha y te lo paso al móvil después."
         ],
-        "facets": ["Freestyle", "Carving", "Técnica"],
+        "facets": ["Giros enlazados", "Freestyle", "Carving"],
         "meeting": "un punto de encuentro que elegimos juntos"
       },
       "fullDay": {
         "kicker": "Día completo",
         "name": "Clase de snowboard de día completo",
-        "blurb": "Todo lo de la intensiva, con la montaña entera y tiempo para respirar.",
+        "blurb": "Todo lo de la intensiva de 4 horas — a lo largo de seis horas, la montaña entera y un descanso de verdad.",
         "points": [
           "Todo lo de la intensiva de 4 horas — freestyle o carving, grabado.",
           "Elige la estación: podemos bajar por otras estaciones del cantón de St. Gallen (hablándolo antes conmigo).",
-          "Una pausa de verdad de 30–45 minutos para recargar."
+          "Seis horas en total, con 30 minutos de descanso para recargar."
         ],
         "facets": ["Freestyle", "Carving", "Varias estaciones"],
         "meeting": "un punto de encuentro que elegimos juntos"
@@ -555,6 +556,73 @@
     "cta_title": "Vente a bajar.",
     "cta_book": "Reservar clase",
     "cta_instructors": "Conoce a tu coach"
+  },
+  "faq": {
+    "metadata_title": "FAQ — clases de snowboard en Flumserberg | The Drop",
+    "metadata_description": "Forfait, equipo, edad mínima, idiomas, cancelación y qué llevar — todo lo que necesitas saber antes de reservar una clase privada de snowboard en Flumserberg con The Drop.",
+    "eyebrow": "Antes de reservar",
+    "heading": "Preguntas, resueltas.",
+    "intro": "Lo que más me preguntan — equipo, edad, idiomas, tiempo, qué pasa si cambian los planes. Si algo sigue sin estar claro, solo llama.",
+    "aria_label": "Preguntas frecuentes",
+    "items": [
+      {
+        "q": "¿Está incluido el forfait?",
+        "a": "No — el forfait del día lo compras tú, y cuando nos veamos te indico la taquilla correcta. La única excepción son los principiantes totales: nos quedamos en la zona de principiantes, que es gratuita, así que no necesitas forfait."
+      },
+      {
+        "q": "¿Necesito mi propio equipo?",
+        "a": "Trae capas de abrigo, guantes y gafas si tienes. La tabla y las botas no van incluidas — las alquilas en la estación, y te puedo recomendar algunas tiendas de confianza."
+      },
+      {
+        "q": "¿Cuál es la edad mínima?",
+        "a": "Ocho años, tanto para niños como para adultos. Si reservas para alguien más pequeño, llámame antes y lo hablamos."
+      },
+      {
+        "q": "¿En qué idiomas das las clases?",
+        "a": "Español, inglés y alemán. El español es mi lengua materna, mi inglés es fluido y mi alemán es sólido y mejora cada temporada. Dime cuál prefieres al reservar y toda la clase va en ese idioma."
+      },
+      {
+        "q": "¿Qué nivel necesito?",
+        "a": "Cualquiera. La de 1 hora es el arreglo rápido cuando algo se te atasca. La de 2 horas mete a los principiantes en los fundamentos. La intensiva de 4 horas es la clase de la que te vas bajando de verdad con los giros enlazados — seguro, en un solo día — o a fondo con freestyle y carving si ya tienes las bases. El día completo añade una segunda estación y un descanso de verdad. ¿No sabes cuál encaja? Escríbeme."
+      },
+      {
+        "q": "¿Cuánto dura la clase de día completo?",
+        "a": "Seis horas en la montaña, con 30 minutos de descanso a media jornada para descansar las piernas y recargar. Un día entero en la nieve, dosificado para que cada bajada cuente."
+      },
+      {
+        "q": "¿Dónde quedamos?",
+        "a": "Para las clases de 1 y 2 horas, en la puerta del restaurante COLORS en Flumserberg. Para las de 4 y 6 horas elegimos juntos el punto de encuentro al reservar."
+      },
+      {
+        "q": "¿Qué llevo?",
+        "a": "Abrígate — capas, chaqueta y pantalón impermeables, guantes, gafas y casco (se alquila con el equipo). Añade crema solar y agua; el sol de montaña pega más de lo que parece. La tabla y las botas las alquilas en la estación."
+      },
+      {
+        "q": "¿Qué pasa si hace mal tiempo?",
+        "a": "Salimos con casi cualquier condición — para eso está la nieve. Si tengo que cancelar porque los telecabinas no funcionan, las pistas están cerradas o el riesgo de avalancha no es seguro, reprogramas sin coste o recibes el reembolso completo."
+      },
+      {
+        "q": "¿Cómo funciona la cancelación?",
+        "a": "Si cancelas al menos 48 horas antes, recibes un crédito válido un año, aplicable a cualquier reserva futura. Dentro de las 48 horas, o si no apareces, se pierde el importe. Si estás enfermo o lesionado con certificado médico, llámame — te doy un crédito sea cual sea el plazo."
+      },
+      {
+        "q": "¿Podemos esquiar en otra estación que no sea Flumserberg?",
+        "a": "En la clase de día completo, sí — podemos ir a otras estaciones del cantón de St. Gallen. Acuérdalo conmigo antes para planear el día y el punto de encuentro."
+      },
+      {
+        "q": "¿Cómo puedo pagar?",
+        "a": "Tarjeta, TWINT, Apple Pay o Google Pay — eliges tu método al pagar. Todo se gestiona de forma segura, y la reserva se confirma en cuanto pasa el pago."
+      },
+      {
+        "q": "¿Me graban la clase?",
+        "a": "En las clases de 4 y 6 horas te grabo mientras bajamos y te envío los clips al móvil por WhatsApp después. En la de 2 horas va incluido en cuanto superas la fase de principiante."
+      }
+    ],
+    "cta_title": "¿Te queda alguna duda?",
+    "cta_body": "¿Algo que no haya respondido aquí? Llama o escríbeme — prefiero ayudarte a elegir la clase correcta que dejarte adivinar.",
+    "cta_book": "Reservar una clase",
+    "cta_prices": "Ver todos los precios",
+    "cta_contact": "Hablar conmigo"
   },
   "contact": {
     "metadata_title": "Contacto — The Drop",
