@@ -46,8 +46,8 @@
     "class_dur_fullDay": "Día completo",
     "class_blurb_oneHour": "Corrige un fallo concreto o recupera la confianza. Una hora enfocada, solo tú y yo.",
     "class_blurb_twoHours": "Tu primer día en la nieve — o tu siguiente salto de nivel. Videocorrección para casa.",
-    "class_blurb_intensive": "A fondo con freestyle o carving. Videocorrección en vivo, y te la llevas.",
-    "class_blurb_fullDay": "Toda la montaña — tú eliges la estación del norte de Suiza.",
+    "class_blurb_intensive": "Te vas bajando con tus giros enlazados — seguro, en un solo día. O a fondo con freestyle y carving. Grabado, y te lo llevas.",
+    "class_blurb_fullDay": "Seis horas en la montaña con 30 minutos de descanso — y tú eliges la estación del cantón.",
     "class_cta": "Reservar",
     "instructor_eyebrow": "Tu coach",
     "instructor_name": "Soy Javi",
@@ -456,7 +456,7 @@
         "name": "Clase de snowboard de 2 horas",
         "blurb": "Tu primer día, o las bases bien hechas. Tiempo de sobra para que te haga clic.",
         "points": [
-          "¿Primera vez en la tabla? Te vas enlazando los giros.",
+          "¿Primera vez en la tabla? Empiezas a enlazar los giros — la intensiva de 4 horas es donde los dejas clavados.",
           "¿Ya tienes las bases? Un buen repaso técnico.",
           "Dos horas es donde se asientan los fundamentos."
         ],
@@ -465,25 +465,25 @@
         "meeting": "la puerta del restaurante COLORS"
       },
       "intensive": {
-        "kicker": "A fondo",
+        "kicker": "Giros clavados",
         "name": "Clase intensiva de 4 horas",
-        "blurb": "Freestyle o carving — cuatro horas para cambiar de verdad cómo bajas.",
+        "blurb": "Te vas bajando con tus giros enlazados — seguro, en un solo día. O, si ya tienes las bases, a fondo con freestyle y carving.",
         "points": [
-          "Elige tu línea: freestyle en el park o carving de giros fuertes.",
-          "Ejercicios que se quedan, no bajar por bajar.",
+          "¿Primera vez en la tabla? Es la clase de la que te vas bajando de verdad con los giros enlazados — seguro, no quizá.",
+          "¿Ya tienes las bases? Elige tu línea: freestyle en el park o carving de giros fuertes.",
           "Te grabo sobre la marcha y te lo paso al móvil después."
         ],
-        "facets": ["Freestyle", "Carving", "Técnica"],
+        "facets": ["Giros enlazados", "Freestyle", "Carving"],
         "meeting": "un punto de encuentro que elegimos juntos"
       },
       "fullDay": {
         "kicker": "Día completo",
         "name": "Clase de snowboard de día completo",
-        "blurb": "Todo lo de la intensiva, con la montaña entera y tiempo para respirar.",
+        "blurb": "Todo lo de la intensiva de 4 horas — a lo largo de seis horas, la montaña entera y un descanso de verdad.",
         "points": [
           "Todo lo de la intensiva de 4 horas — freestyle o carving, grabado.",
           "Elige la estación: podemos bajar por otras estaciones del cantón de St. Gallen (hablándolo antes conmigo).",
-          "Una pausa de verdad de 30–45 minutos para recargar."
+          "Seis horas en total, con 30 minutos de descanso para recargar."
         ],
         "facets": ["Freestyle", "Carving", "Varias estaciones"],
         "meeting": "un punto de encuentro que elegimos juntos"
@@ -583,7 +583,11 @@
       },
       {
         "q": "¿Qué nivel necesito?",
-        "a": "Cualquiera. La clase de 2 horas está pensada para el primer día y los fundamentos; la de 1 hora es el arreglo rápido cuando algo se te atasca; las de 4 y 6 horas profundizan en freestyle o carving. ¿No sabes cuál encaja? Escríbeme."
+        "a": "Cualquiera. La de 1 hora es el arreglo rápido cuando algo se te atasca. La de 2 horas mete a los principiantes en los fundamentos. La intensiva de 4 horas es la clase de la que te vas bajando de verdad con los giros enlazados — seguro, en un solo día — o a fondo con freestyle y carving si ya tienes las bases. El día completo añade una segunda estación y un descanso de verdad. ¿No sabes cuál encaja? Escríbeme."
+      },
+      {
+        "q": "¿Cuánto dura la clase de día completo?",
+        "a": "Seis horas en la montaña, con 30 minutos de descanso a media jornada para descansar las piernas y recargar. Un día entero en la nieve, dosificado para que cada bajada cuente."
       },
       {
         "q": "¿Dónde quedamos?",
@@ -617,7 +621,8 @@
     "cta_title": "¿Te queda alguna duda?",
     "cta_body": "¿Algo que no haya respondido aquí? Llama o escríbeme — prefiero ayudarte a elegir la clase correcta que dejarte adivinar.",
     "cta_book": "Reservar una clase",
-    "cta_prices": "Ver todos los precios"
+    "cta_prices": "Ver todos los precios",
+    "cta_contact": "Hablar conmigo"
   },
   "contact": {
     "metadata_title": "Contacto — The Drop",

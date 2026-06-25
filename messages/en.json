@@ -46,8 +46,8 @@
     "class_dur_fullDay": "Full Day",
     "class_blurb_oneHour": "Fix one thing, or get your nerve back. One focused hour, just the two of us.",
     "class_blurb_twoHours": "Your first day on snow — or your next breakthrough. Video feedback to take home.",
-    "class_blurb_intensive": "Go deep on freestyle or carving. Live video coaching, and yours to keep.",
-    "class_blurb_fullDay": "The whole mountain — your choice of resort across northern Switzerland.",
+    "class_blurb_intensive": "Leave riding your linked turns — for sure, in a single day. Or go deep on freestyle and carving. Filmed, yours to keep.",
+    "class_blurb_fullDay": "Six hours on the mountain with a 30-minute break — and your choice of resort across the canton.",
     "class_cta": "Book",
     "instructor_eyebrow": "Your coach",
     "instructor_name": "I'm Javi",
@@ -456,7 +456,7 @@
         "name": "2-hour snowboard lesson",
         "blurb": "Your first day, or the basics done right. Enough time for it to actually click.",
         "points": [
-          "First time on a board? You'll leave linking your turns.",
+          "First time on a board? You'll start linking your turns — the 4-hour intensive is the one you nail them for good.",
           "Already know the basics? A proper technical tune-up.",
           "Two hours is where the fundamentals settle in."
         ],
@@ -465,25 +465,25 @@
         "meeting": "the COLORS restaurant door"
       },
       "intensive": {
-        "kicker": "Go Deep",
+        "kicker": "Turns Nailed",
         "name": "4-hour intensive lesson",
-        "blurb": "Freestyle or carving — four hours to actually change how you ride.",
+        "blurb": "Leave riding your linked turns — for sure, in a single day. Or, past the basics, go deep on freestyle and carving.",
         "points": [
-          "Pick your line: freestyle in the park, or carving hard turns.",
-          "Drills that stick, not just laps for the sake of it.",
+          "First time on a board? This is the one you leave actually riding your linked turns — for sure, not maybe.",
+          "Past the basics? Pick your line: freestyle in the park, or carving hard turns.",
           "I film you as we go, and send it to your phone after."
         ],
-        "facets": ["Freestyle", "Carving", "Technique"],
+        "facets": ["Linked turns", "Freestyle", "Carving"],
         "meeting": "a meeting point we pick together"
       },
       "fullDay": {
         "kicker": "All Day",
         "name": "Full-day snowboard lesson",
-        "blurb": "Everything the intensive is, with the whole mountain and time to breathe.",
+        "blurb": "Everything the 4-hour intensive is — across six hours, the whole mountain, and a real break.",
         "points": [
           "All of the 4-hour intensive — freestyle or carving, filmed.",
           "Choose the resort: we can ride other spots in the canton of St. Gallen (sorted with me first).",
-          "A real 30–45 minute break to refuel."
+          "Six hours in total, with a 30-minute break to refuel."
         ],
         "facets": ["Freestyle", "Carving", "Multiple resorts"],
         "meeting": "a meeting point we pick together"
@@ -583,7 +583,11 @@
       },
       {
         "q": "What level do I need?",
-        "a": "Any. The 2-hour lesson is built for first-timers and the basics; the 1-hour is a quick fix when one thing's nagging you; the 4- and 6-hour sessions go deep on freestyle or carving. Not sure which fits? Message me."
+        "a": "Any. The 1-hour is a quick fix when one thing's nagging you. The 2-hour gets first-timers started on the basics. The 4-hour intensive is the one you leave actually riding your linked turns — for sure, in a single day — or go deep on freestyle and carving if you're past the basics. The full day adds a second resort and a proper break. Not sure which fits? Message me."
+      },
+      {
+        "q": "How long is the full-day lesson?",
+        "a": "Six hours on the mountain, with a 30-minute break in the middle to rest your legs and refuel. A full day on snow, paced so every run counts."
       },
       {
         "q": "Where do we meet?",
@@ -617,7 +621,8 @@
     "cta_title": "Still wondering something?",
     "cta_body": "Have a question I haven't answered here? Call or message me — I'd rather help you pick the right lesson than have you guess.",
     "cta_book": "Book a lesson",
-    "cta_prices": "See full prices"
+    "cta_prices": "See full prices",
+    "cta_contact": "Get in touch"
   },
   "contact": {
     "metadata_title": "Contact — The Drop",

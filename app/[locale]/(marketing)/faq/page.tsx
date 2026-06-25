@@ -101,6 +101,13 @@ export default async function FaqPage({ params }: Props) {
             >
               {t("cta_prices")}
             </Link>
+            <Link
+              href="/contacto"
+              data-testid="faq-cta-contact"
+              className="rounded-md border-2 border-foreground/30 bg-transparent px-8 py-[18px] text-[13px] font-bold uppercase tracking-[0.18em] text-foreground transition-colors hover:border-foreground hover:bg-foreground hover:text-background"
+            >
+              {t("cta_contact")}
+            </Link>
           </div>
         </section>
       </Reveal>

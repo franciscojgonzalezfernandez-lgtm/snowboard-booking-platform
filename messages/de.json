@@ -46,8 +46,8 @@
     "class_dur_fullDay": "Ganzer Tag",
     "class_blurb_oneHour": "Einen Fehler beheben oder die Angst loswerden. Eine fokussierte Stunde, nur wir zwei.",
     "class_blurb_twoHours": "Dein erster Tag im Schnee — oder dein nächster Durchbruch. Videofeedback für zu Hause.",
-    "class_blurb_intensive": "Tief rein in Freestyle oder Carving. Live-Videocoaching, und du behältst es.",
-    "class_blurb_fullDay": "Der ganze Berg — deine Wahl der Station in der Nordschweiz.",
+    "class_blurb_intensive": "Fahr mit verbundenen Turns nach Hause — sicher, an einem einzigen Tag. Oder tief rein in Freestyle und Carving. Gefilmt, du behältst es.",
+    "class_blurb_fullDay": "Sechs Stunden am Berg mit 30 Minuten Pause — und deine Wahl der Station im Kanton.",
     "class_cta": "Buchen",
     "instructor_eyebrow": "Dein Coach",
     "instructor_name": "Ich bin Javi",
@@ -456,7 +456,7 @@
         "name": "2-stündige Snowboard-Lektion",
         "blurb": "Dein erster Tag oder die Basics richtig gelernt. Genug Zeit, dass es wirklich klickt.",
         "points": [
-          "Zum ersten Mal auf dem Board? Du fährst mit verbundenen Turns nach Hause.",
+          "Zum ersten Mal auf dem Board? Du fängst an, Turns zu verbinden — bei der 4-Stunden-Intensiv sitzen sie dann richtig.",
           "Basics schon drauf? Ein sauberer technischer Feinschliff.",
           "Zwei Stunden sind, wo die Grundlagen sitzen."
         ],
@@ -465,25 +465,25 @@
         "meeting": "an der Tür des Restaurants COLORS"
       },
       "intensive": {
-        "kicker": "Intensiv",
+        "kicker": "Turns sitzen",
         "name": "4-stündige Intensiv-Lektion",
-        "blurb": "Freestyle oder Carving — vier Stunden, um wirklich zu verändern, wie du fährst.",
+        "blurb": "Fahr mit verbundenen Turns nach Hause — sicher, an einem einzigen Tag. Oder geh, wenn du die Basics drauf hast, tief in Freestyle und Carving.",
         "points": [
-          "Wähl deine Linie: Freestyle im Park oder harte Carving-Turns.",
-          "Drills, die sitzen — nicht einfach Laps fahren.",
+          "Zum ersten Mal auf dem Board? Das ist die Lektion, bei der du mit wirklich verbundenen Turns nach Hause fährst — sicher, nicht vielleicht.",
+          "Basics schon drauf? Wähl deine Linie: Freestyle im Park oder harte Carving-Turns.",
           "Ich filme dich unterwegs und schicke es dir danach aufs Handy."
         ],
-        "facets": ["Freestyle", "Carving", "Technik"],
+        "facets": ["Verbundene Turns", "Freestyle", "Carving"],
         "meeting": "an einem Treffpunkt, den wir zusammen wählen"
       },
       "fullDay": {
         "kicker": "Ganzer Tag",
         "name": "Ganztägige Snowboard-Lektion",
-        "blurb": "Alles aus der Intensiv-Lektion, mit dem ganzen Berg und Zeit zum Durchatmen.",
+        "blurb": "Alles aus der 4-Stunden-Intensiv-Lektion — über sechs Stunden, der ganze Berg und eine echte Pause.",
         "points": [
           "Alles aus der 4-Stunden-Intensiv-Lektion — Freestyle oder Carving, gefilmt.",
           "Wähl das Skigebiet: Wir können andere Gebiete im Kanton St. Gallen fahren (vorher mit mir abgesprochen).",
-          "Eine echte Pause von 30–45 Minuten zum Auftanken."
+          "Sechs Stunden insgesamt, mit 30 Minuten Pause zum Auftanken."
         ],
         "facets": ["Freestyle", "Carving", "Mehrere Gebiete"],
         "meeting": "an einem Treffpunkt, den wir zusammen wählen"
@@ -583,7 +583,11 @@
       },
       {
         "q": "Welches Niveau brauche ich?",
-        "a": "Jedes. Die 2-Stunden-Stunde ist für den ersten Tag und die Basics gemacht; die 1-Stunde ist der schnelle Fix, wenn eine Sache klemmt; die 4- und 6-Stunden gehen tief in Freestyle oder Carving. Unsicher, was passt? Schreib mir."
+        "a": "Jedes. Die 1-Stunde ist der schnelle Fix, wenn eine Sache klemmt. Die 2-Stunden bringen Einsteiger an die Basics. Die 4-Stunden-Intensiv ist die Lektion, bei der du mit wirklich verbundenen Turns nach Hause fährst — sicher, an einem einzigen Tag — oder, wenn du die Basics drauf hast, tief in Freestyle und Carving gehst. Der ganze Tag fügt eine zweite Station und eine richtige Pause hinzu. Unsicher, was passt? Schreib mir."
+      },
+      {
+        "q": "Wie lang ist die Ganztageslektion?",
+        "a": "Sechs Stunden am Berg, mit 30 Minuten Pause in der Mitte, um die Beine auszuruhen und aufzutanken. Ein ganzer Tag im Schnee, so getaktet, dass jede Abfahrt zählt."
       },
       {
         "q": "Wo treffen wir uns?",
@@ -617,7 +621,8 @@
     "cta_title": "Bleibt eine Frage offen?",
     "cta_body": "Etwas, das ich hier nicht beantwortet habe? Ruf an oder schreib mir — lieber helfe ich dir, die richtige Stunde zu wählen, als dich raten zu lassen.",
     "cta_book": "Stunde buchen",
-    "cta_prices": "Alle Preise ansehen"
+    "cta_prices": "Alle Preise ansehen",
+    "cta_contact": "Kontakt aufnehmen"
   },
   "contact": {
     "metadata_title": "Kontakt — The Drop",
