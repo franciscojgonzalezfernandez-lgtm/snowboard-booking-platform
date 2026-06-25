@@ -120,6 +120,19 @@ describe("sendBookingConfirmedEmailWith", () => {
     expect(decoded).toContain("DTSTART:20261205T100000Z");
   });
 
+  test("includes the COLORS meeting point + a Google Maps link in the body", async () => {
+    const { deps, client } = makeDeps();
+    await sendBookingConfirmedEmailWith(deps, "book_1");
+    const call = (
+      client.emails.send as unknown as {
+        mock: { calls: Array<[Record<string, unknown>, unknown]> };
+      }
+    ).mock.calls[0]!;
+    const text = call[0].text as string;
+    expect(text).toContain("COLORS");
+    expect(text).toMatch(/google\.com\/maps/);
+  });
+
   test("is idempotent — second invocation returns ALREADY_SENT and does not call Resend", async () => {
     const { deps, client } = makeDeps({
       booking: makeBooking({

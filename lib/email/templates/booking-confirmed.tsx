@@ -24,6 +24,8 @@ export type BookingConfirmedEmailProps = {
   totalLabel: string;
   contactEmail: string;
   manageBookingUrl: string;
+  meetingName: string;
+  meetingMapsHref: string;
 };
 
 type BookingConfirmedCopy = {
@@ -40,6 +42,8 @@ type BookingConfirmedCopy = {
   attendeesValue: (count: number) => string;
   totalLabel: string;
   vatNote: string;
+  meetingLabel: string;
+  meetingDirections: string;
   calendarNote: string;
   manageLink: string;
   cancellationNote: string;
@@ -63,6 +67,8 @@ const COPY: Record<Locale, BookingConfirmedCopy> = {
       count === 1 ? "1 rider" : `${count} riders`,
     totalLabel: "Total",
     vatNote: "CHF, VAT included.",
+    meetingLabel: "Meeting point",
+    meetingDirections: "Open in Google Maps",
     calendarNote:
       "A calendar invite is attached. Open the file on your phone or laptop to add it to your calendar.",
     manageLink: "Manage this booking",
@@ -86,6 +92,8 @@ const COPY: Record<Locale, BookingConfirmedCopy> = {
       count === 1 ? "1 Fahrer:in" : `${count} Fahrer:innen`,
     totalLabel: "Gesamt",
     vatNote: "CHF, inkl. MwSt.",
+    meetingLabel: "Treffpunkt",
+    meetingDirections: "In Google Maps öffnen",
     calendarNote:
       "Eine Kalendereinladung liegt bei. Öffne die Datei auf dem Handy oder Laptop, um sie deinem Kalender hinzuzufügen.",
     manageLink: "Buchung verwalten",
@@ -109,6 +117,8 @@ const COPY: Record<Locale, BookingConfirmedCopy> = {
       count === 1 ? "1 rider" : `${count} riders`,
     totalLabel: "Total",
     vatNote: "CHF, IVA incluido.",
+    meetingLabel: "Punto de encuentro",
+    meetingDirections: "Abrir en Google Maps",
     calendarNote:
       "Adjuntamos una invitación de calendario. Abre el archivo en tu móvil o portátil para añadirlo a tu calendario.",
     manageLink: "Gestionar esta reserva",
@@ -136,6 +146,8 @@ export function BookingConfirmedEmail({
   totalLabel,
   contactEmail,
   manageBookingUrl,
+  meetingName,
+  meetingMapsHref,
 }: BookingConfirmedEmailProps) {
   const t = getBookingConfirmedCopy(locale);
 
@@ -167,6 +179,13 @@ export function BookingConfirmedEmail({
             <InfoRow label={t.totalLabel} value={totalLabel} bold />
             <Text style={vatNote}>{t.vatNote}</Text>
           </Section>
+
+          <Text style={copy}>
+            <strong>{t.meetingLabel}:</strong> {meetingName}.{" "}
+            <a href={meetingMapsHref} style={link}>
+              {t.meetingDirections}
+            </a>
+          </Text>
 
           <Text style={copy}>{t.calendarNote}</Text>
 

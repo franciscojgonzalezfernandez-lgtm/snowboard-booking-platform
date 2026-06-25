@@ -36,6 +36,13 @@ export async function SiteFooter() {
           >
             {tFooter("privacy_link")}
           </Link>
+          <Link
+            href="/contacto"
+            data-testid="footer-contact-link"
+            className="hover:text-primary"
+          >
+            {tFooter("contact_link")}
+          </Link>
           <span aria-hidden="true" className="text-background/70">
             EN <span className="text-primary">·</span> DE{" "}
             <span className="text-primary">·</span> ES
