@@ -4,6 +4,8 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
+import { siteOrigin } from "@/lib/seo/site-url";
+
 const archivo = Archivo({
   variable: "--font-archivo",
   subsets: ["latin"],
@@ -19,6 +21,9 @@ const archivoBlack = Archivo_Black({
 });
 
 export const metadata: Metadata = {
+  // Resolves relative og:image / canonical / hreflang URLs to absolute ones.
+  // Without it Next falls back to localhost and social cards break in prod.
+  metadataBase: new URL(siteOrigin()),
   title: "Snowboard Booking Platform",
   description: "Private snowboard lessons in Switzerland — booking platform",
 };
