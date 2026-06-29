@@ -56,10 +56,13 @@ export default async function BlogIndexPage({ params }: Props) {
       ) : (
         <ul
           data-testid="blog-grid"
-          className="grid gap-px border border-foreground/15 bg-foreground/15 sm:grid-cols-2 lg:grid-cols-3"
+          className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8"
         >
           {posts.map((post) => (
-            <li key={post.id} className="bg-background">
+            <li
+              key={post.id}
+              className="border border-foreground/15 bg-background transition-colors hover:border-foreground/30"
+            >
               <Link
                 href={`/blog/${post.slug}`}
                 data-testid="blog-card"
