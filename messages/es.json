@@ -7,7 +7,7 @@
     "about": "Sobre nosotros",
     "instructors": "Instructores",
     "prices": "Precios",
-    "journal": "Cuaderno",
+    "journal": "Blog",
     "contact": "Contacto",
     "reservar": "Reservar clase",
     "signin": "Iniciar sesión",
@@ -556,6 +556,18 @@
     "cta_title": "Vente a bajar.",
     "cta_book": "Reservar clase",
     "cta_instructors": "Conoce a tu coach"
+  },
+  "blog": {
+    "metadata_title": "Blog — The Drop",
+    "metadata_description": "Snowboard desde quien lo enseña cada semana en Flumserberg: tu primer día, freestyle o carving y por qué el norte de Suiza.",
+    "eyebrow": "Blog",
+    "heading": "Notas de la montaña",
+    "intro": "Lo que te cuento en el telesilla, por escrito. Nada de teoría que no vayas a usar: solo lo que te ayuda a hacer mejor snowboard y a preocuparte menos.",
+    "empty": "Aún no hay nada por aquí. Vuelve pronto.",
+    "read_time": "{minutes} min de lectura",
+    "back": "Todas las notas",
+    "cta_heading": "¿Quieres que te lo enseñe en persona?",
+    "cta_button": "Reserva una clase"
   },
   "faq": {
     "metadata_title": "FAQ — clases de snowboard en Flumserberg | The Drop",

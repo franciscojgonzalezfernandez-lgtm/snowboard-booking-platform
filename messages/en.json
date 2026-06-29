@@ -557,6 +557,18 @@
     "cta_book": "Book a lesson",
     "cta_instructors": "Meet your coach"
   },
+  "blog": {
+    "metadata_title": "Field notes — The Drop",
+    "metadata_description": "Snowboarding from someone who teaches it every week at Flumserberg — your first day, freestyle or carving, and why the north of Switzerland.",
+    "eyebrow": "Field notes",
+    "heading": "Notes from the hill",
+    "intro": "What I tell people on the chairlift, written down. No theory you'll never use — just what helps you ride better and worry less.",
+    "empty": "Nothing here yet. Check back soon.",
+    "read_time": "{minutes} min read",
+    "back": "All field notes",
+    "cta_heading": "Want me to show you in person?",
+    "cta_button": "Book a lesson"
+  },
   "faq": {
     "metadata_title": "FAQ — snowboard lessons in Flumserberg | The Drop",
     "metadata_description": "Lift pass, gear, age limits, languages, cancellation and what to bring — everything you need to know before booking a private snowboard lesson in Flumserberg with The Drop.",

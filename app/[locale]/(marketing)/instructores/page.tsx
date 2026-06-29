@@ -56,10 +56,13 @@ export default async function InstructorsPage({ params }: Props) {
 
       <ul
         data-testid="instructor-grid"
-        className="grid gap-px border border-foreground/15 bg-foreground/15 sm:grid-cols-2 lg:grid-cols-3"
+        className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8"
       >
         {instructors.map((instructor) => (
-          <li key={instructor.id} className="bg-background">
+          <li
+            key={instructor.id}
+            className="border border-foreground/15 bg-background transition-colors hover:border-foreground/30"
+          >
             <Link
               href={{
                 pathname: "/instructores/[slug]",
