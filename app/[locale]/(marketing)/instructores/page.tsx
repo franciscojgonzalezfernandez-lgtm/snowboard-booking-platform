@@ -61,7 +61,10 @@ export default async function InstructorsPage({ params }: Props) {
         {instructors.map((instructor) => (
           <li key={instructor.id} className="bg-background">
             <Link
-              href={`/instructores/${instructor.slug}`}
+              href={{
+                pathname: "/instructores/[slug]",
+                params: { slug: instructor.slug },
+              }}
               data-testid="instructor-card"
               className="group flex h-full flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >

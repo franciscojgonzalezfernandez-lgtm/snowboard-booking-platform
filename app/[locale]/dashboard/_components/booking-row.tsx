@@ -125,7 +125,10 @@ export function BookingRowItem({
         )}
         {kind === "pending" ? (
           <Link
-            href={`/reservar/pago/${booking.id}`}
+            href={{
+              pathname: "/reservar/pago/[bookingId]",
+              params: { bookingId: booking.id },
+            }}
             data-testid="dashboard-booking-resume"
             className="inline-flex items-center justify-center rounded-md border-2 border-foreground bg-foreground px-5 py-2.5 text-[12px] font-bold uppercase tracking-[0.18em] text-background transition-colors hover:bg-destructive hover:border-destructive"
           >
@@ -143,7 +146,10 @@ export function BookingRowItem({
         ) : null}
         {kind === "upcoming" || kind === "past" ? (
           <Link
-            href={`/reservar/exito/${booking.id}`}
+            href={{
+              pathname: "/reservar/exito/[id]",
+              params: { id: booking.id },
+            }}
             data-testid="dashboard-booking-link"
             className="text-xs font-bold uppercase tracking-[0.18em] underline-offset-4 hover:underline"
           >

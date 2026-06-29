@@ -63,15 +63,15 @@ test.describe("F-096 — Contact page", () => {
 
     await expect(page.getByTestId("site-nav-contact")).toHaveAttribute(
       "href",
-      "/en/contacto",
+      "/en/contact",
     );
     await expect(page.getByTestId("footer-contact-link")).toHaveAttribute(
       "href",
-      "/en/contacto",
+      "/en/contact",
     );
 
     await page.getByTestId("site-nav-contact").click();
-    await page.waitForURL(/\/contacto$/);
+    await page.waitForURL(/\/contact$/);
     await expect(page.getByTestId("contact-page")).toBeVisible();
   });
 });

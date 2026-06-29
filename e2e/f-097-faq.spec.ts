@@ -2,6 +2,9 @@ import { test, expect } from "@playwright/test";
 
 const LOCALES = ["en", "de", "es"] as const;
 
+// F-102 — the pricing page slug is translated per locale (FAQ stays universal).
+const PRICING_SLUG = { en: "pricing", de: "preise", es: "precios" } as const;
+
 const HEADING = {
   en: "Questions, answered.",
   de: "Fragen, beantwortet.",
@@ -89,7 +92,7 @@ test.describe("F-097 — FAQ page", () => {
       );
       await expect(page.getByTestId("faq-cta-prices")).toHaveAttribute(
         "href",
-        `/${locale}/precios`,
+        `/${locale}/${PRICING_SLUG[locale]}`,
       );
     });
   }
@@ -103,7 +106,7 @@ test.describe("F-097 — FAQ page", () => {
       .getByRole("link", { name: /prices/i })
       .first()
       .click();
-    await page.waitForURL("**/precios");
+    await page.waitForURL(`**/${PRICING_SLUG.en}`);
     await expect(page.getByTestId("pricing-page")).toBeVisible();
   });
 
