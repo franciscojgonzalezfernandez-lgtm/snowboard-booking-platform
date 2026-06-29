@@ -32,6 +32,11 @@ jobs:
           node-version: 20
           cache: npm
 
+      # Match CI: pin npm 11 so the npm-11-generated lockfile installs cleanly
+      # (node 20 ships npm 10, which dedups locks differently). See ci.yml.
+      - name: Pin npm to 11 (lockfile parity with local)
+        run: npm install -g npm@11
+
       - name: Install dependencies
         run: npm ci
 

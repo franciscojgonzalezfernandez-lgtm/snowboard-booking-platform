@@ -40,6 +40,12 @@ jobs:
           node-version: 20
           cache: npm
 
+      # node 20 ships npm 10, but lockfiles are generated locally with npm 11.
+      # npm majors dedup package-lock.json differently, so an npm-11 lock fails
+      # `npm ci` under npm 10. Pin CI to npm 11 so lockfile resolution matches.
+      - name: Pin npm to 11 (lockfile parity with local)
+        run: npm install -g npm@11
+
       - name: Install dependencies
         run: npm ci
 
