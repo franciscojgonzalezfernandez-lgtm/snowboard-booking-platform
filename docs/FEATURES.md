@@ -1967,18 +1967,20 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-098 — Blog MDX (3 posts trilingüe al lanzamiento)
 
-- Sprint: 5 · Estado: backlog · Prioridad: P2
+- Sprint: 5 · Estado: **done** (2026-06-23) · Prioridad: P2
 - Depende de: F-105, F-031 (next-intl)
 - Motivación: SEO de contenido + autoridad. 3 posts trilingües al lanzamiento (decisión owner) capturan long-tail ("learn snowboard Flumserberg", "snowboard vs ski beginner", "carving tips") con hreflang completo
 - AC:
-  - [ ] Pipeline MDX: `app/[locale]/(marketing)/blog/page.tsx` (índice) + `[slug]/page.tsx`, content en `content/blog/{en,de,es}/*.mdx` con frontmatter (title, description, date, cover, slug)
-  - [ ] 3 posts iniciales × 3 locales (9 ficheros). Topics propuestos (owner confirma): (1) primer día en snowboard, (2) freestyle vs carving — qué clase elegir, (3) por qué Flumserberg / norte de Suiza
-  - [ ] `generateStaticParams` + `generateMetadata` por post (F-103); `Article`/`BlogPosting` JSON-LD (F-100)
-  - [ ] Estilo editorial (tipografía serif display, motion sutil), `next/image` en covers
-- Tests: Playwright — índice lista posts, post resuelve por slug × 3 locales, hreflang alterna; build MDX sin error
+  - [x] Pipeline MDX: `app/[locale]/(marketing)/blog/page.tsx` (índice) + `[slug]/page.tsx`, content en `content/blog/{en,de,es}/*.mdx` con frontmatter (title, description, date, cover, slug). `lib/blog/posts.ts` lee el FS y enlaza traducciones por `id`
+  - [x] 3 posts iniciales × 3 locales (9 ficheros): (1) primer día en snowboard, (2) freestyle vs carving — qué clase elegir, (3) por qué Flumserberg / norte de Suiza. Voz «Your coach» (Javi, du/tú adaptado, no traducción literal)
+  - [x] `generateStaticParams` + `generateMetadata` por post con canonical + `alternates.languages` (hreflang en/de/es + x-default) y openGraph `article`. `Article`/`BlogPosting` JSON-LD → **F-100** (no en este ticket)
+  - [x] Estilo editorial (display Archivo Black, prose a mano sin `@tailwindcss/typography`), `next/image` en covers con fallback editorial mientras el owner no aporte foto
+- Tests: Playwright `e2e/f-098-blog.spec.ts` (9 tests, verde) — índice lista posts, post resuelve por slug × 3 locales, hreflang alterna, card→post, slug desconocido 404; build MDX sin error
 - Notas:
-  - Trilingüe day-one = 3× copywriting; los borra/edita el owner. Slugs traducidos por locale
+  - Trilingüe day-one = 3× copywriting; los borra/edita el owner. Slugs traducidos por locale (frontmatter `slug`, no `pathnames` de next-intl — el segmento `blog` no se traduce)
   - **No** CMS en MVP — MDX en repo, PR por post
+  - **Covers pendientes:** el owner aporta 1 foto por post tras revisar la copy; el frontmatter `cover`/`coverAlt` es opcional y degrada a un bloque cream con wordmark
+  - Deps añadidas: `next-mdx-remote` (`compileMDX` RSC) + `gray-matter` + `reading-time`. `nav.journal` ("Field notes"/"Feldnotizen"/"Cuaderno") cableado a `/blog` en SiteNav + MobileNav
 
 ##### F-099 — Dynamic sitemap + hreflang + robots
 

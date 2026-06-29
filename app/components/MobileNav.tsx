@@ -73,7 +73,7 @@ export function MobileNav({ signedIn }: MobileNavProps) {
           <Link href="/precios" onClick={close} className={linkClass}>
             {t("prices")}
           </Link>
-          <Link href="/" onClick={close} className={linkClass}>
+          <Link href="/blog" onClick={close} className={linkClass}>
             {t("journal")}
           </Link>
           <Link
