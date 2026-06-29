@@ -1932,29 +1932,38 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-096 — Contact page (lean: phone + email + hours + map, sin form)
 
-- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Sprint: 5 · Estado: **done** (2026-06-23) · Prioridad: P1
 - Depende de: F-052 (constantes phone), F-105
 - Motivación: surface de contacto real y destino del CTA del hero announcement (F-053). MVP sin form — el form de team-building es post-MVP (F-054). Reduce fricción para dudas operativas y da un punto de aterrizaje honesto
 - AC:
-  - [ ] `app/[locale]/(marketing)/contacto/page.tsx` (slug F-102): teléfono (`OPERATIONAL_PHONE_DISPLAY`/`_TEL` de F-052), email, horario operativo, ubicación (mapa estático/embed de Flumserberg, lazy)
-  - [ ] **Sin** form (F-054 lo añade post-MVP); CTA `tel:`/`mailto:` nativos
-  - [ ] Copy trilingüe `contact.*`
-- Tests: Playwright — phone `tel:` exacto, email `mailto:`, render × 3 locales
+  - [x] `app/[locale]/(marketing)/contacto/page.tsx` (slug F-102 pendiente): teléfono (`OPERATIONAL_PHONE_DISPLAY`/`_TEL` de F-052), email (`CONTACT_EMAIL` de F-096), horario operativo (temporada + ventana 08:00–17:00), punto de encuentro (COLORS, Tannenbodenalp) y mapa click-to-load de Google Maps. SSG por locale (`generateStaticParams` + `generateMetadata`)
+  - [x] **Sin** form (F-054 lo añade post-MVP); CTA `tel:`/`mailto:` nativos
+  - [x] Copy trilingüe `contact.*` (en/de/es)
+- Tests: [x] Playwright `e2e/f-096-contacto.spec.ts` — `tel:` exacto, `mailto:` exacto, hours/meeting presentes, link mapa → Google, click-to-load monta el iframe de Google, link nav/footer → `/contacto` (clic navega), **sin** `<form>`, 200 × 3 locales (4 verdes). Vitest `send-booking-confirmed` (7 verdes) cubre el link COLORS/Google Maps en el body.
 - Notas:
-  - F-053 CTA team-building apunta aquí cuando el owner active el toggle; F-054 (form) reemplaza el placeholder más adelante
-  - Mapa: embed sin cookies de tracking para no disparar requisito de banner (ver F-045 notas)
+  - **Email single source of truth (F-096):** `lib/contact/email.ts` (`CONTACT_EMAIL` + `CONTACT_EMAIL_HREF`), espejo del patrón phone de F-052. Dedupe: los 3 senders (`send-booking-confirmed`/`-reminder`/`-post-class`) importaban el mismo literal local → ahora importan la constante. Valor = **`hello@rideflumserberg.ch`** (inbox de marca, decisión owner 2026-06-23) — se descartó exponer el gmail personal en superficie pública crawleable. Propaga a la página de contacto + los 3 emails transaccionales.
+  - **Bugfix reminder phone (F-096):** `send-booking-reminder.ts` tenía un fallback de teléfono hardcodeado **falso** (`+41 76 000 00 00`) que se renderizaba en el email de recordatorio si no se pasaba `deps.contactPhone`. Ahora cae a `OPERATIONAL_PHONE_DISPLAY` (`lib/contact/phone.ts`), consistente con `send-cancellation.ts`.
+  - **Mapa — click-to-load Google Maps (follow-up 2026-06-23, decisión owner):** reemplaza el embed OSM original. El iframe de Google setea una cookie de tracking (NID) al cargar → en CH/EU (FADP/GDPR) obligaría a un banner de consentimiento que no existe. Patrón: placeholder cookieless primero (`contacto/_components/map-embed.tsx`, client), el iframe sólo monta tras click explícito del visitante (consent-by-action, sin banner). Coordenadas/queries y hrefs viven en **`lib/contact/location.ts`** (`MEETING_POINT_*`), espejo del patrón phone/email. Link outbound "Open in Google Maps" es un `<a>` plano → sin cookies.
+  - **Link en nav/footer (follow-up 2026-06-23):** `nav.contact` + `footer.contact_link` (en/de/es) → `/contacto`, cableados en `SiteNav` (desktop), `MobileNav` (sheet) y `SiteFooter`. Antes huérfana (sólo URL directa + CTA F-053). El pase de slugs traducidos sigue pendiente (F-102).
+  - **Link COLORS en email de confirmación (follow-up 2026-06-23):** `send-booking-confirmed` añade una línea "Meeting point: COLORS, Tannenbodenalp — Open in Google Maps" (React + plain text, trilingüe) usando `MEETING_POINT_LABEL`/`MEETING_POINT_MAPS_HREF` de `lib/contact/location.ts`. El cliente sabe dónde quedamos sin esperar al recordatorio.
+  - F-053 CTA team-building apunta aquí cuando el owner active el toggle (hoy `cta_href="phone"`); F-054 (form) reemplaza el placeholder más adelante
+  - **Hallazgo (pre-existente de F-090, corregido en F-106):** los primitives de `lib/motion/` (`reveal`/`stagger`/`parallax`/`wordmark-reveal`) producían un **hydration mismatch sólo para usuarios `prefers-reduced-motion`** — el server renderiza `motion.div` (opacity:0) y el cliente reduced devuelve un `<div>` plano; React no parchea el style → flash de contenido en blanco hasta que el efecto de `useReducedMotion` re-renderiza. Afectaba a **todas** las páginas marketing (precios/home/terms/instructores/contacto). Arreglado en **F-106** (PR aparte).
+  - **Datos hardcodeados:** el punto de encuentro (nombre/área + hrefs de mapa) ya vive en `lib/contact/location.ts` (`MEETING_POINT_*`). Queda la ventana horaria 08:00–17:00 en `messages/*.json` (no hay constante de negocio para el horario). Si el owner formaliza el horario, extraerlo igual a `lib/contact/`
 
 ##### F-097 — FAQ page (trilingüe, captura objeciones de conversión)
 
-- Sprint: 5 · Estado: backlog · Prioridad: P2
+- Sprint: 5 · Estado: **done** · Prioridad: P2
 - Depende de: F-105, F-093 (consistencia de hechos), F-040 (política cancelación)
 - Motivación: la FAQ mata las objeciones que frenan la reserva. Responde de una las dudas reales: forfait, equipo, edad, idiomas, cancelación, qué llevar. SEO: FAQ structured data (`FAQPage`) gana rich snippets
 - AC:
-  - [ ] `app/[locale]/(marketing)/faq/page.tsx`: acordeón accesible (shadcn `accordion`) con preguntas/respuestas trilingüe `faq.*`
-  - [ ] Cubre como mínimo: **forfait no incluido** (compras el tuyo) **salvo principiantes** (la **zona de principiantes es gratuita**, no necesitan forfait), **equipo no incluido** (alquiler en estación, el coach indica algunas tiendas), **edad mínima 8**, idiomas EN/DE/ES, **política cancelación/crédito** (F-039b/F-040), qué llevar, meteo, dónde quedamos (COLORS), nivel necesario por clase, **6h: elegir estación en el cantón de St. Gallen**, métodos de pago (Card/TWINT/Apple/Google Pay), entrega de la videocorrección (WhatsApp)
-  - [ ] `FAQPage` JSON-LD (coordinado con F-100) para rich results
-- Tests: Playwright — acordeón expande/colapsa con teclado, × 3 locales; validar JSON-LD `FAQPage`
-- Notas: fuente de verdad de los hechos = F-093 + memory de class differentiators; no duplicar precios (link a `/precios`)
+  - [x] `app/[locale]/(marketing)/faq/page.tsx` (server component, SSG ×3 locales) + isla cliente `faq-accordion.tsx`: acordeón accesible (shadcn `accordion`) con preguntas/respuestas trilingüe `faq.*` (12 items)
+  - [x] Cubre como mínimo: **forfait no incluido** (compras el tuyo) **salvo principiantes** (la **zona de principiantes es gratuita**, no necesitan forfait), **equipo no incluido** (alquiler en estación, el coach indica algunas tiendas), **edad mínima 8**, idiomas EN/DE/ES, **política cancelación/crédito** (F-039b/F-040), qué llevar, meteo, dónde quedamos (COLORS), nivel necesario por clase, **6h: elegir estación en el cantón de St. Gallen**, métodos de pago (Card/TWINT/Apple/Google Pay), entrega de la videocorrección (WhatsApp)
+  - [x] `FAQPage` JSON-LD (construido desde el mismo array `faq.items` que el acordeón → sin drift entre datos estructurados y UI; helper compartido `lib/seo/structured-data.ts` lo absorbe en F-100)
+- Tests: [x] Playwright `e2e/f-097-faq.spec.ts` — acordeón expande/colapsa con teclado × 3 locales, JSON-LD `FAQPage` válido (12 questions), CTA → `/reservar` y `/precios`, nav Prices → `/precios`
+- Notas:
+  - fuente de verdad de los hechos = F-093 + memory de class differentiators; no duplicar precios (link a `/precios`)
+  - En el mismo commit se cableó el link **Prices** del nav (SiteNav + MobileNav) a `/precios` (F-093 había shippeado la página sin link, igual que el patrón de F-094/F-095)
+  - **Link FAQ en el footer** (`SiteFooter`, `footer.faq_link`), decisión del owner (footer > nav principal). Al meter contenido no-legal en esa nav, el `nav_aria` pasó de "Legal" → "Footer"/"Fusszeile"/"Pie de página"
 
 ##### F-098 — Blog MDX (3 posts trilingüe al lanzamiento)
 
@@ -2059,6 +2068,30 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 - Notas:
   - Cierra el hallazgo que F-096 había derivado a F-104. F-104 (audit a11y) ya no necesita arreglar el primitive — sólo verificar en contexto.
   - `view-transition.ts` no usa `motion.div` ni el branch (usa la View Transitions API nativa) → no afectado.
+
+##### F-107 — Bugfix prod: ocultar CTAs sin sentido según sesión/tiempo (hero login + add-to-calendar pasado)
+
+- Sprint: 5 (hotfix) · Estado: backlog · Prioridad: P1 (bugs en producción, owner los reportó 2026-06-24)
+- Depende de: F-092 (home editorial), F-068 (página `exito`), F-047/F-059 (dashboard rows). Sin migración, sin server action — solo gating condicional de render.
+- Motivación: dos botones se renderizan en contextos donde no aplican y confunden al usuario:
+  1. **Hero home muestra "Iniciar sesión" estando ya logueado.** `app/[locale]/(marketing)/page.tsx:76-81` renderiza siempre el `<Link href="/login">` (`cta_signin`), incluso con sesión activa. El `SiteNav` del marketing layout ya es auth-aware (`auth.api.getSession`, `app/components/SiteNav.tsx:29`) pero el CTA del hero no.
+  2. **Página de detalle de clase ofrece "Add to calendar" para clases pasadas.** `app/[locale]/reservar/exito/[id]/page.tsx:237-245` muestra el `<a data-testid="exito-add-to-calendar">` bajo la condición `isConfirmed` (= `CONFIRMED` **o** `COMPLETED`), sin comprobar si la clase ya ocurrió. Una clase ya impartida no se añade al calendario. (El dashboard `booking-row.tsx:135-143` **ya** lo hace bien — sólo monta el ICS en `kind === "upcoming"` — así que este bug es **exclusivo** de la página de detalle.)
+- AC issue 1 — hero login condicional:
+  - [ ] En `app/[locale]/(marketing)/page.tsx`, leer la sesión server-side (`auth.api.getSession({ headers: await headers() })`, mismo patrón que `SiteNav`) y **no** renderizar el `<Link href="/login">` (`cta_signin`) cuando `session?.user`. El `cta_primary` ("Reservar") permanece siempre.
+  - [ ] **Sin regresión de perf (F-090):** el marketing layout ya monta `SiteNav` async con lectura de sesión, de modo que la home ya se renderiza dinámica; añadir la lectura aquí no introduce coste nuevo de LCP ni rompe el contrato F-090. Verificar que el hero sigue siendo el LCP estático (la imagen no se ve afectada).
+  - [ ] Recomendación (no bloqueante, decidir en implementación): para usuario logueado, en lugar de simplemente quitar el botón, sustituir por un CTA secundario a `/dashboard` (mejor UX que dejar sólo "Reservar"). Si se hace, reusar key i18n existente o añadir `home.cta_dashboard` × 3 locales. Por defecto, el AC mínimo es **ocultar**.
+- AC issue 2 — ocultar add-to-calendar en clases pasadas:
+  - [ ] En `app/[locale]/reservar/exito/[id]/page.tsx`, computar `isPast` a partir de `booking.date` + `booking.anchorTime` vs `Date.now()` (reusar `setUtcTime(startOfUtcDay(date), anchorTime)` de `lib/booking-engine/time`, idéntico a `app/[locale]/dashboard/_components/booking-row.tsx:42`). Sólo renderizar el `<a data-testid="exito-add-to-calendar">` cuando `isConfirmed && !isPast`.
+  - [ ] El botón "Go to dashboard" (`exito-go-to-dashboard`) permanece para clases pasadas — sólo desaparece el ICS. La rama `!isConfirmed` (pending/failed) no cambia.
+  - [ ] Cubre ambos casos pasados: `COMPLETED` (siempre pasado) y `CONFIRMED` aún no barrido a completed pero con fecha/hora ya vencida.
+- Tests:
+  - [ ] Playwright issue 1: anónimo en `/` (+ `/de`, `/es`) → `cta_signin` presente; autenticado en `/` → ausente. `cta_primary` presente en ambos.
+  - [ ] Playwright issue 2: detalle de booking confirmado **futuro** → `exito-add-to-calendar` presente; detalle de booking **pasado** (COMPLETED y CONFIRMED-vencido) → ausente, `exito-go-to-dashboard` presente. Regresión cross-surface: el dashboard row pasado sigue sin ICS (`booking-row.tsx`).
+- Notas:
+  - Bug doble pero **un solo ticket / un solo PR** (pedido del owner): dos render-gates condicionales, cero cambios de datos.
+  - **No** tocar el endpoint `/api/booking/[id]/ics` (sigue sirviendo el .ics para cualquier booking — el gate es de UI, no de API; un link directo a una clase pasada sigue devolviendo su .ics, aceptable en MVP).
+  - **No** convertir `SiteNav` ni el hero a client component — gating server-side basta.
+- Refs: F-107, F-092, F-068, F-047
 
 ### Sprint 6 — Polish + QA (semanas 11-12)
 

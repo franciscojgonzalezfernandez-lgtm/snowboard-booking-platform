@@ -8,6 +8,7 @@
     "instructors": "Lehrer",
     "prices": "Preise",
     "journal": "Feldnotizen",
+    "contact": "Kontakt",
     "reservar": "Stunde buchen",
     "signin": "Anmelden",
     "dashboard_cta": "Mein Bereich",
@@ -45,8 +46,8 @@
     "class_dur_fullDay": "Ganzer Tag",
     "class_blurb_oneHour": "Einen Fehler beheben oder die Angst loswerden. Eine fokussierte Stunde, nur wir zwei.",
     "class_blurb_twoHours": "Dein erster Tag im Schnee — oder dein nächster Durchbruch. Videofeedback für zu Hause.",
-    "class_blurb_intensive": "Tief rein in Freestyle oder Carving. Live-Videocoaching, und du behältst es.",
-    "class_blurb_fullDay": "Der ganze Berg — deine Wahl der Station in der Nordschweiz.",
+    "class_blurb_intensive": "Fahr mit verbundenen Turns nach Hause — sicher, an einem einzigen Tag. Oder tief rein in Freestyle und Carving. Gefilmt, du behältst es.",
+    "class_blurb_fullDay": "Sechs Stunden am Berg mit 30 Minuten Pause — und deine Wahl der Station im Kanton.",
     "class_cta": "Buchen",
     "instructor_eyebrow": "Dein Coach",
     "instructor_name": "Ich bin Javi",
@@ -68,9 +69,11 @@
     "footer_loc": "Flumserberg · St. Gallen · Schweiz"
   },
   "footer": {
+    "faq_link": "FAQ",
     "terms_link": "AGB",
     "privacy_link": "Datenschutz",
-    "nav_aria": "Rechtliches",
+    "contact_link": "Kontakt",
+    "nav_aria": "Fusszeile",
     "phone_label": "Telefon"
   },
   "terms": {
@@ -453,7 +456,7 @@
         "name": "2-stündige Snowboard-Lektion",
         "blurb": "Dein erster Tag oder die Basics richtig gelernt. Genug Zeit, dass es wirklich klickt.",
         "points": [
-          "Zum ersten Mal auf dem Board? Du fährst mit verbundenen Turns nach Hause.",
+          "Zum ersten Mal auf dem Board? Du fängst an, Turns zu verbinden — bei der 4-Stunden-Intensiv sitzen sie dann richtig.",
           "Basics schon drauf? Ein sauberer technischer Feinschliff.",
           "Zwei Stunden sind, wo die Grundlagen sitzen."
         ],
@@ -462,25 +465,25 @@
         "meeting": "an der Tür des Restaurants COLORS"
       },
       "intensive": {
-        "kicker": "Intensiv",
+        "kicker": "Turns sitzen",
         "name": "4-stündige Intensiv-Lektion",
-        "blurb": "Freestyle oder Carving — vier Stunden, um wirklich zu verändern, wie du fährst.",
+        "blurb": "Fahr mit verbundenen Turns nach Hause — sicher, an einem einzigen Tag. Oder geh, wenn du die Basics drauf hast, tief in Freestyle und Carving.",
         "points": [
-          "Wähl deine Linie: Freestyle im Park oder harte Carving-Turns.",
-          "Drills, die sitzen — nicht einfach Laps fahren.",
+          "Zum ersten Mal auf dem Board? Das ist die Lektion, bei der du mit wirklich verbundenen Turns nach Hause fährst — sicher, nicht vielleicht.",
+          "Basics schon drauf? Wähl deine Linie: Freestyle im Park oder harte Carving-Turns.",
           "Ich filme dich unterwegs und schicke es dir danach aufs Handy."
         ],
-        "facets": ["Freestyle", "Carving", "Technik"],
+        "facets": ["Verbundene Turns", "Freestyle", "Carving"],
         "meeting": "an einem Treffpunkt, den wir zusammen wählen"
       },
       "fullDay": {
         "kicker": "Ganzer Tag",
         "name": "Ganztägige Snowboard-Lektion",
-        "blurb": "Alles aus der Intensiv-Lektion, mit dem ganzen Berg und Zeit zum Durchatmen.",
+        "blurb": "Alles aus der 4-Stunden-Intensiv-Lektion — über sechs Stunden, der ganze Berg und eine echte Pause.",
         "points": [
           "Alles aus der 4-Stunden-Intensiv-Lektion — Freestyle oder Carving, gefilmt.",
           "Wähl das Skigebiet: Wir können andere Gebiete im Kanton St. Gallen fahren (vorher mit mir abgesprochen).",
-          "Eine echte Pause von 30–45 Minuten zum Auftanken."
+          "Sechs Stunden insgesamt, mit 30 Minuten Pause zum Auftanken."
         ],
         "facets": ["Freestyle", "Carving", "Mehrere Gebiete"],
         "meeting": "an einem Treffpunkt, den wir zusammen wählen"
@@ -565,5 +568,95 @@
     "back": "Alle Feldnotizen",
     "cta_heading": "Soll ich es dir am Berg zeigen?",
     "cta_button": "Stunde buchen"
+  },
+  "faq": {
+    "metadata_title": "FAQ — Snowboardstunden in Flumserberg | The Drop",
+    "metadata_description": "Skiticket, Ausrüstung, Mindestalter, Sprachen, Stornierung und was du mitbringst — alles, was du vor der Buchung einer privaten Snowboardstunde in Flumserberg mit The Drop wissen musst.",
+    "eyebrow": "Vor der Buchung",
+    "heading": "Fragen, beantwortet.",
+    "intro": "Was die Leute mich am häufigsten fragen — Ausrüstung, Alter, Sprachen, Wetter, was passiert, wenn sich Pläne ändern. Ist etwas unklar, ruf einfach an.",
+    "aria_label": "Häufig gestellte Fragen",
+    "items": [
+      {
+        "q": "Ist das Skiticket inbegriffen?",
+        "a": "Nein — die Tageskarte kaufst du selbst, und ich zeige dir beim Treffen den richtigen Schalter. Die einzige Ausnahme sind komplette Anfänger: Wir bleiben im kostenlosen Anfängerbereich, da brauchst du gar kein Ticket."
+      },
+      {
+        "q": "Brauche ich eigene Ausrüstung?",
+        "a": "Bring warme Schichten, Handschuhe und eine Brille mit, falls du hast. Board und Boots sind nicht inbegriffen — die mietest du an der Station, und ich nenne dir gern ein paar Shops, denen ich vertraue."
+      },
+      {
+        "q": "Was ist das Mindestalter?",
+        "a": "Acht Jahre, für Kinder wie Erwachsene. Buchst du für ein jüngeres Kind, ruf mich vorher an und wir besprechen es."
+      },
+      {
+        "q": "In welchen Sprachen unterrichtest du?",
+        "a": "Spanisch, Englisch und Deutsch. Spanisch ist meine Muttersprache, mein Englisch ist fliessend, und mein Deutsch ist solide und wird jede Saison besser. Sag mir bei der Buchung, welche du möchtest, dann läuft die ganze Stunde darin."
+      },
+      {
+        "q": "Welches Niveau brauche ich?",
+        "a": "Jedes. Die 1-Stunde ist der schnelle Fix, wenn eine Sache klemmt. Die 2-Stunden bringen Einsteiger an die Basics. Die 4-Stunden-Intensiv ist die Lektion, bei der du mit wirklich verbundenen Turns nach Hause fährst — sicher, an einem einzigen Tag — oder, wenn du die Basics drauf hast, tief in Freestyle und Carving gehst. Der ganze Tag fügt eine zweite Station und eine richtige Pause hinzu. Unsicher, was passt? Schreib mir."
+      },
+      {
+        "q": "Wie lang ist die Ganztageslektion?",
+        "a": "Sechs Stunden am Berg, mit 30 Minuten Pause in der Mitte, um die Beine auszuruhen und aufzutanken. Ein ganzer Tag im Schnee, so getaktet, dass jede Abfahrt zählt."
+      },
+      {
+        "q": "Wo treffen wir uns?",
+        "a": "Für die 1- und 2-Stunden-Lektionen an der Tür des Restaurants COLORS in Flumserberg. Für die 4- und 6-Stunden suchen wir den Treffpunkt bei der Buchung gemeinsam aus."
+      },
+      {
+        "q": "Was soll ich mitbringen?",
+        "a": "Zieh dich warm an — Schichten, wasserdichte Jacke und Hose, Handschuhe, Brille und einen Helm (mit der Ausrüstung mietbar). Dazu Sonnencreme und Wasser; die Bergsonne ist stärker, als sie aussieht. Board und Boots mietest du an der Station."
+      },
+      {
+        "q": "Was passiert bei schlechtem Wetter?",
+        "a": "Wir fahren bei fast jedem Wetter — Schnee ist ja der Sinn der Sache. Muss ich absagen, weil die Bahnen stehen, die Pisten gesperrt sind oder die Lawinengefahr zu hoch ist, buchst du kostenlos um oder bekommst den vollen Betrag zurück."
+      },
+      {
+        "q": "Wie funktioniert die Stornierung?",
+        "a": "Sagst du mindestens 48 Stunden vorher ab, erhältst du ein Guthaben, ein Jahr gültig und auf jede künftige Buchung anrechenbar. Innerhalb von 48 Stunden oder bei Nichterscheinen verfällt die Gebühr. Bist du krank oder verletzt und hast ein Attest, ruf mich an — dann gibt es unabhängig von der Frist ein Guthaben."
+      },
+      {
+        "q": "Können wir woanders als in Flumserberg fahren?",
+        "a": "Bei der Ganztageslektion ja — wir können andere Stationen im Kanton St. Gallen fahren. Sprich es vorher mit mir ab, damit wir den Tag und den Treffpunkt gemeinsam planen."
+      },
+      {
+        "q": "Wie kann ich bezahlen?",
+        "a": "Karte, TWINT, Apple Pay oder Google Pay — wähl deine Methode an der Kasse. Alles läuft sicher, und die Buchung ist bestätigt, sobald die Zahlung durch ist."
+      },
+      {
+        "q": "Wird meine Stunde gefilmt?",
+        "a": "Bei den 4- und 6-Stunden filme ich dich während der Fahrt und schicke dir die Clips danach per WhatsApp aufs Handy. Bei der 2-Stunden-Lektion ist es inbegriffen, sobald du über das Anfängerstadium hinaus bist."
+      }
+    ],
+    "cta_title": "Bleibt eine Frage offen?",
+    "cta_body": "Etwas, das ich hier nicht beantwortet habe? Ruf an oder schreib mir — lieber helfe ich dir, die richtige Stunde zu wählen, als dich raten zu lassen.",
+    "cta_book": "Stunde buchen",
+    "cta_prices": "Alle Preise ansehen",
+    "cta_contact": "Kontakt aufnehmen"
+  },
+  "contact": {
+    "metadata_title": "Kontakt — The Drop",
+    "metadata_description": "Erreiche The Drop in Flumserberg: anrufen oder schreiben, Treffpunkt und Saison.",
+    "eyebrow": "Kontakt",
+    "heading": "Sprich mit mir, bevor du buchst",
+    "intro": "Fragen zur passenden Stunde, zu deinem Niveau oder zu einem Teamtag? Ruf an oder schreib — am anderen Ende bin ich, Javi.",
+    "phone_label": "Anrufen oder SMS",
+    "phone_help": "Am schnellsten für kurzfristige Fragen und Änderungen am Berg.",
+    "email_label": "E-Mail",
+    "email_help": "Ideal für Teamtage, Gruppenanfragen und alles, was ein paar Stunden Zeit hat.",
+    "hours_label": "Wann wir fahren",
+    "hours_value": "Saison 27. Nov → 26. Apr",
+    "hours_note": "Stunden täglich 08:00–17:00 (Europe/Zurich). In dieser Zeit gehe ich ans Telefon.",
+    "meeting_label": "Wo wir uns treffen",
+    "meeting_value": "Restaurant COLORS, Tannenbodenalp",
+    "meeting_note": "Flumserberg · Heidiland, Kanton St. Gallen. Den genauen Treffpunkt bestätige ich bei der Buchung.",
+    "map_label": "Flumserberg finden",
+    "map_caption": "Tannenbodenalp, Flumserberg — Nordostschweiz, etwa eine Stunde von Zürich.",
+    "map_link": "In Google Maps öffnen",
+    "map_aria": "Karte von Flumserberg, Schweiz",
+    "map_load": "Karte laden",
+    "map_privacy": "Öffnet Google Maps, das Cookies setzen kann."
   }
 }

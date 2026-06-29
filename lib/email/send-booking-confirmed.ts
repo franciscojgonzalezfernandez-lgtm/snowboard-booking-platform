@@ -8,6 +8,11 @@ import { durationMinutes } from "@/lib/booking-engine/duration";
 import { setUtcTime, zurichWallClockToUtc } from "@/lib/booking-engine/time";
 import { buildBookingIcs } from "@/lib/ics/build-event";
 import { formatChf } from "@/lib/pricing/format";
+import { CONTACT_EMAIL } from "@/lib/contact/email";
+import {
+  MEETING_POINT_LABEL,
+  MEETING_POINT_MAPS_HREF,
+} from "@/lib/contact/location";
 import type { Db } from "@/lib/db";
 import { DURATION_LABELS, INTL_TAG } from "./labels";
 import { sendEmail, type EmailClient } from "./send-email";
@@ -16,7 +21,6 @@ import {
   getBookingConfirmedCopy,
 } from "./templates/booking-confirmed";
 
-const CONTACT_EMAIL = "franciscojgonzalezfernandez@gmail.com";
 const ORGANIZER_EMAIL = "booking@rideflumserberg.ch";
 const ORGANIZER_NAME = "Ride Flumserberg";
 const LOCATION = "Flumserberg, Switzerland";
@@ -134,6 +138,8 @@ export async function sendBookingConfirmedEmailWith(
         totalLabel,
         contactEmail,
         manageBookingUrl,
+        meetingName: MEETING_POINT_LABEL,
+        meetingMapsHref: MEETING_POINT_MAPS_HREF,
       }),
       text: buildPlainText({
         copy,
@@ -146,6 +152,8 @@ export async function sendBookingConfirmedEmailWith(
         totalLabel,
         manageBookingUrl,
         contactEmail,
+        meetingName: MEETING_POINT_LABEL,
+        meetingMapsHref: MEETING_POINT_MAPS_HREF,
       }),
       attachments: [attachment],
       tags: [
@@ -179,6 +187,8 @@ function buildPlainText(args: {
   totalLabel: string;
   manageBookingUrl: string;
   contactEmail: string;
+  meetingName: string;
+  meetingMapsHref: string;
 }): string {
   const { copy } = args;
   return [
@@ -192,6 +202,8 @@ function buildPlainText(args: {
     `${copy.instructorLabel}: ${args.instructorName}`,
     `${copy.attendeesLabel}: ${copy.attendeesValue(args.attendeesCount)}`,
     `${copy.totalLabel}: ${args.totalLabel} (${copy.vatNote})`,
+    "",
+    `${copy.meetingLabel}: ${args.meetingName} — ${args.meetingMapsHref}`,
     "",
     copy.calendarNote,
     "",
