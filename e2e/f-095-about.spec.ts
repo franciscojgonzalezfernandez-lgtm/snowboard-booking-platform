@@ -8,12 +8,20 @@ const HEADING = {
   es: "The Drop somos yo y una tabla",
 } as const;
 
+// F-102 — translated slugs for the About and Instructors marketing pages.
+const ABOUT_SLUG = { en: "about", de: "ueber-uns", es: "sobre" } as const;
+const INSTRUCTORS_SLUG = {
+  en: "instructors",
+  de: "instruktoren",
+  es: "instructores",
+} as const;
+
 test.describe("F-095 — About / brand story page", () => {
   for (const locale of LOCALES) {
-    test(`/${locale}/sobre renders the story, video and CTAs`, async ({
+    test(`/${locale}/${ABOUT_SLUG[locale]} renders the story, video and CTAs`, async ({
       page,
     }) => {
-      await page.goto(`/${locale}/sobre`);
+      await page.goto(`/${locale}/${ABOUT_SLUG[locale]}`);
 
       await expect(page.getByTestId("about-page")).toBeVisible();
       await expect(page.locator("h1")).toContainText(HEADING[locale]);
@@ -29,7 +37,7 @@ test.describe("F-095 — About / brand story page", () => {
       );
       await expect(page.getByTestId("about-cta-instructors")).toHaveAttribute(
         "href",
-        `/${locale}/instructores`,
+        `/${locale}/${INSTRUCTORS_SLUG[locale]}`,
       );
     });
   }
@@ -37,7 +45,7 @@ test.describe("F-095 — About / brand story page", () => {
   test("nav About link points to the about page", async ({ page }) => {
     await page.goto("/en");
     await page.getByRole("navigation").getByRole("link", { name: /about/i }).first().click();
-    await page.waitForURL("**/sobre");
+    await page.waitForURL(`**/${ABOUT_SLUG.en}`);
     await expect(page.getByTestId("about-page")).toBeVisible();
   });
 });

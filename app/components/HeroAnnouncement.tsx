@@ -1,3 +1,4 @@
+import type { ComponentProps } from "react";
 import { cookies } from "next/headers";
 import { getTranslations } from "next-intl/server";
 
@@ -40,7 +41,14 @@ export async function HeroAnnouncement() {
         </p>
         {showCta ? (
           isInternalCta ? (
-            <Link href={ctaHref} className={ctaClassName}>
+            <Link
+              // `ctaHref` is owner-authored copy (messages JSON), so it is a
+              // runtime string rather than a statically-known pathname. It has
+              // already passed `isAllowedCtaHref`; cast so next-intl still
+              // applies locale prefixing.
+              href={ctaHref as ComponentProps<typeof Link>["href"]}
+              className={ctaClassName}
+            >
               {ctaLabel}
             </Link>
           ) : (

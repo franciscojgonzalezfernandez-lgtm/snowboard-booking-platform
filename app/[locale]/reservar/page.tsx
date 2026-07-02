@@ -388,7 +388,10 @@ export default async function ReservarPage({
                 {tStep4("anonymous_body")}
               </p>
               <Link
-                href={`/login?next=${encodeURIComponent(buildLoginNext(locale, sp))}`}
+                href={{
+                  pathname: "/login",
+                  query: { next: buildLoginNext(locale, sp) },
+                }}
                 data-testid="step4-anonymous-cta"
                 data-section-focus
                 className="mt-6 inline-flex items-center justify-center rounded-md border-2 border-foreground bg-foreground px-6 py-3 text-[13px] font-bold uppercase tracking-[0.18em] text-background transition-colors hover:bg-destructive hover:border-destructive"

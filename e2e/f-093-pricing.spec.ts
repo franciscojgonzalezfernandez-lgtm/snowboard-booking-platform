@@ -2,13 +2,16 @@ import { test, expect } from "@playwright/test";
 
 const LOCALES = ["en", "de", "es"] as const;
 
-// Card order mirrors the duration ladder rendered on /precios.
+// Card order mirrors the duration ladder rendered on the pricing page.
 const DURATIONS = ["ONE_HOUR", "TWO_HOURS", "INTENSIVE", "FULL_DAY"] as const;
+
+// F-102 — the pricing page slug is translated per locale.
+const PRICING_SLUG = { en: "pricing", de: "preise", es: "precios" } as const;
 
 test.describe("F-093 — Pricing page renders four tiers in each locale", () => {
   for (const locale of LOCALES) {
-    test(`/${locale}/precios shows 4 cards with DB prices`, async ({ page }) => {
-      const response = await page.goto(`/${locale}/precios`);
+    test(`/${locale}/${PRICING_SLUG[locale]} shows 4 cards with DB prices`, async ({ page }) => {
+      const response = await page.goto(`/${locale}/${PRICING_SLUG[locale]}`);
       expect(response?.status()).toBe(200);
 
       await expect(page.getByTestId("pricing-page")).toBeVisible();
@@ -31,7 +34,7 @@ test.describe("F-093 — Pricing page renders four tiers in each locale", () => 
 
 test.describe("F-093 — Take-home video perk is conditional (2h only)", () => {
   test("perk shows on the 2-hour card and nowhere else", async ({ page }) => {
-    await page.goto("/en/precios");
+    await page.goto(`/en/${PRICING_SLUG.en}`);
     await expect(page.getByTestId("pricing-perk-TWO_HOURS")).toBeVisible();
     for (const duration of ["ONE_HOUR", "INTENSIVE", "FULL_DAY"] as const) {
       await expect(page.getByTestId(`pricing-perk-${duration}`)).toHaveCount(0);
@@ -42,7 +45,7 @@ test.describe("F-093 — Take-home video perk is conditional (2h only)", () => {
 test.describe("F-093 — CTA preselects the duration in the booking funnel", () => {
   for (const locale of LOCALES) {
     test(`/${locale} cards link to /reservar with the duration query`, async ({ page }) => {
-      await page.goto(`/${locale}/precios`);
+      await page.goto(`/${locale}/${PRICING_SLUG[locale]}`);
 
       // Every CTA carries the funnel's `d` query key (use-booking-url-state).
       for (const duration of DURATIONS) {

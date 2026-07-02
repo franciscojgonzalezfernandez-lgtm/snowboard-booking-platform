@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
+import { useParams } from "next/navigation";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 
@@ -9,13 +10,14 @@ type LanguageSwitcherProps = {
   tone?: "light" | "dark";
 };
 
-// Switches locale while preserving the current pathname (incl. params).
-// next-intl's `usePathname` from createNavigation returns the locale-stripped
-// path, so passing it back with `{ locale }` produces the equivalent URL in
-// the target locale.
+// Switches locale while preserving the current route (incl. dynamic params).
+// With translated `pathnames`, `usePathname` returns the internal pathname key
+// and we must re-supply `params` so next-intl can rebuild the target locale's
+// slug for dynamic routes (e.g. /instructores/[slug]).
 export function LanguageSwitcher({ className, tone = "dark" }: LanguageSwitcherProps) {
   const locale = useLocale();
   const pathname = usePathname();
+  const params = useParams();
   const router = useRouter();
   const t = useTranslations("nav");
 
@@ -39,7 +41,15 @@ export function LanguageSwitcher({ className, tone = "dark" }: LanguageSwitcherP
           {index > 0 ? <span aria-hidden className="opacity-30">·</span> : null}
           <button
             type="button"
-            onClick={() => router.replace(pathname, { locale: target })}
+            onClick={() =>
+              router.replace(
+                // @ts-expect-error -- `params` is a generic Record; for the
+                // current route its keys always match `pathname`, so the
+                // runtime slug rebuild is safe.
+                { pathname, params },
+                { locale: target },
+              )
+            }
             aria-current={target === locale ? "true" : undefined}
             data-testid={`lang-${target}`}
             className={

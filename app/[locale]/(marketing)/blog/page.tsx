@@ -64,7 +64,7 @@ export default async function BlogIndexPage({ params }: Props) {
               className="border border-foreground/15 bg-background transition-colors hover:border-foreground/30"
             >
               <Link
-                href={`/blog/${post.slug}`}
+                href={{ pathname: "/blog/[slug]", params: { slug: post.slug } }}
                 data-testid="blog-card"
                 className="group flex h-full flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
