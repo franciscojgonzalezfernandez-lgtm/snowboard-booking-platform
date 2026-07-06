@@ -93,13 +93,18 @@ Fixtures: branch Neon dedicada (default `playwright`) con `prisma/seed.ts` recar
 **Engineering experts (Next.js 15 + Prisma + i18n):**
 - `vercel-react-best-practices` — React/Next perf base.
 - `nextjs-app-router-patterns` — RSC, streaming, Server Actions.
-- `typescript-advanced-types` — strict-mode TS, conditional/mapped types.
+- `mastering-typescript` — strict-mode TS, conditional/mapped types.
 - `prisma-database-setup`, `prisma-client-api`, `prisma-postgres` — schema, queries, Neon ops.
 - `next-intl-add-language` — locale `en|de|es` + slug translations.
 
 **QA + performance:**
-- `testing-strategy` — test plans + coverage design.
+- `playwright-core`, `webapp-testing` — tácticas Playwright + testing de app local.
 - `booking-platform-perf` — Web Vitals auditor (LCP <2.5s, CLS <0.1, availability p95 <500ms, home JS <200KB).
+
+**Payments + workflow (project-local `.claude/skills/`):**
+- `stripe-best-practices`, `upgrade-stripe` — cualquier cambio Stripe.
+- `shadcn` — primitives UI.
+- `worktrees` — ciclo de vida de worktrees por ticket (crear vía helper, env, cleanup post-merge).
 
 Skills instalados global pero NO auto-activos aquí: `huashu-design`, `taste`, `ui-ux-pro-max`, `design-taste-frontend`, `high-end-visual-design`, `imagegen-frontend-*`. Invocar explícitamente cuando se necesiten. Fuente de verdad del inventario: `CLAUDE.md` §"Skills active in this project".
 

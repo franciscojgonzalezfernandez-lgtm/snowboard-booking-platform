@@ -76,6 +76,22 @@ const magenta = "\x1b[35m";
 const yellow = "\x1b[33m";
 const red = "\x1b[31m";
 
+// Fail fast when the worktree has no seeded env: a worktree created with a
+// bare `git worktree add` (instead of scripts/new-worktree.sh) is born without
+// the gitignored .env.local, and Next would boot pointing at no database.
+if (
+  !existsSync(ENV_LOCAL) ||
+  !/^DATABASE_URL=/m.test(readFileSync(ENV_LOCAL, "utf8"))
+) {
+  const primary = spawnSync("git", ["worktree", "list", "--porcelain"], {
+    encoding: "utf8",
+  }).stdout?.match(/^worktree (.+)$/m)?.[1];
+  log("dev", red, ".env.local is missing (or has no DATABASE_URL) in this worktree.");
+  log("dev", red, `Seed it from the primary worktree:  cp ${primary ?? "<primary-worktree>"}/.env.local .`);
+  log("dev", red, "Next time create worktrees with scripts/new-worktree.sh — it copies env files for you.");
+  process.exit(1);
+}
+
 let stripeReady = false;
 if (stripeCliAvailable()) {
   const result = fetchWebhookSecret();
