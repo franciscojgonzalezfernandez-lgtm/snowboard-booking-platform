@@ -11,7 +11,7 @@ import {
 import { BUSINESS, BUSINESS_ID } from "@/lib/seo/business";
 
 describe("buildLocalBusiness", () => {
-  it("emits a LocalBusiness/SportsActivityLocation with NAP, geo and hours", () => {
+  it("emits a LocalBusiness/SportsActivityLocation with locality, area and hours", () => {
     const node = buildLocalBusiness();
 
     expect(node["@type"]).toEqual(["LocalBusiness", "SportsActivityLocation"]);
@@ -24,9 +24,8 @@ describe("buildLocalBusiness", () => {
     expect(address.addressLocality).toBe("Flumserberg");
     expect(address.addressCountry).toBe("CH");
 
-    const geo = node.geo as Record<string, unknown>;
-    expect(geo["@type"]).toBe("GeoCoordinates");
-    expect(typeof geo.latitude).toBe("number");
+    const areaServed = node.areaServed as Record<string, unknown>[];
+    expect(areaServed.map((a) => a.name)).toContain("Flumserberg");
 
     const hours = node.openingHoursSpecification as Record<string, unknown>[];
     expect(hours).toHaveLength(1);
@@ -36,11 +35,19 @@ describe("buildLocalBusiness", () => {
     expect(spec!.closes).toBe("17:00");
   });
 
+  it("is a service-area business: no geo, no postalCode/streetAddress (F-112)", () => {
+    const node = buildLocalBusiness();
+    expect(node.geo).toBeUndefined();
+    const address = node.address as Record<string, unknown>;
+    expect(address.postalCode).toBeUndefined();
+    expect(address.streetAddress).toBeUndefined();
+  });
+
   it("omits priceRange, sameAs and aggregateRating by default (D-PLACE gate)", () => {
     const node = buildLocalBusiness();
     expect(node.priceRange).toBeUndefined();
     expect(node.aggregateRating).toBeUndefined();
-    // sameAs is empty until D-PLACE / owner supplies profiles.
+    // sameAs is empty until F-112 (owner socials / verified GBP Maps URL).
     expect(node.sameAs).toBeUndefined();
   });
 

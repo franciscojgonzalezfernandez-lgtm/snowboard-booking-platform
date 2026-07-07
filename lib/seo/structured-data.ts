@@ -53,17 +53,13 @@ export function buildLocalBusiness(options: LocalBusinessOptions = {}): JsonLdNo
     description: BUSINESS.description,
     url: BUSINESS.url,
     telephone: BUSINESS.telephone,
+    // Service-area business: general locality only — no `geo`, no street/postal
+    // code. Precise pin + postalCode are parked in `LOCATION_PENDING` (F-112).
     address: {
       "@type": "PostalAddress",
       addressLocality: BUSINESS.address.locality,
       addressRegion: BUSINESS.address.region,
-      postalCode: BUSINESS.address.postalCode,
       addressCountry: BUSINESS.address.country,
-    },
-    geo: {
-      "@type": "GeoCoordinates",
-      latitude: BUSINESS.geo.latitude,
-      longitude: BUSINESS.geo.longitude,
     },
     areaServed: BUSINESS.areaServed.map((name) => ({ "@type": "Place", name })),
     openingHoursSpecification: [

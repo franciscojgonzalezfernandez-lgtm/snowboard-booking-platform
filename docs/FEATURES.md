@@ -2000,12 +2000,27 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 - Depende de: F-093 (precios/offers), F-094 (instructor), F-021, F-097 (FAQPage)
 - Motivación: rich results + Knowledge Panel. `LocalBusiness`/`SportsActivityLocation` con dirección Flumserberg, horario, priceRange, geo; `Course`+`Offer` por clase; `Person` por instructor. Mejora CTR orgánico, base para el review CTA cuando D-PLACE aterrice
 - AC:
-  - [x] JSON-LD `SportsActivityLocation`/`LocalBusiness` (name "The Drop", address, geo Flumserberg, openingHours con `validFrom/Through` de temporada, priceRange CHF min–max desde DB cacheado, areaServed norte de Suiza) en layout marketing. `sameAs` se omite hasta que D-PLACE/owner aporte URLs
+  - [x] JSON-LD `SportsActivityLocation`/`LocalBusiness` (name "The Drop", openingHours con `validFrom/Through` de temporada, priceRange CHF min–max desde DB cacheado, areaServed norte de Suiza) en layout marketing. **Service-area business**: sin `geo` ni `postalCode`/`streetAddress` — solo locality general (no hay local fijo; la GBP no pasa verificación de escaparate). `sameAs` omitido hasta F-112
   - [x] `Course` + `Offer` por duración (precio DB, currency CHF, `InStock`, `courseWorkload` ISO 8601) en `/precios`; `Person` (bio, idiomas, foto) en perfiles de instructor (F-094); `FAQPage` en `/faq` (F-097); `BlogPosting` en posts (F-098, ya mergeada)
   - [x] `aggregateRating` **solo** cuando D-PLACE/Google reviews existan (no rating fake); gate condicional implementado (param opcional, hoy off)
   - [x] Helper `lib/seo/structured-data.ts` tipado (sin barrel), reutilizado por ruta; `<JsonLd>` centraliza `@context`/`@graph` + escape de `<`
-- Tests: Vitest (11 specs) sobre los builders JSON-LD (shape, gate de aggregateRating, precio desde cents, workload por duración). Validado en runtime con `next start` extrayendo el ld+json de cada superficie × 3 locales. Pendiente: validación manual con Rich Results Test (owner)
-- Notas: `aggregateRating` y review CTA bloqueados por **D-PLACE** (Google Place ID, verificación postal del negocio); degradan limpio mientras null. `sameAs` idem. Helper `toAbsoluteUrl` maneja fotos Blob (absolutas) vs assets `/public` (relativos) para no duplicar host
+- Tests: Vitest (12 specs) sobre los builders JSON-LD (shape, semántica SAB sin geo/postal, gate de aggregateRating, precio desde cents, workload por duración). Validado en runtime con `next start` extrayendo el ld+json de cada superficie × 3 locales. Pendiente: validación manual con Rich Results Test (owner)
+- Notas: `aggregateRating` + review CTA + `sameAs` + `geo`/`postalCode` precisos quedan **parked**, todos owner-dependientes → **F-112**. Valores parked (pin Tannenbodenalp, postalCode 8898, CID GBP) conservados en `LOCATION_PENDING` (`lib/seo/business.ts`). Helper `toAbsoluteUrl` maneja fotos Blob (absolutas) vs assets `/public` (relativos) para no duplicar host
+
+##### F-112 — Cablear SEO owner-dependiente (GBP verificado + sameAs + geo + aggregateRating)
+
+- Sprint: 5 · Estado: blocked (owner) · Prioridad: P2
+- Depende de: F-100 (helpers, flags y gates ya montados), **D-PLACE** (verificación GBP), acciones del owner (verificación vídeo SAB, alta de redes sociales)
+- Motivación: F-100 dejó toda la data owner-dependiente **parked** y degradando limpio (sin `geo`/`postalCode`, `sameAs` vacío, `aggregateRating` off). Este ticket la cablea cuando el owner complete los pasos externos, sin tocar la arquitectura — solo rellenar `LOCATION_PENDING`/`BUSINESS.sameAs` y activar el gate
+- AC:
+  - [ ] Verificar Google Business Profile como **service-area business** (vídeo SAB: equipo de marca + owner en base Flumserberg + material de negocio; sin escaparate); definir zonas de servicio
+  - [ ] Ficha viva → añadir la Google Maps URL a `sameAs`, derivada del CID `15514449138658354283` (`https://www.google.com/maps?cid=15514449138658354283`)
+  - [ ] Crear perfiles sociales (Instagram/Facebook/…) y añadir sus URLs a `BUSINESS.sameAs`
+  - [ ] Obtener Place ID (`ChIJ…`) vía Place ID Finder; guardar en env (p.ej. `GOOGLE_PLACE_ID`)
+  - [ ] Decidir exponer ubicación: restaurar `geo` + `postalCode` en el nodo LocalBusiness desde `LOCATION_PENDING`, o mantener SAB puro (documentar la decisión)
+  - [ ] Activar `aggregateRating` con nota + nº de reseñas **reales** de Google (Places API); reabrir el review CTA del email post-clase y coordinar con F-101
+- Tests: Vitest — con `sameAs` no vacío el nodo lo incluye; con `aggregateRating` el nodo lo incluye; sin geo/postal se mantiene SAB. HTTP — Rich Results Test sin warnings sobre la URL desplegada
+- Notas: puramente owner-dependiente; F-100 ya tiene los flags/gates. Ver `LOCATION_PENDING` y `BUSINESS.sameAs` en `lib/seo/business.ts`. No inventar valores (no rating fake, no URL de Maps muerta antes de verificar)
 
 ##### F-101 — Dynamic OG images por ruta y locale (`next/og`)
 
