@@ -9,6 +9,9 @@ import {
   getInstructorBySlug,
   listActiveInstructors,
 } from "@/lib/instructor/public-profiles";
+import { JsonLd } from "@/app/components/JsonLd";
+import { SITE_URL, toAbsoluteUrl } from "@/lib/seo/site-url";
+import { buildPerson } from "@/lib/seo/structured-data";
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
 
@@ -57,11 +60,20 @@ export default async function InstructorProfilePage({ params }: Props) {
     "fullDay",
   ] as const;
 
+  const personJsonLd = buildPerson({
+    name: instructor.name,
+    url: `${SITE_URL}/${locale}/instructores/${instructor.slug}`,
+    image: instructor.photo ? toAbsoluteUrl(instructor.photo) : null,
+    description: instructor.bio || undefined,
+    knowsLanguage: instructor.languages,
+  });
+
   return (
     <main
       data-testid="instructor-profile"
       className="mx-auto max-w-[1100px] px-6 py-16 sm:py-24 lg:px-7"
     >
+      <JsonLd data={personJsonLd} />
       <Link
         href="/instructores"
         className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground hover:text-primary"

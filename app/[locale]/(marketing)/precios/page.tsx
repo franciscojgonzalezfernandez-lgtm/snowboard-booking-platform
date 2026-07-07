@@ -7,6 +7,9 @@ import { routing } from "@/i18n/routing";
 import { formatChf } from "@/lib/pricing/format";
 import { getPriceCents, PriceConfigurationError } from "@/lib/pricing/get-price";
 import { Reveal } from "@/lib/motion/reveal";
+import { JsonLd } from "@/app/components/JsonLd";
+import { SITE_URL } from "@/lib/seo/site-url";
+import { buildCourse } from "@/lib/seo/structured-data";
 import { PricingTiers, type PricingTier } from "./pricing-tiers";
 
 type Props = { params: Promise<{ locale: string }> };
@@ -23,6 +26,16 @@ const DURATIONS: readonly Duration[] = [
   Duration.INTENSIVE,
   Duration.FULL_DAY,
 ];
+
+// Prisma Duration → the `pricing.tier.*` i18n key (mirrors pricing-tiers.tsx),
+// used to source Course name/description for the JSON-LD from the same strings
+// the cards render — structured data can't drift from the visible copy.
+const TIER_KEY: Record<Duration, string> = {
+  ONE_HOUR: "oneHour",
+  TWO_HOURS: "twoHours",
+  INTENSIVE: "intensive",
+  FULL_DAY: "fullDay",
+};
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -49,22 +62,41 @@ export default async function PricingPage({ params }: Props) {
   });
 
   // No active season, or a season with malformed/incomplete prices → honest
-  // empty state rather than a half-filled grid (same contract as F-080).
+  // empty state rather than a half-filled grid (same contract as F-080). The
+  // Course/Offer JSON-LD is built from the same priced durations, so it appears
+  // only when every price is valid — never a broken Offer.
   let tiers: PricingTier[] | null = null;
+  let courses: Record<string, unknown>[] = [];
   if (season) {
     try {
-      tiers = DURATIONS.map((duration) => ({
+      const priced = DURATIONS.map((duration) => ({
         duration,
-        priceLabel: formatChf(getPriceCents(season, duration)),
+        cents: getPriceCents(season, duration),
       }));
+      tiers = priced.map(({ duration, cents }) => ({
+        duration,
+        priceLabel: formatChf(cents),
+      }));
+      const pricingUrl = `${SITE_URL}/${locale}/precios`;
+      courses = priced.map(({ duration, cents }) =>
+        buildCourse({
+          name: t(`tier.${TIER_KEY[duration]}.name`),
+          description: t(`tier.${TIER_KEY[duration]}.blurb`),
+          url: pricingUrl,
+          duration,
+          priceCents: cents,
+        }),
+      );
     } catch (error) {
       if (!(error instanceof PriceConfigurationError)) throw error;
       tiers = null;
+      courses = [];
     }
   }
 
   return (
     <main data-testid="pricing-page" className="mx-auto max-w-[1320px] px-7 py-16 sm:py-24">
+      {courses.length > 0 ? <JsonLd data={courses} /> : null}
       <Reveal>
         <header className="mb-12 max-w-2xl">
           <div className="mb-6 inline-flex items-center gap-4 text-[12px] font-bold uppercase tracking-[0.28em]">

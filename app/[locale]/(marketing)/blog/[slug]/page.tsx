@@ -8,7 +8,9 @@ import { Link } from "@/i18n/navigation";
 import { type Locale } from "@/i18n/routing";
 import { formatBlogDate } from "@/lib/blog/format";
 import { getAllPostParams, getPostBySlug, getSlugsForId } from "@/lib/blog/posts";
-import { SITE_URL } from "@/lib/seo/site-url";
+import { SITE_URL, toAbsoluteUrl } from "@/lib/seo/site-url";
+import { JsonLd } from "@/app/components/JsonLd";
+import { buildBlogPosting } from "@/lib/seo/structured-data";
 import { blogMdxComponents } from "../mdx-components";
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
@@ -75,12 +77,22 @@ export default async function BlogPostPage({ params }: Props) {
     options: { parseFrontmatter: false },
   });
 
+  const blogPostingJsonLd = buildBlogPosting({
+    headline: post.title,
+    description: post.description,
+    url: postUrl(typedLocale, post.slug),
+    datePublished: post.date,
+    image: post.cover ? toAbsoluteUrl(post.cover) : null,
+    inLanguage: typedLocale,
+  });
+
   return (
     <main
       data-testid="blog-post"
       data-post-id={post.id}
       className="mx-auto max-w-[820px] px-6 py-16 sm:py-24 lg:px-7"
     >
+      <JsonLd data={blogPostingJsonLd} />
       <Link
         href="/blog"
         className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-primary"
