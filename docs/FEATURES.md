@@ -2009,15 +2009,20 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-101 — Dynamic OG images por ruta y locale (`next/og`)
 
-- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Sprint: 5 · Estado: done (PR pendiente) · Prioridad: P1
 - Depende de: F-091 (logo), F-105 (taglines)
 - Motivación: share-rate + CTR social. OG dinámica por ruta y locale (logo + título/tagline localizada) en vez de una imagen estática. F-091 montó la de home; aquí se generaliza
 - AC:
-  - [ ] `opengraph-image.tsx` (y `twitter-image.tsx`) por ruta marketing relevante, vía `next/og` (`ImageResponse`), 1200×630, cream/editorial + logo (F-091) + texto desde `messages` del locale
-  - [ ] Plantilla reutilizable `lib/seo/og-template.tsx` (cream bg, alpine-red accent, serif display) parametrizada por title/kicker/locale
-  - [ ] Fuentes serif embebidas para el render (no system); cache de `ImageResponse`
-- Tests: HTTP — cada `opengraph-image` 200 con `content-type: image/png` y 1200×630; smoke por locale
-- Notas: texto **no** horneado por idioma a mano — sale de `messages/{en,de,es}.json`
+  - [x] `opengraph-image.tsx` + `twitter-image.tsx` por ruta marketing (home, precios, instructores, instructores/[slug], sobre, contacto, faq) × 3 locales, vía `next/og` (`ImageResponse`), 1200×630, cream/editorial + wordmark + texto desde `messages` del locale. `twitter-image` re-exporta el contrato del `opengraph-image` hermano (`runtime` literal por análisis estático de Next)
+  - [x] Plantilla reutilizable `lib/seo/og-template.tsx` (cream bg, alpine-red kicker + rule, **Archivo Black** display) parametrizada por `{ kicker, title }`; `lib/seo/og-route.ts` mapea `eyebrow`→kicker, `heading`→title (con `stripMarkup` para el `<name>` de about)
+  - [x] Fuentes **Archivo Black + Archivo** embebidas (`lib/seo/fonts/*.ttf`, instancias estáticas — satori no resuelve variables) vía `new URL(..., import.meta.url)` para que Next las trace al bundle; loader cacheado por proceso (`lib/seo/og-fonts.ts`)
+  - [x] `metadataBase` (root layout, `lib/seo/site-url.ts` ← `BETTER_AUTH_URL`) para que `og:image` resuelva a URL absoluta de prod (sin él Next cae a localhost y las cards rompen al compartir)
+- Tests: [x] Playwright `e2e/f-101-og-images.spec.ts` — 7 rutas × 3 locales: `og:image`/`twitter:image` presentes, dims 1200×630, el PNG resuelve 200 + `content-type image/png` (21/21). El render satori se valida además en `next build` (todas las cards prerenderizadas SSG)
+- Notas:
+  - **Desviación documentada del AC:** el display es **Archivo Black**, no serif — la marca (F-029/F-105, `docs/brand/tokens.md`) descartó el serif; la OG debe espejar el sitio real. Misma desviación pre-existente que ya flagea `CLAUDE.md`
+  - texto **no** horneado por idioma a mano — sale de `messages/{en,de,es}.json`
+  - **Blog (F-098, PR #155 sin mergear)** queda sin OG hasta que aterrice; añadir `app/[locale]/(marketing)/blog/[slug]/opengraph-image.tsx` (título = post frontmatter) como followup en ese ticket
+  - Slugs aún prefijados en los 3 locales (`localePrefix: "always"`); cuando **F-102** quite el prefijo EN la OG meta lo hereda de next-intl sin tocar estos archivos (solo el URL builder del test)
 
 ##### F-102 — Translated slugs (next-intl `pathnames`)
 
