@@ -64,7 +64,10 @@ export default async function InstructorsPage({ params }: Props) {
             className="border border-foreground/15 bg-background transition-colors hover:border-foreground/30"
           >
             <Link
-              href={`/instructores/${instructor.slug}`}
+              href={{
+                pathname: "/instructores/[slug]",
+                params: { slug: instructor.slug },
+              }}
               data-testid="instructor-card"
               className="group flex h-full flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >

@@ -1912,7 +1912,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - Multi-instructor ready (grid escala); el seed dev ya trae 3 activos (javi, lara-muller, alejandra-gracia)
   - **Slug derivado del nombre** (`slugifyName`, `lib/instructor/slugify.ts`), no hay columna `slug`. Colisión de nombres = primer match gana — añadir `Instructor.slug` si el onboarding self-service permite nombres duplicados
   - Nav `instructors` (SiteNav + MobileNav) ahora apunta a `/instructores` (antes `/`)
-  - **Slug F-102 pendiente**: la ruta es `instructores` en los 3 locales hasta que F-102 añada el mapa `pathnames` (`/instructors` · `/instruktoren` · `/instructores`)
+  - **Slug F-102 hecho**: la clave interna sigue siendo `instructores`; el mapa `pathnames` la sirve como `/instructors` · `/instruktoren` · `/instructores` por locale
   - **Followup nivel-por-idioma**: si el owner quiere `EN native · DE fluent · ES basic` (PRD §6.2) en la UI, requiere persistir niveles — columna `languageLevels Json` en `Instructor` + edición en `/instructor/profile`. Diferido (1 instructor MVP, sin UI de edición); el punto natural es el onboarding multi-instructor
 
 ##### F-095 — About / brand story page
@@ -1936,7 +1936,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 - Depende de: F-052 (constantes phone), F-105
 - Motivación: surface de contacto real y destino del CTA del hero announcement (F-053). MVP sin form — el form de team-building es post-MVP (F-054). Reduce fricción para dudas operativas y da un punto de aterrizaje honesto
 - AC:
-  - [x] `app/[locale]/(marketing)/contacto/page.tsx` (slug F-102 pendiente): teléfono (`OPERATIONAL_PHONE_DISPLAY`/`_TEL` de F-052), email (`CONTACT_EMAIL` de F-096), horario operativo (temporada + ventana 08:00–17:00), punto de encuentro (COLORS, Tannenbodenalp) y mapa click-to-load de Google Maps. SSG por locale (`generateStaticParams` + `generateMetadata`)
+  - [x] `app/[locale]/(marketing)/contacto/page.tsx` (slug F-102 hecho: `/contact` · `/kontakt` · `/contacto`): teléfono (`OPERATIONAL_PHONE_DISPLAY`/`_TEL` de F-052), email (`CONTACT_EMAIL` de F-096), horario operativo (temporada + ventana 08:00–17:00), punto de encuentro (COLORS, Tannenbodenalp) y mapa click-to-load de Google Maps. SSG por locale (`generateStaticParams` + `generateMetadata`)
   - [x] **Sin** form (F-054 lo añade post-MVP); CTA `tel:`/`mailto:` nativos
   - [x] Copy trilingüe `contact.*` (en/de/es)
 - Tests: [x] Playwright `e2e/f-096-contacto.spec.ts` — `tel:` exacto, `mailto:` exacto, hours/meeting presentes, link mapa → Google, click-to-load monta el iframe de Google, link nav/footer → `/contacto` (clic navega), **sin** `<form>`, 200 × 3 locales (4 verdes). Vitest `send-booking-confirmed` (7 verdes) cubre el link COLORS/Google Maps en el body.
@@ -1944,7 +1944,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - **Email single source of truth (F-096):** `lib/contact/email.ts` (`CONTACT_EMAIL` + `CONTACT_EMAIL_HREF`), espejo del patrón phone de F-052. Dedupe: los 3 senders (`send-booking-confirmed`/`-reminder`/`-post-class`) importaban el mismo literal local → ahora importan la constante. Valor = **`hello@rideflumserberg.ch`** (inbox de marca, decisión owner 2026-06-23) — se descartó exponer el gmail personal en superficie pública crawleable. Propaga a la página de contacto + los 3 emails transaccionales.
   - **Bugfix reminder phone (F-096):** `send-booking-reminder.ts` tenía un fallback de teléfono hardcodeado **falso** (`+41 76 000 00 00`) que se renderizaba en el email de recordatorio si no se pasaba `deps.contactPhone`. Ahora cae a `OPERATIONAL_PHONE_DISPLAY` (`lib/contact/phone.ts`), consistente con `send-cancellation.ts`.
   - **Mapa — click-to-load Google Maps (follow-up 2026-06-23, decisión owner):** reemplaza el embed OSM original. El iframe de Google setea una cookie de tracking (NID) al cargar → en CH/EU (FADP/GDPR) obligaría a un banner de consentimiento que no existe. Patrón: placeholder cookieless primero (`contacto/_components/map-embed.tsx`, client), el iframe sólo monta tras click explícito del visitante (consent-by-action, sin banner). Coordenadas/queries y hrefs viven en **`lib/contact/location.ts`** (`MEETING_POINT_*`), espejo del patrón phone/email. Link outbound "Open in Google Maps" es un `<a>` plano → sin cookies.
-  - **Link en nav/footer (follow-up 2026-06-23):** `nav.contact` + `footer.contact_link` (en/de/es) → `/contacto`, cableados en `SiteNav` (desktop), `MobileNav` (sheet) y `SiteFooter`. Antes huérfana (sólo URL directa + CTA F-053). El pase de slugs traducidos sigue pendiente (F-102).
+  - **Link en nav/footer (follow-up 2026-06-23):** `nav.contact` + `footer.contact_link` (en/de/es) → `/contacto`, cableados en `SiteNav` (desktop), `MobileNav` (sheet) y `SiteFooter`. Antes huérfana (sólo URL directa + CTA F-053). Slugs traducidos hechos en F-102 (el `Link` tipado emite `/contact` · `/kontakt` · `/contacto`).
   - **Link COLORS en email de confirmación (follow-up 2026-06-23):** `send-booking-confirmed` añade una línea "Meeting point: COLORS, Tannenbodenalp — Open in Google Maps" (React + plain text, trilingüe) usando `MEETING_POINT_LABEL`/`MEETING_POINT_MAPS_HREF` de `lib/contact/location.ts`. El cliente sabe dónde quedamos sin esperar al recordatorio.
   - F-053 CTA team-building apunta aquí cuando el owner active el toggle (hoy `cta_href="phone"`); F-054 (form) reemplaza el placeholder más adelante
   - **Hallazgo (pre-existente de F-090, corregido en F-106):** los primitives de `lib/motion/` (`reveal`/`stagger`/`parallax`/`wordmark-reveal`) producían un **hydration mismatch sólo para usuarios `prefers-reduced-motion`** — el server renderiza `motion.div` (opacity:0) y el cliente reduced devuelve un `<div>` plano; React no parchea el style → flash de contenido en blanco hasta que el efecto de `useReducedMotion` re-renderiza. Afectaba a **todas** las páginas marketing (precios/home/terms/instructores/contacto). Arreglado en **F-106** (PR aparte).
@@ -2026,15 +2026,19 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-102 — Translated slugs (next-intl `pathnames`)
 
-- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Sprint: 5 · Estado: done · Prioridad: P1
 - Depende de: F-031 (next-intl scaffolded)
-- Motivación: SEO local — las URLs traducidas (`/de/preise`, `/es/precios`) rankean mejor en cada mercado que un slug EN compartido. next-intl ya está scaffolded; aquí se añade el mapa `pathnames` para todo el producto público
+- Motivación: SEO local — las URLs traducidas (`/de/preise`, `/es/precios`) rankean mejor en cada mercado que un slug EN compartido. next-intl ya está scaffolded; aquí se añade el mapa `pathnames` para el producto público
 - AC:
-  - [ ] Definir `pathnames` en la config de routing de next-intl para: precios (`/pricing` · `/preise` · `/precios`), instructores (`/instructors` · `/instruktoren` · `/instructores`), sobre (`/about` · `/ueber-uns` · `/sobre`), contacto (`/contact` · `/kontakt` · `/contacto`), faq, blog, login/register/verify (auth), terms, privacy
-  - [ ] EN sin prefijo; DE/ES con prefijo + slug. `Link`/`redirect` internos usan los helpers tipados de next-intl (no strings crudos)
-  - [ ] Middleware de locale respeta los slugs; 308 de slug viejo→nuevo si aplica
-- Tests: Playwright — navegar por slug en cada locale resuelve la página correcta; `Link` genera el slug del locale activo
-- Notas: el sitemap (F-099) y metadata/hreflang (F-103) consumen este mapa — mantener una sola fuente de verdad
+  - [x] Definir `pathnames` en `i18n/routing.ts` para las páginas **marketing**: precios (`/pricing` · `/preise` · `/precios`), instructores + `[slug]` (`/instructors` · `/instruktoren` · `/instructores`), sobre (`/about` · `/ueber-uns` · `/sobre`), contacto (`/contact` · `/kontakt` · `/contacto`)
+  - [x] `Link`/`redirect` internos usan los helpers tipados de next-intl (clave interna → slug del locale). Convertidos los `href` con query y rutas dinámicas a la forma objeto `{ pathname, query|params }` (credit-aside, login CTAs del funnel, booking-row, instructores index). `LanguageSwitcher` pasa `{ pathname, params }` (preserva rutas dinámicas al cambiar locale)
+  - [x] Middleware respeta los slugs; slug no-canónico (clave interna u otro locale) → **307** al slug canónico del locale activo (`/de/about`→`/de/ueber-uns`, `/en/sobre`→`/en/about`) — cubre "viejo→nuevo" sin tabla de redirects a mano
+- Decisiones de scope (acordadas con el owner 2026-06-27):
+  - **Sólo slugs de marketing.** Las rutas de **pago/auth/legal** (`/reservar*`, `/login`, `/dashboard`, `/terms`, `/privacy`) mantienen slug idéntico en los 3 locales. Razón: los `redirect()` server-side, el `returnUrl` de Stripe y los emails transaccionales construyen esas rutas como strings crudos `/${locale}/…`; traducirlas daría 404 sin un refactor mayor a `getPathname`. Siguen declaradas en el mapa (forma string) porque al activar `pathnames` la navegación tipada es estricta: toda ruta enlazada debe ser una clave.
+  - **`localePrefix` se queda en `always`** (EN mantiene `/en`). Quitar el prefijo EN arrastraría el mismo refactor de los `/${locale}/…` de funnel/auth/emails — diferido.
+  - **`faq` queda universal** (`/faq` en los 3, abreviatura reconocida en DE/ES). `blog`/`register`/`verify` no se mapean: aún no existen como rutas.
+- Tests: Playwright `e2e/f-102-translated-slugs.spec.ts` (slug resuelve por locale, `Link` emite el slug activo, 307 a canónico, language switcher preserva la ruta traducida). Specs existentes actualizados a los slugs nuevos (f-093/094/095/096/097).
+- Notas: el sitemap (F-099) y metadata/hreflang (F-103) consumen este mapa — mantener una sola fuente de verdad. Cuando llegue blog/register/verify o se decida EN-sin-prefijo, ampliar aquí.
 
 ##### F-103 — Conversion metadata por ruta × 3 locales (keyword-tuned)
 

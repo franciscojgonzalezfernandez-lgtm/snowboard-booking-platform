@@ -111,7 +111,7 @@ export function CreditAside({ credits, locale, t, className }: Props) {
       </ul>
 
       <Link
-        href="/reservar?credit=auto"
+        href={{ pathname: "/reservar", query: { credit: "auto" } }}
         data-testid="dashboard-credit-apply"
         className="inline-flex w-full items-center justify-center rounded-md border-2 border-foreground bg-foreground px-5 py-2.5 text-[12px] font-bold uppercase tracking-[0.18em] text-background transition-colors hover:bg-destructive hover:border-destructive"
       >

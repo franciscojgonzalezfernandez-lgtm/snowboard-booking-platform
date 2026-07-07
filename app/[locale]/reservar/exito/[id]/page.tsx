@@ -92,7 +92,7 @@ export default async function ExitoPage({ params }: ExitoPageProps) {
           {t("forbidden_body")}
         </p>
         <Link
-          href={`/login?next=/reservar/exito/${id}`}
+          href={{ pathname: "/login", query: { next: `/reservar/exito/${id}` } }}
           className="mt-8 inline-flex items-center justify-center self-start rounded-md border-2 border-foreground bg-foreground px-6 py-3 text-[13px] font-bold uppercase tracking-[0.18em] text-background transition-colors hover:bg-destructive hover:border-destructive"
         >
           {t("forbidden_cta")}
