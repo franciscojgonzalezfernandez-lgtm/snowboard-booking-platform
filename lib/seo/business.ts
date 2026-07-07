@@ -70,9 +70,10 @@ export const BUSINESS = {
     validThrough: "2027-04-30",
   },
   /**
-   * Off-platform profiles for `sameAs`. Empty until F-112: the owner has no
-   * socials yet and the Google Business Profile is unverified (no live Maps URL).
-   * `buildLocalBusiness` omits `sameAs` entirely while empty.
+   * Off-platform profiles for `sameAs`. Instagram is live. Still pending (F-112):
+   * the Google Business Profile Maps URL (GBP unverified → a dead link would be
+   * worse than none) and any further socials. `buildLocalBusiness` omits `sameAs`
+   * only when this is empty.
    */
-  sameAs: [] as readonly string[],
+  sameAs: ["https://www.instagram.com/rideflumserberg.ch"] as readonly string[],
 } as const;

@@ -43,12 +43,15 @@ describe("buildLocalBusiness", () => {
     expect(address.streetAddress).toBeUndefined();
   });
 
-  it("omits priceRange, sameAs and aggregateRating by default (D-PLACE gate)", () => {
+  it("omits priceRange and aggregateRating by default (gated)", () => {
     const node = buildLocalBusiness();
     expect(node.priceRange).toBeUndefined();
     expect(node.aggregateRating).toBeUndefined();
-    // sameAs is empty until F-112 (owner socials / verified GBP Maps URL).
-    expect(node.sameAs).toBeUndefined();
+  });
+
+  it("emits sameAs with the known social profiles (Instagram live)", () => {
+    const node = buildLocalBusiness();
+    expect(node.sameAs).toContain("https://www.instagram.com/rideflumserberg.ch");
   });
 
   it("includes priceRange when provided", () => {

@@ -2000,7 +2000,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 - Depende de: F-093 (precios/offers), F-094 (instructor), F-021, F-097 (FAQPage)
 - Motivación: rich results + Knowledge Panel. `LocalBusiness`/`SportsActivityLocation` con dirección Flumserberg, horario, priceRange, geo; `Course`+`Offer` por clase; `Person` por instructor. Mejora CTR orgánico, base para el review CTA cuando D-PLACE aterrice
 - AC:
-  - [x] JSON-LD `SportsActivityLocation`/`LocalBusiness` (name "The Drop", openingHours con `validFrom/Through` de temporada, priceRange CHF min–max desde DB cacheado, areaServed norte de Suiza) en layout marketing. **Service-area business**: sin `geo` ni `postalCode`/`streetAddress` — solo locality general (no hay local fijo; la GBP no pasa verificación de escaparate). `sameAs` omitido hasta F-112
+  - [x] JSON-LD `SportsActivityLocation`/`LocalBusiness` (name "The Drop", openingHours con `validFrom/Through` de temporada, priceRange CHF min–max desde DB cacheado **con fallback a null si la DB falla — nunca tumba la superficie marketing**, areaServed norte de Suiza, `sameAs` = Instagram) en layout marketing. **Service-area business**: sin `geo` ni `postalCode`/`streetAddress` — solo locality general (no hay local fijo; la GBP no pasa verificación de escaparate). Maps URL + más socials pendientes en F-112
   - [x] `Course` + `Offer` por duración (precio DB, currency CHF, `InStock`, `courseWorkload` ISO 8601) en `/precios`; `Person` (bio, idiomas, foto) en perfiles de instructor (F-094); `FAQPage` en `/faq` (F-097); `BlogPosting` en posts (F-098, ya mergeada)
   - [x] `aggregateRating` **solo** cuando D-PLACE/Google reviews existan (no rating fake); gate condicional implementado (param opcional, hoy off)
   - [x] Helper `lib/seo/structured-data.ts` tipado (sin barrel), reutilizado por ruta; `<JsonLd>` centraliza `@context`/`@graph` + escape de `<`
@@ -2015,7 +2015,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 - AC:
   - [ ] Verificar Google Business Profile como **service-area business** (vídeo SAB: equipo de marca + owner en base Flumserberg + material de negocio; sin escaparate); definir zonas de servicio
   - [ ] Ficha viva → añadir la Google Maps URL a `sameAs`, derivada del CID `15514449138658354283` (`https://www.google.com/maps?cid=15514449138658354283`)
-  - [ ] Crear perfiles sociales (Instagram/Facebook/…) y añadir sus URLs a `BUSINESS.sameAs`
+  - [x] Instagram (`https://www.instagram.com/rideflumserberg.ch`) creado y cableado en `BUSINESS.sameAs` (F-100). Facebook/otros opcionales pendientes
   - [ ] Obtener Place ID (`ChIJ…`) vía Place ID Finder; guardar en env (p.ej. `GOOGLE_PLACE_ID`)
   - [ ] Decidir exponer ubicación: restaurar `geo` + `postalCode` en el nodo LocalBusiness desde `LOCATION_PENDING`, o mantener SAB puro (documentar la decisión)
   - [ ] Activar `aggregateRating` con nota + nº de reseñas **reales** de Google (Places API); reabrir el review CTA del email post-clase y coordinar con F-101

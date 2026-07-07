@@ -23,20 +23,23 @@ const DURATIONS: readonly Duration[] = [
 const CHF = new Intl.NumberFormat("de-CH", { maximumFractionDigits: 0 });
 
 async function readSeasonPriceRange(): Promise<string | null> {
-  const season = await prisma.season.findFirst({
-    where: { active: true },
-    orderBy: { startDate: "asc" },
-    select: { id: true, priceCentsByDuration: true },
-  });
-  if (!season) return null;
-
   try {
+    const season = await prisma.season.findFirst({
+      where: { active: true },
+      orderBy: { startDate: "asc" },
+      select: { id: true, priceCentsByDuration: true },
+    });
+    if (!season) return null;
+
     const prices = DURATIONS.map((d) => getPriceCents(season, d));
     const min = Math.min(...prices);
     const max = Math.max(...prices);
     return `CHF ${CHF.format(min / 100)}–${CHF.format(max / 100)}`;
   } catch {
-    // PriceConfigurationError → no honest range to show; omit priceRange.
+    // priceRange is a decorative hint on the LocalBusiness node that renders on
+    // EVERY marketing page (via the layout). It must never take down the whole
+    // marketing surface — so any failure (DB unreachable, no schema/seed as in
+    // CI, or a misconfigured season) degrades to no priceRange, not a 500.
     return null;
   }
 }
