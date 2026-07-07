@@ -1996,16 +1996,16 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-100 — Structured data Schema.org (LocalBusiness + Course/Offer + Person)
 
-- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Sprint: 5 · Estado: done · Prioridad: P1
 - Depende de: F-093 (precios/offers), F-094 (instructor), F-021, F-097 (FAQPage)
 - Motivación: rich results + Knowledge Panel. `LocalBusiness`/`SportsActivityLocation` con dirección Flumserberg, horario, priceRange, geo; `Course`+`Offer` por clase; `Person` por instructor. Mejora CTR orgánico, base para el review CTA cuando D-PLACE aterrice
 - AC:
-  - [ ] JSON-LD `SportsActivityLocation`/`LocalBusiness` (name "The Drop", address, geo Flumserberg, openingHours, priceRange, areaServed norte de Suiza, `sameAs` social/Google) en layout marketing
-  - [ ] `Course` + `Offer` por duración (precio DB, currency CHF, availability) en `/precios`; `Person` en perfiles de instructor (F-094); `FAQPage` en `/faq` (F-097); `BlogPosting` en posts (F-098)
-  - [ ] `aggregateRating` **solo** cuando D-PLACE/Google reviews existan (no rating fake); gate condicional
-  - [ ] Helper `lib/seo/structured-data.ts` tipado (sin barrel), reutilizado por ruta
-- Tests: Vitest sobre los builders JSON-LD (shape válido); validación manual con Rich Results Test
-- Notas: `aggregateRating` y review CTA bloqueados por **D-PLACE** (Google Place ID, verificación postal del negocio); degradan limpio mientras null
+  - [x] JSON-LD `SportsActivityLocation`/`LocalBusiness` (name "The Drop", address, geo Flumserberg, openingHours con `validFrom/Through` de temporada, priceRange CHF min–max desde DB cacheado, areaServed norte de Suiza) en layout marketing. `sameAs` se omite hasta que D-PLACE/owner aporte URLs
+  - [x] `Course` + `Offer` por duración (precio DB, currency CHF, `InStock`, `courseWorkload` ISO 8601) en `/precios`; `Person` (bio, idiomas, foto) en perfiles de instructor (F-094); `FAQPage` en `/faq` (F-097); `BlogPosting` en posts (F-098, ya mergeada)
+  - [x] `aggregateRating` **solo** cuando D-PLACE/Google reviews existan (no rating fake); gate condicional implementado (param opcional, hoy off)
+  - [x] Helper `lib/seo/structured-data.ts` tipado (sin barrel), reutilizado por ruta; `<JsonLd>` centraliza `@context`/`@graph` + escape de `<`
+- Tests: Vitest (11 specs) sobre los builders JSON-LD (shape, gate de aggregateRating, precio desde cents, workload por duración). Validado en runtime con `next start` extrayendo el ld+json de cada superficie × 3 locales. Pendiente: validación manual con Rich Results Test (owner)
+- Notas: `aggregateRating` y review CTA bloqueados por **D-PLACE** (Google Place ID, verificación postal del negocio); degradan limpio mientras null. `sameAs` idem. Helper `toAbsoluteUrl` maneja fotos Blob (absolutas) vs assets `/public` (relativos) para no duplicar host
 
 ##### F-101 — Dynamic OG images por ruta y locale (`next/og`)
 

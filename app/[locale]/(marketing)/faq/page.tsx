@@ -4,6 +4,8 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { Reveal } from "@/lib/motion/reveal";
+import { JsonLd } from "@/app/components/JsonLd";
+import { buildFaqPage } from "@/lib/seo/structured-data";
 import { FaqAccordion, type FaqItem } from "./faq-accordion";
 
 type Props = { params: Promise<{ locale: string }> };
@@ -21,22 +23,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-// FAQPage JSON-LD for rich results. F-100 will own the shared
-// lib/seo/structured-data.ts helper; until it lands, this page builds its own
-// minimal node from the same `faq.items` the accordion renders so the
-// structured data can never drift from the visible answers.
-function faqPageJsonLd(items: FaqItem[]) {
-  return {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: items.map((item) => ({
-      "@type": "Question",
-      name: item.q,
-      acceptedAnswer: { "@type": "Answer", text: item.a },
-    })),
-  };
-}
-
 export default async function FaqPage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
@@ -49,14 +35,9 @@ export default async function FaqPage({ params }: Props) {
       data-testid="faq-page"
       className="mx-auto max-w-[820px] px-6 py-16 sm:py-24 lg:px-7"
     >
-      {/* Escape `<` so a stray angle bracket in a translation can't break out of
-          the script element. Content is our own JSON-encoded i18n strings. */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(faqPageJsonLd(items)).replace(/</g, "\\u003c"),
-        }}
-      />
+      {/* FAQPage JSON-LD built from the same `faq.items` the accordion renders,
+          so structured data can never drift from the visible answers. */}
+      <JsonLd data={buildFaqPage(items)} />
 
       <Reveal>
         <header className="mb-12 max-w-2xl">
