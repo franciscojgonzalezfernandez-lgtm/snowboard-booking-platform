@@ -79,9 +79,12 @@ const red = "\x1b[31m";
 // Fail fast when the worktree has no seeded env: a worktree created with a
 // bare `git worktree add` (instead of scripts/new-worktree.sh) is born without
 // the gitignored .env.local, and Next would boot pointing at no database.
+// CI has no .env.local at all — it injects DATABASE_URL & co. as process env
+// (GitHub secrets), so an already-present process var passes the guard.
 if (
-  !existsSync(ENV_LOCAL) ||
-  !/^DATABASE_URL=/m.test(readFileSync(ENV_LOCAL, "utf8"))
+  !process.env.DATABASE_URL &&
+  (!existsSync(ENV_LOCAL) ||
+    !/^DATABASE_URL=/m.test(readFileSync(ENV_LOCAL, "utf8")))
 ) {
   const primary = spawnSync("git", ["worktree", "list", "--porcelain"], {
     encoding: "utf8",
