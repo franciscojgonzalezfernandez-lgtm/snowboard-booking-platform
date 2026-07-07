@@ -1,36 +1,26 @@
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { getTranslations } from "next-intl/server";
 
-import { ImageResponse } from "next/og";
+import { routing } from "@/i18n/routing";
+import { renderOgImage, OG_SIZE, OG_CONTENT_TYPE } from "@/lib/seo/og-template";
 
-// Home / marketing OG image: the full "The Drop" logo on cream. F-101 generalises
-// dynamic OG (per route + localized tagline); F-091 ships the home card.
+// Home OG card. F-091 shipped a logo-only card; F-101 generalises it onto the
+// shared template with the localized hero line.
 export const runtime = "nodejs";
-export const alt = "The Drop — Private Snowboard Lessons";
-export const size = { width: 1200, height: 630 };
-export const contentType = "image/png";
+export const alt = "The Drop — Private snowboard lessons in Flumserberg";
+export const size = OG_SIZE;
+export const contentType = OG_CONTENT_TYPE;
 
-export default async function OpengraphImage() {
-  const logo = await readFile(
-    join(process.cwd(), "public/brand/logo-full.png"),
-  );
-  const src = `data:image/png;base64,${logo.toString("base64")}`;
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
 
-  return new ImageResponse(
-    (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "#FAF6F0",
-        }}
-      >
-        <img src={src} width={580} height={511} alt="" />
-      </div>
-    ),
-    size,
-  );
+type Props = { params: Promise<{ locale: string }> };
+
+export default async function HomeOgImage({ params }: Props) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "home" });
+  return renderOgImage({
+    kicker: t("eyebrow"),
+    title: `${t("hero_title_1")} ${t("hero_title_2")} ${t("hero_accent")}`,
+  });
 }
