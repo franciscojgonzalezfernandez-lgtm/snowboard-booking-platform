@@ -26,7 +26,9 @@
 | Language | TypeScript strict mode |
 | Styling | Tailwind CSS v4 + shadcn/ui |
 | Forms | React Hook Form + Zod |
-| i18n | next-intl (public routes only) |
+| Client data cache | TanStack Query v5 (booking funnel stepper only — see `booking-platform-perf` skill) |
+| i18n | next-intl (public routes only; marketing slugs translated via `pathnames`, F-102) |
+| Blog content | MDX in `content/blog/{en,de,es}/*.mdx` — frontmatter `id` (shared across locales) + localized `slug` (F-098) |
 | Auth | **Better Auth** (NOT NextAuth/Auth.js) |
 | ORM | **Prisma** (NOT Drizzle) |
 | DB | Neon Postgres |
@@ -47,21 +49,29 @@
 - **playwright-skill** — E2E testing + visual review loop (browser automation)
 
 **Engineering experts (Next.js 15 + Prisma + i18n):**
-- **vercel-react-best-practices** — React/Next.js perf base from Vercel Engineering (402K installs)
+- **vercel-react-best-practices** — React/Next.js perf base from Vercel Engineering
 - **nextjs-app-router-patterns** — App Router, RSC, streaming, Server Actions
-- **typescript-advanced-types** — strict-mode TS, generics, conditional/mapped types
+- **mastering-typescript** — strict-mode TS, generics, conditional/mapped types
 - **prisma-database-setup** — Prisma schema + provider setup (official Prisma)
 - **prisma-client-api** — query patterns, `$transaction`, filters (official Prisma)
 - **prisma-postgres** — Neon-compatible Postgres provisioning + operations
 - **next-intl-add-language** — add/maintain locale `en | de | es` and slug translations
 
-**UI / components:**
-- **vercel:shadcn** — shadcn/ui CLI, component installation, composition patterns, theming, custom registries. Default reference for any UI primitive work. Invoke before hand-rolling `<input>`/`<button>`/`<select>`/`<dialog>`/etc.
+**UI / components (project-local, `.claude/skills/`):**
+- **shadcn** — shadcn/ui CLI, component installation, composition patterns, theming. Default reference for any UI primitive work. Invoke before hand-rolling `<input>`/`<button>`/`<select>`/`<dialog>`/etc.
+
+**Payments (project-local):**
+- **stripe-best-practices** — API selection, webhooks, key handling; consult on any Stripe change
+- **upgrade-stripe** — Stripe API/SDK version upgrades
+- **stripe-projects** — third-party service provisioning via projects.dev
 
 **QA + performance:**
-- **testing-strategy** — Anthropic-official test strategy & coverage design
-- **playwright-testing** — extra Playwright tactics (augments `playwright-skill`)
-- **booking-platform-perf** — Web Vitals auditor enforcing this project's budgets (LCP < 2.5s, CLS < 0.1, availability p95 < 500ms, home bundle < 200KB)
+- **playwright-core** — extra Playwright tactics (augments `playwright-skill`)
+- **webapp-testing** / **playwright-generate-test** — local-app browser testing + test generation
+- **booking-platform-perf** (project-local) — Web Vitals auditor enforcing this project's budgets (LCP < 2.5s, CLS < 0.1, availability p95 < 500ms, home bundle < 200KB)
+
+**Workflow (project-local):**
+- **worktrees** — per-ticket worktree lifecycle: create via `scripts/new-worktree.sh`, env seeding, post-merge cleanup
 
 **Skills installed globally but NOT active here unless I explicitly invoke them:**
 - huashu-design — not compatible with Next.js architecture
@@ -71,7 +81,6 @@
 
 **Out of scope for now (can install later if needed):**
 - Better Auth specialist skill
-- Stripe payments / webhooks specialist skill
 - Accessibility / WCAG auditor
 - System architect / ADR writer
 
@@ -82,7 +91,7 @@
 **Editorial / premium aesthetic.** References: Aesop, Cereal magazine, Outdoor Voices, Monocle.
 
 **Required:**
-- Serif typography for display (NOT Inter, NOT DM Sans, NOT Geist)
+- Display typography: **Archivo Black**, uppercase, tight tracking (`--font-archivo-black`); body/UI: **Archivo**. Source of truth: `docs/brand/tokens.md` (brand "The Drop", F-105). This supersedes the original "serif display" guideline — do NOT reintroduce serif, and never Inter/DM Sans/Geist.
 - Generous whitespace
 - High contrast, low color saturation
 - Photography-led (not illustration-led)
@@ -106,21 +115,22 @@ When in doubt: check what **Impeccable** would do. The skill is the source of tr
 ```
 app/
 ├── [locale]/                # i18n: en, de, es
-│   ├── (marketing)/         # Landing, terms, privacy — shared chrome layout (SiteNav with utility bar)
-│   ├── (auth)/              # Login, register, verify — shared chrome layout (SiteNav, no utility bar)
+│   ├── (marketing)/         # Landing, precios, instructores, sobre, contacto, faq, blog, terms, privacy — shared chrome (SiteNav with utility bar)
+│   ├── (auth)/              # Login (register/verify not built yet) — shared chrome (SiteNav, no utility bar)
 │   ├── dashboard/           # Authenticated student — own layout with SiteNav + Sign out
 │   ├── reservar/            # Booking funnel — own BookingHeader (NOT inside any route group, deliberate per F-068)
 │   └── layout.tsx           # Root locale layout: NextIntlClientProvider + SiteFooter
 ├── instructor/              # EN only, outside [locale]
 ├── admin/                   # EN only, outside [locale]
-├── api/
-└── sitemap.ts, robots.ts
+└── api/
+# sitemap.ts + robots.ts do NOT exist yet — F-099 (backlog)
 ```
 
 - **Public + student dashboard:** trilingual (`/`, `/de/`, `/es/`)
 - **Instructor + admin panels:** English only
-- **Slug translations:** path segments translated per locale (e.g. `/de/instruktoren/`, `/es/instructores/`)
-- **EN locale: no prefix** in URLs (better SEO for English market)
+- **`localePrefix: "always"`** — every locale carries its prefix, **including EN** (`/en/...`). Dropping the EN prefix was evaluated and deferred in F-102 (2026-06-27): funnel/auth/emails build `/${locale}/…` strings server-side and would need a `getPathname` refactor first.
+- **Slug translations (F-102, marketing only):** next-intl `pathnames` map in `i18n/routing.ts` — `/pricing`·`/preise`·`/precios`, `/instructors`·`/instruktoren`·`/instructores`, `/about`·`/ueber-uns`·`/sobre`, `/contact`·`/kontakt`·`/contacto`. Funnel/auth/legal (`/reservar*`, `/login`, `/dashboard`, `/terms`, `/privacy`) and `/faq`, `/blog` keep identical slugs across locales. Non-canonical slug → 307 to canonical. Internal links MUST use the typed next-intl `Link`/`redirect` helpers (internal key, not raw strings).
+- **Blog post slugs are localized content** (frontmatter `slug` per locale, shared `id`) — different mechanism than the `pathnames` map. Locale switching on a post must resolve the translated slug (F-108).
 - **`reservar/` stays outside `(booking)` group on purpose** (F-068). `BookingHeader` already implements the funnel-only chrome contract; renaming would add churn without payoff. Pages inside `reservar/` must not mount `SiteNav`.
 
 ---
@@ -143,16 +153,18 @@ app/
 
 **Worktrees por defecto.** Cada ticket vive en su propio worktree hermano del repo (`../booking-platform.f-XXX`), cortado desde `origin/main`. No hacer `checkout` que cambie la branch del repo principal salvo edits triviales a meta-docs.
 
-**Usa el helper** `scripts/new-worktree.sh` — crea el worktree desde `origin/main` **y** copia los env gitignored (`.env`, `.env.local`) desde el worktree primario. Sin esto el worktree nace sin `DATABASE_URL`/`DIRECT_URL` (apuntan a la branch Neon `dev` en `.env.local`) y dev local + Playwright fallan, o peor: caen al `.env` que apunta a Neon `main` (prod).
+**Usa el helper** `scripts/new-worktree.sh` — crea el worktree desde `origin/main` **y** copia los env gitignored desde el worktree primario. Hoy el único env file es **`.env.local`** (apunta a la branch Neon `dev`); las credenciales de producción viven **sólo** en las env vars de Vercel — no hay `.env` local apuntando a prod. Sin la copia, el worktree nace sin `DATABASE_URL`/`DIRECT_URL` y dev local + Playwright fallan.
 
 ```
 scripts/new-worktree.sh f-XXX-kebab-slug
-# equivale a: git fetch origin + git worktree add -b f-XXX-kebab-slug ../booking-platform.f-XXX origin/main + cp .env .env.local
+# equivale a: git fetch origin + git worktree add -b f-XXX-kebab-slug ../booking-platform.f-XXX origin/main + copia de .env.local
 ```
 
-Si se crea un worktree a mano (`git worktree add ...`), copiar los env después: `cp ../booking-platform/.env{,.local} ../booking-platform.f-XXX/`.
+**Guard:** `npm run dev` (scripts/dev.mjs) aborta con instrucciones si falta `.env.local`/`DATABASE_URL` — un worktree creado a mano ya no arranca en silencio. Si pasa, sembrar con: `cp ../snowboard-booking-platform/.env.local .`
 
-Tras merge: `git worktree remove ../booking-platform.f-XXX && git branch -d f-XXX-kebab-slug`.
+**Prisma CLI no carga `.env.local`** (sólo `.env`). Para comandos CLI: `set -a && source .env.local && set +a && npx prisma migrate status`.
+
+Tras merge: `git worktree remove ../booking-platform.f-XXX && git branch -d f-XXX-kebab-slug` (`-D` si el PR fue squash-merged). Al iniciar sesión, `git worktree list` — cualquier worktree con branch ya mergeada y status limpio se elimina. Ciclo completo en la skill de proyecto **`worktrees`**.
 
 **Commits descriptivos.** Cada commit debe leerse aislado. No `wip`, no `update X`, no `fixes`.
 
@@ -292,13 +304,13 @@ Trivial commits (typo, rename mecánico) pueden llevar body de una línea, pero 
 
 ## Outstanding decisions (to be revisited)
 
-These were flagged in the PRD as needing review:
+1. **Google Business Profile Place ID** for the post-class review CTA — `GOOGLE_PLACE_ID` env var still unset; `lib/email/send-post-class.ts` skips the review link until it exists.
+2. **Tip payment medium** (Stripe vs external TWINT URL) — policy already decided (instructor keeps 100%, D-TIP), but F-082 stays blocked on `INSTRUCTOR_TIP_URL` / company incorporation.
+3. **EN URL prefix** — currently `/en/...` everywhere (`localePrefix: "always"`). Dropping it needs the `getPathname` refactor deferred in F-102.
+4. **Prisma 7 upgrade** + `prisma.config.ts` migration (deprecation warning on every CLI run) — F-111.
 
-1. Final pricing per duration
-2. Google Business Profile Place ID for review CTA
-3. Brand identity assets (logo, hero photography)
-4. Tipping split policy (instructor 100% or split with school)
+Resolved since the original list: pricing per duration (F-080 editor + seeded `Season.priceCentsByDuration`), brand identity (F-105 "The Drop" + F-091 logo), tipping split policy (100% instructor).
 
 ---
 
-**Last updated:** 2026-05-14
+**Last updated:** 2026-07-06

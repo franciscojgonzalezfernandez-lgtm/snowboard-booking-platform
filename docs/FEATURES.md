@@ -2102,6 +2102,60 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - **No** convertir `SiteNav` ni el hero a client component — gating server-side basta.
 - Refs: F-107, F-092, F-068, F-047
 
+##### F-108 — Blog: language switcher 404 al cambiar idioma en un post
+
+- Sprint: 5 (bugfix) · Estado: backlog · Prioridad: P1 (bug en producción, owner lo reportó 2026-07-06)
+- Depende de: F-098 (blog MDX), F-102 (PR #158 — el switcher pasa a `{ pathname, params }`; **implementar después de mergear #158** para no chocar con ese diff)
+- Motivación: en `/blog/[slug]` el slug es **contenido localizado** (frontmatter `slug` por locale, `id` compartido entre traducciones). El `LanguageSwitcher` reutiliza el slug actual al cambiar de locale (`/en/blog/your-first-day-on-a-snowboard` → `/de/blog/your-first-day-on-a-snowboard`) y el post alemán vive en `dein-erster-tag-auf-dem-snowboard` → **404**. Los datos para resolverlo ya existen: `getSlugsForId(post.id)` (`lib/blog/posts.ts`) alimenta los hreflang `alternates.languages` que la página ya emite en el `<head>`.
+- AC:
+  - [ ] Cambiar idioma desde cualquier post navega al slug traducido del post (3 posts × pares de locales), status 200, mismo `data-post-id`.
+  - [ ] Mecanismo **general**, no blog-specific en el switcher: al click, el switcher busca `<link rel="alternate" hreflang="<target>">` en el documento (ya emitido por `generateMetadata` del post) y navega a esa URL si existe; fallback al comportamiento actual `{ pathname, params }` cuando no hay alternate (resto de rutas). Cualquier ruta futura con slugs de contenido localizados hereda el fix con sólo emitir sus alternates.
+  - [ ] Si el post no existe en el locale destino (alternate ausente), fallback al índice `/blog` del locale destino — nunca 404 por cambio de idioma.
+  - [ ] Safety net SEO server-side: en `blog/[slug]/page.tsx`, antes de `notFound()`, resolver el slug entrante contra los otros locales por `id`; si matchea, `redirect()` al slug canónico del locale activo (cubre links compartidos con slug de otro idioma, espejo del 307 de F-102 para slugs estáticos).
+- Tests:
+  - [ ] Playwright `e2e/f-108-blog-locale-switch.spec.ts`: desde cada post EN, click DE y ES → URL contiene el slug traducido, `blog-post` visible, `data-post-id` idéntico. Regresión F-102: en pricing el switcher sigue funcionando como hoy.
+  - [ ] Playwright: `GET /de/blog/<slug-en>` redirige a `/de/blog/<slug-de>` (307/308) y renderiza.
+- Notas: **no** añadir `/blog` al mapa `pathnames` para esto — el segmento estático es universal por decisión F-102; el problema es exclusivamente el slug de contenido. El hreflang de F-098 ya es correcto; este ticket sólo lo consume.
+- Refs: F-098, F-102, PR #158
+
+##### F-109 — Blog: dynamic OG/Twitter images por post
+
+- Sprint: 5 · Estado: backlog · Prioridad: P2
+- Depende de: F-098, F-101 (plantilla `lib/seo/og-template.tsx` + font loader — PR #157; **implementar tras mergear #157**)
+- Motivación: F-101 cubrió las rutas marketing pero el blog (PR #155) aterrizó en paralelo y quedó sin cards — un post compartido en social sale sin imagen. Followup ya anotado en las notas de F-101.
+- AC:
+  - [ ] `app/[locale]/(marketing)/blog/[slug]/opengraph-image.tsx` + `twitter-image.tsx` reutilizando `renderOgImage`: kicker = título del namespace `blog` de messages ("Field notes"), title = frontmatter `title` del post en su locale.
+  - [ ] `generateStaticParams` = `getAllPostParams()` (SSG, mismo patrón que la página del post).
+  - [ ] Slug inexistente → card genérica del blog (sin crash).
+  - [ ] Playwright (extender `e2e/f-101-og-images.spec.ts` o spec propio): og:image + twitter:image presentes y el PNG resuelve 200 con 1200×630, mínimo 1 post × 3 locales.
+- Refs: F-098, F-101, PR #157, PR #155
+
+##### F-110 — Meta: refresh CLAUDE.md + endurecer ritual de worktrees
+
+- Sprint: 5 (meta) · Estado: review · Prioridad: P1
+- Depende de: —
+- Motivación: CLAUDE.md sin actualizar desde 2026-05-14 acumulaba drift contra la realidad del repo: "EN sin prefijo" (falso — `localePrefix: "always"`, decisión F-102), "serif display" (superseded por Archivo Black, F-105), `sitemap.ts`/`robots.ts` listados sin existir (F-099 backlog), inventario de skills con nombres no instalados (`typescript-advanced-types`, `testing-strategy`, `playwright-testing`), historia de `.env`-prod obsoleta (sólo existe `.env.local`; prod vive en Vercel). Además el ritual de worktrees se saltó a mano (worktree `chore-f-106` nació sin env — reporte del owner 2026-07-06) y dos worktrees ya mergeados seguían vivos.
+- AC:
+  - [x] CLAUDE.md actualizado: routing (`localePrefix: "always"` + mapa F-102 + blog en el árbol + F-099 marcado pendiente), design (Archivo Black ← `docs/brand/tokens.md`), skills = inventario real instalado, stack + TanStack Query v5 + blog MDX, env story correcta, outstanding decisions podadas a las reales, last-updated 2026-07-06.
+  - [x] Guard en `scripts/dev.mjs`: aborta con instrucciones de copia si falta `.env.local`/`DATABASE_URL` — un worktree creado con `git worktree add` a pelo ya no arranca en silencio.
+  - [x] Skill de proyecto `.claude/skills/worktrees/SKILL.md` con el ciclo completo (crear vía helper, verificar env, nota Prisma-CLI-no-lee-.env.local, cleanup post-merge).
+  - [x] `docs/WORKFLOW.md` §Skills activos sincronizado con el inventario real.
+  - [x] Limpieza: worktrees mergeados `chore-f-106` y `chore-npm` eliminados con sus branches.
+- Tests: N/A (docs/tooling). Guard verificado a mano: `npm run dev` sin `.env.local` aborta con el mensaje esperado.
+- Refs: F-099, F-102, F-105
+
+##### F-111 — Tooling: migrar `package.json#prisma` a `prisma.config.ts` + evaluar Prisma 7
+
+- Sprint: post-MVP · Estado: backlog · Prioridad: P3
+- Depende de: —
+- Motivación: cada invocación del CLI de Prisma avisa `package.json#prisma is deprecated and will be removed in Prisma 7`. Hay además major disponible (6.19.3 → 7.x).
+- AC:
+  - [ ] Config de seed movida a `prisma.config.ts`; CLI corre sin warning de deprecación.
+  - [ ] Al migrar, resolver la carga de env en el config (el CLI no lee `.env.local` por sí solo — hoy exige `source .env.local` manual); tras el ticket, `npx prisma migrate status` funciona directo en cualquier worktree sembrado.
+  - [ ] Spike Prisma 7: leer la guía de upgrade, listar breaking changes que nos afecten (engine, tipos generados), decidir go/no-go. El upgrade en sí, en ticket propio si es go.
+- Tests: `npm run typecheck` + suite Vitest verde + `prisma migrate status` limpio.
+- Refs: Architecture §Stack
+
 ### Sprint 6 — Polish + QA (semanas 11-12)
 
 - E2E Playwright críticos: happy path booking, cancelación user, redención crédito, cancelación ops, auth flows.
