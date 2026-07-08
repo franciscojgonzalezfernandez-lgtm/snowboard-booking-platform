@@ -2063,15 +2063,19 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-103 — Conversion metadata por ruta × 3 locales (keyword-tuned)
 
-- Sprint: 5 · Estado: backlog · Prioridad: P1
-- Depende de: F-102 (slugs/canonical), F-105 (voz)
+- Sprint: 5 · Estado: **done** (2026-07-09, PR pendiente, stack sobre F-099) · Prioridad: P1
+- Depende de: F-102 (slugs/canonical) — mergeado; F-105 (voz); **F-099** (helper `hreflangAlternates`, aún en PR #165 → este PR va stacked sobre esa rama)
 - Motivación: el título + meta description es el anuncio orgánico. Tunear por keyword y mercado (DE/ES/EN) sube CTR. Sprint 2 dejó `<title>`/description básicos; aquí se completa con canonical + hreflang alternates + copy de conversión
 - AC:
-  - [ ] `generateMetadata` async por ruta marketing × locale: title + description keyword-tuned ("private snowboard lessons Flumserberg" / "Snowboard Privatstunden Flumserberg" / "clases privadas de snowboard Suiza"), namespace `metadata.*`
-  - [ ] `alternates.canonical` + `alternates.languages` (hreflang) por página, derivados del mapa F-102; OG/twitter cards apuntan a F-101
-  - [ ] Sin keyword-stuffing; copy en la voz de marca (F-105)
-- Tests: Playwright/HTTP — `<title>`, `<meta description>`, `<link rel=canonical>` y `hreflang` correctos por ruta × locale
-- Notas: keywords las valida el owner; coordinar con F-099 (mismas alternates)
+  - [x] `generateMetadata` async por ruta marketing × locale con title + description keyword-tuned. **home** no tenía metadata (caía al title genérico del root layout) → añadido `home.metadata_title/description` × 3, keyword por mercado ("private snowboard lessons Flumserberg" / "Snowboard-Privatstunden Flumserberg" / "clases privadas de snowboard … Suiza"). Titles débiles (instructores/sobre/contacto/blog) front-load geo+keyword; los ya fuertes (precios/faq) se dejan. Keys per-página `<ns>.metadata_*` (no un namespace `metadata.*` nuevo — se respeta el patrón existente)
+  - [x] `alternates.canonical` (**self-referencial** — la página DE canonicaliza a su propia URL `/de/…`, no a EN) + `alternates.languages` (hreflang + `x-default`→EN) por página, derivados del mapa F-102 vía el helper compartido. OG/twitter cards siguen file-based (F-101), no se tocan
+  - [x] Sin keyword-stuffing; copy en la voz de marca (F-105). El **owner valida** las keywords finales
+- Tests: [x] Playwright `e2e/f-103-metadata.spec.ts` — title keyword-tuned, `<link rel=canonical>` self por locale, hreflang + x-default correctos (home, precios, about-es, faq). [x] `smoke.spec.ts` actualizado al nuevo title del home. El generador de alternates ya está cubierto por Vitest `lib/seo/hreflang.test.ts` (F-099)
+- Notas:
+  - **Fuente única de verdad:** `marketingAlternates()` (`lib/seo/page-metadata.ts`) envuelve `hreflangAlternates` (F-099) → sitemap y metadata no pueden divergir. El canonical self-referencial se resuelve tomando `languages[locale]` (no el default).
+  - **Desviación del AC:** "EN sin prefijo" ya no aplica — `localePrefix: "always"` (F-102), todo prefijado.
+  - **blog/[slug]** ya traía canonical+hreflang propios (slugs localizados, F-098) → no se toca. Los demás 10 surfaces marketing se cablean aquí.
+  - keywords las valida el owner; alternates compartidas con F-099 (mismo helper).
 
 ##### F-104 — Accessibility audit de superficies Sprint 5 (WCAG 2.1 AA)
 

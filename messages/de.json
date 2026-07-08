@@ -26,6 +26,8 @@
     "close_label": "Hinweis schließen"
   },
   "home": {
+    "metadata_title": "Snowboard-Privatstunden in Flumserberg",
+    "metadata_description": "Snowboarden lernen mit Javi — ein zertifizierter Coach, von den ersten Turns bis Carving und Freestyle, Kinder und Erwachsene, auf Deutsch, Englisch oder Spanisch. Jetzt deine Privatstunde in Flumserberg buchen.",
     "utility": "Flumserberg · Heidiland · Saison 27. Nov – 26. Apr",
     "eyebrow": "Flumserberg · Privates Snowboard-Coaching",
     "hero_title_1": "Fahr besser",
@@ -505,7 +507,7 @@
     }
   },
   "instructors": {
-    "metadata_title": "Instruktoren — Ride Flumserberg",
+    "metadata_title": "Snowboardlehrer in Flumserberg — Ride Flumserberg",
     "metadata_description": "Lerne die Snowboardlehrer von Ride Flumserberg in Flumserberg kennen — welche Sprachen sie sprechen, was sie am liebsten fahren und wie du eine Stunde buchst.",
     "eyebrow": "Dein Coach",
     "heading": "Wer dir das Riden beibringt",
@@ -536,7 +538,7 @@
     }
   },
   "about": {
-    "metadata_title": "Über uns — Ride Flumserberg",
+    "metadata_title": "Über Ride Flumserberg — Snowboard-Coaching in Flumserberg",
     "metadata_description": "Ride Flumserberg ist ein Rider, der in Flumserberg coacht. Die Geschichte hinter dem Namen, wie ich Snowboarden gelernt habe und warum ich mehr Leute aufs Board bringen will.",
     "eyebrow": "Über uns",
     "hero_image_alt": "Javi steht in voller Snowboard-Ausrüstung auf einer präparierten Piste in Flumserberg.",
@@ -555,7 +557,7 @@
     "cta_instructors": "Lern deinen Coach kennen"
   },
   "blog": {
-    "metadata_title": "Feldnotizen — Ride Flumserberg",
+    "metadata_title": "Feldnotizen — Snowboarden in Flumserberg",
     "metadata_description": "Snowboarden von jemandem, der es jede Woche am Flumserberg unterrichtet — dein erster Tag, Freestyle oder Carving und warum der Norden der Schweiz.",
     "eyebrow": "Feldnotizen",
     "heading": "Notizen vom Berg",
@@ -634,7 +636,7 @@
     "cta_contact": "Kontakt aufnehmen"
   },
   "contact": {
-    "metadata_title": "Kontakt — Ride Flumserberg",
+    "metadata_title": "Kontakt — Snowboardstunden in Flumserberg",
     "metadata_description": "Erreiche uns in Flumserberg: anrufen oder schreiben, Treffpunkt und Saison.",
     "eyebrow": "Kontakt",
     "heading": "Sprich mit mir, bevor du buchst",

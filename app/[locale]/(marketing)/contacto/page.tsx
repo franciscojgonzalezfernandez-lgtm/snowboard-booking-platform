@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
+import { marketingAlternates } from "@/lib/seo/page-metadata";
+
 import { routing } from "@/i18n/routing";
 import { Reveal } from "@/lib/motion/reveal";
 import {
@@ -29,6 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: t("metadata_title"),
     description: t("metadata_description"),
+    alternates: marketingAlternates("/contacto", locale),
   };
 }
 

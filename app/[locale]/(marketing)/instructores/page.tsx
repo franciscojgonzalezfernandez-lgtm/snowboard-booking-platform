@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
+import { marketingAlternates } from "@/lib/seo/page-metadata";
+
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { listActiveInstructors } from "@/lib/instructor/public-profiles";
@@ -18,6 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: t("metadata_title"),
     description: t("metadata_description"),
+    alternates: marketingAlternates("/instructores", locale),
   };
 }
 
