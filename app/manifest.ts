@@ -1,11 +1,11 @@
 import type { MetadataRoute } from "next";
 
-// PWA manifest for "The Drop". Cream theme; snowflake-free peak mark icons live in
-// public/ (generated in F-091). Next auto-links this at /manifest.webmanifest.
+// PWA manifest for "Ride Flumserberg". Cream theme; snowflake-free peak mark icons
+// live in public/ (generated in F-091). Next auto-links this at /manifest.webmanifest.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "The Drop — Private Snowboard Lessons",
-    short_name: "The Drop",
+    name: "Ride Flumserberg — Private Snowboard Lessons",
+    short_name: "Ride Flumserberg",
     description:
       "Private snowboard lessons in Flumserberg and northern Switzerland.",
     start_url: "/",

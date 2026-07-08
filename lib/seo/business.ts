@@ -3,10 +3,10 @@ import { SITE_URL } from "@/lib/seo/site-url";
 
 // Single source of truth for the business's identity, service area and operating
 // window, consumed by the Schema.org builders in `structured-data.ts` (F-100).
-// Mirrors the seed (F-021): one school, "The Drop", Flumserberg, winter season
-// 26/27 with 08:00–17:00 operating hours.
+// Mirrors the seed (F-021): one school, "Ride Flumserberg", Flumserberg, winter
+// season 26/27 with 08:00–17:00 operating hours.
 //
-// The Drop is a SERVICE-AREA BUSINESS — no fixed premises. Lessons happen out on
+// Ride Flumserberg is a SERVICE-AREA BUSINESS — no fixed premises. Lessons happen out on
 // Flumserberg, not at a storefront. So the emitted LocalBusiness deliberately
 // carries NO precise `geo` and NO `postalCode`/`streetAddress`: only a general
 // locality + `areaServed`. This matches Google's service-area-business guidance
@@ -41,7 +41,7 @@ export const LOCATION_PENDING = {
 } as const;
 
 export const BUSINESS = {
-  name: "The Drop",
+  name: "Ride Flumserberg",
   url: SITE_URL,
   telephone: OPERATIONAL_PHONE_TEL,
   description:

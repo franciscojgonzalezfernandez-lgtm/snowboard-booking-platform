@@ -6,7 +6,7 @@ import { renderOgImage, OG_SIZE, OG_CONTENT_TYPE } from "@/lib/seo/og-template";
 // Home OG card. F-091 shipped a logo-only card; F-101 generalises it onto the
 // shared template with the localized hero line.
 export const runtime = "nodejs";
-export const alt = "The Drop — Private snowboard lessons in Flumserberg";
+export const alt = "Ride Flumserberg — Private snowboard lessons in Flumserberg";
 export const size = OG_SIZE;
 export const contentType = OG_CONTENT_TYPE;
 

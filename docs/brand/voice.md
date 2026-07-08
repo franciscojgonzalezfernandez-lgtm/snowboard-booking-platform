@@ -1,4 +1,4 @@
-# The Drop — Voice & Copy Guide
+# Ride Flumserberg — Voice & Copy Guide
 
 > Territory: **"Your coach"** (personal), chosen with the owner 2026-06-15. Canonical brand
 > summary: PRD §2.4. Visual tokens: `tokens.md`. Motion: `motion.md`. Logo: `logo-assets.md`.
@@ -17,7 +17,7 @@ A great rider who happens to be a good coach: **warm, direct, first-person, alle
 
 1. **First person, always.** "I'll get you riding," never "Our instructors will." The product is a person.
    - Do: *"I ride here every week. I'll show you where the good snow is."*
-   - Don't: *"The Drop offers premium coaching experiences."*
+   - Don't: *"Ride Flumserberg offers premium coaching experiences."*
 2. **Beat the fear, don't ignore it.** Name what scares people, then dissolve it.
    - Do: *"Nervous about the steeper stuff? That's exactly what an hour with me is for."*
    - Don't: *"Suitable for all ability levels."*

@@ -64,18 +64,6 @@ export default async function AboutPage({ params }: Props) {
       <div className="mx-auto max-w-[820px] space-y-24 px-6 py-24 lg:px-7">
         <Reveal className="space-y-6">
           <h2 className="font-display text-3xl tracking-tight sm:text-4xl">
-            {t("name_title")}
-          </h2>
-          <p className="text-lg leading-relaxed text-foreground/80">
-            {t("name_body_1")}
-          </p>
-          <p className="text-lg leading-relaxed text-foreground/80">
-            {t("name_body_2")}
-          </p>
-        </Reveal>
-
-        <Reveal className="space-y-6">
-          <h2 className="font-display text-3xl tracking-tight sm:text-4xl">
             {t("me_title")}
           </h2>
           <p className="text-lg leading-relaxed text-foreground/80">

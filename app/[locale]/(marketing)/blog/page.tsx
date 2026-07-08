@@ -80,7 +80,7 @@ export default async function BlogIndexPage({ params }: Props) {
                   ) : (
                     <div className="flex h-full items-center justify-center">
                       <span className="font-display text-2xl uppercase tracking-tight text-foreground/15">
-                        The Drop
+                        Ride Flumserberg
                       </span>
                     </div>
                   )}

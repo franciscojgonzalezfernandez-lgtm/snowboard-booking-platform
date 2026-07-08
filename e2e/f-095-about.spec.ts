@@ -3,9 +3,9 @@ import { test, expect } from "@playwright/test";
 const LOCALES = ["en", "de", "es"] as const;
 
 const HEADING = {
-  en: "The Drop is just me and a board",
-  de: "The Drop, das sind nur ich und ein Board",
-  es: "The Drop somos yo y una tabla",
+  en: "Just me and a board",
+  de: "Nur ich und ein Board",
+  es: "Solo yo y una tabla",
 } as const;
 
 // F-102 — translated slugs for the About and Instructors marketing pages.
@@ -26,8 +26,10 @@ test.describe("F-095 — About / brand story page", () => {
       await expect(page.getByTestId("about-page")).toBeVisible();
       await expect(page.locator("h1")).toContainText(HEADING[locale]);
 
-      // The four narrative sections + the CTA each carry an <h2>.
-      expect(await page.locator("h2").count()).toBeGreaterThanOrEqual(5);
+      // Three narrative sections (who / philosophy / mountain) + the CTA each
+      // carry an <h2>. F-108 removed the "Why the name" section (the drop-moment
+      // paragraph moved into "Why Flumserberg"), dropping the count from 5 to 4.
+      expect(await page.locator("h2").count()).toBeGreaterThanOrEqual(4);
 
       await expect(page.getByTestId("about-video")).toBeVisible();
 

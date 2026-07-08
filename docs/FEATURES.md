@@ -2173,7 +2173,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-113 — Rebrand: eliminar "The Drop" → "Ride Flumserberg" (evitar confusión de marca con rideflumserberg.ch)
 
-- Sprint: 5 (brand) · Estado: backlog · Prioridad: P1 (confusión de marca en producción — dos nombres para el mismo negocio)
+- Sprint: 5 (brand) · Estado: **done** (2026-07-08, PR pendiente) · Prioridad: P1 (confusión de marca en producción — dos nombres para el mismo negocio)
 - Depende de: F-100 (structured data / `lib/seo/business.ts` — fuente de verdad del nombre), F-105 (brand tokens/tipografía), F-095 (about), F-092 (home editorial), F-101 (OG dinámicos), F-068 (Wordmark/BookingHeader). Sin migración, sin server action — puro copy + assets generados por código.
 - Motivación: el negocio usa dos nombres — "The Drop" (marca) y el dominio `rideflumserberg.ch`. El owner quiere un solo nombre, **Ride Flumserberg**, en todas partes. Fuera todo uso del sustantivo propio "The Drop". Se conserva el **tono**: el "drop" como momento/verbo del snowboard (ese medio segundo antes de tirarte en el que se te olvida todo) permanece; solo muere el nombre de marca.
 - Decisiones tomadas con el owner (2026-07-07):
@@ -2182,44 +2182,48 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   3. **Nombre legal (T&C + Privacy):** el data controller pasa a `Ride Flumserberg, the website operator.` (× en/de/es). Se usa el nombre comercial también en las secciones legales.
   4. **Wordmark:** se **conserva** la marca gráfica (pico + banderín rojo de cumbre); solo se sustituye el texto `The Drop` → `Ride Flumserberg`. Ajustar el lockup para el string más largo (dos palabras) sin rediseñar el símbolo.
 - AC — fuente de verdad del nombre (hacer primero):
-  - [ ] `lib/seo/business.ts:44` `name: "The Drop"` → `"Ride Flumserberg"` (+ comentarios líneas 6, 9). Es el nombre canónico que alimenta el JSON-LD schema.org (F-100). **No** tocar la naturaleza service-area-business (sin premises — ver F-112 / memoria SAB); solo el campo `name`.
-  - [ ] Recomendación no bloqueante: dado que tocamos todos los call-sites, evaluar centralizar el nombre en **una** constante (`BRAND_NAME`) reusada por `business.ts`, `manifest.ts`, `Wordmark.tsx`, `og-template.tsx` y los `alt`. Por defecto: rename in-place; centralizar si sale barato.
+  - [x] `lib/seo/business.ts:44` `name: "The Drop"` → `"Ride Flumserberg"` (+ comentarios líneas 6, 9). Es el nombre canónico que alimenta el JSON-LD schema.org (F-100). **No** tocar la naturaleza service-area-business (sin premises — ver F-112 / memoria SAB); solo el campo `name`.
+  - [x] Recomendación no bloqueante: dado que tocamos todos los call-sites, evaluar centralizar el nombre en **una** constante (`BRAND_NAME`) reusada por `business.ts`, `manifest.ts`, `Wordmark.tsx`, `og-template.tsx` y los `alt`. Por defecto: rename in-place; centralizar si sale barato.
 - AC — componentes / código:
-  - [ ] `app/components/Wordmark.tsx` — texto (línea 16) + comentario (línea 1). Verificar layout en `SiteNav`, footer y `BookingHeader` con el string más largo (no wrap indeseado; tracking/size si hace falta).
-  - [ ] `lib/seo/og-template.tsx` — wordmark de satori (texto línea 50 + comentario línea 32). Verificar que los OG dinámicos (F-101) siguen legibles con la palabra más larga.
-  - [ ] `lib/motion/wordmark-reveal.tsx:7` — comentario (solo doc).
-  - [ ] `app/manifest.ts` — `name` (línea 7), `short_name` (línea 8), comentario (línea 3).
-  - [ ] 7× `opengraph-image.tsx` `export const alt` (marketing raíz, `sobre`, `faq`, `contacto`, `instructores`, `instructores/[slug]`, `precios`).
-  - [ ] `app/[locale]/(marketing)/page.tsx:223` — `alt="The Drop"` → `"Ride Flumserberg"`.
-  - [ ] `app/[locale]/reservar/page.tsx:265` — `name: "The Drop"` en el JSON-LD → `"Ride Flumserberg"` (o reusar la constante de `business.ts`).
-  - [ ] `app/[locale]/(marketing)/blog/page.tsx:83` — texto wordmark → `Ride Flumserberg`.
+  - [x] `app/components/Wordmark.tsx` — texto (línea 16) + comentario (línea 1). Verificar layout en `SiteNav`, footer y `BookingHeader` con el string más largo (no wrap indeseado; tracking/size si hace falta).
+  - [x] `lib/seo/og-template.tsx` — wordmark de satori (texto línea 50 + comentario línea 32). Verificar que los OG dinámicos (F-101) siguen legibles con la palabra más larga.
+  - [x] `lib/motion/wordmark-reveal.tsx:7` — comentario (solo doc).
+  - [x] `app/manifest.ts` — `name` (línea 7), `short_name` (línea 8), comentario (línea 3).
+  - [x] 7× `opengraph-image.tsx` `export const alt` (marketing raíz, `sobre`, `faq`, `contacto`, `instructores`, `instructores/[slug]`, `precios`).
+  - [x] `app/[locale]/(marketing)/page.tsx:223` — `alt="The Drop"` → `"Ride Flumserberg"`.
+  - [x] `app/[locale]/reservar/page.tsx:265` — `name: "The Drop"` en el JSON-LD → `"Ride Flumserberg"` (o reusar la constante de `business.ts`).
+  - [x] `app/[locale]/(marketing)/blog/page.tsx:83` — texto wordmark → `Ride Flumserberg`.
 - AC — i18n `messages/{en,de,es}.json` (~22 ocurrencias por archivo — grep exhaustivo, no fiarse de esta lista parcial):
-  - [ ] `home.intro_eyebrow` "Why The Drop" → reformular sin el nombre viejo (p.ej. "Why me" — copy final en implementación).
-  - [ ] `home.intro_body` — "The Drop is me" → `Ride Flumserberg is me` / equivalente. **Conservar** "rush dropping in" / "Reinfahren" / "subidón al tirarse" (verbo, no marca).
-  - [ ] `home.footer_copy` "© 2026 The Drop" → "© 2026 Ride Flumserberg" (× 3).
-  - [ ] `terms` metadata_title/description.
-  - [ ] `privacy` metadata_title/description + **`privacy.section_controller_body`** "The Drop, the website operator" → "Ride Flumserberg, the website operator" (× 3, decisión 3).
-  - [ ] `prices/precios.metadata_title`.
-  - [ ] `instructors` metadata_title/description + profile_metadata_title/description.
-  - [ ] `about` metadata_title/description + `heading` ("...The Drop is just me and a board" → reformular con el nombre nuevo, copy en implementación).
-  - [ ] `about` — **eliminar** `name_title`, `name_body_1`; **mover** `name_body_2` (sin la frase de origen del nombre) al final de `mountain_body`. Borrar los `t("name_title")`/`t("name_body_1")`/`t("name_body_2")` en `app/[locale]/(marketing)/sobre/page.tsx` (líneas 66-73). Micro-decisión no bloqueante: `name_body_1` (ethos "quiets a restless/hyperactive head") solapa con `lede`/`philosophy` → por defecto se descarta; si el owner quiere conservarla, reubicar en `philosophy_body`.
-  - [ ] `blog` (Field notes) metadata_title (× 3).
-  - [ ] `faq` metadata_title/description (× 3).
-  - [ ] `contact/contacto` metadata_title/description (× 3).
+  - [x] `home.intro_eyebrow` "Why The Drop" → reformular sin el nombre viejo (p.ej. "Why me" — copy final en implementación).
+  - [x] `home.intro_body` — "The Drop is me" → `Ride Flumserberg is me` / equivalente. **Conservar** "rush dropping in" / "Reinfahren" / "subidón al tirarse" (verbo, no marca).
+  - [x] `home.footer_copy` "© 2026 The Drop" → "© 2026 Ride Flumserberg" (× 3).
+  - [x] `terms` metadata_title/description.
+  - [x] `privacy` metadata_title/description + **`privacy.section_controller_body`** "The Drop, the website operator" → "Ride Flumserberg, the website operator" (× 3, decisión 3).
+  - [x] `prices/precios.metadata_title`.
+  - [x] `instructors` metadata_title/description + profile_metadata_title/description.
+  - [x] `about` metadata_title/description + `heading` ("...The Drop is just me and a board" → reformular con el nombre nuevo, copy en implementación).
+  - [x] `about` — **eliminar** `name_title`, `name_body_1`; **mover** `name_body_2` (sin la frase de origen del nombre) al final de `mountain_body`. Borrar los `t("name_title")`/`t("name_body_1")`/`t("name_body_2")` en `app/[locale]/(marketing)/sobre/page.tsx` (líneas 66-73). Micro-decisión no bloqueante: `name_body_1` (ethos "quiets a restless/hyperactive head") solapa con `lede`/`philosophy` → por defecto se descarta; si el owner quiere conservarla, reubicar en `philosophy_body`.
+  - [x] `blog` (Field notes) metadata_title (× 3).
+  - [x] `faq` metadata_title/description (× 3).
+  - [x] `contact/contacto` metadata_title/description (× 3).
 - AC — tests:
-  - [ ] `lib/seo/structured-data.test.ts` — actualizar 3 aserciones `.toBe("The Drop")` (líneas 19, 152, 200: name / worksFor / publisher) → "Ride Flumserberg".
-  - [ ] `e2e/f-095-about.spec.ts:6-8` — actualizar las 3 aserciones de `heading` al copy nuevo (× 3 locales). Verificar que "Why the name" ya no existe y el drop-moment aparece dentro de "Why Flumserberg".
-  - [ ] `e2e/f-049-spa.spec.ts` — comentario "The Drop owner" (solo doc).
-  - [ ] **Regression guard nuevo:** Playwright asserta que "The Drop" **no** aparece en el DOM de `/`, `/about` (slug traducido F-102), footer, ni en `document.title`, × 3 locales.
+  - [x] `lib/seo/structured-data.test.ts` — actualizar 3 aserciones `.toBe("The Drop")` (líneas 19, 152, 200: name / worksFor / publisher) → "Ride Flumserberg".
+  - [x] `e2e/f-095-about.spec.ts:6-8` — actualizar las 3 aserciones de `heading` al copy nuevo (× 3 locales). Verificar que "Why the name" ya no existe y el drop-moment aparece dentro de "Why Flumserberg".
+  - [x] `e2e/f-049-spa.spec.ts` — comentario "The Drop owner" (solo doc).
+  - [x] **Regression guard nuevo:** Playwright asserta que "The Drop" **no** aparece en el DOM de `/`, `/about` (slug traducido F-102), footer, ni en `document.title`, × 3 locales.
 - AC — assets estáticos:
-  - [ ] Verificar que `public/brand/`, `public/icon-*.png` y favicons **no** tienen "The Drop" horneado en el pixel. OG dinámicos (satori) se regeneran del código. Si algún PNG/SVG estático lleva el nombre viejo, regenerar.
+  - [x] Verificar que `public/brand/`, `public/icon-*.png` y favicons **no** tienen "The Drop" horneado en el pixel. OG dinámicos (satori) se regeneran del código. Si algún PNG/SVG estático lleva el nombre viejo, regenerar.
+    - **Hallazgo:** `public/brand/logo-full.png` (el logo ilustrado a mano del "brand moment" del home final-CTA) **sí** tenía "THE DROP" + "ENJOY YOUR LINE." horneado en el pixel — no editable por código. `about.png` es foto (sin texto); `icon-*.png`/`icon.svg`/favicons son la marca gráfica pico+banderín (sin texto). **Resuelto:** el owner produjo el logo redibujado ("Ride FLUMSERBERG / ENJOY YOUR LINE.", mismo estilo hand-drawn, 1337×1177 RGBA, ratio 1.136 ≈ idéntico al viejo 1.136 → sin cambio de CLS ni distorsión en el `<Image width={520} height={458}>`). D-LOGO resuelto para este surface.
+- AC — llms.txt (añadido a F-113 a petición del owner 2026-07-08):
+  - [x] `app/llms.txt/route.ts` — Route Handler estático (`text/plain`) sirviendo `/llms.txt` per llmstxt.org: H1 marca + resumen + mapa curado de las superficies marketing canónicas (EN), con nota trilingüe (/de, /es via slugs F-102). Nace con el nombre nuevo. **No** es señal de ranking de Google (eso es F-099 sitemap/robots) — es cortesía para crawlers/agentes LLM. Bajo mantenimiento manual junto a las rutas marketing.
 - AC — docs (consistencia; puede ir en el mismo PR o en uno de docs):
-  - [ ] `CLAUDE.md` líneas 94 y 312 (brand "The Drop", F-105) → "Ride Flumserberg".
-  - [ ] `docs/brand/{voice,logo-assets,tokens,motion}.md` + referencia en `docs/PRD.md`. `.claude/memory/sprint-5-brand-direction.md` es histórico → dejar o anotar el rename.
+  - [x] `CLAUDE.md` líneas 94 y 312 (brand "The Drop", F-105) → "Ride Flumserberg".
+  - [x] `docs/brand/{voice,logo-assets,tokens,motion}.md` + referencia en `docs/PRD.md`. `.claude/memory/sprint-5-brand-direction.md` es histórico → dejar o anotar el rename.
 - Notas / fuera de scope:
   - **No** cambia el dominio (`rideflumserberg.ch` ya es el dominio), **no** hay slugs con el nombre de marca (F-102 map es geográfico/funcional) → **cero redirects**, cero cambios de URL.
   - **Se conserva el verbo/momento "drop"** (snowboard slang): `intro_body` "dropping in", `about.video_caption` "clip drops in soon", y el párrafo del medio segundo antes de tirarte. Solo muere el **sustantivo propio** "The Drop".
   - Sin migración DB, sin server action. Un solo PR (docs opcionalmente aparte).
+- **Entregado (2026-07-08):** rename completo `The Drop` → `Ride Flumserberg` en código (Wordmark, og-template satori, manifest, business.ts/JSON-LD F-100, reservar JSON-LD, blog placeholder, icon.svg aria, home logo alt, 7× OG `alt`), i18n (en/de/es: intro_eyebrow reformulado a "Why me"/"Warum ich"/"Por qué yo", intro_body, footer_copy, todas las metadata + controller legal, heading about reformulado a "Just me and a board"/etc.), y la reestructura de `/about` (sección "Why the name" eliminada; drop-moment movido al cierre de "Why Flumserberg"). Tests: 3 aserciones structured-data + heading f-095 (+ `h2` count 5→4) + comentario f-049 + nuevo guard `e2e/f-113-rebrand.spec.ts` (DOM + `<title>` sin "The Drop", footer con nombre nuevo, /·/about × 3 locales). Logo raster redibujado por el owner (ver hallazgo assets). llms.txt añadido. Docs: CLAUDE.md, `docs/brand/{voice,motion,tokens,logo-assets}.md`, PRD §2.4 rebautizados (histórico anotado). Verbo/momento "drop" conservado (dropping in / video_caption / párrafo del medio segundo).
 - Refs: F-113, F-100, F-105, F-095, F-092, F-101, F-068
 
 ### Sprint 6 — Polish + QA (semanas 11-12)

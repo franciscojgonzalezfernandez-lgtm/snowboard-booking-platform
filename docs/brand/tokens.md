@@ -1,4 +1,4 @@
-# The Drop — Design Tokens (cream / editorial)
+# Ride Flumserberg — Design Tokens (cream / editorial)
 
 > Canonical color + type tokens. Documents the existing **Patagonia-editorial** theme implemented in
 > `app/globals.css` (F-029 / F-030). Values are `oklch` (source of truth) with `~hex` for reference.

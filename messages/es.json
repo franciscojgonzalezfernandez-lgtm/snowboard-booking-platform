@@ -34,9 +34,9 @@
     "hero_sub": "Clases privadas de snowboard con un apasionado de verdad — disfrutaré tu progreso tanto como tú.",
     "cta_primary": "Reservar clase",
     "cta_signin": "Iniciar sesión",
-    "intro_eyebrow": "Por qué The Drop",
+    "intro_eyebrow": "Por qué yo",
     "intro_title": "No solo enseño snowboard. Lo vivo.",
-    "intro_body": "La mayoría de escuelas te asignan un monitor. The Drop soy yo — un rider certificado que ha pasado la vida en la montaña y sigue sintiendo el mismo subidón al tirarse. Leo cómo montas, corrijo lo que te frena y te pongo a trazar líneas que no creías tuyas. Tu progreso es mi parte favorita del día.",
+    "intro_body": "La mayoría de escuelas te asignan un monitor. Ride Flumserberg soy yo — un rider certificado que ha pasado la vida en la montaña y sigue sintiendo el mismo subidón al tirarse. Leo cómo montas, corrijo lo que te frena y te pongo a trazar líneas que no creías tuyas. Tu progreso es mi parte favorita del día.",
     "classes_eyebrow": "Las clases",
     "classes_title": "Cuatro formas de montar conmigo",
     "classes_sub": "Privadas, de 1 a 4 personas. Elige la duración que encaja — del resto me encargo yo. Forfait y equipo no incluidos; te indico el alquiler.",
@@ -65,7 +65,7 @@
     "review_4_quote": "Tuve mi primera clase con Javi y me sorprendió muchísimo el apoyo y la atención al detalle con mis errores, esos que pueden derivar en malos hábitos. ¡Fue genial!",
     "final_title": "Encontremos tu línea.",
     "final_cta": "Reservar clase",
-    "footer_copy": "© 2026 The Drop",
+    "footer_copy": "© 2026 Ride Flumserberg",
     "footer_loc": "Flumserberg · St. Gallen · Suiza"
   },
   "footer": {
@@ -77,8 +77,8 @@
     "phone_label": "Teléfono"
   },
   "terms": {
-    "metadata_title": "Términos y Condiciones — The Drop",
-    "metadata_description": "Términos y condiciones generales para clases privadas de snowboard reservadas en The Drop.",
+    "metadata_title": "Términos y Condiciones — Ride Flumserberg",
+    "metadata_description": "Términos y condiciones generales para clases privadas de snowboard reservadas en Ride Flumserberg.",
     "heading": "Términos y Condiciones",
     "last_updated": "Última actualización: 19 de mayo de 2026",
     "intro": "Estas condiciones rigen las reservas hechas en rideflumserberg.ch. Al confirmar una reserva las aceptas en su totalidad.",
@@ -101,13 +101,13 @@
     "section_jurisdiction_body": "El fuero exclusivo es Mels (Sarganserland, cantón de St. Gallen, Suiza). Se aplica el derecho federal suizo."
   },
   "privacy": {
-    "metadata_title": "Política de Privacidad — The Drop",
-    "metadata_description": "Cómo The Drop recoge, utiliza y protege tus datos personales.",
+    "metadata_title": "Política de Privacidad — Ride Flumserberg",
+    "metadata_description": "Cómo Ride Flumserberg recoge, utiliza y protege tus datos personales.",
     "heading": "Política de Privacidad",
     "last_updated": "Última actualización: 19 de mayo de 2026",
     "intro": "Esta página explica qué datos personales recogemos cuando reservas una clase, quién los trata por cuenta nuestra y cómo ejercer tus derechos bajo la nLPD suiza y el RGPD europeo.",
     "section_controller_title": "Responsable del tratamiento",
-    "section_controller_body": "The Drop, operador de este sitio web. Contacto: franciscojgonzalezfernandez@gmail.com. Operamos desde Flumserberg, cantón de St. Gallen, Suiza.",
+    "section_controller_body": "Ride Flumserberg, operador de este sitio web. Contacto: franciscojgonzalezfernandez@gmail.com. Operamos desde Flumserberg, cantón de St. Gallen, Suiza.",
     "section_data_title": "Datos que recogemos",
     "section_data_body": "Nombre, dirección de correo electrónico, número de teléfono y los datos necesarios para completar el pago. Los datos de tarjeta los gestiona directamente Stripe y no pasan nunca por nuestros servidores. Además, almacenamos una cookie de sesión emitida por nuestra librería de autenticación; es estrictamente necesaria para mantenerte autenticado y no contiene información de rastreo.",
     "section_processors_title": "Proveedores de servicio",
@@ -429,7 +429,7 @@
     }
   },
   "pricing": {
-    "metadata_title": "Clases de snowboard y precios — The Drop, Flumserberg",
+    "metadata_title": "Clases de snowboard y precios — Ride Flumserberg, Flumserberg",
     "metadata_description": "Clases privadas de snowboard en Flumserberg con Javi: de una hora a un día entero, precio único hasta cuatro personas, en inglés, alemán o español. Desde los 8 años.",
     "eyebrow": "Las clases",
     "heading": "Elige cuánto rato bajamos.",
@@ -505,8 +505,8 @@
     }
   },
   "instructors": {
-    "metadata_title": "Instructores — The Drop",
-    "metadata_description": "Conoce a los instructores de snowboard de The Drop en Flumserberg: los idiomas que hablan, lo que más les gusta montar y cómo reservar una clase.",
+    "metadata_title": "Instructores — Ride Flumserberg",
+    "metadata_description": "Conoce a los instructores de snowboard de Ride Flumserberg en Flumserberg: los idiomas que hablan, lo que más les gusta montar y cómo reservar una clase.",
     "eyebrow": "Tu coach",
     "heading": "Con quién vas a montar",
     "intro": "Una escuela, gente de verdad. Mira quién enseña, qué idiomas habla y qué le gusta montar — antes de reservar.",
@@ -516,8 +516,8 @@
     "view_profile": "Ver perfil",
     "cta": "Reservar clase",
     "back": "Todos los instructores",
-    "profile_metadata_title": "{name} — Instructor de snowboard en The Drop",
-    "profile_metadata_description": "{name} enseña snowboard en The Drop en Flumserberg. Idiomas, especialidades y cómo reservar una clase.",
+    "profile_metadata_title": "{name} — Instructor de snowboard en Ride Flumserberg",
+    "profile_metadata_description": "{name} enseña snowboard en Ride Flumserberg en Flumserberg. Idiomas, especialidades y cómo reservar una clase.",
     "lang": {
       "en": "Inglés",
       "de": "Alemán",
@@ -536,15 +536,12 @@
     }
   },
   "about": {
-    "metadata_title": "Sobre nosotros — The Drop",
-    "metadata_description": "The Drop es un rider que da clases en Flumserberg. La historia detrás del nombre, cómo aprendí y por qué quiero a más gente sobre una tabla.",
+    "metadata_title": "Sobre nosotros — Ride Flumserberg",
+    "metadata_description": "Ride Flumserberg es un rider que da clases en Flumserberg. La historia detrás del nombre, cómo aprendí y por qué quiero a más gente sobre una tabla.",
     "eyebrow": "Sobre nosotros",
     "hero_image_alt": "Javi de pie en una pista pisada de Flumserberg con todo el equipo de snowboard.",
-    "heading": "Soy <name>Javi</name>. The Drop somos yo y una tabla.",
+    "heading": "Soy <name>Javi</name>. Solo yo y una tabla.",
     "lede": "De día escribo software. El resto del tiempo estoy en la montaña — porque el snowboard saca lo mejor de mí, y de cualquiera con quien me toque bajar.",
-    "name_title": "Por qué The Drop",
-    "name_body_1": "Lo monté alrededor de una cosa que el snowboard hace por mí: calma una cabeza inquieta e hiperactiva como nada. Sobre la tabla encuentro claridad, calma, una especie de foco puro — y he visto cómo saca lo mejor de cualquiera que lo practica. Quiero esa sensación al alcance de la mayor cantidad de gente posible.",
-    "name_body_2": "El drop en sí es el medio segundo antes de lanzarte a una línea o a una feature que te da miedo — ese respiro en el que dejas todo lo demás atrás y solo quedáis tú y la tabla. De eso va todo. De ahí sale el nombre.",
     "me_title": "Con quién bajas",
     "me_body_1": "Soy entrenador certificado en España, con varios años enseñando tanto a adultos como a niños — desde los primeros giros hasta el carving y el freestyle.",
     "me_body_2": "Los niños viven una experiencia construida sobre lo mucho que disfruto bajando con ellos. Y una mente de ingeniero hace que, cuando un adulto quiere entender por qué funciona un giro, pueda explicárselo de verdad.",
@@ -552,13 +549,13 @@
     "philosophy_title": "De qué va de verdad una clase conmigo",
     "philosophy_body": "Va de construir confianza. Lo que más disfruto es ver a alguien plantarle cara a un miedo con el que llegó — así que la vamos construyendo paso a paso, manteniendo cada sesión segura y de verdad divertida.",
     "mountain_title": "Por qué Flumserberg",
-    "mountain_body": "Es la primera montaña en la que trabajé como instructor en Suiza, y es fácil de llegar desde Zúrich y St. Gallen. Lo mejor: la zona de principiantes es gratis y abierta para todos — ninguna excusa para no empezar.",
+    "mountain_body": "Es la primera montaña en la que trabajé como instructor en Suiza, y es fácil de llegar desde Zúrich y St. Gallen. Lo mejor: la zona de principiantes es gratis y abierta para todos — ninguna excusa para no empezar. El drop en sí es el medio segundo antes de lanzarte a una línea o a una feature que te da miedo — ese respiro en el que dejas todo lo demás atrás y solo quedáis tú y la tabla. De eso va todo.",
     "cta_title": "Vente a bajar.",
     "cta_book": "Reservar clase",
     "cta_instructors": "Conoce a tu coach"
   },
   "blog": {
-    "metadata_title": "Blog — The Drop",
+    "metadata_title": "Blog — Ride Flumserberg",
     "metadata_description": "Snowboard desde quien lo enseña cada semana en Flumserberg: tu primer día, freestyle o carving y por qué el norte de Suiza.",
     "eyebrow": "Blog",
     "heading": "Notas de la montaña",
@@ -570,8 +567,8 @@
     "cta_button": "Reserva una clase"
   },
   "faq": {
-    "metadata_title": "FAQ — clases de snowboard en Flumserberg | The Drop",
-    "metadata_description": "Forfait, equipo, edad mínima, idiomas, cancelación y qué llevar — todo lo que necesitas saber antes de reservar una clase privada de snowboard en Flumserberg con The Drop.",
+    "metadata_title": "FAQ — clases de snowboard en Flumserberg | Ride Flumserberg",
+    "metadata_description": "Forfait, equipo, edad mínima, idiomas, cancelación y qué llevar — todo lo que necesitas saber antes de reservar una clase privada de snowboard en Flumserberg con Ride Flumserberg.",
     "eyebrow": "Antes de reservar",
     "heading": "Preguntas, resueltas.",
     "intro": "Lo que más me preguntan — equipo, edad, idiomas, tiempo, qué pasa si cambian los planes. Si algo sigue sin estar claro, solo llama.",
@@ -637,8 +634,8 @@
     "cta_contact": "Hablar conmigo"
   },
   "contact": {
-    "metadata_title": "Contacto — The Drop",
-    "metadata_description": "Contacta con The Drop en Flumserberg: llama o escribe, punto de encuentro y temporada.",
+    "metadata_title": "Contacto — Ride Flumserberg",
+    "metadata_description": "Contacta con nosotros en Flumserberg: llama o escribe, punto de encuentro y temporada.",
     "eyebrow": "Contacto",
     "heading": "Habla conmigo antes de reservar",
     "intro": "¿Dudas sobre qué clase encaja, tu nivel o un día de equipo? Llama o escribe — al otro lado estoy yo, Javi.",

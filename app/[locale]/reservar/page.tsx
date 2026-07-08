@@ -262,7 +262,7 @@ export default async function ReservarPage({
     areaServed: { "@type": "Place", name: "Flumserberg, Switzerland" },
     provider: {
       "@type": "LocalBusiness",
-      name: "The Drop",
+      name: "Ride Flumserberg",
       address: {
         "@type": "PostalAddress",
         addressLocality: "Flumserberg",
