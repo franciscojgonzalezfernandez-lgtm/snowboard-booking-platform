@@ -2009,9 +2009,10 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-112 — Cablear SEO owner-dependiente (GBP verificado + sameAs + geo + aggregateRating)
 
-- Sprint: 5 · Estado: blocked (owner) · Prioridad: P2
-- Depende de: F-100 (helpers, flags y gates ya montados), **D-PLACE** (verificación GBP), acciones del owner (verificación vídeo SAB, alta de redes sociales)
-- Motivación: F-100 dejó toda la data owner-dependiente **parked** y degradando limpio (sin `geo`/`postalCode`, `sameAs` vacío, `aggregateRating` off). Este ticket la cablea cuando el owner complete los pasos externos, sin tocar la arquitectura — solo rellenar `LOCATION_PENDING`/`BUSINESS.sameAs` y activar el gate
+- Sprint: post-MVP · Estado: 🅿️ PARKED (bloqueado por owner hasta invierno 2026/27) · Prioridad: P3
+- **⏳ No accionable hasta ~Nov 2026:** la verificación de Google Business Profile no es posible hasta que el negocio opere en temporada (invierno 2026/27). Revisitar al arrancar la temporada. F-100 ya degrada limpio sin esto, así que **no bloquea MVP ni lanzamiento**
+- Depende de: F-100 (helpers, flags y gates ya montados), **D-PLACE** (verificación GBP), acciones del owner (verificación vídeo SAB en temporada, alta de redes sociales)
+- Motivación: F-100 dejó toda la data owner-dependiente **parked** y degradando limpio (sin `geo`/`postalCode`, `aggregateRating` off; `sameAs` solo Instagram). Este ticket la cablea cuando el owner complete los pasos externos, sin tocar la arquitectura — solo rellenar `LOCATION_PENDING`/`BUSINESS.sameAs` y activar el gate
 - AC:
   - [ ] Verificar Google Business Profile como **service-area business** (vídeo SAB: equipo de marca + owner en base Flumserberg + material de negocio; sin escaparate); definir zonas de servicio
   - [ ] Ficha viva → añadir la Google Maps URL a `sameAs`, derivada del CID `15514449138658354283` (`https://www.google.com/maps?cid=15514449138658354283`)
