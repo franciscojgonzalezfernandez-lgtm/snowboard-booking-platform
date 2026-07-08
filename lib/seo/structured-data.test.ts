@@ -16,7 +16,7 @@ describe("buildLocalBusiness", () => {
 
     expect(node["@type"]).toEqual(["LocalBusiness", "SportsActivityLocation"]);
     expect(node["@id"]).toBe(BUSINESS_ID);
-    expect(node.name).toBe("The Drop");
+    expect(node.name).toBe("Ride Flumserberg");
     expect(node.telephone).toBe(BUSINESS.telephone);
 
     const address = node.address as Record<string, unknown>;
@@ -149,7 +149,7 @@ describe("buildPerson", () => {
     expect(node.jobTitle).toBe("Snowboard instructor");
     expect(node.image).toBe("https://rideflumserberg.ch/instructors/javi.png");
     expect(node.knowsLanguage).toEqual(["en", "de", "es"]);
-    expect((node.worksFor as Record<string, unknown>).name).toBe("The Drop");
+    expect((node.worksFor as Record<string, unknown>).name).toBe("Ride Flumserberg");
   });
 
   it("omits image, description and knowsLanguage when absent", () => {
@@ -197,7 +197,7 @@ describe("buildBlogPosting", () => {
     expect(node.dateModified).toBe("2026-01-15");
     expect(node.inLanguage).toBe("en");
     expect((node.author as Record<string, unknown>)["@type"]).toBe("Person");
-    expect((node.publisher as Record<string, unknown>).name).toBe("The Drop");
+    expect((node.publisher as Record<string, unknown>).name).toBe("Ride Flumserberg");
     expect(node.image).toBeUndefined();
   });
 });

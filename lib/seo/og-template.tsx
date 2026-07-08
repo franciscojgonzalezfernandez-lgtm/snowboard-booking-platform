@@ -29,7 +29,7 @@ type OgCardInput = {
   title: string;
 };
 
-// The "The Drop" wordmark lockup, redrawn for satori (same paths as
+// The "Ride Flumserberg" wordmark lockup, redrawn for satori (same paths as
 // app/components/Wordmark.tsx): ink peak + alpine-red summit flag.
 function WordmarkLockup() {
   return (
@@ -47,7 +47,7 @@ function WordmarkLockup() {
           letterSpacing: -0.5,
         }}
       >
-        The Drop
+        Ride Flumserberg
       </span>
     </div>
   );

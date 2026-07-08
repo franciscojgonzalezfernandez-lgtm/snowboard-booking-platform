@@ -91,7 +91,7 @@
 **Editorial / premium aesthetic.** References: Aesop, Cereal magazine, Outdoor Voices, Monocle.
 
 **Required:**
-- Display typography: **Archivo Black**, uppercase, tight tracking (`--font-archivo-black`); body/UI: **Archivo**. Source of truth: `docs/brand/tokens.md` (brand "The Drop", F-105). This supersedes the original "serif display" guideline — do NOT reintroduce serif, and never Inter/DM Sans/Geist.
+- Display typography: **Archivo Black**, uppercase, tight tracking (`--font-archivo-black`); body/UI: **Archivo**. Source of truth: `docs/brand/tokens.md` (brand "Ride Flumserberg", F-105; renamed from "The Drop" in F-113). This supersedes the original "serif display" guideline — do NOT reintroduce serif, and never Inter/DM Sans/Geist.
 - Generous whitespace
 - High contrast, low color saturation
 - Photography-led (not illustration-led)
@@ -309,7 +309,7 @@ Trivial commits (typo, rename mecánico) pueden llevar body de una línea, pero 
 3. **EN URL prefix** — currently `/en/...` everywhere (`localePrefix: "always"`). Dropping it needs the `getPathname` refactor deferred in F-102.
 4. **Prisma 7 upgrade** + `prisma.config.ts` migration (deprecation warning on every CLI run) — F-111.
 
-Resolved since the original list: pricing per duration (F-080 editor + seeded `Season.priceCentsByDuration`), brand identity (F-105 "The Drop" + F-091 logo), tipping split policy (100% instructor).
+Resolved since the original list: pricing per duration (F-080 editor + seeded `Season.priceCentsByDuration`), brand identity (F-105 brand system + F-091 logo, renamed to "Ride Flumserberg" in F-113), tipping split policy (100% instructor).
 
 ---
 

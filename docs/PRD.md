@@ -49,11 +49,13 @@ Las plataformas de reserva genéricas (Bókun, Peek, FareHarbor) son funcionales
 - No incluye reservas de glaciar verano ni indoor (solo invierno)
 - No incluye app móvil nativa (web responsive PWA-ready)
 
-### 2.4 Identidad de marca — «The Drop»
+### 2.4 Identidad de marca — «Ride Flumserberg»
+
+> **Rebautizado en F-113 (2026-07-08):** «The Drop» → **«Ride Flumserberg»** para eliminar la confusión de dos nombres para el mismo negocio (el dominio ya era `rideflumserberg.ch`). Se conserva el *tono* del "drop" (verbo/momento del snowboard), no el sustantivo propio. La prosa de origen del nombre abajo queda como histórico.
 
 > Fuente de verdad de marca. El detalle operativo vive en `docs/brand/` (voz, tokens, motion, logo). Aquí queda lo canónico. Territorio elegido con el owner (2026-06-15): **«Your coach» — personal, cálido, en primera persona**.
 
-**Nombre:** *the drop* (en minúsculas). Doble sentido: la **gota** de nieve/agua y el **drop in** del snowboard (entrar en la pista/el pipe). Es una marca **personal** del owner-instructor (Javi), no una escuela genérica.
+**Nombre:** **Ride Flumserberg** (nombre comercial, no se traduce). Rebautizado desde «The Drop» en F-113. Se conserva el sentido del **drop in** del snowboard (entrar en la pista/el pipe) como verbo/momento en el copy, pero ya **no** como nombre de marca. Es una marca **personal** del owner-instructor (Javi), no una escuela genérica.
 
 **Posicionamiento:** coaching privado de snowboard en Flumserberg y el norte de Suiza, impartido por un rider de verdad. No son monitores intercambiables: es *un* coach que te lleva de los primeros giros a tus primeros drops, con videocorrección real, en grupos de 1 a 4 personas. Vende **progreso y confianza**, no "actividad de ocio".
 

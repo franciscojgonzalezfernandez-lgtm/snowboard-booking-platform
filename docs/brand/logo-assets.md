@@ -1,4 +1,4 @@
-# The Drop — Logo & Brand Assets (as built)
+# Ride Flumserberg — Logo & Brand Assets (as built)
 
 > What's live after **F-091**. The source artwork was produced by the owner; F-091 integrated it and
 > generated all asset formats. Brand/voice: **F-105**. Colors: cream/editorial (`docs/brand/tokens.md`).
@@ -13,7 +13,7 @@
   underline, and "ENJOY YOUR LINE." Source: `Logos drop/image.jpeg`, **trimmed + cream keyed to
   transparent** (so it sits on the cream page), 1200px wide. Use **large**: hero (F-092), about, OG, social.
 - **Header / footer / funnel wordmark** — `app/components/Wordmark.tsx`. A compact lockup: the
-  **peak + red-flag mark** + "The Drop" in the display font (Archivo Black), `currentColor`. Mounted in
+  **peak + red-flag mark** + "Ride Flumserberg" in the display font (Archivo Black), `currentColor`. Mounted in
   `SiteNav`, `MobileNav`, `booking-header`. (Replaced the placeholder "Adlerhorst·SBS".)
 - **Favicon / app-icon** — `app/icon.svg`. The **mountain peak with a red summit flag**, lifted from
   the logo so the icon and logo are one family. Legible at 16px.

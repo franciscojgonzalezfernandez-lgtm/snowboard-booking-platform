@@ -3,7 +3,7 @@ import { ogImageFromNamespace } from "@/lib/seo/og-route";
 import { OG_SIZE, OG_CONTENT_TYPE } from "@/lib/seo/og-template";
 
 export const runtime = "nodejs";
-export const alt = "The Drop — snowboard lesson prices in Flumserberg";
+export const alt = "Ride Flumserberg — snowboard lesson prices in Flumserberg";
 export const size = OG_SIZE;
 export const contentType = OG_CONTENT_TYPE;
 

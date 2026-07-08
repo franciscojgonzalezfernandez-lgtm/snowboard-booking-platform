@@ -34,9 +34,9 @@
     "hero_sub": "Private Snowboardstunden mit einem echten Besessenen — dein Fortschritt freut mich genauso wie dich.",
     "cta_primary": "Stunde buchen",
     "cta_signin": "Anmelden",
-    "intro_eyebrow": "Warum The Drop",
+    "intro_eyebrow": "Warum ich",
     "intro_title": "Ich unterrichte Snowboarden nicht nur. Ich lebe es.",
-    "intro_body": "Die meisten Schulen geben dir einen Lehrer. The Drop bin ich — ein certifiziert Rider, der sein Leben auf dem Berg verbracht hat und beim Reinfahren immer noch denselben Kick spürt. Ich lese, wie du fährst, behebe, was dich bremst, und bringe dich auf Linien, die du dir nicht zugetraut hättest. Dein Fortschritt ist mein liebster Teil des Tages.",
+    "intro_body": "Die meisten Schulen geben dir einen Lehrer. Ride Flumserberg bin ich — ein certifiziert Rider, der sein Leben auf dem Berg verbracht hat und beim Reinfahren immer noch denselben Kick spürt. Ich lese, wie du fährst, behebe, was dich bremst, und bringe dich auf Linien, die du dir nicht zugetraut hättest. Dein Fortschritt ist mein liebster Teil des Tages.",
     "classes_eyebrow": "Die Stunden",
     "classes_title": "Vier Wege, mit mir zu fahren",
     "classes_sub": "Privat, 1 bis 4 Personen. Wähl die Dauer, die passt — den Rest mache ich. Skipass und Ausrüstung nicht inklusive; ich zeige dir den Verleih.",
@@ -65,7 +65,7 @@
     "review_4_quote": "Hatte meine erste Stunde bei Javi und war unglaublich überrascht von der Unterstützung und der Liebe zum Detail bei meinen Fehlern — den Fehlern, die zu schlechten Angewohnheiten führen könnten. War super!",
     "final_title": "Finden wir deine Linie.",
     "final_cta": "Stunde buchen",
-    "footer_copy": "© 2026 The Drop",
+    "footer_copy": "© 2026 Ride Flumserberg",
     "footer_loc": "Flumserberg · St. Gallen · Schweiz"
   },
   "footer": {
@@ -77,8 +77,8 @@
     "phone_label": "Telefon"
   },
   "terms": {
-    "metadata_title": "Allgemeine Geschäftsbedingungen — The Drop",
-    "metadata_description": "Allgemeine Geschäftsbedingungen für private Snowboardstunden bei The Drop.",
+    "metadata_title": "Allgemeine Geschäftsbedingungen — Ride Flumserberg",
+    "metadata_description": "Allgemeine Geschäftsbedingungen für private Snowboardstunden bei Ride Flumserberg.",
     "heading": "Allgemeine Geschäftsbedingungen",
     "last_updated": "Zuletzt aktualisiert am 19. Mai 2026",
     "intro": "Diese Bedingungen gelten für alle Buchungen auf rideflumserberg.ch. Mit der Bestätigung einer Buchung werden sie vollumfänglich akzeptiert.",
@@ -101,13 +101,13 @@
     "section_jurisdiction_body": "Ausschliesslicher Gerichtsstand ist Mels (Sarganserland, Kanton St. Gallen, Schweiz). Es gilt schweizerisches Bundesrecht."
   },
   "privacy": {
-    "metadata_title": "Datenschutzerklärung — The Drop",
-    "metadata_description": "Wie The Drop Ihre personenbezogenen Daten erhebt, verwendet und schützt.",
+    "metadata_title": "Datenschutzerklärung — Ride Flumserberg",
+    "metadata_description": "Wie Ride Flumserberg Ihre personenbezogenen Daten erhebt, verwendet und schützt.",
     "heading": "Datenschutzerklärung",
     "last_updated": "Zuletzt aktualisiert am 19. Mai 2026",
     "intro": "Diese Seite erklärt, welche personenbezogenen Daten wir bei einer Buchung erheben, wer sie in unserem Auftrag verarbeitet und wie Sie Ihre Rechte nach Schweizer revidiertem Datenschutzgesetz (revDSG) und EU-DSGVO ausüben können.",
     "section_controller_title": "Verantwortlicher",
-    "section_controller_body": "The Drop, Betreiber dieser Website. Kontakt: franciscojgonzalezfernandez@gmail.com. Tätigkeitsort: Flumserberg, Kanton St. Gallen, Schweiz.",
+    "section_controller_body": "Ride Flumserberg, Betreiber dieser Website. Kontakt: franciscojgonzalezfernandez@gmail.com. Tätigkeitsort: Flumserberg, Kanton St. Gallen, Schweiz.",
     "section_data_title": "Welche Daten wir erheben",
     "section_data_body": "Name, E-Mail-Adresse, Telefonnummer sowie die zur Zahlungsabwicklung notwendigen Angaben. Kartendaten werden direkt von Stripe verarbeitet und gelangen nie auf unsere Server. Zusätzlich speichern wir ein Sitzungscookie unserer Authentifizierungsbibliothek; es ist strikt notwendig, um Sie eingeloggt zu halten, und enthält keine Tracking-Informationen.",
     "section_processors_title": "Dienstleister",
@@ -429,7 +429,7 @@
     }
   },
   "pricing": {
-    "metadata_title": "Snowboard-Lektionen & Preise — The Drop, Flumserberg",
+    "metadata_title": "Snowboard-Lektionen & Preise — Ride Flumserberg, Flumserberg",
     "metadata_description": "Private Snowboard-Lektionen in Flumserberg mit Javi: von einer Stunde bis zum ganzen Tag, fixer Preis für bis zu vier Personen, auf Englisch, Deutsch oder Spanisch. Ab 8 Jahren.",
     "eyebrow": "Die Lektionen",
     "heading": "Wähl, wie lang wir fahren.",
@@ -505,8 +505,8 @@
     }
   },
   "instructors": {
-    "metadata_title": "Instruktoren — The Drop",
-    "metadata_description": "Lerne die Snowboardlehrer von The Drop in Flumserberg kennen — welche Sprachen sie sprechen, was sie am liebsten fahren und wie du eine Stunde buchst.",
+    "metadata_title": "Instruktoren — Ride Flumserberg",
+    "metadata_description": "Lerne die Snowboardlehrer von Ride Flumserberg in Flumserberg kennen — welche Sprachen sie sprechen, was sie am liebsten fahren und wie du eine Stunde buchst.",
     "eyebrow": "Dein Coach",
     "heading": "Wer dir das Riden beibringt",
     "intro": "Eine Schule, echte Menschen. Sieh, wer unterrichtet, welche Sprachen er spricht und was er am liebsten fährt — bevor du buchst.",
@@ -516,8 +516,8 @@
     "view_profile": "Profil ansehen",
     "cta": "Stunde buchen",
     "back": "Alle Instruktoren",
-    "profile_metadata_title": "{name} — Snowboardlehrer bei The Drop",
-    "profile_metadata_description": "{name} unterrichtet Snowboarden bei The Drop in Flumserberg. Sprachen, Schwerpunkte und wie du eine Stunde buchst.",
+    "profile_metadata_title": "{name} — Snowboardlehrer bei Ride Flumserberg",
+    "profile_metadata_description": "{name} unterrichtet Snowboarden bei Ride Flumserberg in Flumserberg. Sprachen, Schwerpunkte und wie du eine Stunde buchst.",
     "lang": {
       "en": "Englisch",
       "de": "Deutsch",
@@ -536,15 +536,12 @@
     }
   },
   "about": {
-    "metadata_title": "Über uns — The Drop",
-    "metadata_description": "The Drop ist ein Rider, der in Flumserberg coacht. Die Geschichte hinter dem Namen, wie ich Snowboarden gelernt habe und warum ich mehr Leute aufs Board bringen will.",
+    "metadata_title": "Über uns — Ride Flumserberg",
+    "metadata_description": "Ride Flumserberg ist ein Rider, der in Flumserberg coacht. Die Geschichte hinter dem Namen, wie ich Snowboarden gelernt habe und warum ich mehr Leute aufs Board bringen will.",
     "eyebrow": "Über uns",
     "hero_image_alt": "Javi steht in voller Snowboard-Ausrüstung auf einer präparierten Piste in Flumserberg.",
-    "heading": "Ich bin <name>Javi</name>. The Drop, das sind nur ich und ein Board.",
+    "heading": "Ich bin <name>Javi</name>. Nur ich und ein Board.",
     "lede": "Tagsüber schreibe ich Software. Die restliche Zeit bin ich am Berg — weil Snowboarden das Beste aus mir herausholt, und aus jedem, mit dem ich fahren darf.",
-    "name_title": "Warum The Drop",
-    "name_body_1": "Angefangen habe ich mit dem, was Snowboarden für mich tut: Es beruhigt einen unruhigen, hyperaktiven Kopf besser als alles andere. Auf dem Board bekomme ich Klarheit, Ruhe, eine Art puren Fokus — und ich habe gesehen, wie es das Beste aus jedem herausholt, der fährt. Das soll für so viele Menschen wie möglich erreichbar sein.",
-    "name_body_2": "Der Drop selbst ist die halbe Sekunde, bevor du dich auf eine Linie oder ein Feature einlässt, das dir Angst macht — der Atemzug, in dem du alles andere fallen lässt und nur du und das Board übrig bleibt. Genau darum geht es. Daher kommt der Name.",
     "me_title": "Mit wem du fährst",
     "me_body_1": "Ich bin zertifizierter Coach aus Spanien und unterrichte seit mehreren Jahren Erwachsene wie Kinder — von den ersten Turns bis Carving und Freestyle.",
     "me_body_2": "Kinder bekommen ein Erlebnis, das darauf baut, wie gern ich mit ihnen fahre. Und ein Ingenieurskopf sorgt dafür, dass ich es erklären kann, wenn ein Erwachsener verstehen will, warum ein Turn wirklich funktioniert.",
@@ -552,13 +549,13 @@
     "philosophy_title": "Worum es in einer Stunde mit mir wirklich geht",
     "philosophy_body": "Es geht um Vertrauen. Am liebsten sehe ich, wie jemand einer Angst begegnet, mit der er gekommen ist — also bauen wir dieses Vertrauen Schritt für Schritt auf und halten jede Einheit sicher und richtig spassig.",
     "mountain_title": "Warum Flumserberg",
-    "mountain_body": "Es ist der erste Berg, auf dem ich in der Schweiz als Instruktor gearbeitet habe, und von Zürich und St. Gallen aus leicht erreichbar. Das Beste: Der Anfängerbereich ist gratis und für alle offen — keine Ausrede, nicht anzufangen.",
+    "mountain_body": "Es ist der erste Berg, auf dem ich in der Schweiz als Instruktor gearbeitet habe, und von Zürich und St. Gallen aus leicht erreichbar. Das Beste: Der Anfängerbereich ist gratis und für alle offen — keine Ausrede, nicht anzufangen. Der Drop selbst ist die halbe Sekunde, bevor du dich auf eine Linie oder ein Feature einlässt, das dir Angst macht — der Atemzug, in dem du alles andere fallen lässt und nur du und das Board übrig bleibt. Genau darum geht es.",
     "cta_title": "Komm fahren.",
     "cta_book": "Stunde buchen",
     "cta_instructors": "Lern deinen Coach kennen"
   },
   "blog": {
-    "metadata_title": "Feldnotizen — The Drop",
+    "metadata_title": "Feldnotizen — Ride Flumserberg",
     "metadata_description": "Snowboarden von jemandem, der es jede Woche am Flumserberg unterrichtet — dein erster Tag, Freestyle oder Carving und warum der Norden der Schweiz.",
     "eyebrow": "Feldnotizen",
     "heading": "Notizen vom Berg",
@@ -570,8 +567,8 @@
     "cta_button": "Stunde buchen"
   },
   "faq": {
-    "metadata_title": "FAQ — Snowboardstunden in Flumserberg | The Drop",
-    "metadata_description": "Skiticket, Ausrüstung, Mindestalter, Sprachen, Stornierung und was du mitbringst — alles, was du vor der Buchung einer privaten Snowboardstunde in Flumserberg mit The Drop wissen musst.",
+    "metadata_title": "FAQ — Snowboardstunden in Flumserberg | Ride Flumserberg",
+    "metadata_description": "Skiticket, Ausrüstung, Mindestalter, Sprachen, Stornierung und was du mitbringst — alles, was du vor der Buchung einer privaten Snowboardstunde in Flumserberg mit Ride Flumserberg wissen musst.",
     "eyebrow": "Vor der Buchung",
     "heading": "Fragen, beantwortet.",
     "intro": "Was die Leute mich am häufigsten fragen — Ausrüstung, Alter, Sprachen, Wetter, was passiert, wenn sich Pläne ändern. Ist etwas unklar, ruf einfach an.",
@@ -637,8 +634,8 @@
     "cta_contact": "Kontakt aufnehmen"
   },
   "contact": {
-    "metadata_title": "Kontakt — The Drop",
-    "metadata_description": "Erreiche The Drop in Flumserberg: anrufen oder schreiben, Treffpunkt und Saison.",
+    "metadata_title": "Kontakt — Ride Flumserberg",
+    "metadata_description": "Erreiche uns in Flumserberg: anrufen oder schreiben, Treffpunkt und Saison.",
     "eyebrow": "Kontakt",
     "heading": "Sprich mit mir, bevor du buchst",
     "intro": "Fragen zur passenden Stunde, zu deinem Niveau oder zu einem Teamtag? Ruf an oder schreib — am anderen Ende bin ich, Javi.",

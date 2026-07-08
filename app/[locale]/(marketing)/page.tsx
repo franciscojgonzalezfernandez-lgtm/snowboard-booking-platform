@@ -220,7 +220,7 @@ export default async function HomePage({ params }: HomePageProps) {
           <Reveal>
             <Image
               src="/brand/logo-full.png"
-              alt="The Drop"
+              alt="Ride Flumserberg"
               width={520}
               height={458}
               className="mx-auto mb-10 h-auto w-[min(80%,440px)]"

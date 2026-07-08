@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import type { ReactNode } from "react";
 
 /**
- * The hero gesture for the "The Drop" wordmark: a confident rise-and-settle
+ * The hero gesture for the "Ride Flumserberg" wordmark: a confident rise-and-settle
  * reveal. Replaces the old drop-glyph fall — the owner dropped the glyph
  * (2026-06-15), so the wordmark itself is the hero moment.
  *

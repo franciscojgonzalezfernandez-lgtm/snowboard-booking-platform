@@ -10,7 +10,7 @@ import { renderOgImage, OG_SIZE, OG_CONTENT_TYPE } from "@/lib/seo/og-template";
 // Per-instructor share card: the rider's name as the headline. Highest-value
 // social surface (people share the profile they want to book).
 export const runtime = "nodejs";
-export const alt = "Snowboard instructor at The Drop";
+export const alt = "Snowboard instructor at Ride Flumserberg";
 export const size = OG_SIZE;
 export const contentType = OG_CONTENT_TYPE;
 
