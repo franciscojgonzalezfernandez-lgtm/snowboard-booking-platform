@@ -1984,15 +1984,20 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-099 — Dynamic sitemap + hreflang + robots
 
-- Sprint: 5 · Estado: backlog · Prioridad: P1
-- Depende de: F-102 (slugs traducidos para las URLs alternas)
+- Sprint: 5 · Estado: **done** (2026-07-08, PR pendiente) · Prioridad: P1
+- Depende de: F-102 (slugs traducidos para las URLs alternas) — **mergeado**
 - Motivación: indexación correcta multi-idioma. Sin sitemap + hreflang, Google canibaliza locales y pierde el mercado DE/ES. Hoy no existen `sitemap.ts` ni `robots.ts`
 - AC:
-  - [ ] `app/sitemap.ts`: genera URLs de todas las rutas públicas × 3 locales (home, precios, instructores + perfiles, sobre, contacto, faq, blog + posts, terms, privacy) con `alternates.languages` (hreflang) por entrada, incluyendo `x-default`
-  - [ ] EN sin prefijo, DE/ES con prefijo + slug traducido (F-102). Lastmod de blog/instructores desde datos
-  - [ ] `app/robots.ts`: allow público, disallow `/admin`, `/instructor`, `/dashboard`, `/reservar` (funnel), `/api`; `Sitemap:` apunta al sitemap
-- Tests: Playwright/HTTP — `/sitemap.xml` 200 con entradas + hreflang correctos; `/robots.txt` 200 con disallows esperados. Vitest sobre el generador de alternates
-- Notas: rutas autenticadas/funnel fuera del índice; mantener en sync con F-102
+  - [x] `app/sitemap.ts`: genera URLs de todas las rutas públicas (home, precios, instructores + perfiles, sobre, contacto, faq, blog + posts, terms, privacy) **una entrada `<url>` por locale** (Google quiere un `<url>` por versión) con `alternates.languages` (hreflang) + `x-default` en cada entrada
+  - [x] Slug traducido por locale (F-102). Lastmod: blog desde `date` del frontmatter; perfiles de instructor desde `Instructor.createdAt`. **Desviación del AC:** el AC decía "EN sin prefijo" — **stale**. La realidad (F-102) es `localePrefix: "always"`: EN **también** lleva prefijo (`/en/...`); quitarlo se aplazó. Todas las URLs van prefijadas.
+  - [x] `app/robots.ts`: allow público, disallow `/admin`, `/instructor` (panel raíz, no colisiona con `/{locale}/instructores` marketing), `/api`, `/sentry-example-page`, y **por locale** `/{en,de,es}/dashboard` + `/{en,de,es}/reservar` (necesario porque son locale-prefixed; un `/reservar` pelado no casaría con `/en/reservar`); `Sitemap:` + `Host:` apuntan a `SITE_URL`
+- Tests: [x] Playwright/HTTP `e2e/f-099-sitemap-robots.spec.ts` — `/sitemap.xml` 200 xml con slugs traducidos + hreflang + x-default y **sin** rutas funnel/privadas; `/robots.txt` 200 con disallows esperados + Sitemap. [x] Vitest `lib/seo/hreflang.test.ts` sobre el generador de alternates (localizedPath + hreflangAlternates, incl. params + x-default)
+- Notas:
+  - **Fuente única de verdad:** `lib/seo/hreflang.ts` (`localizedPath` + `hreflangAlternates`) lee el mismo mapa `pathnames` de F-102 (`i18n/routing.ts`) — puro, sin runtime next-intl ni DB, testeable. F-103 (metadata canonical + hreflang) **reusa** este helper.
+  - **`/reservar` en disallow (no en el sitemap)** pese al SSR/JSON-LD crawlable de F-049: el SSR es resiliencia (no romper el render si un bot entra / prefetch), no un mandato de indexar. Los deep-links parametrizados (`?d=&dt=`) explotan el crawl budget → mejor bloquear el funnel. El contenido rankeable (Course/Offer) vive en home + `/precios` (F-100).
+  - **`Instructor` no tiene `updatedAt`** (solo `createdAt`) → se expone `createdAt` en `PublicInstructor` como lastmod honesto (perfil nunca editado = createdAt). Añadir columna `updatedAt` = migración, fuera de scope.
+  - Sitemap con `revalidate = 3600` (ISR) → posts/instructores nuevos aparecen sin redeploy completo.
+  - Mantener en sync con F-102 (el helper lo garantiza) y F-103 (comparte alternates).
 
 ##### F-100 — Structured data Schema.org (LocalBusiness + Course/Offer + Person)
 
