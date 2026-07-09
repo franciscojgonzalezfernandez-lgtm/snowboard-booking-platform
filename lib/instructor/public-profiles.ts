@@ -17,6 +17,10 @@ export type PublicInstructor = {
   bio: string;
   specialties: string[];
   languages: Locale[];
+  /** Row creation time. Used as the sitemap `lastmod` for the profile page
+   * (F-099) — the schema has no `updatedAt`, so for a never-edited profile this
+   * is the honest last-modified. */
+  createdAt: Date;
 };
 
 const PUBLIC_SELECT = {
@@ -25,6 +29,7 @@ const PUBLIC_SELECT = {
   bio: true,
   specialties: true,
   languages: true,
+  createdAt: true,
   user: { select: { name: true } },
 } as const;
 
@@ -34,6 +39,7 @@ function toPublic(row: {
   bio: string | null;
   specialties: string[];
   languages: Locale[];
+  createdAt: Date;
   user: { name: string | null };
 }): PublicInstructor {
   const name = row.user.name ?? "Instructor";
@@ -45,6 +51,7 @@ function toPublic(row: {
     bio: row.bio ?? "",
     specialties: row.specialties,
     languages: row.languages,
+    createdAt: row.createdAt,
   };
 }
 
