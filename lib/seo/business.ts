@@ -21,9 +21,11 @@ export const BUSINESS_ID = `${SITE_URL}/#business`;
 /**
  * FLAG — owner-dependent SEO data still pending, wired by F-112.
  *
- * Everything here is blocked on the owner completing an external step, so it is
- * intentionally NOT emitted yet. `structured-data.ts` degrades clean while these
- * stay empty/parked. Do not "fix" by inventing values.
+ * ⏳ PARKED / POST-MVP: not actionable until winter 2026/27 (~Nov 2026). The
+ * Google Business Profile can't be verified until the business operates in
+ * season, so this whole block waits for that. It does NOT block MVP/launch —
+ * `structured-data.ts` degrades clean while these stay empty/parked. Revisit at
+ * season start; do not "fix" by inventing values.
  *
  * - `precisePin` / `postalCode`: restore into the LocalBusiness node once the
  *   business either verifies its Google Business Profile as a service-area
