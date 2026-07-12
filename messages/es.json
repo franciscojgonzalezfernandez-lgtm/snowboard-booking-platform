@@ -26,6 +26,8 @@
     "close_label": "Cerrar aviso"
   },
   "home": {
+    "metadata_title": "Clases privadas de snowboard en Suiza — Flumserberg",
+    "metadata_description": "Aprende snowboard con Javi — un monitor certificado, de los primeros giros al carving y el freestyle, niños y adultos, en español, inglés o alemán. Reserva tu clase privada en Flumserberg.",
     "utility": "Flumserberg · Heidiland · Abierto del 27 nov al 26 abr",
     "eyebrow": "Flumserberg · Coaching privado de snowboard",
     "hero_title_1": "Mejora",
@@ -505,7 +507,7 @@
     }
   },
   "instructors": {
-    "metadata_title": "Instructores — Ride Flumserberg",
+    "metadata_title": "Instructores de snowboard en Flumserberg — Ride Flumserberg",
     "metadata_description": "Conoce a los instructores de snowboard de Ride Flumserberg en Flumserberg: los idiomas que hablan, lo que más les gusta montar y cómo reservar una clase.",
     "eyebrow": "Tu coach",
     "heading": "Con quién vas a montar",
@@ -536,7 +538,7 @@
     }
   },
   "about": {
-    "metadata_title": "Sobre nosotros — Ride Flumserberg",
+    "metadata_title": "Sobre Ride Flumserberg — clases de snowboard en Flumserberg",
     "metadata_description": "Ride Flumserberg es un rider que da clases en Flumserberg. La historia detrás del nombre, cómo aprendí y por qué quiero a más gente sobre una tabla.",
     "eyebrow": "Sobre nosotros",
     "hero_image_alt": "Javi de pie en una pista pisada de Flumserberg con todo el equipo de snowboard.",
@@ -555,7 +557,7 @@
     "cta_instructors": "Conoce a tu coach"
   },
   "blog": {
-    "metadata_title": "Blog — Ride Flumserberg",
+    "metadata_title": "Blog de snowboard — Flumserberg",
     "metadata_description": "Snowboard desde quien lo enseña cada semana en Flumserberg: tu primer día, freestyle o carving y por qué el norte de Suiza.",
     "eyebrow": "Blog",
     "heading": "Notas de la montaña",
@@ -634,7 +636,7 @@
     "cta_contact": "Hablar conmigo"
   },
   "contact": {
-    "metadata_title": "Contacto — Ride Flumserberg",
+    "metadata_title": "Contacto — clases de snowboard en Flumserberg",
     "metadata_description": "Contacta con nosotros en Flumserberg: llama o escribe, punto de encuentro y temporada.",
     "eyebrow": "Contacto",
     "heading": "Habla conmigo antes de reservar",

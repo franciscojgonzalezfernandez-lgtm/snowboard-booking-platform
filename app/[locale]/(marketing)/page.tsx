@@ -1,8 +1,10 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import { Star } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { HeroAnnouncement } from "@/app/components/HeroAnnouncement";
+import { marketingAlternates } from "@/lib/seo/page-metadata";
 import { Link } from "@/i18n/navigation";
 import { Reveal } from "@/lib/motion/reveal";
 import { Stagger, StaggerItem } from "@/lib/motion/stagger";
@@ -19,6 +21,18 @@ const TIERS = [
 ] as const;
 
 const REVIEW_IDS = ["1", "2", "3", "4"] as const;
+
+export async function generateMetadata({
+  params,
+}: HomePageProps): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "home" });
+  return {
+    title: t("metadata_title"),
+    description: t("metadata_description"),
+    alternates: marketingAlternates("/", locale),
+  };
+}
 
 export default async function HomePage({ params }: HomePageProps) {
   const { locale } = await params;
