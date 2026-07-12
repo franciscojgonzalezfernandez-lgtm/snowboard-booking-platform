@@ -2451,6 +2451,91 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ---
 
+### F-115 — "Plan your visit" page (season window + getting here + gear rental + resort-hours link)
+
+- Sprint: post-Sprint 5 · Estado: backlog · Prioridad: P2 (SEO surface + info, pedido por owner)
+- Depende de: F-032 (marketing layout/`SiteNav`), F-102 (`pathnames` slug translations), F-099 (sitemap — nueva ruta), F-100 (schema.org — con cuidado), F-039 (`Season.startDate/endDate/active`), `lib/contact/location` (meeting point + `MapEmbed`, ya usados en `/contacto`)
+- Motivación: el owner quiere una superficie tipo "plan your visit" / hub local que (a) diga a los visitantes la ventana de temporada y cómo llegar a Flumserberg, (b) posicione en SEO long-tail para queries de temporada/acceso + servicios de alrededor (alquiler de material, restaurantes, tiendas cercanas, qué hacer en Flumserberg), (c) gane relevancia temática enlazando a la página oficial de horarios del resort (`https://www.flumserberg.ch/Operating-hours`). Estrategia: convertirse en el recurso local útil de referencia para quien planea venir a la escuela.
+- Decisiones (sesión 2026-07-12):
+  - **Standalone page**, NO una sección de `/contacto`. URL dedicada rankea mejor para esas queries; cross-link a contacto para el mapa.
+  - **No espejar los horarios de remontes del resort** (mantenimiento + riesgo de dato erróneo, no los controlamos) — enlazar a su página canónica y resumir, no duplicar.
+  - **Enlace saliente ≠ boost SEO propio**: pasa equity al resort. El valor es relevancia temática + utilidad al usuario. La palanca real de ranking es el contenido útil propio (season + rental + cómo llegar).
+  - **Guía local (gear rental + restaurantes + tiendas + qué hacer)**: bloques cortos con negocios reales cerca de Flumserberg (alquiler de material + el rental del resort, restaurantes, tiendas, cosas que hacer). Copy factual, sin implicar partnership que no existe. Captura long-tail ("alquiler snowboard Flumserberg", "snowboard rental Heidiland", "restaurantes Flumserberg", "qué hacer en Flumserberg"). Empezar con lo que el owner conozca de primera mano; crecer por iteración.
+- AC ruta/i18n:
+  - [ ] Nueva ruta `app/[locale]/(marketing)/plan-your-visit/page.tsx` (slug canónico EN). Traducción de slug vía F-102 `pathnames` en `i18n/routing.ts` — slugs decididos: `/plan-your-visit` · `/plane-deinen-besuch` · `/planea-tu-visita` (framing "plan your visit", no solo "cómo llegar" — la página es un hub local amplio). Slug no-canónico → 307 a canónico (comportamiento F-102).
+  - [ ] `generateStaticParams` + `setRequestLocale` + `generateMetadata` (title/description por locale). Enlaces internos con el `Link` tipado de next-intl (clave interna), nunca strings crudos.
+  - [ ] Añadir a `sitemap.ts` (F-099, con alternates hreflang) + al menú "More" del nav (F-116).
+- AC contenido:
+  - [ ] **Season block** — LIVE desde `Season` (`active` + `startDate`/`endDate`), no hardcode. Estado activo → "Open until X"; off-season → "Next season: X → Y"; sin temporada activa → fallback grácil. SSR, una query, cache-friendly (reusar helper de F-039 si aplica).
+  - [ ] **Getting here** — reusar `lib/contact/location` (`MEETING_POINT_MAPS_*`). Cross-link a `/contacto` para el mapa completo; no duplicar el iframe (o montar el mismo `MapEmbed` click-to-load).
+  - [ ] **Gear rental** — lista corta (2-3 tiendas + resort) como const editable (`lib/content/` o messages), links salientes factuales.
+  - [ ] **Resort operating-hours reference** — link saliente `follow` a `flumserberg.ch/Operating-hours`, enmarcado como "horarios oficiales de remontes/resort".
+- AC SEO:
+  - [ ] Metadata + canonical + hreflang (infra i18n existente).
+  - [ ] **Schema.org: NO** emitir `openingHoursSpecification`/geo falsos de `LocalBusiness` — sin premises (F-112 / SAB parked). La ventana de temporada es *disponibilidad*, no horario comercial. Ceñirse a lo que F-100 ya emite con seguridad.
+  - [ ] Copy trilingüe, helpful-content, server-rendered.
+- Tests:
+  - [ ] Playwright: renderiza × 3 locales, muestra estado de temporada correcto, links salientes con `href` + `rel` correctos, link del menú "More" navega, slug no-canónico → 307.
+  - [ ] Vitest: formatter del estado de temporada (active vs off-season vs none).
+- Notas:
+  - Listados locales (rental/restaurantes/tiendas) = deuda de mantenimiento/exactitud; mantenerlos curados y cortos, con datos que el owner conozca, en vez de un directorio exhaustivo del valle.
+  - Followup posible: video/mapa embebido de la ruta de acceso (no en este ticket).
+- Refs: F-115, F-099, F-100, F-102, F-039, F-112, PRD §7.3, §10
+
+---
+
+### F-116 — Desktop header rework: declutter + trim nav IA (3 primary + "More")
+
+- Sprint: post-Sprint 5 · Estado: backlog · Prioridad: P2 (UX, pedido por owner)
+- Depende de: F-051 (`MobileNav` hamburger/Sheet), F-032 (`SiteNav` + marketing layout), F-105/F-113 (`Wordmark` "Ride Flumserberg"), F-115 (añade "Plan your visit" al menú "More")
+- Motivación: owner reporta cabecera desktop amontonada en ~1024–1280px: el wordmark "Ride Flumserberg" parte en dos líneas y los 5 links + teléfono + language switcher + "My account" + "Sign out" compiten en una sola fila flex; el estado signed-in es el peor caso. Confirmado con Playwright a 1024px (`app/components/SiteNav.tsx`, fila flex única desde `lg`).
+- Decisión IA (sesión 2026-07-12): **3 primary + "More" dropdown**. Teléfono + language switcher → utility bar.
+- AC layout:
+  - [ ] **Wordmark**: `whitespace-nowrap` (nunca 2 líneas) + `shrink-0`.
+  - [ ] **Utility bar** (barra oscura superior, hoy solo `LanguageSwitcher` cuando `utility`): mover ahí el teléfono + consolidar el `LanguageSwitcher` (hoy duplicado en la brand row vía `{!utility ? ... }`). La brand row deja de renderizar `site-nav-phone` y ese switcher.
+  - [ ] **Primary nav** (brand row): Prices, Instructors, Field notes. **About + Contact + Plan-your-visit** → dropdown "More▾".
+  - [ ] **"More" dropdown**: shadcn `DropdownMenu`/`NavigationMenu` (instalar si falta). Teclado + `aria`. Client island hijo mínimo — `SiteNav` sigue Server Component; no inflar el bundle del marketing layout. Estilo editorial (borders, no card redondeada con sombra; Impeccable de referencia).
+  - [ ] **Breakpoint**: subir la nav completa a `xl` (1280) si hace falta más aire; mantener el hamburger `MobileNav` por debajo. `MobileNav` (F-051) DEBE incluir TODOS los links (3 primary + 3 del "More").
+  - [ ] Tighten gaps (`gap-8` → `gap-6`) + tracking.
+- AC estados:
+  - [ ] signed-in (My account + Sign out) sin romper layout — es el peor caso a testear. Coordinar con F-070 (ocultar "My account" en `/dashboard`).
+  - [ ] Utility bar pasa a estar siempre presente en marketing. Auth/dashboard layouts montan `SiteNav` sin `utility` — decidir cómo exponen phone/lang ahí (mini utility o brand row compacta) y documentarlo. NO tocar `BookingHeader` de `/reservar` (chrome propio, F-068).
+- Tests:
+  - [ ] Playwright viewport 1024/1280/1440 signed-out + signed-in: wordmark 1 línea, sin overflow, "More" abre/cierra, links navegables, phone+lang en utility bar. Mobile < breakpoint: hamburger con todos los links.
+  - [ ] Visual snapshot header × (signed-in/out) × 3 widths.
+- Notas:
+  - `MobileNav` (F-051) debe reflejar la nueva IA (links del "More" dentro del Sheet).
+- Refs: F-116, F-051, F-070, F-115, F-105, F-113, `app/components/SiteNav.tsx`, `app/components/MobileNav.tsx`
+
+---
+
+### F-117 — Blog ↔ YouTube synergy: MDX video facade (embed ES, link EN/DE) + channel byline
+
+- Sprint: post-Sprint 5 · Estado: backlog · Prioridad: P3 (brand/content + EEAT)
+- Depende de: F-098 (pipeline MDX blog + frontmatter `id`/`slug` + components map), budgets de `booking-platform-perf`
+- Motivación: el owner tiene canal de YouTube con tutoriales/vlogs de snowboard que dan alma + personalidad a la marca (y señales de autoría EEAT). Quiere sinergia blog↔canal. El vídeo popular "cómo hacer snowboard" es **solo en español** (`https://www.youtube.com/watch?v=1tMzQAjIBvM`).
+- Decisión (sesión 2026-07-12): **embed en ES, link en EN/DE**. Facade obligatorio por perf.
+- AC componente:
+  - [ ] MDX `<YouTube id="…" title="…">` = **facade** (thumbnail + botón play; el iframe se monta solo on click). **NO** iframe crudo (≈1MB+ JS, rompe LCP<2.5s / CLS<0.1 / bundle home<200KB). Reservar aspect-ratio 16:9 → CLS 0.
+  - [ ] Thumbnail via `next/image` (`i.ytimg.com` en `remotePatterns`) o poster local, `lazy`. Play → carga `youtube-nocookie` embed. Añadir dominio a CSP `frame-src`.
+  - [ ] Reusable en cualquier post; registrar en el MDX components map (F-098).
+  - [ ] `<VideoLink>` locale-aware: en posts no-ES, en vez de embed, un link "Watch in Spanish (ES)" / "Auf Spanisch ansehen" al vídeo.
+- AC contenido:
+  - [ ] ES `content/blog/es/tu-primer-dia-en-snowboard.mdx`: embed del vídeo (`1tMzQAjIBvM`) vía facade.
+  - [ ] EN `your-first-day-on-a-snowboard.mdx` + DE `dein-erster-tag-auf-dem-snowboard.mdx`: `<VideoLink>` con label "in Spanish" (no embed).
+  - [ ] **Channel synergy**: byline/author-box del post enlaza al canal de YouTube (EEAT). Pequeño, sin rediseñar el layout del blog.
+- AC perf:
+  - [ ] Verificar con `booking-platform-perf`: la blog page no regresa en First Load JS; sin iframe en network pre-click; CLS 0 (aspect-ratio reservado).
+- Tests:
+  - [ ] Playwright: ES post muestra facade → click carga iframe; EN/DE muestran link (no iframe) con `href` correcto; CLS 0; byline→canal presente.
+  - [ ] Perf: sin request a youtube pre-click; bundle blog estable.
+- Notas:
+  - Vídeo ES-only → embed solo donde el idioma casa; no forzar embed EN/DE.
+  - **Fuera de scope** (followup F-XXX): videos hub / curación de tutoriales por post. Este ticket = facade component + 1 vídeo + byline.
+- Refs: F-117, F-098, PRD §7.3, `booking-platform-perf`
+
+---
+
 ## Bloqueantes / decisiones abiertas (consolidadas)
 
 | Ref     | Decisión                           | Bloquea                           | Acción                               |

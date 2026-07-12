@@ -451,6 +451,8 @@ Un mismo `User` puede tener múltiples roles (`student`, `instructor`, `admin`) 
 - URLs limpias con slugs traducidos (`/de/instruktoren/[slug]`, `/es/instructores/[slug]`)
 - Canonical URLs correctas
 - Server-rendered content (no client-only para SEO)
+- **Contenido local útil (post-MVP):** página "Plan your visit" para queries de temporada/acceso/alquiler cerca de Flumserberg + link temático a los horarios oficiales del resort (F-115). El enlace saliente aporta relevancia temática, no equity propio.
+- **Sinergia canal YouTube (post-MVP):** embeber (facade, sin coste de perf) tutoriales del canal del owner en posts del blog donde el idioma casa + byline enlazando el canal (señal de autoría/EEAT) (F-117).
 
 ### 7.4 Seguridad
 
@@ -519,6 +521,8 @@ Ver Diagrama 4 (Estructura de páginas públicas + home) en el documento de disc
 | Dashboard | `/[locale]/dashboard/*` | 3 | `student` |
 | Instructor | `/instructor/*` | EN | `instructor` |
 | Admin | `/admin/*` | EN | `admin` |
+
+**Superficies marketing post-MVP (backlog):** "Plan your visit" — hub local (ventana de temporada + cómo llegar + guía local: alquiler de material, restaurantes, tiendas cercanas, qué hacer + link a horarios oficiales del resort). Trilingüe, slug traducido vía F-102 (`/plan-your-visit` · `/plane-deinen-besuch` · `/planea-tu-visita`). Ver **F-115**.
 
 ---
 
