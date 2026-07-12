@@ -206,7 +206,7 @@ export default async function HomePage({ params }: HomePageProps) {
             {REVIEW_IDS.map((id) => (
               <StaggerItem key={id}>
                 <figure className="flex h-full flex-col border-2 border-foreground bg-background p-7">
-                  <div className="mb-5 flex gap-1" aria-label="5 / 5">
+                  <div className="mb-5 flex gap-1" role="img" aria-label="5 / 5">
                     {[0, 1, 2, 3, 4].map((i) => (
                       <Star
                         key={i}

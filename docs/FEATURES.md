@@ -2079,16 +2079,20 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-104 — Accessibility audit de superficies Sprint 5 (WCAG 2.1 AA)
 
-- Sprint: 5 · Estado: backlog · Prioridad: P1
+- Sprint: 5 · Estado: **done** (2026-07-12, PR pendiente) · Prioridad: P1
 - Depende de: F-090, F-092–F-098
 - Motivación: el motion + páginas nuevas tienen que nacer accesibles, no parchearse en Sprint 6. Audit acotado a las superficies de marketing nuevas (el WCAG global completo sigue en Sprint 6)
 - AC:
-  - [ ] Pasada `axe`/Playwright en home, precios, instructores, sobre, contacto, faq, blog × 3 locales: 0 violaciones críticas
-  - [ ] Contraste WCAG AA verificado en el tema cream/editorial (texto ≥4.5:1, UI ≥3:1) sobre las superficies reales
-  - [ ] Focus visible (alpine red ring) en todos los interactivos; orden de tab lógico; navegación por teclado del acordeón FAQ y los CTAs
-  - [ ] `prefers-reduced-motion` respetado en todas las animaciones (verifica F-090 en contexto real); `alt` en toda la fotografía; jerarquía de headings correcta; `lang` por locale; tap targets ≥44px
-- Tests: Playwright + axe automatizado por ruta/locale; checklist manual de teclado/screen-reader spot-check
-- Notas: overlaps con el WCAG audit de Sprint 6 pero acotado a Sprint 5 para que las páginas lancen accesibles; Sprint 6 hace el barrido producto-wide (dashboard/booking/admin)
+  - [x] Pasada `axe`/Playwright (`@axe-core/playwright`) en home, precios, instructores, sobre, contacto, faq, blog × 3 locales (21 tests): **0 violaciones critical/serious** (WCAG 2.1 A/AA tags). Se corrigieron los **2** hallazgos iniciales (ver Notas). moderate/minor no bloquean (rodan al barrido Sprint 6)
+  - [x] Contraste WCAG AA: corregido el activo del `LanguageSwitcher` (alpine-red como texto daba ~4.26 sobre cream / ~3.8 sobre charcoal, <4.5:1). Ahora el texto activo usa el color de alto contraste del tono (ink/snow) y el rojo sobrevive como **underline** (elemento gráfico → basta 3:1, ambos tonos pasan). Resto de superficies: 0 fallos de `color-contrast` en axe
+  - [x] Focus visible: regla global `:focus-visible { outline: 2px solid var(--ring) }` en `globals.css` (`--ring` = alpine red). El `* { outline-ring/50 }` solo fijaba el color, sin ancho → no se veía; ahora todo interactivo sin ring propio muestra foco. Orden de tab lógico (DOM order); acordeón FAQ = shadcn/Radix (teclado nativo, `aria-expanded`)
+  - [x] `prefers-reduced-motion`: ya resuelto en F-106 (CSS `[data-motion]`), verificado en contexto. `alt`: hero decorativo `alt=""`, foto owner/instructores con alt descriptivo, logo `alt="Ride Flumserberg"`. **`lang` por locale corregido**: el root layout tenía `<html lang="en">` hardcodeado (WCAG 3.1.1 fail en /de y /es) → ahora `<html lang={await getLocale()}>`. Jerarquía de headings: 0 `heading-order` en axe. Tap targets: los botones de locale llevan `min-h-11` (44px)
+- Tests: [x] `e2e/f-104-a11y.spec.ts` — axe por ruta/locale (21/21), falla en critical/serious, adjunta el set completo de violaciones para triage
+- Notas:
+  - **2 hallazgos corregidos:** (1) `aria-prohibited-attr` (serious) — el rating de estrellas del home era un `<div aria-label="5 / 5">` (un `div` genérico no admite `aria-label`) → añadido `role="img"`. (2) `color-contrast` (serious) — el activo del `LanguageSwitcher` en las 9 páginas (ver AC contraste).
+  - **`<html lang>` per-locale** vía `next-intl` `getLocale()` en el root layout (está fuera de `[locale]`); las rutas EN-only (`/admin`, `/instructor`) caen al default. Compatible con el render estático (las páginas ya llaman `setRequestLocale`).
+  - axe cubre ~30-40% de WCAG; el spot-check manual (teclado, focus, alt semántico, lang) cubre lo que axe no ve. Overlaps con el WCAG audit de Sprint 6 (producto-wide: dashboard/booking/admin) pero acotado aquí para lanzar las superficies marketing accesibles.
+- Refs: F-104, F-090, F-106, F-092–F-098
 
 ##### F-106 — Fix `lib/motion` hydration mismatch bajo `prefers-reduced-motion`
 

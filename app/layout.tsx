@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Archivo, Archivo_Black } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { getLocale } from "next-intl/server";
 import "./globals.css";
 
 import { siteOrigin } from "@/lib/seo/site-url";
@@ -28,13 +29,17 @@ export const metadata: Metadata = {
   description: "Private snowboard lessons in Switzerland — booking platform",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // WCAG 3.1.1: the <html lang> must match the page language. The tag lives in
+  // the root layout (outside [locale]), so read the active locale from next-intl
+  // (falls back to the default for the EN-only /admin and /instructor trees).
+  const locale = await getLocale();
   return (
-    <html lang="en">
+    <html lang={locale}>
       <body className={`${archivo.variable} ${archivoBlack.variable} antialiased`}>
         {children}
         <Analytics />
