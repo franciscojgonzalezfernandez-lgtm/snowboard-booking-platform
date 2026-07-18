@@ -38,6 +38,11 @@ export const routing = defineRouting({
     },
     "/sobre": { en: "/about", de: "/ueber-uns", es: "/sobre" },
     "/contacto": { en: "/contact", de: "/kontakt", es: "/contacto" },
+    "/plan-your-visit": {
+      en: "/plan-your-visit",
+      de: "/plane-deinen-besuch",
+      es: "/planea-tu-visita",
+    },
     "/faq": "/faq",
     // Blog (F-098): the `/blog` index segment stays universal (recognised
     // loanword in DE/ES, like `/faq`); the post slug itself is already

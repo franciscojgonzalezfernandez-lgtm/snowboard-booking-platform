@@ -23,6 +23,13 @@ export async function SiteFooter() {
           className="flex flex-wrap items-center gap-5"
         >
           <Link
+            href="/plan-your-visit"
+            data-testid="footer-plan-link"
+            className="hover:text-primary"
+          >
+            {tFooter("plan_link")}
+          </Link>
+          <Link
             href="/faq"
             data-testid="footer-faq-link"
             className="hover:text-primary"
