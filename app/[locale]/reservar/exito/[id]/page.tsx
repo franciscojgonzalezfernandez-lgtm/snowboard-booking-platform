@@ -6,6 +6,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
 import { auth } from "@/lib/auth";
+import { setUtcTime, startOfUtcDay } from "@/lib/booking-engine/time";
 import { prisma } from "@/lib/db";
 import { formatChf } from "@/lib/pricing/format";
 
@@ -106,6 +107,13 @@ export default async function ExitoPage({ params }: ExitoPageProps) {
     status === BookingStatus.CONFIRMED || status === BookingStatus.COMPLETED;
   const isPending = status === BookingStatus.PENDING_PAYMENT;
   const isFailed = status === BookingStatus.PAYMENT_FAILED;
+
+  // F-107: a lesson that already happened can't be added to a calendar. Same
+  // start-instant computation as the dashboard row (booking-row.tsx). Covers
+  // COMPLETED (always past) and a CONFIRMED booking whose slot has since passed.
+  const isPast =
+    setUtcTime(startOfUtcDay(booking.date), booking.anchorTime).getTime() <=
+    Date.now();
 
   const heading = isConfirmed
     ? t("heading_confirmed", { name: booking.booker.name ?? "" })
@@ -236,13 +244,15 @@ export default async function ExitoPage({ params }: ExitoPageProps) {
 
       {isConfirmed ? (
         <div className="mt-8 flex flex-wrap gap-3">
-          <a
-            href={`/api/booking/${booking.id}/ics`}
-            data-testid="exito-add-to-calendar"
-            className="inline-flex items-center justify-center rounded-md border-2 border-foreground bg-foreground px-6 py-3 text-[13px] font-bold uppercase tracking-[0.18em] text-background transition-colors hover:bg-destructive hover:border-destructive"
-          >
-            {t("add_to_calendar")}
-          </a>
+          {!isPast && (
+            <a
+              href={`/api/booking/${booking.id}/ics`}
+              data-testid="exito-add-to-calendar"
+              className="inline-flex items-center justify-center rounded-md border-2 border-foreground bg-foreground px-6 py-3 text-[13px] font-bold uppercase tracking-[0.18em] text-background transition-colors hover:bg-destructive hover:border-destructive"
+            >
+              {t("add_to_calendar")}
+            </a>
+          )}
           <Link
             href="/dashboard"
             data-testid="exito-go-to-dashboard"
