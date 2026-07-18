@@ -2153,14 +2153,15 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-109 — Blog: dynamic OG/Twitter images por post
 
-- Sprint: 5 · Estado: backlog · Prioridad: P2
+- Sprint: 5 · Estado: **done** (2026-07-18, PR pendiente) · Prioridad: P2
 - Depende de: F-098, F-101 (plantilla `lib/seo/og-template.tsx` + font loader — PR #157; **implementar tras mergear #157**)
 - Motivación: F-101 cubrió las rutas marketing pero el blog (PR #155) aterrizó en paralelo y quedó sin cards — un post compartido en social sale sin imagen. Followup ya anotado en las notas de F-101.
 - AC:
-  - [ ] `app/[locale]/(marketing)/blog/[slug]/opengraph-image.tsx` + `twitter-image.tsx` reutilizando `renderOgImage`: kicker = título del namespace `blog` de messages ("Field notes"), title = frontmatter `title` del post en su locale.
-  - [ ] `generateStaticParams` = `getAllPostParams()` (SSG, mismo patrón que la página del post).
-  - [ ] Slug inexistente → card genérica del blog (sin crash).
-  - [ ] Playwright (extender `e2e/f-101-og-images.spec.ts` o spec propio): og:image + twitter:image presentes y el PNG resuelve 200 con 1200×630, mínimo 1 post × 3 locales.
+  - [x] `app/[locale]/(marketing)/blog/[slug]/opengraph-image.tsx` + `twitter-image.tsx` reutilizando `renderOgImage`: kicker = título del namespace `blog` de messages ("Field notes"), title = frontmatter `title` del post en su locale.
+  - [x] `generateStaticParams` = `getAllPostParams()` (SSG, mismo patrón que la página del post).
+  - [x] Slug inexistente → card genérica del blog (sin crash): `getPostBySlug` null → `title` cae al `blog.heading` del índice; la card renderiza igual.
+  - [x] Playwright (`e2e/f-109-blog-og-images.spec.ts`, spec propio): og:image + twitter:image presentes y el PNG resuelve 200 con 1200×630, 1 post ("first-day") × 3 locales.
+- Decisión (impl 2026-07-18): `blog/[slug]/page.tsx` fijaba `openGraph.images` al `cover` del post — eso **override**aba la convención file-based y dejaba la card sin `og:image:width/height`. Se elimina esa línea para que la card branded (satori) sea el `og:image` uniforme de todos los posts (con/sin cover). El `cover` sigue como hero in-article y como `image` del BlogPosting JSON-LD.
 - Refs: F-098, F-101, PR #157, PR #155
 
 ##### F-110 — Meta: refresh CLAUDE.md + endurecer ritual de worktrees

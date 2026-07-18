@@ -56,7 +56,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url: postUrl(locale as Locale, post.slug),
       publishedTime: post.date,
       locale,
-      images: post.cover ? [{ url: `${SITE_URL}${post.cover}` }] : undefined,
+      // og:image (+ dimensions + twitter:image) comes from the sibling
+      // `opengraph-image.tsx` — a branded "Field notes" card, consistent for
+      // every post (F-109). The cover still serves as the in-article hero and
+      // the BlogPosting structured-data image below.
     },
   };
 }
