@@ -50,7 +50,7 @@ export default async function HomePage({ params }: HomePageProps) {
   const session = await auth.api.getSession({ headers: await headers() });
 
   return (
-    <>
+    <main>
       {/* Home-only promo band (F-053); renders nothing when disabled/dismissed. */}
       <HeroAnnouncement />
 
@@ -269,6 +269,6 @@ export default async function HomePage({ params }: HomePageProps) {
           </Reveal>
         </div>
       </section>
-    </>
+    </main>
   );
 }

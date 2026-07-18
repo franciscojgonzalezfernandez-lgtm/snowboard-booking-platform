@@ -2558,6 +2558,19 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - **Fuera de scope** (followup F-XXX): videos hub / curación de tutoriales por post. Este ticket = facade component + 1 vídeo + byline.
 - Refs: F-117, F-098, PRD §7.3, `booking-platform-perf`
 
+### F-118 — Home sin `<main>` landmark: Lighthouse a11y 98→100
+
+- Sprint: post-Sprint 5 · Estado: **done** (2026-07-18) · Prioridad: P2 (a11y followup de F-104)
+- Depende de: F-104
+- Motivación: en prod (`rideflumserberg.ch/es`) Lighthouse marcaba a11y **98/100** con el hallazgo "Document does not have a main landmark". Todas las páginas de marketing (precios, instructores, sobre, contacto, faq, blog, terms, privacy) envuelven su contenido en `<main>`, **menos la home** (`(marketing)/page.tsx`), que devolvía un fragmento `<>` pelado. El audit de F-104 no lo cazó: `landmark-one-main` es una regla axe **best-practice**, fuera de los tags WCAG (`wcag2a/aa`) sobre los que gatea el test → nunca falló. Lighthouse sí la puntúa.
+- AC:
+  - [x] Envolver el contenido de la home en `<main>` (fragmento `<>` → `<main>`). Sin className: las `<section>` internas ya gestionan su fondo/ancho full-bleed; `<main>` block por defecto no altera layout.
+  - [x] Guard anti-regresión en `e2e/f-104-a11y.spec.ts`: por ruta/locale, `expect(page.locator("main").count()).toBe(1)` — codifica el hallazgo Lighthouse que los tags WCAG del axe no ven. Cubre las 21 combinaciones ruta×locale (home + 6 × 3).
+- Tests: [x] `e2e/f-104-a11y.spec.ts` — assertion de exactamente un `<main>` por ruta (21/21) además del gate axe existente.
+- Notas:
+  - Fix de 1 línea semántica; el resto del a11y de la home ya estaba OK tras F-104. Cierra el último punto que separaba la home de 100/100 en Lighthouse a11y.
+- Refs: F-118, F-104, `app/[locale]/(marketing)/page.tsx`
+
 ---
 
 ## Bloqueantes / decisiones abiertas (consolidadas)

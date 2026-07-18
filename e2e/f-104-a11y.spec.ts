@@ -35,6 +35,16 @@ for (const route of ROUTES) {
     test(`a11y: ${route.name} [${locale}] (${path})`, async ({ page }, testInfo) => {
       await page.goto(path, { waitUntil: "networkidle" });
 
+      // F-118: Lighthouse flags `landmark-one-main` (Document has no main
+      // landmark). It's an axe best-practice rule — outside the WCAG tags
+      // below — so the axe gate never caught it; the home was shipping a bare
+      // fragment. Assert exactly one <main> per route so it can't regress the
+      // Lighthouse a11y score again.
+      expect(
+        await page.locator("main").count(),
+        `expected exactly one <main> landmark on ${path}`,
+      ).toBe(1);
+
       const results = await new AxeBuilder({ page })
         .withTags(WCAG_TAGS)
         .analyze();
