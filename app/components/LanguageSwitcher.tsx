@@ -25,7 +25,14 @@ export function LanguageSwitcher({ className, tone = "dark" }: LanguageSwitcherP
     tone === "dark"
       ? "text-primary-foreground/55 hover:text-primary-foreground"
       : "text-muted-foreground hover:text-foreground";
-  const activeColor = tone === "dark" ? "text-primary" : "text-primary";
+  // Active state marks the current locale. The brand red as *text* fails WCAG AA
+  // contrast (~4.26 on cream, ~3.8 on charcoal < 4.5:1), so the label uses the
+  // tone's high-contrast ink/snow and the alpine-red survives as an underline
+  // accent — a graphical element, which only needs 3:1 (both tones pass).
+  const activeColor =
+    tone === "dark"
+      ? "text-primary-foreground underline decoration-primary decoration-2 underline-offset-4"
+      : "text-foreground underline decoration-primary decoration-2 underline-offset-4";
 
   return (
     <div

@@ -141,6 +141,17 @@
   html {
     font-family: var(--font-archivo), system-ui, -apple-system, sans-serif;
   }
+  /*
+   * Visible keyboard focus (F-104, WCAG 2.4.7). The `*` rule above only sets the
+   * outline *color*; without a width/style nothing shows. This draws an
+   * alpine-red (--ring) ring on any keyboard-focused interactive that doesn't
+   * already provide its own focus-visible treatment. Mouse clicks don't trigger
+   * :focus-visible, so it stays clean for pointer users.
+   */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
   h1, h2, h3 {
     font-family: var(--font-archivo-black), var(--font-archivo), system-ui, sans-serif;
     text-transform: uppercase;
