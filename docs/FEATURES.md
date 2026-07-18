@@ -2137,8 +2137,13 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ##### F-108 — Blog: language switcher 404 al cambiar idioma en un post
 
-- Sprint: 5 (bugfix) · Estado: backlog · Prioridad: P1 (bug en producción, owner lo reportó 2026-07-06)
-- Depende de: F-098 (blog MDX), F-102 (PR #158 — el switcher pasa a `{ pathname, params }`; **implementar después de mergear #158** para no chocar con ese diff)
+- Sprint: 5 (bugfix) · Estado: **done** (2026-07-18, PR pendiente) · Prioridad: P1 (bug en producción, owner lo reportó 2026-07-06)
+- Depende de: F-098 (blog MDX), F-102 (#158, mergeado), F-103 (#166 — emite los hreflang que el switcher consume)
+- **Entregado (2026-07-18):**
+  - **Client (general):** `LanguageSwitcher` — al cambiar de locale busca `<link rel="alternate" hreflang="<target>">` en el `<head>` (que la página ya emite, F-103) y navega a su path (soft push vía `next/navigation` router; se usa el `pathname` de la URL absoluta para no saltar a prod en local). Fallback al `{ pathname, params }` de next-intl para rutas sin alternates (funnel/auth/dashboard). No es blog-specific: cualquier ruta con slugs de contenido localizados hereda el fix con sólo emitir sus alternates.
+  - **Server (safety net):** `blog/[slug]/page.tsx` — antes de `notFound()`, `findPostIdByAnySlug(slug)` (`lib/blog/posts.ts`) resuelve el post por el slug de **cualquier** locale; si existe, `redirect()` (307) al slug canónico del locale activo (`getSlugsForId(id)[locale]`), o a `/[locale]/blog` si el post no está traducido. Sólo un slug inexistente en todos los locales es 404 real. Cubre links compartidos con slug de otro idioma (espejo del 307 de F-102).
+  - **Desviación menor del AC:** el "fallback a `/blog` index" cuando falta la traducción se centraliza en el **server net** (no en el client) para que el switcher quede genérico y sin lógica de blog. Resultado idéntico: nunca 404.
+  - Tests: `e2e/f-108-blog-locale-switch.spec.ts` (6): switch EN→DE→ES en los 3 posts (URL = slug traducido, `blog-post` visible, `data-post-id` idéntico); server 307 de slug de otro locale → slug canónico; slug inexistente sigue 404; regresión F-102 (switcher de pricing sigue OK). Verificado el caso exacto del owner (`/de/blog/<es-slug>` → 307 → `/de/blog/<de-slug>`).
 - Motivación: en `/blog/[slug]` el slug es **contenido localizado** (frontmatter `slug` por locale, `id` compartido entre traducciones). El `LanguageSwitcher` reutiliza el slug actual al cambiar de locale (`/en/blog/your-first-day-on-a-snowboard` → `/de/blog/your-first-day-on-a-snowboard`) y el post alemán vive en `dein-erster-tag-auf-dem-snowboard` → **404**. Los datos para resolverlo ya existen: `getSlugsForId(post.id)` (`lib/blog/posts.ts`) alimenta los hreflang `alternates.languages` que la página ya emite en el `<head>`.
 - AC:
   - [ ] Cambiar idioma desde cualquier post navega al slug traducido del post (3 posts × pares de locales), status 200, mismo `data-post-id`.

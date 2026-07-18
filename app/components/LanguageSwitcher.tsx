@@ -1,9 +1,9 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { useParams } from "next/navigation";
+import { useParams, useRouter as useNextRouter } from "next/navigation";
 import { usePathname, useRouter } from "@/i18n/navigation";
-import { routing } from "@/i18n/routing";
+import { routing, type Locale } from "@/i18n/routing";
 
 type LanguageSwitcherProps = {
   className?: string;
@@ -19,7 +19,35 @@ export function LanguageSwitcher({ className, tone = "dark" }: LanguageSwitcherP
   const pathname = usePathname();
   const params = useParams();
   const router = useRouter();
+  const nextRouter = useNextRouter();
   const t = useTranslations("nav");
+
+  // F-108: prefer the hreflang alternate the page emits in <head>. For routes
+  // with localized content slugs (blog posts) the source slug doesn't exist in
+  // the target locale, so rebuilding the same slug via next-intl 404s — but the
+  // alternate URL already points at the target locale's real slug. General: any
+  // route emitting alternates inherits the fix. Falls back to the pathname +
+  // params rebuild for routes with no alternates (funnel / auth / dashboard).
+  function switchTo(target: Locale) {
+    if (typeof document !== "undefined") {
+      const href = document
+        .querySelector(`link[rel="alternate"][hreflang="${target}"]`)
+        ?.getAttribute("href");
+      if (href) {
+        // Alternates are absolute (prod origin); navigate by path so localhost
+        // stays on localhost.
+        const url = new URL(href, window.location.origin);
+        nextRouter.push(url.pathname + url.search);
+        return;
+      }
+    }
+    router.replace(
+      // @ts-expect-error -- `params` is a generic Record; for the current route
+      // its keys always match `pathname`, so the runtime slug rebuild is safe.
+      { pathname, params },
+      { locale: target },
+    );
+  }
 
   const inactiveColor =
     tone === "dark"
@@ -48,15 +76,7 @@ export function LanguageSwitcher({ className, tone = "dark" }: LanguageSwitcherP
           {index > 0 ? <span aria-hidden className="opacity-30">·</span> : null}
           <button
             type="button"
-            onClick={() =>
-              router.replace(
-                // @ts-expect-error -- `params` is a generic Record; for the
-                // current route its keys always match `pathname`, so the
-                // runtime slug rebuild is safe.
-                { pathname, params },
-                { locale: target },
-              )
-            }
+            onClick={() => switchTo(target)}
             aria-current={target === locale ? "true" : undefined}
             data-testid={`lang-${target}`}
             className={
