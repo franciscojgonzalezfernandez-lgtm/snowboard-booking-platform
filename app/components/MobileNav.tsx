@@ -64,17 +64,20 @@ export function MobileNav({ signedIn }: MobileNavProps) {
             <PhoneIcon className="h-4 w-4" aria-hidden />
             {OPERATIONAL_PHONE_DISPLAY}
           </a>
-          <Link href="/sobre" onClick={close} className={linkClass}>
-            {t("about")}
+          {/* F-116: match the desktop IA — 3 primary links first, then the
+              "More" group (About · Contact). Flat list on mobile (no nested
+              dropdown), but ordered so the hierarchy reads the same. */}
+          <Link href="/precios" onClick={close} className={linkClass}>
+            {t("prices")}
           </Link>
           <Link href="/instructores" onClick={close} className={linkClass}>
             {t("instructors")}
           </Link>
-          <Link href="/precios" onClick={close} className={linkClass}>
-            {t("prices")}
-          </Link>
           <Link href="/blog" onClick={close} className={linkClass}>
             {t("journal")}
+          </Link>
+          <Link href="/sobre" onClick={close} className={linkClass}>
+            {t("about")}
           </Link>
           <Link
             href="/contacto"

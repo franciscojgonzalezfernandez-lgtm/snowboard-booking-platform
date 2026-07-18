@@ -61,6 +61,9 @@ test.describe("F-096 — Contact page", () => {
   }) => {
     await page.goto("/en");
 
+    // Contact moved into the "More" dropdown (F-116) — open it before asserting
+    // / clicking the nav link. The footer link is unaffected.
+    await page.getByTestId("site-nav-more").click();
     await expect(page.getByTestId("site-nav-contact")).toHaveAttribute(
       "href",
       "/en/contact",

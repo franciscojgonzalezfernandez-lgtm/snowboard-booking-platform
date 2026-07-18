@@ -11,6 +11,7 @@ import {
 } from "@/lib/contact/phone";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { MobileNav } from "./MobileNav";
+import { NavMore } from "./NavMore";
 import { Wordmark } from "./Wordmark";
 
 type SiteNavProps = {
@@ -20,10 +21,16 @@ type SiteNavProps = {
 // Top nav mounted from route-group layouts (marketing / auth / dashboard).
 // Pages should not mount it inline. Booking funnel (/reservar) keeps its own
 // BookingHeader and does NOT compose this component.
-// Variant B: thin top utility bar on --foreground (ink) when `utility` is
-// provided, then a brand row with wordmark + nav links + language switcher
-// + auth CTA. Mobile (<lg): brand + hamburger only; nav/lang/CTA move into
-// MobileNav Sheet.
+//
+// F-116 desktop IA — two rows on lg+:
+//   1. Utility bar (--foreground / ink): optional marketing tagline on the
+//      left, phone + LanguageSwitcher on the right. Always rendered so phone +
+//      lang have one consistent home on every surface (marketing passes the
+//      `utility` tagline; auth/dashboard leave the left side empty).
+//   2. Brand row: wordmark + 3 primary links (Prices · Instructors · Field
+//      notes) + a "More" dropdown (About · Contact) + the auth CTA. Phone and
+//      lang no longer compete here — that was the ~1024–1280px crowding the
+//      owner reported. Below lg everything collapses into the MobileNav Sheet.
 export async function SiteNav({ utility }: SiteNavProps) {
   const tNav = await getTranslations("nav");
   const session = await auth.api.getSession({ headers: await headers() });
@@ -31,30 +38,40 @@ export async function SiteNav({ utility }: SiteNavProps) {
 
   return (
     <header data-testid="site-nav">
-      {utility ? (
-        <div className="hidden bg-foreground text-background lg:block">
-          <div className="mx-auto flex max-w-[1320px] items-center justify-between px-7 py-2 text-[11px] font-bold uppercase tracking-[0.14em]">
-            <span>{utility}</span>
+      <div className="hidden bg-foreground text-background lg:block">
+        <div className="mx-auto flex max-w-[1320px] items-center justify-between gap-6 px-7 py-2 text-[11px] font-bold uppercase tracking-[0.14em]">
+          <span>{utility}</span>
+          <div className="flex items-center gap-6">
+            <a
+              href={`tel:${OPERATIONAL_PHONE_TEL}`}
+              data-testid="site-nav-phone"
+              aria-label={`${tNav("phone_label")} ${OPERATIONAL_PHONE_DISPLAY}`}
+              className="inline-flex items-center gap-2 text-background transition-colors hover:text-primary"
+            >
+              <PhoneIcon className="h-4 w-4" aria-hidden />
+              {OPERATIONAL_PHONE_DISPLAY}
+            </a>
             <LanguageSwitcher tone="dark" />
           </div>
         </div>
-      ) : null}
+      </div>
 
       <div className="border-b-2 border-foreground bg-background">
-        <div className="mx-auto flex max-w-[1320px] items-center justify-between gap-4 px-5 py-4 lg:px-7 lg:py-5">
+        <div className="mx-auto flex max-w-[1320px] items-center justify-between gap-6 px-5 py-4 lg:px-7 lg:py-5">
           <Link
             href="/"
-            className="font-display text-[18px] uppercase tracking-tight lg:text-[22px]"
+            data-testid="site-nav-brand"
+            className="shrink-0 font-display text-[18px] uppercase tracking-tight lg:text-[22px]"
           >
-            <Wordmark />
+            <Wordmark className="whitespace-nowrap" />
           </Link>
 
-          <nav className="hidden gap-8 lg:flex">
+          <nav className="hidden items-center gap-6 lg:flex">
             <Link
-              href="/sobre"
+              href="/precios"
               className="text-xs font-bold uppercase tracking-[0.15em] hover:text-primary"
             >
-              {tNav("about")}
+              {tNav("prices")}
             </Link>
             <Link
               href="/instructores"
@@ -63,37 +80,19 @@ export async function SiteNav({ utility }: SiteNavProps) {
               {tNav("instructors")}
             </Link>
             <Link
-              href="/precios"
-              className="text-xs font-bold uppercase tracking-[0.15em] hover:text-primary"
-            >
-              {tNav("prices")}
-            </Link>
-            <Link
               href="/blog"
               className="text-xs font-bold uppercase tracking-[0.15em] hover:text-primary"
             >
               {tNav("journal")}
             </Link>
-            <Link
-              href="/contacto"
-              data-testid="site-nav-contact"
-              className="text-xs font-bold uppercase tracking-[0.15em] hover:text-primary"
-            >
-              {tNav("contact")}
-            </Link>
+            <NavMore
+              moreLabel={tNav("more")}
+              aboutLabel={tNav("about")}
+              contactLabel={tNav("contact")}
+            />
           </nav>
 
           <div className="hidden items-center gap-5 lg:flex">
-            <a
-              href={`tel:${OPERATIONAL_PHONE_TEL}`}
-              data-testid="site-nav-phone"
-              aria-label={`${tNav("phone_label")} ${OPERATIONAL_PHONE_DISPLAY}`}
-              className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.05em] text-foreground transition-colors hover:text-primary"
-            >
-              <PhoneIcon className="h-4 w-4" aria-hidden />
-              {OPERATIONAL_PHONE_DISPLAY}
-            </a>
-            {!utility ? <LanguageSwitcher tone="light" /> : null}
             {signedIn ? (
               <>
                 <Link

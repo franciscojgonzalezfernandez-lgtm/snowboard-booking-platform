@@ -2521,26 +2521,27 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ### F-116 — Desktop header rework: declutter + trim nav IA (3 primary + "More")
 
-- Sprint: post-Sprint 5 · Estado: backlog · Prioridad: P2 (UX, pedido por owner)
+- Sprint: post-Sprint 5 · Estado: **done** (2026-07-18) · Prioridad: P2 (UX, pedido por owner)
 - Depende de: F-051 (`MobileNav` hamburger/Sheet), F-032 (`SiteNav` + marketing layout), F-105/F-113 (`Wordmark` "Ride Flumserberg"), F-115 (añade "Plan your visit" al menú "More")
 - Motivación: owner reporta cabecera desktop amontonada en ~1024–1280px: el wordmark "Ride Flumserberg" parte en dos líneas y los 5 links + teléfono + language switcher + "My account" + "Sign out" compiten en una sola fila flex; el estado signed-in es el peor caso. Confirmado con Playwright a 1024px (`app/components/SiteNav.tsx`, fila flex única desde `lg`).
 - Decisión IA (sesión 2026-07-12): **3 primary + "More" dropdown**. Teléfono + language switcher → utility bar.
 - AC layout:
-  - [ ] **Wordmark**: `whitespace-nowrap` (nunca 2 líneas) + `shrink-0`.
-  - [ ] **Utility bar** (barra oscura superior, hoy solo `LanguageSwitcher` cuando `utility`): mover ahí el teléfono + consolidar el `LanguageSwitcher` (hoy duplicado en la brand row vía `{!utility ? ... }`). La brand row deja de renderizar `site-nav-phone` y ese switcher.
-  - [ ] **Primary nav** (brand row): Prices, Instructors, Field notes. **About + Contact + Plan-your-visit** → dropdown "More▾".
-  - [ ] **"More" dropdown**: shadcn `DropdownMenu`/`NavigationMenu` (instalar si falta). Teclado + `aria`. Client island hijo mínimo — `SiteNav` sigue Server Component; no inflar el bundle del marketing layout. Estilo editorial (borders, no card redondeada con sombra; Impeccable de referencia).
-  - [ ] **Breakpoint**: subir la nav completa a `xl` (1280) si hace falta más aire; mantener el hamburger `MobileNav` por debajo. `MobileNav` (F-051) DEBE incluir TODOS los links (3 primary + 3 del "More").
-  - [ ] Tighten gaps (`gap-8` → `gap-6`) + tracking.
+  - [x] **Wordmark**: `whitespace-nowrap` (nunca 2 líneas) + `shrink-0` en el brand `Link`. Verificado a 1024/1280/1440 (boundingBox < 40px = 1 línea).
+  - [x] **Utility bar**: teléfono + `LanguageSwitcher` viven ahora ahí (a la derecha). La brand row ya no renderiza `site-nav-phone` ni el switcher duplicado. `site-nav-phone` sigue `hidden lg:block` → tests F-052 intactos.
+  - [x] **Primary nav** (brand row): Prices, Instructors, Field notes. **About + Contact** → dropdown "More▾". *Plan-your-visit lo añadirá F-115* (aún no existe la ruta) — el componente `NavMore` deja el hueco documentado.
+  - [x] **"More" dropdown**: `components/ui/dropdown-menu` (Base UI, ya instalado) en un client island mínimo `NavMore.tsx`; `SiteNav` sigue Server Component. Items = next-intl `Link` vía `render` (slugs F-102 + prefetch intactos). Teclado + `aria` nativos (Escape cierra, testeado). Estilo editorial: `rounded-none border-2 border-foreground`, sin sombra/ring.
+  - [x] **Breakpoint**: `lg` (1024) es suficiente tras sacar phone+lang de la brand row — sin overflow a 1024 signed-in (peor caso). No hizo falta subir a `xl`. Hamburger `MobileNav` por debajo incluye TODOS los links (3 primary + About + Contact + Book).
+  - [x] Tighten gaps (`gap-8`/`gap-4` → `gap-6`).
 - AC estados:
-  - [ ] signed-in (My account + Sign out) sin romper layout — es el peor caso a testear. Coordinar con F-070 (ocultar "My account" en `/dashboard`).
-  - [ ] Utility bar pasa a estar siempre presente en marketing. Auth/dashboard layouts montan `SiteNav` sin `utility` — decidir cómo exponen phone/lang ahí (mini utility o brand row compacta) y documentarlo. NO tocar `BookingHeader` de `/reservar` (chrome propio, F-068).
+  - [x] signed-in (My account + Sign out) a 1024px sin romper layout ni overflow — testeado en `/dashboard` (rama auth determinista). Coordinación con F-070 (ocultar "My account" en `/dashboard`) queda para ese ticket; aquí no rompe.
+  - [x] Utility bar pasa a estar **siempre presente** (todas las superficies que montan `SiteNav`). Auth/dashboard montan sin `utility`: el lado izquierdo queda vacío y phone/lang viven igual en la utility bar → home consistente para phone/lang en las 3 chromes. `BookingHeader` de `/reservar` NO tocado (F-068).
 - Tests:
-  - [ ] Playwright viewport 1024/1280/1440 signed-out + signed-in: wordmark 1 línea, sin overflow, "More" abre/cierra, links navegables, phone+lang en utility bar. Mobile < breakpoint: hamburger con todos los links.
-  - [ ] Visual snapshot header × (signed-in/out) × 3 widths.
+  - [x] `e2e/f-116-header.spec.ts` — viewport 1024/1280/1440 signed-out (wordmark 1 línea, sin overflow horizontal, phone+lang en utility bar, 3 primary + More visibles, About/Contact NO sueltos) + "More" abre/cierra (Escape) y navega + signed-in 1024 (account+signout sin romper). Regresiones: F-096 y F-102 actualizados para abrir "More" antes de tocar `site-nav-contact` (Base UI portalea el contenido sólo al abrir).
+  - [x] Visual review (Playwright screenshots) header 1024 open/closed + 1280 DE + mobile sheet: dropdown editorial, brand row aireada, IA mobile primary-first.
 - Notas:
-  - `MobileNav` (F-051) debe reflejar la nueva IA (links del "More" dentro del Sheet).
-- Refs: F-116, F-051, F-070, F-115, F-105, F-113, `app/components/SiteNav.tsx`, `app/components/MobileNav.tsx`
+  - `MobileNav` (F-051) reordenado a la nueva IA (primary-first: Prices · Instructors · Field notes · About · Contact · Book). El wordmark del `SheetHeader` (panel 320px) sí envuelve — fuera de scope, es el panel estrecho, no la brand row desktop.
+  - Nueva key i18n `nav.more` (More / Mehr / Más).
+- Refs: F-116, F-051, F-070, F-115, F-105, F-113, `app/components/SiteNav.tsx`, `app/components/MobileNav.tsx`, `app/components/NavMore.tsx`
 
 ---
 
