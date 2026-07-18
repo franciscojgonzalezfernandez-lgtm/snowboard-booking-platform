@@ -2267,8 +2267,13 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ### F-114 — Redirect del dominio `*.vercel.app` al dominio canónico (evitar contenido duplicado)
 
-- Sprint: post-MVP (SEO hygiene) · Estado: backlog · Prioridad: P2
-- Depende de: acceso del owner a Vercel Project Settings → Domains; F-099/F-103 (el `canonical` ya mitiga en la práctica)
+- Sprint: post-MVP (SEO hygiene) · Estado: **done** (2026-07-18, PR pendiente — vía middleware) · Prioridad: P2
+- Depende de: F-099/F-103 (el `canonical` ya mitiga en la práctica)
+- **Entregado (2026-07-18):** implementado por **middleware** (la opción de Vercel Domains habría requerido acceso al dashboard del owner; el middleware es code-side, testeable y suficiente).
+  - `lib/seo/canonical-host.ts`: `canonicalRedirectTarget({host, vercelEnv, pathname, search})` puro → devuelve la URL canónica (308) sólo si `vercelEnv === 'production'` **y** el `host` termina en `.vercel.app`; null en otro caso. Preview (`VERCEL_ENV=preview`) y el host canónico pasan de largo.
+  - `middleware.ts`: envuelve el `createMiddleware(routing)` de next-intl; si hay target, `NextResponse.redirect(target, 308)` antes de la lógica de locale.
+  - Tests: Vitest `lib/seo/canonical-host.test.ts` (5) + integración manual (`next start` con `VERCEL_ENV=production`, `Host: *.vercel.app` → 308 a canónico preservando path+query en `/en`·`/de/preise`·`/es/sobre?ref=x`; host canónico → 200; `VERCEL_ENV=preview` + `*.vercel.app` → 200).
+  - **Scope (documentado):** el redirect sólo cubre las rutas del `matcher` de next-intl (marketing/locale — las indexables). `/admin`, `/instructor`, `/api` y ficheros con punto (`robots.txt`, `sitemap.xml`) quedan fuera del matcher → **no** se redirigen en `*.vercel.app`. Aceptable: no se indexan, y el `robots.txt`/`sitemap.xml` servidos en `*.vercel.app` ya apuntan a `rideflumserberg.ch` (auto-canónicos). `BETTER_AUTH_URL`/`SITE_URL` sin cambio.
 - Motivación: `snowboard-booking-platform.vercel.app` responde **200** y sirve el sitio completo **sin** redirigir a `rideflumserberg.ch`. Descubierto al preparar el alta en Google Search Console (2026-07-12). Riesgo de indexación duplicada: Google puede rastrear e indexar las URLs `.vercel.app` como copia del sitio. **Mitigado hoy** por el `<link rel="canonical">` (F-103), que en todas las páginas apunta a `rideflumserberg.ch` → Google debería plegar los duplicados. Este ticket lo cierra a nivel infra para no depender solo del canonical (defensa en profundidad).
 - AC:
   - [ ] En **Vercel → Project Settings → Domains**: `rideflumserberg.ch` como dominio principal; configurar el/los `*.vercel.app` como **Redirect (308)** al principal. Si Vercel no permite redirigir su dominio de sistema, alternativa por **middleware**: 308 a `https://rideflumserberg.ch` cuando el `host` de la request sea el de producción `*.vercel.app`, preservando `pathname` + `search`.
