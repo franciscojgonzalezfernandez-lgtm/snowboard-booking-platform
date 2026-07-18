@@ -110,6 +110,18 @@ export function getSlugsForId(id: string): Partial<Record<Locale, string>> {
   return out;
 }
 
+/** Find the shared post `id` for a slug that may belong to ANY locale (F-108).
+ * Lets the server resolve a URL carrying another locale's slug (a shared link,
+ * or a language switch that kept the source slug) back to its post so it can
+ * redirect to the active locale's canonical slug. Null when no locale has it. */
+export function findPostIdByAnySlug(slug: string): string | null {
+  for (const locale of routing.locales) {
+    const match = getAllPosts(locale).find((p) => p.slug === slug);
+    if (match) return match.id;
+  }
+  return null;
+}
+
 /** Every (locale, slug) pair for `generateStaticParams`. */
 export function getAllPostParams(): { locale: Locale; slug: string }[] {
   return routing.locales.flatMap((locale) =>

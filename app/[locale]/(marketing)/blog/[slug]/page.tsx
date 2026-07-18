@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { compileMDX } from "next-mdx-remote/rsc";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
 import { type Locale } from "@/i18n/routing";
 import { formatBlogDate } from "@/lib/blog/format";
-import { getAllPostParams, getPostBySlug, getSlugsForId } from "@/lib/blog/posts";
+import {
+  findPostIdByAnySlug,
+  getAllPostParams,
+  getPostBySlug,
+  getSlugsForId,
+} from "@/lib/blog/posts";
 import { SITE_URL, toAbsoluteUrl } from "@/lib/seo/site-url";
 import { JsonLd } from "@/app/components/JsonLd";
 import { buildBlogPosting } from "@/lib/seo/structured-data";
@@ -67,6 +72,16 @@ export default async function BlogPostPage({ params }: Props) {
   const typedLocale = locale as Locale;
   const post = getPostBySlug(typedLocale, slug);
   if (!post) {
+    // F-108 locale-mismatch safety net: the incoming slug may belong to another
+    // locale (a shared link, or a language switch that kept the source slug).
+    // Resolve it to its post and redirect to THIS locale's canonical slug; if
+    // the post isn't translated here, fall back to the blog index. Only a slug
+    // that exists in no locale is a genuine 404. Mirrors F-102's slug 307.
+    const id = findPostIdByAnySlug(slug);
+    if (id) {
+      const localized = getSlugsForId(id)[typedLocale];
+      redirect(localized ? `/${locale}/blog/${localized}` : `/${locale}/blog`);
+    }
     notFound();
   }
 
