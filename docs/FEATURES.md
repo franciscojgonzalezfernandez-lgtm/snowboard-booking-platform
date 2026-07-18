@@ -2251,6 +2251,22 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 > Tickets aceptados pero **fuera del scope MVP** (Sprints 0-6). Se desbloquean post soft-launch cuando el flujo core esté validado en producción y haya tráfico real para priorizar. Cada uno tiene AC borrador para no perder contexto cuando llegue su turno.
 
+### F-114 — Redirect del dominio `*.vercel.app` al dominio canónico (evitar contenido duplicado)
+
+- Sprint: post-MVP (SEO hygiene) · Estado: backlog · Prioridad: P2
+- Depende de: acceso del owner a Vercel Project Settings → Domains; F-099/F-103 (el `canonical` ya mitiga en la práctica)
+- Motivación: `snowboard-booking-platform.vercel.app` responde **200** y sirve el sitio completo **sin** redirigir a `rideflumserberg.ch`. Descubierto al preparar el alta en Google Search Console (2026-07-12). Riesgo de indexación duplicada: Google puede rastrear e indexar las URLs `.vercel.app` como copia del sitio. **Mitigado hoy** por el `<link rel="canonical">` (F-103), que en todas las páginas apunta a `rideflumserberg.ch` → Google debería plegar los duplicados. Este ticket lo cierra a nivel infra para no depender solo del canonical (defensa en profundidad).
+- AC:
+  - [ ] En **Vercel → Project Settings → Domains**: `rideflumserberg.ch` como dominio principal; configurar el/los `*.vercel.app` como **Redirect (308)** al principal. Si Vercel no permite redirigir su dominio de sistema, alternativa por **middleware**: 308 a `https://rideflumserberg.ch` cuando el `host` de la request sea el de producción `*.vercel.app`, preservando `pathname` + `search`.
+  - [ ] Verificar: `curl -I https://snowboard-booking-platform.vercel.app/en` → `308` → `https://rideflumserberg.ch/en`. Idem `/de/preise`, `/es/sobre` (path+query preservados).
+  - [ ] `BETTER_AUTH_URL` / `SITE_URL` siguen en `rideflumserberg.ch` (sin cambio) — el redirect no debe romper el OAuth callback de Google ni `metadataBase`.
+- Tests: HTTP/curl del 308 preservando path+query en las 3 rutas; smoke de que el dominio canónico sigue 200.
+- Notas:
+  - **No urgente**: el canonical de F-103 ya evita la canibalización en la práctica; esto es higiene + defensa en profundidad.
+  - ⚠️ Si se hace por **middleware**, NO redirigir las **preview deployments** (viven legítimamente en `*.vercel.app`): limitar por host de producción exacto o gate `process.env.VERCEL_ENV === 'production'`. Un redirect ciego de todo `.vercel.app` rompería las previews de cada PR.
+  - Descubierto junto al alta en GSC; relacionado con F-112 (SEO owner-dependiente).
+- Refs: F-114, F-099, F-103, F-112
+
 ### F-054 — Team-building / group inquiry form
 
 - Sprint: post-MVP · Estado: backlog · Prioridad: P2
