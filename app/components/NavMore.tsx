@@ -12,18 +12,24 @@ import {
 
 type NavMoreProps = {
   moreLabel: string;
+  planLabel: string;
   aboutLabel: string;
   contactLabel: string;
 };
 
-// F-116: secondary marketing links (About + Contact) collapsed behind a "More"
-// dropdown so the desktop brand row keeps to 3 primary links (Prices,
-// Instructors, Field notes). Client island — SiteNav stays a Server Component.
-// The dropdown is a Base UI menu (keyboard + aria handled by the primitive);
-// items render as next-intl `Link`s via the `render` prop so locale slug
-// translation (F-102) and prefetch keep working. Styled editorial: square
-// border, no rounded card / shadow. F-115 will add "Plan your visit" here.
-export function NavMore({ moreLabel, aboutLabel, contactLabel }: NavMoreProps) {
+// F-116: secondary marketing links (Plan your visit + About + Contact) collapsed
+// behind a "More" dropdown so the desktop brand row keeps to 3 primary links
+// (Prices, Instructors, Field notes). Client island — SiteNav stays a Server
+// Component. The dropdown is a Base UI menu (keyboard + aria handled by the
+// primitive); items render as next-intl `Link`s via the `render` prop so locale
+// slug translation (F-102) and prefetch keep working. Styled editorial: square
+// border, no rounded card / shadow.
+export function NavMore({
+  moreLabel,
+  planLabel,
+  aboutLabel,
+  contactLabel,
+}: NavMoreProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -42,9 +48,16 @@ export function NavMore({ moreLabel, aboutLabel, contactLabel }: NavMoreProps) {
         className="min-w-[220px] rounded-none border-2 border-foreground bg-background p-0 shadow-none ring-0"
       >
         <DropdownMenuItem
+          data-testid="site-nav-plan"
+          render={<Link href="/plan-your-visit" />}
+          className="cursor-pointer rounded-none px-5 py-4 text-xs font-bold uppercase tracking-[0.15em] text-foreground focus:bg-foreground focus:text-background"
+        >
+          {planLabel}
+        </DropdownMenuItem>
+        <DropdownMenuItem
           data-testid="site-nav-about"
           render={<Link href="/sobre" />}
-          className="cursor-pointer rounded-none px-5 py-4 text-xs font-bold uppercase tracking-[0.15em] text-foreground focus:bg-foreground focus:text-background"
+          className="cursor-pointer rounded-none border-t border-foreground px-5 py-4 text-xs font-bold uppercase tracking-[0.15em] text-foreground focus:bg-foreground focus:text-background"
         >
           {aboutLabel}
         </DropdownMenuItem>

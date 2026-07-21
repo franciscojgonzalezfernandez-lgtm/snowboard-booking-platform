@@ -73,11 +73,15 @@ test.describe("F-116 — desktop header layout (signed-out)", () => {
     await page.setViewportSize({ width: 1024, height: 900 });
     await page.goto("/en");
 
+    const plan = page.getByTestId("site-nav-plan");
     const about = page.getByTestId("site-nav-about");
     const contact = page.getByTestId("site-nav-contact");
     await expect(about).toHaveCount(0); // closed by default
 
     await page.getByTestId("site-nav-more").click();
+    // F-115 hub wired into the "More" group (first item).
+    await expect(plan).toBeVisible();
+    await expect(plan).toHaveAttribute("href", "/en/plan-your-visit");
     await expect(about).toBeVisible();
     await expect(about).toHaveAttribute("href", "/en/about");
     await expect(contact).toBeVisible();
