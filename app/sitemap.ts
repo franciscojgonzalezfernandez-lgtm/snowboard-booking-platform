@@ -30,6 +30,7 @@ const STATIC_ROUTES: StaticRoute[] = [
   { href: "/precios", priority: 0.9, changeFrequency: "weekly" },
   { href: "/instructores", priority: 0.8, changeFrequency: "monthly" },
   { href: "/contacto", priority: 0.7, changeFrequency: "monthly" },
+  { href: "/plan-your-visit", priority: 0.7, changeFrequency: "monthly" },
   { href: "/sobre", priority: 0.6, changeFrequency: "monthly" },
   { href: "/faq", priority: 0.6, changeFrequency: "monthly" },
   { href: "/blog", priority: 0.6, changeFrequency: "weekly" },

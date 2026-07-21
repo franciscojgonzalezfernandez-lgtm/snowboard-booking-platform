@@ -71,6 +71,7 @@
     "footer_loc": "Flumserberg · St. Gallen · Schweiz"
   },
   "footer": {
+    "plan_link": "Besuch planen",
     "faq_link": "FAQ",
     "terms_link": "AGB",
     "privacy_link": "Datenschutz",
@@ -567,6 +568,33 @@
     "back": "Alle Feldnotizen",
     "cta_heading": "Soll ich es dir am Berg zeigen?",
     "cta_button": "Stunde buchen"
+  },
+  "planVisit": {
+    "metadata_title": "Deinen Besuch in Flumserberg planen — Saison, Anreise & Verleih",
+    "metadata_description": "Plane deinen Snowboard-Tag in Flumserberg: die Saison, die Anreise aus Zürich oder St. Gallen, unseren Treffpunkt, den Materialverleih und die Betriebszeiten des Resorts.",
+    "eyebrow": "Besuch planen",
+    "heading": "Alles, was du für Flumserberg brauchst.",
+    "lede": "Ein kurzer, ehrlicher Leitfaden für deinen Tag — wann die Saison läuft, wie du auf den Berg kommst, wo wir uns treffen und wie du an Material kommst.",
+    "season_title": "Die Saison",
+    "season_active": "Wir fahren gerade — die Saison läuft bis {date}. Buche jeden Tag innerhalb des Zeitraums.",
+    "season_upcoming": "Nächste Saison: {start} → {end}. Stunden sind für Daten in diesem Zeitraum buchbar.",
+    "season_none": "Die Saisondaten werden noch bestätigt — melde dich und ich sage dir, wann die Buchung öffnet.",
+    "season_cta": "Preise ansehen",
+    "getting_title": "Anreise",
+    "getting_body": "Flumserberg liegt in der Region Heidiland, gut erreichbar aus Zürich und St. Gallen — mit dem Auto oder per Zug nach Unterterzen und mit der Seilbahn hinauf nach Tannenbodenalp. Wir treffen uns bei {meeting}.",
+    "getting_map_cta": "Treffpunkt auf der Karte ansehen",
+    "rental_title": "Materialverleih",
+    "rental_body": "Du brauchst nichts zu besitzen, um anzufangen. Miete Board, Boots und Helm oben am Berg und hol alles am Morgen deiner Stunde ab.",
+    "rental_recommend": "Wo ich mieten würde: Intersport Rent Flumserberg.",
+    "rental_cta": "Intersport Rent Flumserberg ansehen",
+    "area_title": "Am Berg",
+    "area_body": "Der Anfängerbereich auf Tannenbodenalp ist gratis und für alle offen — für die ersten Turns brauchst du kein Ticket. Auf dem Berg gibt es Bergrestaurants für die Mittagspause und genug Pisten, wenn du bereit bist, mehr zu entdecken.",
+    "hours_title": "Betriebs- & Bergbahnzeiten",
+    "hours_body": "Bahnzeiten, offene Pisten und aktuelle Bedingungen findest du auf der Seite des Resorts — die verlässliche Quelle, täglich von Flumserberg aktualisiert.",
+    "hours_cta": "Betriebszeiten des Resorts",
+    "cta_title": "Bereit, wenn du es bist.",
+    "cta_book": "Stunde buchen",
+    "cta_contact": "Frage stellen"
   },
   "faq": {
     "metadata_title": "FAQ — Snowboardstunden in Flumserberg | Ride Flumserberg",
