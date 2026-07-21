@@ -9,8 +9,9 @@ import { prisma } from "@/lib/db";
 import { seasonStatus } from "@/lib/season/plan-status";
 import { MEETING_POINT_LABEL } from "@/lib/contact/location";
 import {
+  INTERSPORT_RENT_URL,
+  RENTAL_SHOPS,
   RESORT_OPERATING_HOURS_URL,
-  RESORT_URL,
 } from "@/lib/content/plan-your-visit";
 
 type Props = { params: Promise<{ locale: string }> };
@@ -132,7 +133,7 @@ export default async function PlanYourVisitPage({ params }: Props) {
           </section>
         </Reveal>
 
-        {/* Gear rental — resort's own rental (no invented third-party shops). */}
+        {/* Gear rental — owner-recommended shops (Intersport Rent Flumserberg). */}
         <Reveal>
           <section className="border-t border-foreground/15 pt-8">
             <h2 className="font-display text-2xl tracking-tight sm:text-3xl">
@@ -141,8 +142,24 @@ export default async function PlanYourVisitPage({ params }: Props) {
             <p className="mt-4 max-w-[62ch] text-lg leading-relaxed text-foreground/80">
               {t("rental_body")}
             </p>
+            <p className="mt-5 text-[15px] font-bold uppercase tracking-[0.14em] text-foreground/70">
+              {t("rental_recommend")}
+            </p>
+            <ul className="mt-3 space-y-1.5">
+              {RENTAL_SHOPS.map((shop) => (
+                <li
+                  key={shop.address}
+                  className="text-[15px] leading-snug text-foreground/60"
+                >
+                  <span className="font-semibold text-foreground">
+                    {shop.name}
+                  </span>{" "}
+                  — {shop.address}
+                </li>
+              ))}
+            </ul>
             <a
-              href={RESORT_URL}
+              href={INTERSPORT_RENT_URL}
               target="_blank"
               rel="noopener"
               data-testid="plan-rental-link"

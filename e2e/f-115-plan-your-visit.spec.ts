@@ -7,8 +7,9 @@ const SLUG = {
   es: "planea-tu-visita",
 } as const;
 
-const RESORT_URL = "https://www.flumserberg.ch";
 const RESORT_HOURS_URL = "https://www.flumserberg.ch/Operating-hours";
+const INTERSPORT_RENT_URL =
+  "https://www.intersportrent.com/skirent-flumserberg";
 
 const LOCALES = ["en", "de", "es"] as const;
 
@@ -31,11 +32,14 @@ test.describe("F-115 — Plan your visit", () => {
       await expect(hours).toHaveAttribute("target", "_blank");
       await expect(hours).toHaveAttribute("rel", /noopener/);
 
-      // Gear rental → the resort site.
+      // Gear rental → owner-recommended Intersport Rent, with the real shops listed.
       await expect(page.getByTestId("plan-rental-link")).toHaveAttribute(
         "href",
-        RESORT_URL,
+        INTERSPORT_RENT_URL,
       );
+      await expect(
+        page.getByText("Intersport Flumserberg", { exact: false }).first(),
+      ).toBeVisible();
     });
   }
 
