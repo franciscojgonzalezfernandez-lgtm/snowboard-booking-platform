@@ -2536,7 +2536,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 - AC layout:
   - [x] **Wordmark**: `whitespace-nowrap` (nunca 2 líneas) + `shrink-0` en el brand `Link`. Verificado a 1024/1280/1440 (boundingBox < 40px = 1 línea).
   - [x] **Utility bar**: teléfono + `LanguageSwitcher` viven ahora ahí (a la derecha). La brand row ya no renderiza `site-nav-phone` ni el switcher duplicado. `site-nav-phone` sigue `hidden lg:block` → tests F-052 intactos.
-  - [x] **Primary nav** (brand row): Prices, Instructors, Field notes. **About + Contact** → dropdown "More▾". *Plan-your-visit lo añadirá F-115* (aún no existe la ruta) — el componente `NavMore` deja el hueco documentado.
+  - [x] **Primary nav** (brand row): Prices, Instructors, Field notes. Dropdown "More▾" = **Plan your visit · About · Contact** (Plan your visit primero). Tras mergear F-115 (#176) se cableó aquí `plan-your-visit` (nav + `MobileNav`) — resuelta la deferral mutua (F-115 lo dejó en el footer y defirió el nav a F-116; F-116 lo había dejado como hueco para F-115).
   - [x] **"More" dropdown**: `components/ui/dropdown-menu` (Base UI, ya instalado) en un client island mínimo `NavMore.tsx`; `SiteNav` sigue Server Component. Items = next-intl `Link` vía `render` (slugs F-102 + prefetch intactos). Teclado + `aria` nativos (Escape cierra, testeado). Estilo editorial: `rounded-none border-2 border-foreground`, sin sombra/ring.
   - [x] **Breakpoint**: `lg` (1024) es suficiente tras sacar phone+lang de la brand row — sin overflow a 1024 signed-in (peor caso). No hizo falta subir a `xl`. Hamburger `MobileNav` por debajo incluye TODOS los links (3 primary + About + Contact + Book).
   - [x] Tighten gaps (`gap-8`/`gap-4` → `gap-6`).
@@ -2548,7 +2548,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - [x] Visual review (Playwright screenshots) header 1024 open/closed + 1280 DE + mobile sheet: dropdown editorial, brand row aireada, IA mobile primary-first.
 - Notas:
   - `MobileNav` (F-051) reordenado a la nueva IA (primary-first: Prices · Instructors · Field notes · About · Contact · Book). El wordmark del `SheetHeader` (panel 320px) sí envuelve — fuera de scope, es el panel estrecho, no la brand row desktop.
-  - Nueva key i18n `nav.more` (More / Mehr / Más).
+  - Nuevas keys i18n `nav.more` (More / Mehr / Más) + `nav.plan` (Plan your visit / Besuch planen / Planea tu visita).
 - Refs: F-116, F-051, F-070, F-115, F-105, F-113, `app/components/SiteNav.tsx`, `app/components/MobileNav.tsx`, `app/components/NavMore.tsx`
 
 ---
