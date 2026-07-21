@@ -73,6 +73,7 @@
     "footer_loc": "Flumserberg · St. Gallen · Suiza"
   },
   "footer": {
+    "plan_link": "Planea tu visita",
     "faq_link": "FAQ",
     "terms_link": "Términos",
     "privacy_link": "Privacidad",
@@ -569,6 +570,33 @@
     "back": "Todas las notas",
     "cta_heading": "¿Quieres que te lo enseñe en persona?",
     "cta_button": "Reserva una clase"
+  },
+  "planVisit": {
+    "metadata_title": "Planea tu visita a Flumserberg — temporada, cómo llegar y alquiler",
+    "metadata_description": "Planea tu día de snowboard en Flumserberg: la temporada, cómo llegar desde Zúrich o St. Gallen, dónde nos vemos, el alquiler de material y los horarios del resort.",
+    "eyebrow": "Planea tu visita",
+    "heading": "Todo lo que necesitas para Flumserberg.",
+    "lede": "Una guía breve y honesta para planear tu día — cuándo es la temporada, cómo subir a la montaña, dónde nos vemos y cómo conseguir material.",
+    "season_title": "La temporada",
+    "season_active": "Estamos montando — la temporada dura hasta el {date}. Reserva cualquier día dentro de la ventana.",
+    "season_upcoming": "Próxima temporada: {start} → {end}. Las clases se pueden reservar para fechas dentro de ese periodo.",
+    "season_none": "Las fechas de temporada se están confirmando — escríbeme y te aviso cuando se abran las reservas.",
+    "season_cta": "Ver precios",
+    "getting_title": "Cómo llegar",
+    "getting_body": "Flumserberg está en la región de Heidiland, fácil de llegar desde Zúrich y St. Gallen — en coche, o en tren hasta Unterterzen y el teleférico hasta Tannenbodenalp. Nos vemos en {meeting}.",
+    "getting_map_cta": "Ver el punto de encuentro en el mapa",
+    "rental_title": "Alquiler de material",
+    "rental_body": "No necesitas tener nada para empezar. Alquila tabla, botas y casco arriba en la montaña y recoge todo la mañana de tu clase.",
+    "rental_recommend": "Dónde alquilaría yo: Intersport Rent Flumserberg.",
+    "rental_cta": "Ver Intersport Rent Flumserberg",
+    "area_title": "En la montaña",
+    "area_body": "La zona de principiantes de Tannenbodenalp es gratis y abierta para todos — no necesitas forfait para tus primeros giros. Hay restaurantes de montaña para comer y pistas de sobra cuando estés listo para explorar.",
+    "hours_title": "Horarios de remontes y resort",
+    "hours_body": "Los horarios de remontes, pistas abiertas y condiciones están en la página del resort — la fuente fiable, actualizada cada día por Flumserberg.",
+    "hours_cta": "Horarios del resort",
+    "cta_title": "Cuando quieras.",
+    "cta_book": "Reservar clase",
+    "cta_contact": "Hacer una pregunta"
   },
   "faq": {
     "metadata_title": "FAQ — clases de snowboard en Flumserberg | Ride Flumserberg",

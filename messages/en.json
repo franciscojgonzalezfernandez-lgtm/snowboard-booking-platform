@@ -73,6 +73,7 @@
     "footer_loc": "Flumserberg · St. Gallen · Switzerland"
   },
   "footer": {
+    "plan_link": "Plan your visit",
     "faq_link": "FAQ",
     "terms_link": "Terms",
     "privacy_link": "Privacy",
@@ -569,6 +570,33 @@
     "back": "All field notes",
     "cta_heading": "Want me to show you in person?",
     "cta_button": "Book a lesson"
+  },
+  "planVisit": {
+    "metadata_title": "Plan your visit to Flumserberg — season, getting here & rentals",
+    "metadata_description": "Plan a snowboard day in Flumserberg: the season window, how to get here from Zürich or St. Gallen, where we meet, gear rental and the resort's lift hours.",
+    "eyebrow": "Plan your visit",
+    "heading": "Everything you need to ride Flumserberg.",
+    "lede": "A short, honest guide to planning your day — when the season runs, how to get up the mountain, where we meet, and how to sort out gear.",
+    "season_title": "The season",
+    "season_active": "We're riding now — the season runs until {date}. Book any day inside the window.",
+    "season_upcoming": "Next season runs {start} → {end}. Lessons can be booked for dates inside that window.",
+    "season_none": "Season dates are being confirmed — get in touch and I'll let you know when booking opens.",
+    "season_cta": "See prices",
+    "getting_title": "Getting here",
+    "getting_body": "Flumserberg sits in the Heidiland region, easy to reach from Zürich and St. Gallen — by car, or by train to Unterterzen and the cable car up to Tannenbodenalp. We meet at {meeting}.",
+    "getting_map_cta": "See the meeting point on the map",
+    "rental_title": "Gear rental",
+    "rental_body": "You don't need to own a thing to start. Rent a board, boots and a helmet up on the mountain and pick everything up the morning of your lesson.",
+    "rental_recommend": "Where I'd rent: Intersport Rent Flumserberg.",
+    "rental_cta": "See Intersport Rent Flumserberg",
+    "area_title": "On the mountain",
+    "area_body": "The beginner area at Tannenbodenalp is free and open to everyone — no lift pass needed for your first turns. There are mountain restaurants on the hill for lunch and plenty of runs once you're ready to explore.",
+    "hours_title": "Lift & resort hours",
+    "hours_body": "Lift times, open runs and current conditions live on the resort's own page — the source of truth, updated daily by Flumserberg.",
+    "hours_cta": "Resort operating hours",
+    "cta_title": "Ready when you are.",
+    "cta_book": "Book a lesson",
+    "cta_contact": "Ask a question"
   },
   "faq": {
     "metadata_title": "FAQ — snowboard lessons in Flumserberg | Ride Flumserberg",
