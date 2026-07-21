@@ -2582,6 +2582,39 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - Fix de 1 línea semántica; el resto del a11y de la home ya estaba OK tras F-104. Cierra el último punto que separaba la home de 100/100 en Lighthouse a11y.
 - Refs: F-118, F-104, `app/[locale]/(marketing)/page.tsx`
 
+### F-119 — Login embebido en el funnel (Step 4): matar el salto a `/login`
+
+- Sprint: 5 (funnel UX) · Estado: backlog · Prioridad: P2 (fricción de conversión — pedido por owner)
+- Depende de: F-068 (chrome del funnel), F-056 (account linking Google ↔ email/magic), `lib/auth/client.ts` (`authClient`), `booking-platform-perf` (presupuesto del stepper)
+- Motivación: hoy, cuando un booker anónimo llega al Step 4 del funnel, `app/[locale]/reservar/page.tsx:367-402` renderiza una sección "anonymous" cuyo único CTA es un `<Link>` a `/login?next=…` (línea 390 vía `buildLoginNext(locale, sp)`). Eso lo saca del funnel a una página aparte y lo obliga a volver. Fricción innecesaria en el punto de máxima intención de compra. Embeber el login **en el propio Step 4** elimina ese salto intermedio.
+- Decisión (sesión 2026-07-21, con owner):
+  - **Métodos: los tres** — Google (OAuth), magic link **y** email+password. Matiz asumido y aceptado: Google y magic link **siguen** haciendo round-trip (a `accounts.google.com` / al inbox) y vuelven al funnel; email+password es el **único** camino 100% on-page sin navegar. El win no es "cero navegación", es matar la página `/login` intermedia.
+  - **`/login` se mantiene** — el embed es **aditivo**. `/login` sigue sirviendo al nav "My account", dashboard y acceso directo. Este ticket solo cambia el Step 4.
+  - **Bloque bespoke, no reutilizar `LoginForm` tal cual** — componente compacto **funnel-native**, afinado a la chrome del booking (editorial: uppercase tracking, borde no sombra, sin las tabs SaaS de `LoginForm`). Reutiliza las llamadas de `authClient`, no el layout tabbed.
+  - **Auto-provisión, sin paso de signup** — sin toggle signin/signup dentro del funnel. Google y magic link ya auto-crean cuenta en primer uso (Better Auth default). Email+password: **submit unificado** → intenta `signIn.email`; si el error es "usuario no existe", cae a `signUp.email` con `name` derivado del email (`email.split("@")[0]`, como el fallback actual de `LoginForm`). Un solo affordance "continuar", sin decisión para el booker.
+- AC — componente:
+  - [ ] Nuevo `app/[locale]/reservar/step4-auth.tsx` (`'use client'`), bespoke/compacto, montado en `page.tsx` en lugar del bloque `!session?.user` actual (líneas 367-402). Reemplaza el `<Link>`→`/login`; **no** deja ningún enlace a `/login` en el Step 4.
+  - [ ] Los tres métodos: botón Google (`authClient.signIn.social`), magic link (`authClient.signIn.magicLink`, con estado "revisa tu email" inline), y form email+password (submit unificado signin→signup-on-not-found).
+  - [ ] `callbackURL` = URL actual del funnel (reutiliza `buildLoginNext(locale, sp)`), para que Google/magic link vuelvan al Step 4 con el draft intacto (el draft vive en URL-state, sobrevive el round-trip).
+  - [ ] Tras éxito de **email+password** (único no-nav): `router.refresh()` (sin `push`) → el RSC re-evalúa `session?.user` y el Step 4 se voltea in-place a `BookerPaymentFlow`. Cero navegación de extremo a extremo.
+  - [ ] Diseño Impeccable: sin tabs; jerarquía editorial que case con `booking-header`/summary. Consultar `impeccable` antes de maquetar. shadcn `Button`/`Input`/`Form` como primitivas (no hand-roll).
+- AC — i18n:
+  - [ ] Copy vía next-intl en los 3 locales (en/de/es). Reutilizar el namespace `login` donde aplique (labels Google/magic/email/password, errores) + añadir claves funnel-específicas bajo `step4` (el `anonymous_heading`/`anonymous_body`/`anonymous_cta` actuales se re-encuadran o retiran). Sin strings hardcodeados.
+- AC — perf (`booking-platform-perf`):
+  - [ ] El bloque de auth solo pesa cuando el booker anónimo alcanza el Step 4 → **dynamic import** para mantenerlo fuera del First Load JS del funnel. Verificar que el stepper no regresa en bundle. Sin CLS al voltear anonymous→payment (reservar altura / transición coreografiada gated por `prefers-reduced-motion`).
+- Tests (Playwright):
+  - [ ] Anónimo llega al Step 4 → ve el bloque embebido (Google + magic link + email/pwd), **no** un link a `/login`.
+  - [ ] Email+pwd usuario nuevo: submit → cuenta auto-creada → Step 4 se voltea a payment **sin navegar** (misma URL, query params intactos).
+  - [ ] Email+pwd usuario existente: inicia sesión inline.
+  - [ ] Magic link: introducir email → estado "enviado" inline; `callbackURL` = URL actual del funnel.
+  - [ ] Draft sobrevive: tras auth, `duration`/`date`/`time`/`instructor`/`language` intactos.
+  - [ ] Regresión: `/login` standalone sigue funcionando; actualizar cualquier test que aseveraba el CTA anonymous → `/login`.
+- Notas:
+  - Gotcha de test (ver memoria `verify-against-next-start-gotchas`): Better Auth **rate-limita signups en builds de prod** — usar `npm run dev` para E2E de auto-provisión, o emails únicos por run.
+  - `next` param / `safe-next.ts` ya validan el destino → reutilizar, no reinventar.
+  - Fuera de scope: rediseñar `/login`; passkeys; "guest checkout" sin cuenta (el producto requiere cuenta para dashboard/créditos).
+- Refs: F-119, F-068, F-056, `app/[locale]/reservar/page.tsx:367-402`, `app/[locale]/(auth)/login/login-form.tsx`, `lib/auth/client.ts`, `booking-platform-perf`, PRD §? (funnel), Architecture §auth
+
 ---
 
 ## Bloqueantes / decisiones abiertas (consolidadas)
