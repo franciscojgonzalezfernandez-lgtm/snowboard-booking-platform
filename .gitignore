@@ -47,3 +47,6 @@ yarn-error.log*
 # Sentry Config File
 .env.sentry-build-plugin
 .env*
+
+# graphify knowledge-graph output (rebuildable, local)
+graphify-out/

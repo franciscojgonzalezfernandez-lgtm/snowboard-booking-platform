@@ -9,6 +9,7 @@
 **Snowboard booking platform** for a single ski school in Switzerland. Single-developer MVP. Operated initially by one instructor (the owner), architected for multi-instructor expansion.
 
 **Documentos del proyecto:**
+- [`AGENTS.md`](AGENTS.md) — thin pointer a este archivo para Codex/otros agentes (no definir convenciones ahí).
 - [`docs/PRD.md`](docs/PRD.md) — producto/negocio.
 - [`docs/Architecture.md`](docs/Architecture.md) — stack, modelo de datos, integraciones, ADRs.
 - [`docs/FEATURES.md`](docs/FEATURES.md) — backlog vivo (fuente de verdad del scope por ticket).
