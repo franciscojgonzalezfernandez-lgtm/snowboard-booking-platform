@@ -45,8 +45,8 @@ test.describe("F-102 — `Link` emits the active locale's slug", () => {
   // On a localized home, the nav anchors must point at the locale's external
   // slug (proves next-intl rewrote the internal pathname key), not the raw key.
   const NAV_SLUGS = {
-    de: { about: "/de/ueber-uns", instructors: "/de/instruktoren", pricing: "/de/preise" },
-    es: { about: "/es/sobre", instructors: "/es/instructores", pricing: "/es/precios" },
+    de: { about: "/de/ueber-uns", instructors: "/de/instruktoren", pricing: "/de/preise", contact: "/de/kontakt" },
+    es: { about: "/es/sobre", instructors: "/es/instructores", pricing: "/es/precios", contact: "/es/contacto" },
   } as const;
 
   for (const locale of ["de", "es"] as const) {
@@ -56,9 +56,13 @@ test.describe("F-102 — `Link` emits the active locale's slug", () => {
       // Instructors + Prices stay as primary links in the brand row.
       await expect(nav.locator(`a[href="${NAV_SLUGS[locale].instructors}"]`)).toBeVisible();
       await expect(nav.locator(`a[href="${NAV_SLUGS[locale].pricing}"]`)).toBeVisible();
-      // About lives in the "More" dropdown (F-116); open it, then assert its
-      // translated slug. Content is portaled → query from `page`. (Contact's
-      // translated slug is covered by the route test above.)
+      // Contact is a direct brand-row link (F-116); About lives in the "More"
+      // dropdown. Assert both translated slugs (dropdown content is portaled →
+      // query from `page`).
+      await expect(page.getByTestId("site-nav-contact")).toHaveAttribute(
+        "href",
+        NAV_SLUGS[locale].contact,
+      );
       await page.getByTestId("site-nav-more").click();
       await expect(page.locator(`a[href="${NAV_SLUGS[locale].about}"]`)).toBeVisible();
     });

@@ -56,19 +56,23 @@ test.describe("F-096 — Contact page", () => {
     });
   }
 
-  test("contact page is reachable from the footer link", async ({ page }) => {
+  test("contact page is reachable from the nav and footer links", async ({
+    page,
+  }) => {
     await page.goto("/en");
 
-    // Contact is intentionally NOT in the nav "More" dropdown (commercial IA —
-    // keep the nav lean toward booking). The footer link is its nav-level entry
-    // point; the phone CTA in the utility bar is the other.
-    await expect(page.getByTestId("site-nav-contact")).toHaveCount(0);
+    // Contact is a direct brand-row nav link (not in the "More" dropdown) plus a
+    // footer link.
+    await expect(page.getByTestId("site-nav-contact")).toHaveAttribute(
+      "href",
+      "/en/contact",
+    );
     await expect(page.getByTestId("footer-contact-link")).toHaveAttribute(
       "href",
       "/en/contact",
     );
 
-    await page.getByTestId("footer-contact-link").click();
+    await page.getByTestId("site-nav-contact").click();
     await page.waitForURL(/\/contact$/);
     await expect(page.getByTestId("contact-page")).toBeVisible();
   });

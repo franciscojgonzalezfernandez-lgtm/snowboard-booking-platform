@@ -27,10 +27,10 @@ type SiteNavProps = {
 //      left, phone + LanguageSwitcher on the right. Always rendered so phone +
 //      lang have one consistent home on every surface (marketing passes the
 //      `utility` tagline; auth/dashboard leave the left side empty).
-//   2. Brand row: wordmark + 3 primary links (Prices · Instructors · Field
-//      notes) + a "More" dropdown (About · Contact) + the auth CTA. Phone and
-//      lang no longer compete here — that was the ~1024–1280px crowding the
-//      owner reported. Below lg everything collapses into the MobileNav Sheet.
+//   2. Brand row: wordmark + primary links (Prices · Instructors · Field notes ·
+//      Contact) + a "More" dropdown (Plan your visit · About) + the auth CTA.
+//      Phone and lang no longer compete here — that was the ~1024–1280px crowding
+//      the owner reported. Below lg everything collapses into the MobileNav Sheet.
 export async function SiteNav({ utility }: SiteNavProps) {
   const tNav = await getTranslations("nav");
   const session = await auth.api.getSession({ headers: await headers() });
@@ -46,9 +46,9 @@ export async function SiteNav({ utility }: SiteNavProps) {
               href={`tel:${OPERATIONAL_PHONE_TEL}`}
               data-testid="site-nav-phone"
               aria-label={`${tNav("phone_label")} ${OPERATIONAL_PHONE_DISPLAY}`}
-              className="inline-flex items-center gap-2 text-background transition-colors hover:text-primary"
+              className="inline-flex items-center gap-2 text-[13px] text-background transition-colors hover:text-primary"
             >
-              <PhoneIcon className="h-4 w-4" aria-hidden />
+              <PhoneIcon className="h-[18px] w-[18px] text-primary" aria-hidden />
               {OPERATIONAL_PHONE_DISPLAY}
             </a>
             <LanguageSwitcher tone="dark" />
@@ -84,6 +84,13 @@ export async function SiteNav({ utility }: SiteNavProps) {
               className="text-xs font-bold uppercase tracking-[0.15em] hover:text-primary"
             >
               {tNav("journal")}
+            </Link>
+            <Link
+              href="/contacto"
+              data-testid="site-nav-contact"
+              className="text-xs font-bold uppercase tracking-[0.15em] hover:text-primary"
+            >
+              {tNav("contact")}
             </Link>
             <NavMore
               moreLabel={tNav("more")}

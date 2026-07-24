@@ -64,10 +64,10 @@ export function MobileNav({ signedIn }: MobileNavProps) {
             <PhoneIcon className="h-4 w-4" aria-hidden />
             {OPERATIONAL_PHONE_DISPLAY}
           </a>
-          {/* F-116: match the desktop IA — 3 primary links first, then the
-              "More" group (Plan your visit · About). Contact lives in the footer
-              + the phone CTA above, not the nav. Flat list on mobile (no nested
-              dropdown), ordered so the hierarchy reads the same. */}
+          {/* F-116: match the desktop IA — primary links first (Prices ·
+              Instructors · Field notes · Contact), then the "More" group (Plan
+              your visit · About). Flat list on mobile (no nested dropdown),
+              ordered so the hierarchy reads the same. */}
           <Link href="/precios" onClick={close} className={linkClass}>
             {t("prices")}
           </Link>
@@ -76,6 +76,14 @@ export function MobileNav({ signedIn }: MobileNavProps) {
           </Link>
           <Link href="/blog" onClick={close} className={linkClass}>
             {t("journal")}
+          </Link>
+          <Link
+            href="/contacto"
+            onClick={close}
+            data-testid="mobile-nav-contact"
+            className={linkClass}
+          >
+            {t("contact")}
           </Link>
           <Link
             href="/plan-your-visit"

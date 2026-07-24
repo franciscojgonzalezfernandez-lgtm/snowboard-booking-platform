@@ -54,11 +54,13 @@ test.describe("F-116 — desktop header layout (signed-out)", () => {
       await expect(page.getByTestId("site-nav-phone")).toBeVisible();
       await expect(page.getByTestId("lang-en")).toBeVisible();
 
-      // Brand row keeps the 3 primary links + the More trigger + the auth CTA.
+      // Brand row keeps the primary links (Prices · Instructors · Field notes ·
+      // Contact) + the More trigger + the auth CTA.
       const nav = page.getByTestId("site-nav");
       await expect(nav.locator('a[href="/en/pricing"]')).toBeVisible();
       await expect(nav.locator('a[href="/en/instructors"]')).toBeVisible();
       await expect(nav.locator('a[href="/en/blog"]')).toBeVisible();
+      await expect(page.getByTestId("site-nav-contact")).toBeVisible();
       await expect(page.getByTestId("site-nav-more")).toBeVisible();
       await expect(page.getByTestId("site-nav-signin")).toBeVisible();
 
@@ -78,13 +80,12 @@ test.describe("F-116 — desktop header layout (signed-out)", () => {
     await expect(about).toHaveCount(0); // closed by default
 
     await page.getByTestId("site-nav-more").click();
-    // "More" group = Plan your visit + About. Contact was pulled out of the nav
-    // on purpose (footer + phone CTA keep it reachable) to keep the nav lean.
+    // "More" group = Plan your visit + About only (Contact is a direct brand-row
+    // link, not in the dropdown).
     await expect(plan).toBeVisible();
     await expect(plan).toHaveAttribute("href", "/en/plan-your-visit");
     await expect(about).toBeVisible();
     await expect(about).toHaveAttribute("href", "/en/about");
-    await expect(page.getByTestId("site-nav-contact")).toHaveCount(0);
 
     await page.keyboard.press("Escape");
     await expect(about).toHaveCount(0);
