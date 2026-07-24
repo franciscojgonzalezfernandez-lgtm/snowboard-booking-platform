@@ -61,6 +61,8 @@ test.describe("F-096 — Contact page", () => {
   }) => {
     await page.goto("/en");
 
+    // Contact is a direct brand-row nav link (not in the "More" dropdown) plus a
+    // footer link.
     await expect(page.getByTestId("site-nav-contact")).toHaveAttribute(
       "href",
       "/en/contact",

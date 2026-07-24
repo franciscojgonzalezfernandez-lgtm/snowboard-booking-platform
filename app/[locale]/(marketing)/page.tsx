@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import Image from "next/image";
 import { Star } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { HeroAnnouncement } from "@/app/components/HeroAnnouncement";
-import { auth } from "@/lib/auth";
 import { marketingAlternates } from "@/lib/seo/page-metadata";
 import { Link } from "@/i18n/navigation";
 import { Reveal } from "@/lib/motion/reveal";
@@ -42,12 +40,6 @@ export default async function HomePage({ params }: HomePageProps) {
 
   const t = await getTranslations("home");
   const tPricing = await getTranslations("pricing");
-
-  // F-107: hide the hero "sign in" CTA for authenticated visitors (it's
-  // meaningless when logged in). Same session read as SiteNav; the marketing
-  // layout already renders that async, so the home is already dynamic — no new
-  // LCP cost (the hero image stays the static LCP element). "Reservar" stays.
-  const session = await auth.api.getSession({ headers: await headers() });
 
   return (
     <main>
@@ -96,15 +88,6 @@ export default async function HomePage({ params }: HomePageProps) {
               >
                 {t("cta_primary")}
               </Link>
-              {!session?.user && (
-                <Link
-                  href="/login"
-                  data-testid="hero-cta-signin"
-                  className="rounded-md border-2 border-background bg-transparent px-8 py-[18px] text-[13px] font-bold uppercase tracking-[0.18em] text-background transition-colors hover:bg-background hover:text-foreground"
-                >
-                  {t("cta_signin")}
-                </Link>
-              )}
             </div>
           </div>
         </div>

@@ -53,13 +53,18 @@ test.describe("F-102 — `Link` emits the active locale's slug", () => {
     test(`${locale} nav links use translated slugs`, async ({ page }) => {
       await page.goto(`/${locale}`);
       const nav = page.getByTestId("site-nav");
-      await expect(nav.locator(`a[href="${NAV_SLUGS[locale].about}"]`)).toBeVisible();
+      // Instructors + Prices stay as primary links in the brand row.
       await expect(nav.locator(`a[href="${NAV_SLUGS[locale].instructors}"]`)).toBeVisible();
       await expect(nav.locator(`a[href="${NAV_SLUGS[locale].pricing}"]`)).toBeVisible();
+      // Contact is a direct brand-row link (F-116); About lives in the "More"
+      // dropdown. Assert both translated slugs (dropdown content is portaled →
+      // query from `page`).
       await expect(page.getByTestId("site-nav-contact")).toHaveAttribute(
         "href",
         NAV_SLUGS[locale].contact,
       );
+      await page.getByTestId("site-nav-more").click();
+      await expect(page.locator(`a[href="${NAV_SLUGS[locale].about}"]`)).toBeVisible();
     });
   }
 });
