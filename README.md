@@ -117,11 +117,13 @@ This isn't "I used Copilot to autocomplete." This is a full agentic pipeline. Ev
 | `playwright-skill` | E2E + visual review loop |
 | `vercel-react-best-practices` | React/Next.js perf base |
 | `nextjs-app-router-patterns` | RSC, streaming, Server Actions |
-| `typescript-advanced-types` | strict-mode TS, generics, mapped types |
+| `mastering-typescript` | strict-mode TS, generics, mapped types |
 | `prisma-database-setup` · `prisma-client-api` · `prisma-postgres` | Prisma + Neon end-to-end |
 | `next-intl-add-language` | Locale + slug translation maintenance |
-| `stripe-best-practices` | Payment integration patterns + key hygiene |
-| `testing-strategy` · `booking-platform-perf` | QA + Web Vitals budgets |
+| `shadcn` | shadcn/ui composition, theming, CLI |
+| `stripe-best-practices` · `upgrade-stripe` | Payment integration patterns + key hygiene |
+| `playwright-core` · `webapp-testing` · `booking-platform-perf` | QA + Web Vitals budgets |
+| `worktrees` | Per-ticket worktree lifecycle + env seeding |
 
 ### 4. Hard rules baked into `CLAUDE.md`
 
@@ -142,7 +144,7 @@ This isn't "I used Copilot to autocomplete." This is a full agentic pipeline. Ev
 | Language | **TypeScript** (`strict`, `noUncheckedIndexedAccess`) | Compile-time guarantees on a booking domain that loves edge cases |
 | Styling | **Tailwind v4** + **shadcn/ui** (heavily modified) | Editorial-grade defaults, zero runtime CSS |
 | Forms | **React Hook Form** + **Zod** | Same Zod schema validates client + server |
-| i18n | **next-intl** (public routes only) | EN / DE / ES with translated slugs, EN has no prefix for SEO |
+| i18n | **next-intl** (public routes only) | EN / DE / ES with translated marketing slugs; `localePrefix: "always"` — every locale carries its prefix, including `/en` |
 | Auth | **Better Auth** 1.6 (email+pwd, magic link, Google OAuth) | Modern, framework-native, type-safe sessions |
 | ORM | **Prisma** 6 + `@prisma/adapter-neon` | Neon HTTP driver for Edge/serverless runtimes |
 | DB | **Neon Postgres** (`main` + `dev` branches) | Branch-per-feature DBs, serverless pricing |
@@ -250,8 +252,8 @@ The `stripe-best-practices` skill is invoked on every PR that touches `lib/strip
 | Instructor panel | **EN only** |
 | Admin panel | **EN only** |
 
-- **EN has no `/en` prefix** — better SEO for the English-speaking market that dominates Flumserberg's intl traffic.
-- **Translated slugs per locale** — `/de/instruktoren/`, `/es/instructores/`, `/instructors`. Not just labels, the URL itself.
+- **Every locale carries its prefix, including EN** (`localePrefix: "always"`) — dropping `/en` was evaluated and deferred (F-102): funnel/auth/emails build `/${locale}/…` strings server-side and need a `getPathname` refactor first.
+- **Translated marketing slugs per locale** — `/en/instructors`, `/de/instruktoren`, `/es/instructores`. Not just labels, the URL itself. Blog post slugs are localized per post (shared frontmatter `id`), a separate mechanism.
 - All copy via `useTranslations()` — zero hardcoded strings. ESLint rule enforced.
 
 ---
@@ -275,10 +277,10 @@ booking-platform/
 │   └── post-deploy-smoke.yml       ← Playwright vs production URL
 │
 ├── app/
-│   ├── [locale]/                   ← i18n: EN (no prefix), DE, ES
-│   │   ├── (marketing)/            ← landing, instructors, blog
-│   │   ├── (booking)/              ← reservation flow (Steps 1-3)
-│   │   ├── (auth)/                 ← login, signup, verify
+│   ├── [locale]/                   ← i18n: /en, /de, /es (all prefixed)
+│   │   ├── (marketing)/            ← landing, pricing, instructors, blog, faq, legal
+│   │   ├── (auth)/                 ← login (register/verify not built yet)
+│   │   ├── reservar/               ← booking funnel Steps 1-3 (own chrome, outside groups — F-068)
 │   │   ├── dashboard/              ← authenticated student area
 │   │   └── layout.tsx
 │   ├── instructor/                 ← EN only, outside [locale]
@@ -289,8 +291,11 @@ booking-platform/
 │   │   ├── cron/                   ← reminder emails, calendar resync
 │   │   ├── availability/           ← booking engine endpoint (< 500ms p95)
 │   │   └── google-calendar/
-│   ├── sitemap.ts
-│   └── robots.ts
+│   ├── sitemap.ts                  ← multilingual, hreflang alternates (F-099)
+│   ├── robots.ts
+│   └── llms.txt/route.ts
+│
+├── content/blog/{en,de,es}/        ← MDX posts, localized slug + shared id (F-098)
 │
 ├── lib/
 │   ├── db/                         ← Prisma client (Neon adapter)
@@ -312,16 +317,16 @@ booking-platform/
 ## Routing
 
 ```
-/                            EN  landing
-/de/                         DE  landing
-/es/                         ES  landing
-/instructors                 EN  instructor directory
+/en · /de · /es              landing (every locale prefixed, incl. EN)
+/en/instructors              EN  instructor directory
 /de/instruktoren             DE  translated slug
 /es/instructores             ES  translated slug
-/book                        EN  booking flow
-/dashboard                   EN  student dashboard (auth)
+/{locale}/reservar           booking funnel (Steps 1-3, own chrome)
+/{locale}/dashboard          student dashboard (auth)
+/{locale}/blog/<slug>        MDX blog, slug localized per post
 /instructor                  EN  instructor panel (auth, role: instructor)
 /admin                       EN  admin panel (auth, role: admin)
+/sitemap.xml · /robots.txt · /llms.txt
 /api/webhooks/stripe         POST  signature-verified, idempotent
 /api/cron/reminders          POST  CRON_SECRET-gated
 ```
@@ -344,10 +349,10 @@ Enforced by the `booking-platform-perf` skill on every UI change.
 
 ## Design Direction
 
-**Editorial / premium.** References: Aesop, Cereal magazine, Outdoor Voices, Monocle.
+**Editorial / premium.** Brand: **Ride Flumserberg** (F-105/F-113). References: Aesop, Cereal magazine, Outdoor Voices, Monocle.
 
-- ✅ Serif display typography, generous whitespace, high contrast, low saturation.
-- ✅ Photography-led. Subtle, intentional motion.
+- ✅ Display typography: **Archivo Black**, uppercase, tight tracking; body/UI: Archivo. Generous whitespace, high contrast, low saturation.
+- ✅ Photography-led. Choreographed motion via `lib/motion/` primitives, gated behind `prefers-reduced-motion`.
 - ❌ No purple/blue gradients. No 3-column-icon-card grids. No glassmorphism. No emoji decoration. No drop shadows — borders only.
 
 When in doubt, the `impeccable` skill is the source of truth.
@@ -425,11 +430,12 @@ npm run test:e2e         # Playwright
 
 | Sprint | Scope | Status |
 |---|---|---|
-| **Sprint 0** | Repo, scaffolding, CI, design tokens, i18n, Vercel + Neon wiring | ✅ Done |
-| **Sprint 0.5** | Home page × 3 locales, login moved under `[locale]`, design tokens | ✅ Done |
-| **Sprint 1.5** | Resend domain, Stripe + TWINT account, secrets in Vercel | ✅ Done |
-| **Sprint 1** | Booking engine + Steps 1–3 UI, multi-instructor seed, hourly anchors | ✅ Done |
-| **Sprint 2+** | Stripe Payment Element end-to-end, instructor panel, account credit ledger | 🚧 In progress |
+| **Sprint 0 / 0.5** | Repo, scaffolding, CI, design tokens, i18n, Vercel + Neon wiring, home × 3 locales | ✅ Done |
+| **Sprint 1 / 1.5** | Booking engine + Steps 1–3 UI, hourly anchors; Resend, Stripe + TWINT, secrets | ✅ Done |
+| **Sprint 2–3** | Stripe Payment Element end-to-end, cancellation + account credit ledger, student dashboard | ✅ Done |
+| **Sprint 4** | Instructor panel (availability calendar, week timeline, no-show), admin surfaces, GCal sync | ✅ Done |
+| **Sprint 5** | Marketing wave: brand "Ride Flumserberg", MDX blog EN/DE/ES, translated slugs, SEO (sitemap/robots/metadata/OG/Schema.org), WCAG AA | ✅ Done |
+| **Post-Sprint 5** | Plan-your-visit hub (F-115), desktop header rework (F-116), blog↔YouTube (F-117) | 🚧 In progress |
 
 Live at **[rideflumserberg.ch](https://rideflumserberg.ch)**. Follow progress in [`docs/FEATURES.md`](docs/FEATURES.md) — every shipped commit references an `F-XXX` ticket there.
 

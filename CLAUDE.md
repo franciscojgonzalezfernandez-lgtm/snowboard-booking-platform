@@ -9,6 +9,7 @@
 **Snowboard booking platform** for a single ski school in Switzerland. Single-developer MVP. Operated initially by one instructor (the owner), architected for multi-instructor expansion.
 
 **Documentos del proyecto:**
+- [`AGENTS.md`](AGENTS.md) — thin pointer a este archivo para Codex/otros agentes (no definir convenciones ahí).
 - [`docs/PRD.md`](docs/PRD.md) — producto/negocio.
 - [`docs/Architecture.md`](docs/Architecture.md) — stack, modelo de datos, integraciones, ADRs.
 - [`docs/FEATURES.md`](docs/FEATURES.md) — backlog vivo (fuente de verdad del scope por ticket).
@@ -123,15 +124,26 @@ app/
 ├── instructor/              # EN only, outside [locale]
 ├── admin/                   # EN only, outside [locale]
 └── api/
-# sitemap.ts + robots.ts do NOT exist yet — F-099 (backlog)
+# app/sitemap.ts + app/robots.ts (F-099) and app/llms.txt/route.ts (F-113) live at app/ root
 ```
 
 - **Public + student dashboard:** trilingual (`/`, `/de/`, `/es/`)
 - **Instructor + admin panels:** English only
 - **`localePrefix: "always"`** — every locale carries its prefix, **including EN** (`/en/...`). Dropping the EN prefix was evaluated and deferred in F-102 (2026-06-27): funnel/auth/emails build `/${locale}/…` strings server-side and would need a `getPathname` refactor first.
 - **Slug translations (F-102, marketing only):** next-intl `pathnames` map in `i18n/routing.ts` — `/pricing`·`/preise`·`/precios`, `/instructors`·`/instruktoren`·`/instructores`, `/about`·`/ueber-uns`·`/sobre`, `/contact`·`/kontakt`·`/contacto`. Funnel/auth/legal (`/reservar*`, `/login`, `/dashboard`, `/terms`, `/privacy`) and `/faq`, `/blog` keep identical slugs across locales. Non-canonical slug → 307 to canonical. Internal links MUST use the typed next-intl `Link`/`redirect` helpers (internal key, not raw strings).
-- **Blog post slugs are localized content** (frontmatter `slug` per locale, shared `id`) — different mechanism than the `pathnames` map. Locale switching on a post must resolve the translated slug (F-108).
+- **Blog post slugs are localized content** (frontmatter `slug` per locale, shared `id`) — different mechanism than the `pathnames` map. Locale switching on a post resolves the translated slug (shipped in F-108).
 - **`reservar/` stays outside `(booking)` group on purpose** (F-068). `BookingHeader` already implements the funnel-only chrome contract; renaming would add churn without payoff. Pages inside `reservar/` must not mount `SiteNav`.
+
+---
+
+## SEO surfaces (Sprint 5, shipped July 2026)
+
+- **Sitemap + robots (F-099):** `app/sitemap.ts` emits all marketing/blog routes × locales with `hreflang` alternates; `app/robots.ts` disallows `admin`/`instructor`/`api`/`dashboard`/`reservar` and points at the sitemap. New indexable routes MUST be added to the sitemap generator.
+- **Per-route metadata (F-103):** keyword-led `<title>`/description + canonical + hreflang via `generateMetadata` on every marketing route. New marketing pages must follow the same pattern.
+- **Structured data (F-100):** Schema.org JSON-LD on marketing surfaces. Owner-dependent fields (geo/postal/`sameAs`/ratings) parked post-MVP — F-112, winter 2026/27.
+- **OG/Twitter cards:** dynamic branded images per marketing route × locale (F-101) and per blog post (F-109).
+- **Canonical host (F-114):** production `*.vercel.app` alias 308-redirects to `https://rideflumserberg.ch`.
+- **`llms.txt` (F-113):** served from `app/llms.txt/route.ts`.
 
 ---
 
@@ -313,4 +325,4 @@ Resolved since the original list: pricing per duration (F-080 editor + seeded `S
 
 ---
 
-**Last updated:** 2026-07-06
+**Last updated:** 2026-07-22
