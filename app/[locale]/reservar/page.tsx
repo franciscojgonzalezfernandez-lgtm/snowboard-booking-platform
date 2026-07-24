@@ -9,8 +9,9 @@ import {
   QueryClient,
 } from "@tanstack/react-query";
 
+import dynamic from "next/dynamic";
+
 import { auth } from "@/lib/auth";
-import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { prisma } from "@/lib/db";
 import {
@@ -25,6 +26,13 @@ import { DurationPicker } from "./duration-picker";
 import { FreezeWhileDraft } from "./freeze-while-draft";
 import { MonthCalendar } from "./month-calendar";
 import { TimeInstructor } from "./time-instructor";
+
+// F-119: embedded Section-4 auth. Lazy-loaded so better-auth/react stays out
+// of the funnel's First Load JS — only anonymous bookers who reach Section 4
+// pay for the chunk (logged-in bookers get the payment flow instead).
+const Step4Auth = dynamic(() =>
+  import("./step4-auth").then((m) => m.Step4Auth),
+);
 
 type ReservarSearchParams = {
   d?: string;
@@ -387,17 +395,7 @@ export default async function ReservarPage({
               <p className="mt-4 text-sm text-muted-foreground">
                 {tStep4("anonymous_body")}
               </p>
-              <Link
-                href={{
-                  pathname: "/login",
-                  query: { next: buildLoginNext(locale, sp) },
-                }}
-                data-testid="step4-anonymous-cta"
-                data-section-focus
-                className="mt-6 inline-flex items-center justify-center rounded-md border-2 border-foreground bg-foreground px-6 py-3 text-[13px] font-bold uppercase tracking-[0.18em] text-background transition-colors hover:bg-destructive hover:border-destructive"
-              >
-                {tStep4("anonymous_cta")}
-              </Link>
+              <Step4Auth callbackURL={buildLoginNext(locale, sp)} />
             </section>
           )}
 
