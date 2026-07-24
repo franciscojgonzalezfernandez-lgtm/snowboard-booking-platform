@@ -110,7 +110,7 @@ test.describe("F-049 — single-page booking shell", () => {
     await expect(page.getByTestId("section-1")).toBeInViewport();
   });
 
-  test("anonymous deep-link with full URL state surfaces the Section 4 sign-in CTA", async ({
+  test("anonymous deep-link with full URL state surfaces the embedded Section 4 auth block", async ({
     page,
   }) => {
     // No login — anonymous browsing context. The instructor id is the seed's
@@ -123,12 +123,17 @@ test.describe("F-049 — single-page booking shell", () => {
     url.searchParams.set("l", "en");
     await page.goto(url.pathname + url.search);
 
-    const cta = page.getByTestId("step4-anonymous-cta");
-    await expect(cta).toBeVisible();
-    // The CTA preserves the URL state via ?next=
-    const href = await cta.getAttribute("href");
-    expect(href).toContain("/login?next=");
-    expect(decodeURIComponent(href ?? "")).toContain("d=ONE_HOUR");
-    expect(decodeURIComponent(href ?? "")).toContain(`dt=${DEEP_LINK_DATE}`);
+    // F-119: Section 4 now embeds auth in-page (Google + magic link +
+    // email/password) instead of linking out to /login — no navigation off
+    // the funnel, no `?next=` round trip through a separate page.
+    const auth = page.getByTestId("step4-auth");
+    await expect(auth).toBeVisible();
+    await expect(page.getByTestId("step4-auth-google")).toBeVisible();
+    await expect(page.getByTestId("step4-auth-email")).toBeVisible();
+    await expect(page.getByTestId("step4-auth-password")).toBeVisible();
+    await expect(page.getByTestId("step4-auth-magic")).toBeVisible();
+    // The old link-out to /login is gone.
+    await expect(page.getByTestId("step4-anonymous-cta")).toHaveCount(0);
+    await expect(page.locator('a[href*="/login"]')).toHaveCount(0);
   });
 });
