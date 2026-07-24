@@ -89,7 +89,6 @@ export async function SiteNav({ utility }: SiteNavProps) {
               moreLabel={tNav("more")}
               planLabel={tNav("plan")}
               aboutLabel={tNav("about")}
-              contactLabel={tNav("contact")}
             />
           </nav>
 

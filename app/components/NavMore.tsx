@@ -14,22 +14,17 @@ type NavMoreProps = {
   moreLabel: string;
   planLabel: string;
   aboutLabel: string;
-  contactLabel: string;
 };
 
-// F-116: secondary marketing links (Plan your visit + About + Contact) collapsed
-// behind a "More" dropdown so the desktop brand row keeps to 3 primary links
-// (Prices, Instructors, Field notes). Client island — SiteNav stays a Server
-// Component. The dropdown is a Base UI menu (keyboard + aria handled by the
-// primitive); items render as next-intl `Link`s via the `render` prop so locale
-// slug translation (F-102) and prefetch keep working. Styled editorial: square
-// border, no rounded card / shadow.
-export function NavMore({
-  moreLabel,
-  planLabel,
-  aboutLabel,
-  contactLabel,
-}: NavMoreProps) {
+// F-116: secondary marketing links (Plan your visit + About) collapsed behind a
+// "More" dropdown so the desktop brand row keeps to 3 primary links (Prices,
+// Instructors, Field notes). Contact was pulled out of the nav on purpose — it
+// stays in the footer + the phone CTA in the utility bar — to keep the nav lean
+// and focused on booking. Client island — SiteNav stays a Server Component. The
+// dropdown is a Base UI menu (keyboard + aria handled by the primitive); items
+// render as next-intl `Link`s via the `render` prop so locale slug translation
+// (F-102) and prefetch keep working. Styled editorial: square border, no shadow.
+export function NavMore({ moreLabel, planLabel, aboutLabel }: NavMoreProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -60,13 +55,6 @@ export function NavMore({
           className="cursor-pointer rounded-none border-t border-foreground px-5 py-4 text-xs font-bold uppercase tracking-[0.15em] text-foreground focus:bg-foreground focus:text-background"
         >
           {aboutLabel}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          data-testid="site-nav-contact"
-          render={<Link href="/contacto" />}
-          className="cursor-pointer rounded-none border-t border-foreground px-5 py-4 text-xs font-bold uppercase tracking-[0.15em] text-foreground focus:bg-foreground focus:text-background"
-        >
-          {contactLabel}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
