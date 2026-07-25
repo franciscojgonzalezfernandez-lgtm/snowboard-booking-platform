@@ -98,29 +98,22 @@ async function createBooking(
   return booking.id;
 }
 
-test.describe("F-107 issue 1 — home hero sign-in CTA is session-aware", () => {
+// F-116 superseded F-107's session-aware hero sign-in: the CTA was removed
+// entirely (commercial decision — keep the hero focused on booking, reduce
+// friction). Kept as a regression guard that only the book CTA remains.
+test.describe("F-107/F-116 — home hero has no sign-in CTA", () => {
   for (const locale of LOCALES) {
-    test(`anonymous /${locale} shows both hero CTAs`, async ({ page }) => {
+    test(`/${locale} hero shows only the book CTA`, async ({ page }) => {
       await page.goto(`/${locale}`);
       await expect(page.getByTestId("hero-cta-primary")).toBeVisible();
-      await expect(page.getByTestId("hero-cta-signin")).toBeVisible();
+      await expect(page.getByTestId("hero-cta-signin")).toHaveCount(0);
     });
   }
-
-  test("authenticated / hides the sign-in CTA, keeps the primary", async ({
-    page,
-  }) => {
-    await signUp(page, uniqueEmail("auth"));
-    await page.goto("/en");
-    await expect(page.getByTestId("hero-cta-primary")).toBeVisible();
-    await expect(page.getByTestId("hero-cta-signin")).toHaveCount(0);
-  });
 });
 
 // One sign-up, three bookings under the same booker. Better Auth enforces
 // sign-up rate limiting in production builds (`next start`), so the spec keeps
-// its total sign-ups low (this test + the issue-1 auth test) rather than one
-// per case.
+// its total sign-ups low (just this test) rather than one per case.
 test.describe("F-107 issue 2 — exito add-to-calendar is time-aware", () => {
   test("add-to-calendar shows for a future lesson, hides once it is past", async ({
     page,
