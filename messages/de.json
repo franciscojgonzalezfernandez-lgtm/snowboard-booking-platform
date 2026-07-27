@@ -29,7 +29,7 @@
   },
   "home": {
     "metadata_title": "Snowboard-Privatstunden in Flumserberg",
-    "metadata_description": "Snowboarden lernen mit Javi — ein zertifizierter Coach, von den ersten Turns bis Carving und Freestyle, Kinder und Erwachsene, auf Deutsch, Englisch oder Spanisch. Jetzt deine Privatstunde in Flumserberg buchen.",
+    "metadata_description": "Private Snowboardstunden in Flumserberg mit Javi — ein zertifizierter Coach, erste Turns bis Carving und Freestyle, Kinder und Erwachsene, auf DE, EN oder ES.",
     "utility": "Flumserberg · Heidiland · Saison 27. Nov – 26. Apr",
     "eyebrow": "Flumserberg · Privates Snowboard-Coaching",
     "hero_title_1": "Fahr besser",
@@ -83,7 +83,7 @@
   },
   "terms": {
     "metadata_title": "Allgemeine Geschäftsbedingungen — Ride Flumserberg",
-    "metadata_description": "Allgemeine Geschäftsbedingungen für private Snowboardstunden bei Ride Flumserberg.",
+    "metadata_description": "Allgemeine Geschäftsbedingungen für private Snowboardstunden bei Ride Flumserberg in Flumserberg: Buchung, Zahlung, Stornierung und Haftung.",
     "heading": "Allgemeine Geschäftsbedingungen",
     "last_updated": "Zuletzt aktualisiert am 19. Mai 2026",
     "intro": "Diese Bedingungen gelten für alle Buchungen auf rideflumserberg.ch. Mit der Bestätigung einer Buchung werden sie vollumfänglich akzeptiert.",
@@ -107,7 +107,7 @@
   },
   "privacy": {
     "metadata_title": "Datenschutzerklärung — Ride Flumserberg",
-    "metadata_description": "Wie Ride Flumserberg Ihre personenbezogenen Daten erhebt, verwendet und schützt.",
+    "metadata_description": "Wie Ride Flumserberg Ihre personenbezogenen Daten erhebt, verwendet und schützt, wenn Sie eine private Snowboardstunde in Flumserberg buchen.",
     "heading": "Datenschutzerklärung",
     "last_updated": "Zuletzt aktualisiert am 19. Mai 2026",
     "intro": "Diese Seite erklärt, welche personenbezogenen Daten wir bei einer Buchung erheben, wer sie in unserem Auftrag verarbeitet und wie Sie Ihre Rechte nach Schweizer revidiertem Datenschutzgesetz (revDSG) und EU-DSGVO ausüben können.",
@@ -125,7 +125,7 @@
     "section_contact_body": "Zur Ausübung dieser Rechte oder bei Fragen zum Datenschutz schreiben Sie an franciscojgonzalezfernandez@gmail.com. Sind Sie der Meinung, dass Ihre Rechte verletzt wurden, können Sie zusätzlich Beschwerde beim Eidgenössischen Datenschutz- und Öffentlichkeitsbeauftragten (EDÖB) einreichen."
   },
   "login": {
-    "metadata_title": "Anmelden — Snowboard Booking Platform",
+    "metadata_title": "Anmelden — Ride Flumserberg",
     "heading": "Anmelden",
     "sub": "E-Mail und Passwort, Magic Link oder Google.",
     "terms_prefix": "Mit der Anmeldung akzeptierst du die ",
@@ -435,7 +435,7 @@
   },
   "pricing": {
     "metadata_title": "Snowboard-Lektionen & Preise — Ride Flumserberg, Flumserberg",
-    "metadata_description": "Private Snowboard-Lektionen in Flumserberg mit Javi: von einer Stunde bis zum ganzen Tag, fixer Preis für bis zu vier Personen, auf Englisch, Deutsch oder Spanisch. Ab 8 Jahren.",
+    "metadata_description": "Private Snowboardstunden in Flumserberg mit Javi: von einer Stunde bis zum ganzen Tag, Fixpreis für bis zu vier Personen, ab 8 Jahren.",
     "eyebrow": "Die Lektionen",
     "heading": "Wähl, wie lang wir fahren.",
     "intro": "Vier Arten, mit mir zu fahren. Nimm die, die zu deinem Stand passt — der Preis bleibt gleich, ob du allein kommst oder drei Kollegen mitbringst.",
@@ -542,7 +542,7 @@
   },
   "about": {
     "metadata_title": "Über Ride Flumserberg — Snowboard-Coaching in Flumserberg",
-    "metadata_description": "Ride Flumserberg ist ein Rider, der in Flumserberg coacht. Die Geschichte hinter dem Namen, wie ich Snowboarden gelernt habe und warum ich mehr Leute aufs Board bringen will.",
+    "metadata_description": "Ride Flumserberg ist ein Rider, der in Flumserberg coacht — die Geschichte hinter dem Namen und warum ich mehr Leute aufs Snowboard bringen will.",
     "eyebrow": "Über uns",
     "hero_image_alt": "Javi steht in voller Snowboard-Ausrüstung auf einer präparierten Piste in Flumserberg.",
     "heading": "Ich bin <name>Javi</name>. Nur ich und ein Board.",
@@ -573,7 +573,7 @@
   },
   "planVisit": {
     "metadata_title": "Deinen Besuch in Flumserberg planen — Saison, Anreise & Verleih",
-    "metadata_description": "Plane deinen Snowboard-Tag in Flumserberg: die Saison, die Anreise aus Zürich oder St. Gallen, unseren Treffpunkt, den Materialverleih und die Betriebszeiten des Resorts.",
+    "metadata_description": "Plane deinen Snowboard-Tag in Flumserberg: Saison, Anreise aus Zürich oder St. Gallen, Treffpunkt, Materialverleih und die Betriebszeiten des Resorts.",
     "eyebrow": "Besuch planen",
     "heading": "Alles, was du für Flumserberg brauchst.",
     "lede": "Ein kurzer, ehrlicher Leitfaden für deinen Tag — wann die Saison läuft, wie du auf den Berg kommst, wo wir uns treffen und wie du an Material kommst.",
@@ -600,7 +600,7 @@
   },
   "faq": {
     "metadata_title": "FAQ — Snowboardstunden in Flumserberg | Ride Flumserberg",
-    "metadata_description": "Skiticket, Ausrüstung, Mindestalter, Sprachen, Stornierung und was du mitbringst — alles, was du vor der Buchung einer privaten Snowboardstunde in Flumserberg mit Ride Flumserberg wissen musst.",
+    "metadata_description": "Skiticket, Ausrüstung, Mindestalter, Sprachen, Stornierung und was du mitbringst — alles Wichtige vor der Buchung einer Snowboardstunde in Flumserberg.",
     "eyebrow": "Vor der Buchung",
     "heading": "Fragen, beantwortet.",
     "intro": "Was die Leute mich am häufigsten fragen — Ausrüstung, Alter, Sprachen, Wetter, was passiert, wenn sich Pläne ändern. Ist etwas unklar, ruf einfach an.",
@@ -667,7 +667,7 @@
   },
   "contact": {
     "metadata_title": "Kontakt — Snowboardstunden in Flumserberg",
-    "metadata_description": "Erreiche uns in Flumserberg: anrufen oder schreiben, Treffpunkt und Saison.",
+    "metadata_description": "Kontaktiere Ride Flumserberg für private Snowboardstunden in Flumserberg: anrufen oder schreiben, Treffpunkt am Berg und unsere Wintersaison.",
     "eyebrow": "Kontakt",
     "heading": "Sprich mit mir, bevor du buchst",
     "intro": "Fragen zur passenden Stunde, zu deinem Niveau oder zu einem Teamtag? Ruf an oder schreib — am anderen Ende bin ich, Javi.",

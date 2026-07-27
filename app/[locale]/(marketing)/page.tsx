@@ -4,7 +4,7 @@ import { Star } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { HeroAnnouncement } from "@/app/components/HeroAnnouncement";
-import { marketingAlternates } from "@/lib/seo/page-metadata";
+import { marketingAlternates, marketingOpenGraph } from "@/lib/seo/page-metadata";
 import { Link } from "@/i18n/navigation";
 import { Reveal } from "@/lib/motion/reveal";
 import { Stagger, StaggerItem } from "@/lib/motion/stagger";
@@ -31,6 +31,7 @@ export async function generateMetadata({
     title: t("metadata_title"),
     description: t("metadata_description"),
     alternates: marketingAlternates("/", locale),
+    openGraph: marketingOpenGraph("/", locale),
   };
 }
 

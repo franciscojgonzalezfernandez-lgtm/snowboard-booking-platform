@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
-import { marketingAlternates } from "@/lib/seo/page-metadata";
+import { marketingAlternates, marketingOpenGraph } from "@/lib/seo/page-metadata";
 import { Duration } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
@@ -50,6 +50,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: t("metadata_title"),
     description: t("metadata_description"),
     alternates: marketingAlternates("/precios", locale),
+    openGraph: marketingOpenGraph("/precios", locale),
   };
 }
 

@@ -3,7 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
-import { marketingAlternates } from "@/lib/seo/page-metadata";
+import { marketingAlternates, marketingOpenGraph } from "@/lib/seo/page-metadata";
 
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
@@ -35,6 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: t("profile_metadata_title", { name: instructor.name }),
     description: t("profile_metadata_description", { name: instructor.name }),
     alternates: marketingAlternates("/instructores/[slug]", locale, { slug }),
+    openGraph: marketingOpenGraph("/instructores/[slug]", locale, { slug }),
   };
 }
 

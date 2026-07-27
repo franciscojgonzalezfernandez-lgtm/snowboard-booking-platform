@@ -14,6 +14,7 @@ import {
   getSlugsForId,
 } from "@/lib/blog/posts";
 import { SITE_URL, toAbsoluteUrl } from "@/lib/seo/site-url";
+import { articleOpenGraph } from "@/lib/seo/page-metadata";
 import { JsonLd } from "@/app/components/JsonLd";
 import { buildBlogPosting } from "@/lib/seo/structured-data";
 import { blogMdxComponents } from "../mdx-components";
@@ -55,16 +56,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       languages,
     },
     openGraph: {
-      type: "article",
+      // og:type/site_name/url/locale/publishedTime + og:locale:alternate (the
+      // OTHER locales this post is actually translated into, F-120) come from
+      // the shared helper; per-post title/description layer on top. og:image
+      // (+ dimensions + twitter:image) comes from the sibling
+      // `opengraph-image.tsx` — a branded "Field notes" card (F-109).
+      ...articleOpenGraph({
+        url: postUrl(locale as Locale, post.slug),
+        locale,
+        publishedTime: post.date,
+        alternateLocales: Object.keys(slugs).filter((l) => l !== locale),
+      }),
       title: post.title,
       description: post.description,
-      url: postUrl(locale as Locale, post.slug),
-      publishedTime: post.date,
-      locale,
-      // og:image (+ dimensions + twitter:image) comes from the sibling
-      // `opengraph-image.tsx` — a branded "Field notes" card, consistent for
-      // every post (F-109). The cover still serves as the in-article hero and
-      // the BlogPosting structured-data image below.
     },
   };
 }

@@ -4,7 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { Reveal } from "@/lib/motion/reveal";
-import { marketingAlternates } from "@/lib/seo/page-metadata";
+import { marketingAlternates, marketingOpenGraph } from "@/lib/seo/page-metadata";
 import { prisma } from "@/lib/db";
 import { seasonStatus } from "@/lib/season/plan-status";
 import { MEETING_POINT_LABEL } from "@/lib/contact/location";
@@ -38,6 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: t("metadata_title"),
     description: t("metadata_description"),
     alternates: marketingAlternates("/plan-your-visit", locale),
+    openGraph: marketingOpenGraph("/plan-your-visit", locale),
   };
 }
 

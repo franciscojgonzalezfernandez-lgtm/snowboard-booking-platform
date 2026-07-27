@@ -8,6 +8,15 @@ export const routing = defineRouting({
   // the booking funnel, auth redirects and transactional emails through
   // next-intl's `getPathname`, which is out of scope for F-102.
   localePrefix: "always",
+  // F-120 — single hreflang emitter. next-intl's middleware defaults to also
+  // sending an HTTP `Link` header with alternates, which collided with our HTML
+  // `<link rel="alternate">` set (`lib/seo/hreflang.ts`, F-103): the header's
+  // `x-default` pointed at the unprefixed `/pricing` (a 307) and blog alternates
+  // reused the untranslated slug across locales (F-098) — Ahrefs flagged both as
+  // broken/duplicate hreflang (the two red errors + most 3XX rebounds). Turn the
+  // header off; the F-103 HTML set (self-canonical, x-default → `/en/…`, slug-
+  // aware) is the sole source of truth.
+  alternateLinks: false,
   // F-102 — translated slugs for the public **marketing** pages (local SEO:
   // `/de/preise`, `/es/precios` rank better per market than a shared EN slug).
   //

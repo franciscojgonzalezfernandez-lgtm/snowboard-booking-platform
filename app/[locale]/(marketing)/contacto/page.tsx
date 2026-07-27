@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
-import { marketingAlternates } from "@/lib/seo/page-metadata";
+import { marketingAlternates, marketingOpenGraph } from "@/lib/seo/page-metadata";
 
 import { routing } from "@/i18n/routing";
 import { Reveal } from "@/lib/motion/reveal";
@@ -32,6 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: t("metadata_title"),
     description: t("metadata_description"),
     alternates: marketingAlternates("/contacto", locale),
+    openGraph: marketingOpenGraph("/contacto", locale),
   };
 }
 
