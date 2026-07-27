@@ -2623,6 +2623,66 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - Fuera de scope: rediseñar `/login`; passkeys; "guest checkout" sin cuenta (el producto requiere cuenta para dashboard/créditos).
 - Refs: F-119, F-068, F-056, `app/[locale]/reservar/page.tsx:367-402`, `app/[locale]/(auth)/login/login-form.tsx`, `lib/auth/client.ts`, `booking-platform-perf`, PRD §? (funnel), Architecture §auth
 
+### F-120 — Ahrefs Site Audit: matar los 96 errores técnicos (hreflang duplicado por Link header, OG incompleto, email-protection 404, login indexable)
+
+- Sprint: post-Sprint 5 · Estado: backlog · Prioridad: P1 (SEO — bloquea que el crawl budget y las señales i18n consoliden antes de temporada)
+- Depende de: F-099 (sitemap), F-102 (pathnames), F-103 (metadata), F-108 (blog slug resolution), F-114 (canonical host)
+- Motivación: Ahrefs Site Audit (crawl 2026-07-27, proyecto Rideflumserberg) reporta **Health Score 62** ("Fair"): 96 errores, 111 warnings, 99 notices; 53/141 URLs internas con errores. El diagnóstico completo se hizo en sesión 2026-07-27 contra prod — cada issue de abajo tiene root cause verificada, no es una lista mecánica del tool.
+- Root causes verificadas:
+  1. **Hreflang duplicado/roto (87 instancias = los 2 errores rojos):** hay DOS emisores de hreflang compitiendo. El HTML `<link rel="alternate">` (nuestro `lib/seo/hreflang.ts`, F-103) está **correcto** (en/de/es + `x-default`→`/en/...`, self-canonical). Pero el middleware de next-intl (`createMiddleware(routing)`, `middleware.ts:6`) emite además su **HTTP `Link` header** por defecto (`alternateLinks: true` implícito) con: (a) `x-default` → URL **sin prefijo** (`/pricing`, `/faq`…) que responde **307** → error "Hreflang to redirect or broken page" (39 páginas); (b) en blog posts, alternates construidos **cambiando el prefijo de locale pero manteniendo el slug sin traducir** (`/de/blog/why-learn-snowboarding-flumserberg` → 307) porque el middleware no conoce la traducción de slugs por frontmatter (F-098); (c) la suma header+HTML produce "More than one page for same language in hreflang" (48 páginas). Verificado con `curl -sI https://rideflumserberg.ch/en/pricing` → header `link: …<https://rideflumserberg.ch/pricing>; hreflang="x-default"`.
+  2. **Open Graph incompleto (39 páginas):** el HTML emite `og:title/description/image` (F-101/F-103) pero **falta `og:url`, `og:type`, `og:site_name`, `og:locale`** en todas las rutas de marketing. Verificado con curl en `/en/faq` y `/en/pricing`.
+  3. **Broken link ×6 + la única 404:** `/cdn-cgi/l/email-protection` — la feature **Email Address Obfuscation de Cloudflare** (Scrape Shield) reescribe el `mailto:` de contact/privacy (×3 locales cada una), pero como la app sirve desde Vercel el endpoint `/cdn-cgi/*` no existe → 404. Es un toggle de dashboard Cloudflare, no código.
+  4. **`/login` ×3 locales:** indexable pero fuera del sitemap (correcto que no esté; lo incorrecto es que sea indexable) y con **título stale** "Sign in — Snowboard Booking Platform" (marca vieja pre-F-105/F-113). Probablemente también las 3 páginas de "OG tags missing" y "X card missing".
+  5. **Meta descriptions:** 18 demasiado largas, 12 demasiado cortas (por locale).
+  6. Menores: 40 páginas "3XX redirect" + 9 "redirect chain" (mayoría descubiertas VÍA los Link headers rotos del punto 1 — caerán solas), 1 "Slow page" (nueva, identificar URL en Ahrefs), 1 imagen pesada, 2 HTTP→HTTPS. Los 54 "Blocked by robots.txt" son **intencionales** (F-099: reservar/dashboard/api) — no tocar.
+- AC — código:
+  - [ ] `alternateLinks: false` en `defineRouting` (`i18n/routing.ts`) — un solo emisor de hreflang (el HTML de F-103). Verificar con curl que prod ya no emite el `Link` header con hreflang. Mata los 2 errores rojos y la mayoría de 3XX/chains de rebote.
+  - [ ] Completar OG en el helper compartido de metadata (`lib/seo/page-metadata.ts` o equivalente): `og:url` = canonical self-referencial, `og:type` (`website` marketing / `article` blog posts con `publishedTime`), `og:site_name` = "Ride Flumserberg", `og:locale` (+ `og:locale:alternate`). Todas las rutas de marketing × 3 locales.
+  - [ ] `/login`: `robots: { index: false }` en metadata + título de marca ("Sign in — Ride Flumserberg" y equivalentes de/es). Cierra "Indexable page not in sitemap" ×3 sin añadirlo al sitemap.
+  - [ ] Pasada de meta descriptions por locale: rango objetivo ~110–160 chars, keyword-led (F-103 style). 18 largas + 12 cortas listadas en Ahrefs → Content report.
+  - [ ] (Cosmético, si es barato) `og:image` en páginas con slug traducido emite la ruta interna del folder (`/en/precios/opengraph-image-…` en la página EN) — sirve 200, pero si Next lo permite, emitir la URL bajo el slug público canónico.
+- AC — fuera de código (owner/dashboard):
+  - [ ] Cloudflare → Scrape Shield → **desactivar Email Address Obfuscation** para `rideflumserberg.ch`. Verificar que contact/privacy renderizan `mailto:` limpio y `/cdn-cgi/l/email-protection` desaparece del crawl.
+- Verificación global:
+  - [ ] Re-crawl en Ahrefs post-deploy: objetivo **Health Score ≥ 90**, 0 errores de hreflang, 0 broken links internos.
+  - [ ] `curl -sI` a `/en/pricing`, `/de/preise`, un blog post por locale: sin `Link` header hreflang; HTML con set completo OG.
+- Tests:
+  - [ ] Unit (Vitest): helper de metadata emite `og:url`/`og:type`/`og:site_name`/`og:locale` para una ruta marketing y un blog post.
+  - [ ] Playwright: response de `/en/pricing` sin header `link` conteniendo `hreflang`; `<meta property="og:url">` presente y = canonical; `/en/login` con `<meta name="robots" content="noindex">` y título de marca.
+- Notas:
+  - Los 49 "Pages to submit to IndexNow" son un nice-to-have de Ahrefs, no un error — ignorar por ahora (Google no consume IndexNow).
+  - El perfil de backlinks NO es parte de este ticket → F-121.
+- Refs: F-120, F-099, F-102, F-103, F-108, F-114, `middleware.ts:6`, `i18n/routing.ts`, `lib/seo/hreflang.ts`, `lib/seo/page-metadata.ts`
+
+### F-121 — Plan SEO off-site: autoridad de dominio real (DR 0 → señales locales legítimas) + higiene del perfil de backlinks
+
+- Sprint: continuo (pre-temporada 2026/27) · Estado: backlog · Prioridad: P2 (mayormente acciones del owner, no código)
+- Depende de: F-112 (campos owner-dependent de schema), F-082 (post-class email), F-117 (sinergia YouTube), D-PLACE (Google Business Profile)
+- Motivación: Ahrefs Site Explorer (2026-07-27): **DR 0, UR 0, 0 keywords orgánicas, 0 tráfico orgánico** — y a la vez **409 referring domains / 925 backlinks**. Revisado el detalle: el perfil es **100% spam** (link farms `fiverr-*-seo.site`, granjas `*.shop`, todos flageados SPAM por Ahrefs, **0 dofollow** hacia el dominio). Es decir: el dominio no tiene NI UN link real. La autoridad hay que construirla de cero, y eso no se arregla con código — se arregla con presencia local real. El "0 keywords" además refleja el queue lag de dominio nuevo ya diagnosticado en GSC (memoria 2026-07-22): la base técnica on-site está bien; lo que falta es lo de fuera.
+- Plan de acción (por orden de impacto):
+  1. **Google Business Profile** (desbloquea D-PLACE y el review CTA de F-082): crear/verificar el perfil de la escuela con categoría "Ski school", área Flumserberg, NAP consistente con el footer. El local pack es la SERP que más convierte para "snowboard lessons flumserberg" — más valioso que cualquier backlink al inicio.
+  2. **Links locales legítimos (calidad > cantidad, 5-10 bastan para salir de DR 0):**
+     - Flumserberg/Heidiland turismo: listado de escuelas/actividades del resort y de la región.
+     - Swiss Snowsports Association: listado de miembro (si la escuela se federa — además señal de confianza EEAT).
+     - Directorios suizos reales: `local.ch`, `search.ch`, cámara de comercio local.
+     - Marketplaces de clases (CheckYeti/similar): perfil con link, aunque sea nofollow — tráfico referral cualificado y señal de entidad.
+     - Partnerships: tiendas de alquiler locales (la página "Plan your visit" de F-115 ya les enlaza — pedir reciprocidad), alojamientos que recomienden clases.
+  3. **Higiene del spam:** con 0 dofollow, Google casi seguro lo ignora — **no hacer disavow preventivo** (riesgo > beneficio y es señal de pánico). Acción: monitorizar en Ahrefs (alert mensual de new ref domains) y solo preparar disavow si aparece manual action en GSC o dofollow spam creciente. Documentado para no re-alarmarse cada crawl.
+  4. **Reviews loop:** post-clase (F-082) → review en Google Business Profile → ratings reales → desbloquea `aggregateRating` del schema (F-112). Círculo completo: cada clase feliz alimenta el local pack.
+  5. **Contenido por intención local (con F-117):** blog calendar pre-temporada priorizando **DE** (idioma de búsqueda local dominante): "Snowboardkurs Flumserberg", "Snowboard lernen Ostschweiz", condiciones/apertura de temporada. El canal de YouTube del owner como señal de autoría (byline F-117) + `sameAs` cuando F-112 se desbloquee.
+  6. **Timing:** todo lo anterior debe estar vivo **antes de noviembre 2026** — los links y el perfil GBP necesitan semanas de indexación para rendir en diciembre-febrero, que es cuando existe la demanda.
+- AC (medibles, revisar mensualmente):
+  - [ ] GBP verificado y `GOOGLE_PLACE_ID` seteado (cierra D-PLACE; activa review link de `lib/email/send-post-class.ts`).
+  - [ ] ≥5 referring domains legítimos (no-SPAM en Ahrefs) antes de 2026-11-01.
+  - [ ] DR > 0 y primeras keywords orgánicas registradas en Ahrefs/GSC.
+  - [ ] Alert de Ahrefs configurada (new referring domains, mensual).
+  - [ ] Decisión disavow documentada (default: no, revisar si manual action).
+- Tests: N/A (acciones off-site; el código involucrado ya tiene tickets propios: F-082, F-112, F-117).
+- Notas:
+  - No comprar links, no "guest post outreach" masivo, no directorios de pago random — exactamente eso es lo que genera el perfil spam que ya sufrimos.
+  - La página `/en/plan-your-visit` (F-115) y el hub FAQ son los mejores candidatos a atraer links naturales — mantenerlos actualizados con datos de temporada reales.
+- Refs: F-121, F-112, F-082, F-115, F-117, D-PLACE, memoria `gsc-indexing-status`, `sab-no-premises-seo-parked`
+
 ---
 
 ## Bloqueantes / decisiones abiertas (consolidadas)
