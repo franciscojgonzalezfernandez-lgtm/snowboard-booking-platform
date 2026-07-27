@@ -2674,7 +2674,24 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   4. **Reviews loop:** post-clase (F-082) → review en Google Business Profile → ratings reales → desbloquea `aggregateRating` del schema (F-112). Círculo completo: cada clase feliz alimenta el local pack.
   5. **Contenido por intención local (con F-117):** blog calendar pre-temporada priorizando **DE** (idioma de búsqueda local dominante): "Snowboardkurs Flumserberg", "Snowboard lernen Ostschweiz", condiciones/apertura de temporada. El canal de YouTube del owner como señal de autoría (byline F-117) + `sameAs` cuando F-112 se desbloquee.
   6. **Timing:** todo lo anterior debe estar vivo **antes de noviembre 2026** — los links y el perfil GBP necesitan semanas de indexación para rendir en diciembre-febrero, que es cuando existe la demanda.
+- Subtareas por canal (investigación 2026-07-28, sesión con browser):
+  - **F-121a — localsearch.ch (local.ch + search.ch + localcities.ch)** · GRATIS · hazlo YA:
+    - Carta física recibida por el owner es legítima: localsearch = Swisscom Directories AG, ~7M visitas/mes entre local.ch y search.ch (top-5 sitios CH). Verificado 2026-07-28: **no existe aún ningún entry "Ride Flumserberg"** en local.ch — registro desde cero en `https://customercenter.local.ch/en/update` (flujo: business listing → teléfono → login/registro email).
+    - ⚠️ SRF y K-Tipp documentan ventas agresivas + cambios de contrato automáticos en los paquetes de pago ("Digitalone" etc.). **Solo entry gratuito**; rechazar llamadas comerciales posteriores. NAP exacto = footer del sitio.
+  - **F-121b — Google Business Profile (D-PLACE)** · GRATIS · bloqueado parcial, plan B:
+    - Estado: owner sin local físico (memoria `sab-no-premises-seo-parked`) y verificación pide vídeo. Investigado: la verificación por vídeo es hoy el default, debe ser **captura en vivo** (no upload), y para service-area business acepta **material brandeado en lugar de escaparate**: equipo/tabla con branding, tarjetas, uniforme/chaqueta, y prueba de gestión (admin del sitio web, emails de dominio).
+    - Plan: crear el perfil ya como **service-area business** (área: Flumserberg/Sarganserland, sin dirección visible), intentar verificación con material brandeado en verano; si Google la rechaza, reintentar en noviembre con equipamiento de temporada en pista. El perfil creado no se pierde — queda pendiente de verificar.
+  - **F-121c — CheckYeti** · marketplace (comisión) · pre-temporada:
+    - Ya listan 8 ofertas en Flumserberg (la Schweizer Skischule Flumserberg incumbente entre ellas) — estar fuera = invisible en la SERP "skischulen flumserberg" que CheckYeti domina. Alta de proveedor: formulario "Work with us" (footer checkyeti.com → HubSpot form) + portal `provider.checkyeti.com`. Señal de entidad + referral cualificado; el link probablemente nofollow (da igual, no es para DR).
+  - **F-121d — Heidiland Tourismus** · requiere asociación local:
+    - `partner.heidiland.com`: para figurar como Erlebnisanbieter hay que ser **miembro del Verkehrsverein local** primero. A cambio: entry OpenData (visibilidad en heidiland.com + plataformas terceras + asistentes digitales) y opción de vender vía su booking (Holidu Smart Destination — tenemos funnel propio, solo interesa el listing). Paso: contactar Heidiland Tourismus / Verkehrsverein Flumserberg, preguntar cuota.
+  - **F-121e — Swiss Snowsports Association** · CHF 60/año individual · señal EEAT:
+    - Membresía individual del owner (si tiene formación SSSA o equivalente reconocida) → credencial citable en la página de instructores. La categoría "escuela licenciada" (Kollektivmitglied A, listado en swiss-ski-school.ch) es proceso largo — evaluar post-MVP, no bloquea.
+  - **F-121f — quick wins gratis** (15 min cada uno, tras F-121b):
+    - Apple Business Connect (Apple Maps) y Bing Places (importa el perfil de Google una vez verificado). Mismo NAP.
+  - **F-121g — opcionales/descartados por ahora:** bergfex B2B Sportanbieter (probablemente de pago — pedir tarifas solo si sobra presupuesto); directorios genéricos de pago → NO (es el patrón del spam actual).
 - AC (medibles, revisar mensualmente):
+  - [ ] F-121a: entry gratuito localsearch publicado con link a `rideflumserberg.ch` (visible en local.ch y search.ch).
   - [ ] GBP verificado y `GOOGLE_PLACE_ID` seteado (cierra D-PLACE; activa review link de `lib/email/send-post-class.ts`).
   - [ ] ≥5 referring domains legítimos (no-SPAM en Ahrefs) antes de 2026-11-01.
   - [ ] DR > 0 y primeras keywords orgánicas registradas en Ahrefs/GSC.
