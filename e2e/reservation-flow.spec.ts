@@ -130,7 +130,7 @@ test.describe("Booking funnel — permanent regression net", () => {
     assertConsoleClean(sink, "DeepLink d+dt");
   });
 
-  test("Deep link with full URL state surfaces the Section 4 sign-in CTA", async ({
+  test("Deep link with full URL state surfaces the embedded Section 4 auth block", async ({
     page,
   }) => {
     const sink = attachConsoleSink(page);
@@ -143,28 +143,21 @@ test.describe("Booking funnel — permanent regression net", () => {
     url.searchParams.set("l", "en");
     await page.goto(url.pathname + url.search);
 
-    const cta = page.getByTestId("step4-anonymous-cta");
-    await expect(cta).toBeVisible();
+    // F-119: the anonymous Section 4 now embeds the auth methods in-page
+    // (Google + magic link + email/password) instead of a CTA link to
+    // /login. The draft stays in the URL, so no `?next=` hand-off is needed
+    // for the on-page email/password path; Google/magic link carry it via
+    // callbackURL. Assert the block renders and the /login link-out is gone.
+    await expect(page.getByTestId("step4-auth")).toBeVisible();
+    await expect(page.getByTestId("step4-auth-google")).toBeVisible();
+    await expect(page.getByTestId("step4-auth-email")).toBeVisible();
+    await expect(page.getByTestId("step4-auth-password")).toBeVisible();
+    await expect(page.getByTestId("step4-auth-magic")).toBeVisible();
+    await expect(page.getByTestId("step4-anonymous-cta")).toHaveCount(0);
+    // The funnel URL is untouched — no redirect to /login.
+    expect(new URL(page.url()).pathname).toBe("/en/reservar");
 
-    // The CTA preserves the URL state via ?next= so the post-login round
-    // trip lands back on Section 4 with the same selections. Parse the
-    // inner `next` target as a real URL so the time's `:` does not trip
-    // the test on its URI-encoded `%3A` representation.
-    const href = await cta.getAttribute("href");
-    expect(href, "CTA href must be set").not.toBeNull();
-    const outer = new URL(href!, "http://localhost");
-    expect(outer.pathname).toBe("/en/login");
-    const nextValue = outer.searchParams.get("next");
-    expect(nextValue, "next= must be present").not.toBeNull();
-    const inner = new URL(nextValue!, "http://localhost");
-    expect(inner.pathname).toBe("/en/reservar");
-    expect(inner.searchParams.get("d")).toBe("ONE_HOUR");
-    expect(inner.searchParams.get("dt")).toBe(SEED_DATE);
-    expect(inner.searchParams.get("t")).toBe("10:00");
-    expect(inner.searchParams.get("i")).toBe(SEED_INSTRUCTOR);
-    expect(inner.searchParams.get("l")).toBe("en");
-
-    assertConsoleClean(sink, "DeepLink Section4 CTA");
+    assertConsoleClean(sink, "DeepLink Section4 auth block");
   });
 
   test("Re-entering Step 1 after picking a different duration keeps Select interactive", async ({
