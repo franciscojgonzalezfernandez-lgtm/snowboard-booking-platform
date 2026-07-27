@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -17,10 +18,18 @@ export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
 
-export async function generateMetadata({ params }: LoginPageProps) {
+export async function generateMetadata({
+  params,
+}: LoginPageProps): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "login" });
-  return { title: t("metadata_title") };
+  return {
+    title: t("metadata_title"),
+    // F-120: the login page is deliberately out of the sitemap (F-099). Marking
+    // it noindex closes Ahrefs' "indexable page not in sitemap" without adding
+    // an auth surface to the index; `follow` keeps link equity flowing.
+    robots: { index: false, follow: true },
+  };
 }
 
 export default async function LoginPage({

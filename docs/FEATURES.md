@@ -2628,7 +2628,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ### F-120 — Ahrefs Site Audit: matar los 96 errores técnicos (hreflang duplicado por Link header, OG incompleto, email-protection 404, login indexable)
 
-- Sprint: post-Sprint 5 · Estado: backlog · Prioridad: P1 (SEO — bloquea que el crawl budget y las señales i18n consoliden antes de temporada)
+- Sprint: post-Sprint 5 · Estado: código completo (en review) — pendiente sólo la acción de owner en Cloudflare + re-crawl de verificación · Prioridad: P1 (SEO — bloquea que el crawl budget y las señales i18n consoliden antes de temporada)
 - Depende de: F-099 (sitemap), F-102 (pathnames), F-103 (metadata), F-108 (blog slug resolution), F-114 (canonical host)
 - Motivación: Ahrefs Site Audit (crawl 2026-07-27, proyecto Rideflumserberg) reporta **Health Score 62** ("Fair"): 96 errores, 111 warnings, 99 notices; 53/141 URLs internas con errores. El diagnóstico completo se hizo en sesión 2026-07-27 contra prod — cada issue de abajo tiene root cause verificada, no es una lista mecánica del tool.
 - Root causes verificadas:
@@ -2639,19 +2639,19 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   5. **Meta descriptions:** 18 demasiado largas, 12 demasiado cortas (por locale).
   6. Menores: 40 páginas "3XX redirect" + 9 "redirect chain" (mayoría descubiertas VÍA los Link headers rotos del punto 1 — caerán solas), 1 "Slow page" (nueva, identificar URL en Ahrefs), 1 imagen pesada, 2 HTTP→HTTPS. Los 54 "Blocked by robots.txt" son **intencionales** (F-099: reservar/dashboard/api) — no tocar.
 - AC — código:
-  - [ ] `alternateLinks: false` en `defineRouting` (`i18n/routing.ts`) — un solo emisor de hreflang (el HTML de F-103). Verificar con curl que prod ya no emite el `Link` header con hreflang. Mata los 2 errores rojos y la mayoría de 3XX/chains de rebote.
-  - [ ] Completar OG en el helper compartido de metadata (`lib/seo/page-metadata.ts` o equivalente): `og:url` = canonical self-referencial, `og:type` (`website` marketing / `article` blog posts con `publishedTime`), `og:site_name` = "Ride Flumserberg", `og:locale` (+ `og:locale:alternate`). Todas las rutas de marketing × 3 locales.
-  - [ ] `/login`: `robots: { index: false }` en metadata + título de marca ("Sign in — Ride Flumserberg" y equivalentes de/es). Cierra "Indexable page not in sitemap" ×3 sin añadirlo al sitemap.
-  - [ ] Pasada de meta descriptions por locale: rango objetivo ~110–160 chars, keyword-led (F-103 style). 18 largas + 12 cortas listadas en Ahrefs → Content report.
-  - [ ] (Cosmético, si es barato) `og:image` en páginas con slug traducido emite la ruta interna del folder (`/en/precios/opengraph-image-…` en la página EN) — sirve 200, pero si Next lo permite, emitir la URL bajo el slug público canónico.
+  - [x] `alternateLinks: false` en `defineRouting` (`i18n/routing.ts`) — un solo emisor de hreflang (el HTML de F-103). Verificado con curl: `/en/pricing` ya no emite el `Link` header con hreflang. Mata los 2 errores rojos y la mayoría de 3XX/chains de rebote.
+  - [x] Completar OG en el helper compartido de metadata (`lib/seo/page-metadata.ts`): `marketingOpenGraph` (website) + `articleOpenGraph` (article, `publishedTime`) emiten `og:url` self-referencial, `og:type`, `og:site_name` = `BUSINESS.name` ("Ride Flumserberg"), `og:locale` + `og:locale:alternate`. Cableado en las 11 rutas de marketing × 3 locales y en el blog post.
+  - [x] `/login`: `robots: { index: false, follow: true }` en metadata + título de marca ("Sign in — Ride Flumserberg" + `de`/`es`). Cierra "Indexable page not in sitemap" ×3 sin añadirlo al sitemap.
+  - [x] Pasada de meta descriptions por locale: 20 outliers (11 largas >160, 9 cortas <110 según medición local) reescritas a 110–160 chars, keyword-led. (Sin acceso al export de Ahrefs; rango aplicado de forma determinista sobre todas las descriptions.)
+  - [~] (Cosmético) `og:image` bajo el slug público canónico: **omitido**. La imagen la inyecta la convención `opengraph-image.tsx` (F-101/F-109) bajo la ruta del folder; forzar la URL pública arriesga doble-emisión. Sirve 200 y no es un error de Ahrefs → no vale el churn.
 - AC — fuera de código (owner/dashboard):
   - [ ] Cloudflare → Scrape Shield → **desactivar Email Address Obfuscation** para `rideflumserberg.ch`. Verificar que contact/privacy renderizan `mailto:` limpio y `/cdn-cgi/l/email-protection` desaparece del crawl.
 - Verificación global:
   - [ ] Re-crawl en Ahrefs post-deploy: objetivo **Health Score ≥ 90**, 0 errores de hreflang, 0 broken links internos.
   - [ ] `curl -sI` a `/en/pricing`, `/de/preise`, un blog post por locale: sin `Link` header hreflang; HTML con set completo OG.
 - Tests:
-  - [ ] Unit (Vitest): helper de metadata emite `og:url`/`og:type`/`og:site_name`/`og:locale` para una ruta marketing y un blog post.
-  - [ ] Playwright: response de `/en/pricing` sin header `link` conteniendo `hreflang`; `<meta property="og:url">` presente y = canonical; `/en/login` con `<meta name="robots" content="noindex">` y título de marca.
+  - [x] Unit (Vitest): `lib/seo/page-metadata.test.ts` — `marketingOpenGraph` y `articleOpenGraph` emiten `og:url`/`og:type`/`og:site_name`/`og:locale`(+alternate) para ruta marketing y blog post (5 tests).
+  - [x] Playwright: `e2e/f-120-technical-seo.spec.ts` — `/en/pricing` sin `Link` header con `hreflang` (y HTML hreflang F-103 intacto); `og:url` = canonical + `og:type`/`site_name`/`locale`; blog post `og:type=article`; `/login` ×3 con `robots noindex` + título de marca (7 tests). Regresión: f-101/f-103/f-109 verdes.
 - Notas:
   - Los 49 "Pages to submit to IndexNow" son un nice-to-have de Ahrefs, no un error — ignorar por ahora (Google no consume IndexNow).
   - El perfil de backlinks NO es parte de este ticket → F-121.

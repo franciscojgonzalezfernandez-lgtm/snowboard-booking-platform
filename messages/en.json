@@ -29,7 +29,7 @@
   },
   "home": {
     "metadata_title": "Private snowboard lessons in Flumserberg, Switzerland",
-    "metadata_description": "Learn snowboarding with Javi — one certified coach, from first turns to carving and freestyle, kids and adults, taught in English, German or Spanish. Book your private lesson in Flumserberg.",
+    "metadata_description": "Private snowboard lessons in Flumserberg with Javi, a certified coach — first turns to carving and freestyle, kids and adults, taught in EN, DE or ES.",
     "utility": "Flumserberg · Heidiland · Open Nov 27 → Apr 26",
     "eyebrow": "Flumserberg · Private snowboard coaching",
     "hero_title_1": "Ride better",
@@ -83,7 +83,7 @@
   },
   "terms": {
     "metadata_title": "Terms and Conditions — Ride Flumserberg",
-    "metadata_description": "General terms and conditions for private snowboard lessons booked at Ride Flumserberg.",
+    "metadata_description": "General terms and conditions for private snowboard lessons booked with Ride Flumserberg in Flumserberg: booking, payment, cancellation and liability.",
     "heading": "Terms and Conditions",
     "last_updated": "Last updated 19 May 2026",
     "intro": "These terms govern bookings made on rideflumserberg.ch. By confirming a booking you accept them in full.",
@@ -107,7 +107,7 @@
   },
   "privacy": {
     "metadata_title": "Privacy Policy — Ride Flumserberg",
-    "metadata_description": "How Ride Flumserberg collects, uses, and protects your personal data.",
+    "metadata_description": "How Ride Flumserberg collects, uses and protects your personal data when you book a private snowboard lesson in Flumserberg, Switzerland.",
     "heading": "Privacy Policy",
     "last_updated": "Last updated 19 May 2026",
     "intro": "This page explains what personal data we collect when you book a lesson, who processes it on our behalf, and how to exercise your rights under the Swiss nFADP and the EU GDPR.",
@@ -125,7 +125,7 @@
     "section_contact_body": "To exercise these rights or to raise any privacy-related question, write to franciscojgonzalezfernandez@gmail.com. If you believe your rights have been infringed, you may also lodge a complaint with the Swiss Federal Data Protection and Information Commissioner (FDPIC)."
   },
   "login": {
-    "metadata_title": "Sign in — Snowboard Booking Platform",
+    "metadata_title": "Sign in — Ride Flumserberg",
     "heading": "Sign in",
     "sub": "Email and password, magic link, or Google.",
     "terms_prefix": "By continuing you accept the ",
@@ -600,7 +600,7 @@
   },
   "faq": {
     "metadata_title": "FAQ — snowboard lessons in Flumserberg | Ride Flumserberg",
-    "metadata_description": "Lift pass, gear, age limits, languages, cancellation and what to bring — everything you need to know before booking a private snowboard lesson in Flumserberg with Ride Flumserberg.",
+    "metadata_description": "Lift pass, gear, age limits, languages, cancellation and what to bring — everything to know before booking a private snowboard lesson in Flumserberg.",
     "eyebrow": "Before you book",
     "heading": "Questions, answered.",
     "intro": "The things people ask me most — gear, age, languages, weather, what happens if plans change. If something's still unclear, just call.",
@@ -667,7 +667,7 @@
   },
   "contact": {
     "metadata_title": "Contact — snowboard lessons in Flumserberg",
-    "metadata_description": "Reach us in Flumserberg: call or write, where we meet, and the season we ride.",
+    "metadata_description": "Contact Ride Flumserberg for private snowboard lessons in Flumserberg — call or write, where we meet on the mountain, and our winter season.",
     "eyebrow": "Get in touch",
     "heading": "Talk to me before you book",
     "intro": "Questions about which lesson fits, your level, or a team day? Call or write — it's me, Javi, on the other end.",
