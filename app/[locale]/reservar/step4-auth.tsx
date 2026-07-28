@@ -78,13 +78,26 @@ export function Step4Auth({ callbackURL }: Step4AuthProps) {
       const signUp = await authClient.signUp.email({ email, password, name });
 
       if (signUp.error) {
-        if (signUp.error.code !== "USER_ALREADY_EXISTS") {
+        // Better Auth reports an existing account with a versioned code —
+        // `USER_ALREADY_EXISTS` in some releases, `USER_ALREADY_EXISTS_USE_
+        // ANOTHER_EMAIL` in others — so match on the prefix, not an exact
+        // string. Getting this wrong swallows the whole sign-in fallback and
+        // shows a "use another email" error to a returning user (the F-119
+        // regression this guards against).
+        const alreadyExists =
+          signUp.error.code?.startsWith("USER_ALREADY_EXISTS") ?? false;
+        if (!alreadyExists) {
           setError(signUp.error.message ?? t("error_fallback"));
           return;
         }
         const signIn = await authClient.signIn.email({ email, password });
         if (signIn.error) {
-          setError(signIn.error.message ?? t("error_fallback"));
+          // The account exists but the password did not authenticate: either a
+          // wrong password, or the account has none because it was created via
+          // Google / magic link. Better Auth returns the same generic error for
+          // both, so nudge toward the passwordless methods rather than a bare
+          // "invalid password".
+          setError(t("error_existing_account"));
           return;
         }
       }

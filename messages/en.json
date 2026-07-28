@@ -147,6 +147,7 @@
     "magic_sent": "Check your inbox for the sign-in link. It expires shortly.",
     "error_fallback": "Authentication failed",
     "error_magic_link_delivery_failed": "Could not send the sign-in email. Please try again in a moment.",
+    "error_existing_account": "That email is already registered. Check your password, or continue with Google or a magic link.",
     "validation_email_invalid": "Invalid email",
     "validation_password_min": "Min 8 characters",
     "validation_name_required": "Required",

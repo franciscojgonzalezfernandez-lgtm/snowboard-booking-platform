@@ -147,6 +147,7 @@
     "magic_sent": "Schau in dein Postfach — der Anmelde-Link läuft bald ab.",
     "error_fallback": "Anmeldung fehlgeschlagen",
     "error_magic_link_delivery_failed": "Anmelde-E-Mail konnte nicht gesendet werden. Bitte versuche es gleich erneut.",
+    "error_existing_account": "Diese E-Mail ist bereits registriert. Prüfe dein Passwort oder nutze Google oder einen Magic Link.",
     "validation_email_invalid": "Ungültige E-Mail",
     "validation_password_min": "Mindestens 8 Zeichen",
     "validation_name_required": "Erforderlich",

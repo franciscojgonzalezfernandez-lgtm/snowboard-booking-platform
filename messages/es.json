@@ -147,6 +147,7 @@
     "magic_sent": "Revisa tu bandeja: el enlace de acceso caduca pronto.",
     "error_fallback": "Autenticación fallida",
     "error_magic_link_delivery_failed": "No se pudo enviar el correo de acceso. Inténtalo de nuevo en un momento.",
+    "error_existing_account": "Ese email ya está registrado. Revisa tu contraseña o continúa con Google o un magic link.",
     "validation_email_invalid": "E-mail inválido",
     "validation_password_min": "Mínimo 8 caracteres",
     "validation_name_required": "Obligatorio",

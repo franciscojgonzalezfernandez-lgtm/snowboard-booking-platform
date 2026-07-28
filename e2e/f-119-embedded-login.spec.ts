@@ -65,6 +65,35 @@ test.describe("F-119 — embedded Section 4 auth", () => {
     expect(new URL(page.url()).pathname).toBe("/en/reservar");
   });
 
+  test("email+password with an EXISTING account signs in (unified submit, no 'already exists' error)", async ({
+    page,
+  }) => {
+    const email = uniqueEmail();
+    const password = "Sn0wb0ard!Strong";
+
+    // First submit auto-provisions the account and flips to payment.
+    await page.goto(step4Url());
+    await page.getByTestId("step4-auth-email").fill(email);
+    await page.getByTestId("step4-auth-password").fill(password);
+    await page.getByTestId("step4-auth-submit").click();
+    await expect(page.getByTestId("section-4")).toBeVisible({ timeout: 20000 });
+
+    // Return anonymous and submit the SAME credentials. Better Auth answers the
+    // sign-up with USER_ALREADY_EXISTS(_USE_ANOTHER_EMAIL); the unified submit
+    // must fall back to sign-in and flip to payment — NOT surface the sign-up
+    // error. Regression guard for the prefix-match bug (returning user shown
+    // "use another email").
+    await page.context().clearCookies();
+    await page.goto(step4Url());
+    await page.getByTestId("step4-auth-email").fill(email);
+    await page.getByTestId("step4-auth-password").fill(password);
+    await page.getByTestId("step4-auth-submit").click();
+
+    await expect(page.getByTestId("section-4")).toBeVisible({ timeout: 20000 });
+    await expect(page.getByTestId("step4-auth-error")).toHaveCount(0);
+    expect(new URL(page.url()).pathname).toBe("/en/reservar");
+  });
+
   test("magic link validates the email inline instead of leaving the funnel", async ({
     page,
   }) => {
