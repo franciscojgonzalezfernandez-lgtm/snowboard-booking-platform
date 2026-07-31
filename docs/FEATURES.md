@@ -2756,6 +2756,43 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - Los pendientes **off-site** (GBP verificación, localsearch, Place ID, YouTube description link…) NO van aquí — viven en el "Estado de ejecución" de F-121.
 - Refs: F-123, F-120, F-103, PR #187
 
+### F-124 — Marketing sale `no-store`: recuperar el cacheado de CDN y arreglar el LCP (Lighthouse 98 → 100, y móvil dentro de presupuesto)
+
+- Sprint: post-Sprint 5 · Estado: backlog · Prioridad: **P1** (rompe el presupuesto de `booking-platform-perf`: LCP < 2.5s móvil en home)
+- Depende de: F-090 (hero LCP-safe), F-116 (SiteNav + NavMore), `booking-platform-perf`
+- Motivación: Lighthouse contra prod (2026-07-29, `rideflumserberg.ch/es`): **desktop 95-98** — el 2% que falta es *solo* LCP (1.4s, score 0.83; FCP/TBT/CLS ya en 1.00) — y **móvil 66**, con LCP **5.6s**, FCP 2.9s, Speed Index 6.0s. El móvil está muy fuera del presupuesto del proyecto (LCP < 2.5s). Diagnóstico verificado con `curl` contra prod; tres causas encadenadas:
+  1. **Todo el árbol de marketing se sirve dinámico.** `app/[locale]/(marketing)/layout.tsx` monta `<SiteNav>`, y `app/components/SiteNav.tsx:36` hace `auth.api.getSession({ headers: await headers() })`. Leer `headers()` marca dinámica **toda** la rama → Next emite `cache-control: private, no-cache, no-store, max-age=0, must-revalidate` y Vercel responde **`x-vercel-cache: MISS` siempre**. Verificado idéntico en `/es`, `/es/precios`, `/es/faq`, `/es/blog`. Coste medido: TTFB 340-500ms en caliente (1.6s en cold start) = **45% del LCP** según el desglose de Lighthouse (630ms de 1410ms). Efecto colateral: los 2 fallos de **bf-cache** del report son exactamente este `no-store` (volver atrás re-renderiza en vez de restaurar).
+  2. **La propia imagen del LCP no se cachea.** `/_next/image?url=%2Fbrand%2Fhero.jpg&w=1920&q=75` responde `cache-control: public, max-age=0, must-revalidate` + `x-vercel-cache: MISS`. `next.config.ts` no define `images.minimumCacheTTL`, así que el optimizador hereda el `max-age=0` del estático de `public/`. Cada visitante re-descarga los 82 KB del hero: es el Load Delay (222ms) + Load Time (203ms) del LCP.
+  3. **Falta el priority hint.** El `<Image priority>` de la home (`(marketing)/page.tsx:52-58`) sí emite el `<link rel="preload" as="image">`, pero Next 15.5 **no** pone `fetchpriority="high"` ni en el `<img>` ni en el preload → el insight `lcp-discovery-insight` de Lighthouse falla en `priorityHinted`.
+- AC:
+  - [ ] **Sacar la lectura de sesión del render de servidor de marketing** para que esas rutas vuelvan a prerenderizarse y las sirva el CDN. Opción recomendada: extraer el CTA de auth de `SiteNav` a un island cliente (`authClient.useSession()`), dejando el resto de la nav como Server Component; el layout de marketing deja de tocar `headers()`. Alternativas a evaluar antes de implementar: `<Suspense>` alrededor del island, o `experimental.ppr` (canary en 15.5 — **no** adoptarlo solo por esto).
+  - [ ] Verificar tras deploy: `curl -sI https://rideflumserberg.ch/es` → `cache-control` con `s-maxage`/`stale-while-revalidate` (no `no-store`) y `x-vercel-cache: HIT` en la segunda petición. Idem `/es/precios`, `/es/faq`, `/es/blog`.
+  - [ ] **CLS 0 obligatorio** al montar el island: reservar el ancho del CTA (hoy CLS es 1.00 y no puede regresar). Estado neutro en SSR, sin salto al hidratar.
+  - [ ] `images.minimumCacheTTL` largo en `next.config.ts` (p. ej. 31536000) **o** import estático del hero (`import hero from "@/public/brand/hero.jpg"`, que da URL hasheada + inmutable). Verificar que `/_next/image` del hero pasa a `public, max-age=…, immutable` y cachea en el edge.
+  - [ ] `fetchPriority="high"` explícito en el `<Image>` del hero → `lcp-discovery-insight` en verde.
+  - [ ] Re-medir con `booking-platform-perf`: **LCP < 2.5s móvil** en `/es` (hoy 5.6s) y performance desktop **100**.
+- Tests:
+  - [ ] Playwright: respuesta de `/es` **sin** `no-store` en `cache-control`; hero `<img>` con `fetchpriority="high"`; la nav muestra el CTA correcto autenticado y anónimo (regresión de F-116).
+  - [ ] Assert explícito de CLS al montar el island de auth (además del guard de presupuesto existente).
+- Notas:
+  - Ojo al medir: el número de Lighthouse varía mucho por red y cold start (el run móvil desde fuera de CH dio 66; el desktop, 95). Comparar siempre con el mismo runner y en caliente.
+  - `uses-long-cache-ttl` lista dos `script.js` propios (proxy de analytics, max-age 31 días) — ruido, no tocar.
+  - **No** rediseñar `SiteNav` en este ticket: mover el CTA, no el resto.
+- Refs: F-124, F-090, F-116, `app/[locale]/(marketing)/layout.tsx`, `app/components/SiteNav.tsx:36`, `app/[locale]/(marketing)/page.tsx:52`, `next.config.ts`, `booking-platform-perf`
+
+### F-125 — Dieta de JS en marketing: 99 KiB sin usar + 14 KiB de transpilación legacy
+
+- Sprint: post-Sprint 5 · Estado: backlog · Prioridad: P3 (TBT ya en verde; esto es margen, no incendio)
+- Depende de: F-124 (medir después, para no mezclar efectos)
+- Motivación: en el mismo run de Lighthouse (2026-07-29), con TBT ya OK (40ms desktop / 210ms móvil), quedan dos diagnósticos de payload: `unused-javascript` **99 KiB** y `legacy-javascript` **14 KiB** (transpilación/polyfills para navegadores que el proyecto no soporta). No mueve el score hoy, pero sí el presupuesto de First Load JS < 200 KB de la home y el TBT móvil.
+- AC:
+  - [ ] Identificar los chunks de `unused-javascript` (`@next/bundle-analyzer` o el detalle del report) y separar cuánto es framework inevitable de cuánto son imports evitables desde la home.
+  - [ ] Revisar el target de browserslist/SWC: los 14 KiB de `legacy-javascript` suelen ser transpilación innecesaria para browsers modernos.
+  - [ ] Verificar con `booking-platform-perf` que la home sigue bajo **200 KB gz** de First Load JS y que el TBT móvil mejora o se mantiene.
+- Tests: [ ] Guard de tamaño de bundle de la home en CI (si no existe, crearlo aquí).
+- Notas: medir **después** de F-124 — al volver estático el marketing cambian tanto el waterfall como el reparto de chunks.
+- Refs: F-125, F-124, `booking-platform-perf`
+
 ---
 
 ## Bloqueantes / decisiones abiertas (consolidadas)
