@@ -49,11 +49,15 @@ export default async function HomePage({ params }: HomePageProps) {
 
       {/* HERO — static (LCP-safe per F-090). Owner's photo via next/image. */}
       <section className="relative h-[86vh] min-h-[600px] max-h-[880px] overflow-hidden bg-foreground text-background">
+        {/* `priority` emits the preload link, but Next 15.5 stops there — it
+            does not set fetchpriority on the <img>, which is what Lighthouse's
+            LCP request-discovery audit checks. Passing it explicitly (F-124). */}
         <Image
           src="/brand/hero.jpg"
           alt=""
           fill
           priority
+          fetchPriority="high"
           sizes="100vw"
           className="object-cover object-center"
         />

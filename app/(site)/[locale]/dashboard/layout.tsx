@@ -9,9 +9,12 @@ type DashboardLayoutProps = {
 
 // Authenticated chrome. Middleware + page-level auth gate already redirect
 // anonymous visitors to /login, so SiteNav renders the My account + Sign out
-// branch in steady state. The sonner <Toaster /> is mounted globally in the
-// root layout (app/layout.tsx) — mounting a second one here rendered every
-// dashboard toast twice, so this layout deliberately has none.
+// branch in steady state — which is why `initialSignedIn` is hard-coded here
+// (F-124): the auth CTA is a client island now, and without this the dashboard
+// would flash "sign in" until the session resolved. No session read needed, the
+// gate upstream already made that guarantee. The sonner <Toaster /> is mounted
+// globally in the root layout (app/layout.tsx) — mounting a second one here
+// rendered every dashboard toast twice, so this layout deliberately has none.
 export default async function DashboardLayout({
   children,
   params,
@@ -21,7 +24,7 @@ export default async function DashboardLayout({
 
   return (
     <>
-      <SiteNav />
+      <SiteNav initialSignedIn />
       {children}
     </>
   );

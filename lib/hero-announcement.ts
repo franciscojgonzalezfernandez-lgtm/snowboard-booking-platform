@@ -16,6 +16,26 @@ export const HERO_ANNOUNCEMENT_COOKIE = `hero_announcement_dismissed_v${HERO_ANN
 export const HERO_ANNOUNCEMENT_DISMISS_TTL = 60 * 60 * 24 * 30;
 
 /**
+ * Class flipped onto `<html>` when the visitor has dismissed the band. The rule
+ * that acts on it lives in `app/globals.css`.
+ */
+export const HERO_ANNOUNCEMENT_DISMISSED_CLASS = "hero-announcement-dismissed";
+
+/**
+ * Blocking inline script rendered immediately before the band (F-124).
+ *
+ * The band is static HTML now, so the dismissal cannot be resolved on the
+ * server without making the whole home page dynamic. Running this synchronously
+ * in parser order sets the flag before the band's markup is parsed, so a
+ * returning visitor never paints it — no flash, and crucially no layout shift
+ * pushing the hero (the LCP element) around.
+ *
+ * The dismissal cookie is deliberately NOT httpOnly: it carries no authority,
+ * it is a UI preference this script has to be able to read.
+ */
+export const HERO_ANNOUNCEMENT_HIDE_SCRIPT = `try{if(document.cookie.indexOf("${HERO_ANNOUNCEMENT_COOKIE}=")>-1){document.documentElement.classList.add("${HERO_ANNOUNCEMENT_DISMISSED_CLASS}")}}catch(e){}`;
+
+/**
  * Sentinel `cta_href` value that resolves to the owner's operational phone. The
  * number is **not** re-declared in translations — it lives once in `lib/contact/
  * phone.ts` (F-052) and propagates from there.

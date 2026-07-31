@@ -175,4 +175,15 @@
       filter: none !important;
     }
   }
+
+  /*
+   * Hero announcement dismissal (F-124). The band is static HTML so the home
+   * page can be prerendered and served from the CDN; the flag on <html> is set
+   * by a blocking script that runs before the band is parsed, so a returning
+   * visitor who dismissed it never paints the band — and the hero, which is the
+   * LCP element, never shifts.
+   */
+  .hero-announcement-dismissed [data-hero-announcement] {
+    display: none;
+  }
 }
