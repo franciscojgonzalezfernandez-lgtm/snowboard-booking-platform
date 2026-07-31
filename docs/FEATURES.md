@@ -2699,6 +2699,18 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 - Notas:
   - No comprar links, no "guest post outreach" masivo, no directorios de pago random — exactamente eso es lo que genera el perfil spam que ya sufrimos.
   - La página `/en/plan-your-visit` (F-115) y el hub FAQ son los mejores candidatos a atraer links naturales — mantenerlos actualizados con datos de temporada reales.
+- Estado de ejecución (2026-07-29, sesiones con browser):
+  - ✅ **F-121b parcial — GBP saneado** (perfil superviviente, store code `0519414889388809990`): nombre → "Ride Flumserberg" (era el dominio), descripción rebrandeada (la vieja aún decía "The Drop"; GBP no permite URLs en descripción), categoría solo "Escuela de esquí" (no existe categoría snowboard-school en GBP; eliminada "Tienda de snowboard" del duplicado borrado), sitio web → `https://rideflumserberg.ch` (era www), YouTube `https://www.youtube.com/@javi-tricker` en Perfiles sociales, service-area sin dirección visible confirmado. Gotcha documentado: había 2 perfiles duplicados; el owner borró el editado y sobrevivió el intacto → todo re-aplicado sobre el superviviente. **No crear más perfiles.**
+  - ✅ **F-121c — CheckYeti application enviada** (2026-07-28, form HubSpot "Work with us"): contacto owner + Ride Flumserberg + rideflumserberg.ch + Switzerland-DE + Legal Soletrader + "other system". El form se auto-envió antes de marcar activity-type ("Ski Lessons" posiblemente vacío) — cuando contacten, aclarar que es escuela de snowboard. **NO reenviar el form** (duplicados retrasan el review, aviso explícito de CheckYeti).
+  - ❌ **F-121d (Heidiland) y F-121e (Swiss Snowsports) descartados por el owner** (2026-07-29): título aún no válido para SSSA; sin Verkehrsverein por ahora. Reevaluar temporada 2027/28.
+  - ⬜ Pendiente owner (por orden):
+    1. **localsearch (F-121a):** login/registro en `customercenter.local.ch` (la carta trae código de claim). Existe ya entry auto-creado del registro mercantil: "Gonzalez Fernandez Snowball Effect", Josefstrasse 4, 8610 Uster. Decisión: (A) actualizarlo a la marca — expone la dirección personal de Uster ligada a "Ride Flumserberg" — o (B, recomendado) dejarlo y crear entry separado "Ride Flumserberg" con zona Flumserberg. Solo entry gratuito; rechazar llamadas de venta ("Digitalone").
+    2. **GBP verificación por vídeo** (botón "Verificar"): captura en vivo, material brandeado (tabla/chaqueta/tarjetas) + demostrar gestión de rideflumserberg.ch. Si Google rechaza en verano → reintentar en noviembre en pista.
+    3. Tras verificar: **copiar el Place ID** → setear `GOOGLE_PLACE_ID` en Vercel (cierra D-PLACE, activa el review-link de `lib/email/send-post-class.ts`, F-082).
+    4. **GBP horario:** quedó "Abierto (sin horario especificado)" — fijar 8:30–17:00 (lo que tenía el perfil borrado) o el horario real de temporada.
+    5. **YouTube:** primera línea de la descripción del vídeo `1tMzQAjIBvM` → `Clases privadas de snowboard en Flumserberg → https://rideflumserberg.ch/es` (audiencia ES → prefijo /es); replicar en el banner/vídeo destacado del canal. Nofollow, pero tráfico cualificado + señal de entidad (el GBP ya enlaza el canal desde 2026-07-29).
+    6. Tras GBP verificado: **Apple Business Connect + Bing Places** (F-121f, Bing importa el perfil de Google).
+    7. **Alert mensual de Ahrefs** (new referring domains) — AC pendiente.
 - Refs: F-121, F-112, F-082, F-115, F-117, D-PLACE, memoria `gsc-indexing-status`, `sab-no-premises-seo-parked`
 
 ---
@@ -2725,6 +2737,24 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - **Migración de usuarios existentes** email+password no verificados: marcar `emailVerified:true` a quienes ya tienen reservas CONFIRMED/pagadas (pagaron → email real de facto) para no bloquearles el próximo booking; el resto verifica en el próximo login. Decidir en implementación.
   - Fuera de scope: CAPTCHA (evaluar solo si rate-limit + cap no bastan); cambiar el modelo de hold-antes-de-pagar (el hold es correcto para no doble-vender; el fix es *quién* puede holdear, no *cuándo*).
 - Refs: F-122, F-119, F-056, F-060, `lib/auth/index.ts`, `lib/booking/create-draft.ts` (L198/L338/L502), `lib/cron/expire-pending.ts`, `vercel.json`, `app/[locale]/reservar/step4-auth.tsx`
+
+### F-123 — Residuales Ahrefs post-F-120: OG incomplete ×12 + meta descriptions ×7 (sostener Health 100)
+
+- Sprint: post-Sprint 5 · Estado: backlog · Prioridad: P3 (pulido on-site; el error gordo ya cayó)
+- Depende de: F-120, PR #187 (re-encode del hero de /about)
+- Motivación: crawl de Ahrefs 2026-07-28 tras F-120: Health **62 → 99**, 1 error + 26 warnings. El error (imagen de /about, 1.6 MB servida desde un PNG fuente de 7.6 MB) ya tiene fix en PR #187 (JPEG mozjpeg 277 KB). Quedan los warnings accionables por código.
+- AC:
+  - [ ] Merge PR #187 → deploy → "New crawl" en Ahrefs → **0 errores, Health 100**.
+  - [ ] "Open Graph tags incomplete" ×12 (bajó de 39): identificar las páginas en el report **Social tags** (probablemente rutas que no pasan por el helper de F-120 — blog posts u operator pages) y completar `og:url`/`og:type`/`og:site_name`/`og:locale` con el mismo helper compartido.
+  - [ ] "Meta description too long" ×7: acortar a 110–160 chars, keyword-led (estilo F-103), por locale.
+  - [ ] Re-crawl de verificación: warnings OG y meta-description a 0 en páginas indexables.
+- Tests:
+  - [ ] Ampliar el unit test del helper OG (F-120) para cubrir las rutas que faltaban.
+- Notas:
+  - "Meta description too short" ×3 = `/login` (ya noindex desde F-120) — **no tocar**, Ahrefs lo lista como not-indexable.
+  - "Pages to submit to IndexNow" — ignorar (Google no consume IndexNow; nice-to-have de Ahrefs).
+  - Los pendientes **off-site** (GBP verificación, localsearch, Place ID, YouTube description link…) NO van aquí — viven en el "Estado de ejecución" de F-121.
+- Refs: F-123, F-120, F-103, PR #187
 
 ---
 
