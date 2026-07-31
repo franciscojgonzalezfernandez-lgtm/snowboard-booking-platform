@@ -115,17 +115,25 @@ When in doubt: check what **Impeccable** would do. The skill is the source of tr
 
 ```
 app/
-├── [locale]/                # i18n: en, de, es
-│   ├── (marketing)/         # Landing, precios, instructores, sobre, contacto, faq, blog, terms, privacy — shared chrome (SiteNav with utility bar)
-│   ├── (auth)/              # Login (register/verify not built yet) — shared chrome (SiteNav, no utility bar)
-│   ├── dashboard/           # Authenticated student — own layout with SiteNav + Sign out
-│   ├── reservar/            # Booking funnel — own BookingHeader (NOT inside any route group, deliberate per F-068)
-│   └── layout.tsx           # Root locale layout: NextIntlClientProvider + SiteFooter
-├── instructor/              # EN only, outside [locale]
-├── admin/                   # EN only, outside [locale]
+├── (site)/                  # Trilingual public surface — ROOT LAYOUT #1
+│   └── [locale]/            # i18n: en, de, es
+│       ├── (marketing)/     # Landing, precios, instructores, sobre, contacto, faq, blog, terms, privacy — shared chrome (SiteNav with utility bar)
+│       ├── (auth)/          # Login (register/verify not built yet) — shared chrome (SiteNav, no utility bar)
+│       ├── dashboard/       # Authenticated student — own layout with SiteNav + Sign out
+│       ├── reservar/        # Booking funnel — own BookingHeader (NOT inside any route group, deliberate per F-068)
+│       └── layout.tsx       # <html lang={locale}> + NextIntlClientProvider + SiteFooter
+├── (ops)/                   # EN-only operator surface — ROOT LAYOUT #2
+│   ├── layout.tsx           # <html lang="en">
+│   ├── instructor/
+│   ├── admin/
+│   └── sentry-example-page/
+├── root-shell.tsx           # Fonts, base metadata and analytics shared by both root layouts
 └── api/
 # app/sitemap.ts + app/robots.ts (F-099) and app/llms.txt/route.ts (F-113) live at app/ root
 ```
+
+- **Two root layouts, on purpose (F-124).** The `<html lang>` must match the page language (WCAG 3.1.1). A single root layout above `[locale]` could only learn the locale by reading the request, and that one call marked **every** route in the app dynamic — `no-store`, a permanent CDN miss, ~45% of the home's LCP. Route groups carry no URL segment, so `/en/...`, `/admin` and `/instructor` are unchanged. Anything both roots need goes in `app/root-shell.tsx`; do not duplicate it.
+- **Never read request-scoped data (`headers()`, `cookies()`, session) from a layout the public pages share** — it silently un-statics the whole marketing tree. Put it in a client island instead (see `AuthNav`, `MobileNav`). `e2e/f-124-static-marketing.spec.ts` guards this.
 
 - **Public + student dashboard:** trilingual (`/`, `/de/`, `/es/`)
 - **Instructor + admin panels:** English only
