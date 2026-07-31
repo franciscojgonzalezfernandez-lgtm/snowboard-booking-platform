@@ -2744,7 +2744,8 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 - Depende de: F-120, PR #187 (re-encode del hero de /about)
 - Motivación: crawl de Ahrefs 2026-07-28 tras F-120: Health **62 → 99**, 1 error + 26 warnings. El error (imagen de /about, 1.6 MB servida desde un PNG fuente de 7.6 MB) ya tiene fix en PR #187 (JPEG mozjpeg 277 KB). Quedan los warnings accionables por código.
 - AC:
-  - [ ] Merge PR #187 → deploy → "New crawl" en Ahrefs → **0 errores, Health 100**.
+  - [x] PR #187 mergeada (`c785af0`, 2026-07-31) y verificada en prod: `/_next/image` de `/brand/about.jpg` sirve **277 KB** (antes 1.6 MB desde un PNG fuente de 7.6 MB).
+  - [ ] "New crawl" en Ahrefs tras el deploy → confirmar **0 errores, Health 100**.
   - [ ] "Open Graph tags incomplete" ×12 (bajó de 39): identificar las páginas en el report **Social tags** (probablemente rutas que no pasan por el helper de F-120 — blog posts u operator pages) y completar `og:url`/`og:type`/`og:site_name`/`og:locale` con el mismo helper compartido.
   - [ ] "Meta description too long" ×7: acortar a 110–160 chars, keyword-led (estilo F-103), por locale.
   - [ ] Re-crawl de verificación: warnings OG y meta-description a 0 en páginas indexables.
