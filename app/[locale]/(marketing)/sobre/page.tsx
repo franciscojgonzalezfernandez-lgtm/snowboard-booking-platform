@@ -38,7 +38,7 @@ export default async function AboutPage({ params }: Props) {
           heading reads. */}
       <section className="relative flex min-h-[68vh] items-end overflow-hidden bg-foreground text-background">
         <Image
-          src="/brand/about.png"
+          src="/brand/about.jpg"
           alt={t("hero_image_alt")}
           fill
           priority
