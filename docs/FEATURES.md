@@ -2789,16 +2789,47 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ### F-125 — Dieta de JS en marketing: 99 KiB sin usar + 14 KiB de transpilación legacy
 
-- Sprint: post-Sprint 5 · Estado: backlog · Prioridad: P3 (TBT ya en verde; esto es margen, no incendio)
+- Sprint: post-Sprint 5 · Estado: review (PR abierto 2026-08-01) · Prioridad: **P1** (subida desde P3: la medición de baseline desmintió la premisa — no era margen)
 - Depende de: F-124 (medir después, para no mezclar efectos)
-- Motivación: en el mismo run de Lighthouse (2026-07-29), con TBT ya OK (40ms desktop / 210ms móvil), quedan dos diagnósticos de payload: `unused-javascript` **99 KiB** y `legacy-javascript` **14 KiB** (transpilación/polyfills para navegadores que el proyecto no soporta). No mueve el score hoy, pero sí el presupuesto de First Load JS < 200 KB de la home y el TBT móvil.
+- Motivación (original): en el run de Lighthouse (2026-07-29), con TBT ya OK (40ms desktop / 210ms móvil), quedaban dos diagnósticos de payload: `unused-javascript` **99 KiB** y `legacy-javascript` **14 KiB`.
+- **Baseline real (medido 2026-08-01, no estimado):** la home servía **410 KB gz** de First Load JS contra un presupuesto de **200 KB** — 2× por encima, no "margen". Lighthouse se quedaba corto porque sólo contaba lo _no ejecutado_. Medición por build diferencial (`npm run build` + suma gzip de los chunks de la ruta) y contra prod (`node scripts/check-bundle-budget.mjs --url`), que daba **400.7 KB gz** de JS real descargado por un navegador moderno.
+- Atribución del baseline:
+  - **Sentry 108 KB gz** en el chunk compartido por todas las rutas: 40 KB de `replayIntegration()`/rrweb + 68 KB de core/tracing. Se cargaba en páginas de marketing estáticas cuyo único trabajo es pintar rápido.
+  - **~20 KB gz de Sentry adicionales** vía `app/global-error.tsx` — es Client Component con `import * as Sentry` estático, y Next lo mete en el bundle de **todas** las rutas.
+  - **~48 KB gz de Base UI** (dialog + menu + floating) por los islands de `SiteNav`: `MobileNav` (Sheet) y `NavMore` (dropdown).
+  - **~11 KB gz del cliente de Better Auth** vía `AuthNav`, que el tráfico anónimo (casi todo el de marketing) sólo necesita para que le confirmen que es anónimo.
+  - Resto: react-dom/framework ~55, next-intl cliente ~12, lucide ~11, Vercel analytics + speed-insights ~7. Los imports de `@base-ui/react` ya eran por subpath — no había fuga de barrel.
 - AC:
-  - [ ] Identificar los chunks de `unused-javascript` (`@next/bundle-analyzer` o el detalle del report) y separar cuánto es framework inevitable de cuánto son imports evitables desde la home.
-  - [ ] Revisar el target de browserslist/SWC: los 14 KiB de `legacy-javascript` suelen ser transpilación innecesaria para browsers modernos.
-  - [ ] Verificar con `booking-platform-perf` que la home sigue bajo **200 KB gz** de First Load JS y que el TBT móvil mejora o se mantiene.
-- Tests: [ ] Guard de tamaño de bundle de la home en CI (si no existe, crearlo aquí).
-- Notas: medir **después** de F-124 — al volver estático el marketing cambian tanto el waterfall como el reparto de chunks.
-- Refs: F-125, F-124, `booking-platform-perf`
+  - [x] Identificar los chunks de `unused-javascript` y separar framework inevitable de imports evitables (ver atribución arriba).
+  - [x] **Sentry fuera del critical path** (`instrumentation-client.ts`): SDK por `import()` dinámico en `requestIdleCallback`, con listeners de `error`/`unhandledrejection` colocados síncronos para bufferizar lo que se rompa antes de que cargue. `replayIntegration()` eliminado. `tracesSampleRate` 1 → **0.1 en producción** (con el marketing ya cacheado por F-124, samplear al 100% quema cuota describiendo hits de CDN).
+  - [x] `app/global-error.tsx`: el `import` de Sentry pasa a dinámico dentro del `useEffect`.
+  - [x] **Islands de nav diferidos a interacción**: `MobileNav`/`NavMore` conservan sólo el botón (presente en el first paint) y cargan el popup con `next/dynamic` al primer `pointerenter`/`touchstart`/`focus`, de modo que el chunk suele estar en caché antes de que termine el tap. Nuevos: `MobileNavSheet.tsx`, `NavMoreMenu.tsx`. `DropdownMenuContent` acepta `anchor` para que el trigger pueda vivir fuera del primitive.
+  - [x] **`AuthNav` partido**: `AuthNavLinks` (presentacional, sin Better Auth) pinta ya; `AuthNavSession` (con `useSession`) se carga en idle. El contrato `initialSignedIn` de F-124 y su promesa de cero layout shift se mantienen — lo verifica el spec de F-124, que sigue verde.
+  - [x] Revisar el target de browserslist/SWC: añadido `browserslist` (chrome/edge ≥ 111, firefox ≥ 128, safari ≥ 16.4 — la misma baseline que ya exige Tailwind v4). Medido en aislamiento: **2.4 KB gz** en la home (190.0 → 187.6). El bundle de polyfills de Next (38.6 KB gz) **no cambia**, pero se sirve con `noModule`, así que ningún browser objetivo lo descarga — de ahí que Next lo excluya de su propio First Load JS.
+  - [x] Verificar que la home queda bajo **200 KB gz** de First Load JS.
+- Resultado (First Load JS gz, según `next build`):
+
+  | Ruta | Antes | Después |
+  |---|---|---|
+  | `/[locale]` (home) | 410 kB | **192 kB** |
+  | `/[locale]/precios` | 405 kB | 187 kB |
+  | `/[locale]/blog` | 368 kB | 152 kB |
+  | `/[locale]/login` | 458 kB | 274 kB |
+  | `/[locale]/dashboard` | 464 kB | 323 kB |
+  | `/[locale]/reservar` | 503 kB | 371 kB |
+  | shared by all | 247 kB | 121 kB |
+
+  Medido como descarga real de un browser moderno: **400.7 KB → 187.6 KB gz (−53%)**.
+- Tests:
+  - [x] Guard de tamaño: `scripts/check-bundle-budget.mjs` (`npm run check:bundle`). Dos modos — local contra `.next/app-build-manifest.json`, y `--url <base>` contra un deploy (ignora los scripts `noModule` para que ambos modos den el mismo número). Cableado en `post-deploy-smoke.yml`.
+  - [x] E2E: `e2e/f-125-js-diet.spec.ts` — el chunk del menú móvil se pide **en la interacción y no en la carga**; el menú navega y muestra el CTA anónimo; el foco vuelve al trigger al cerrar (móvil y desktop); el CTA de auth está visible antes de que cargue el island de sesión (5 tests).
+  - [x] Regresión: `f-051`, `f-052`, `f-068`, `f-102`, `f-116`, `f-124` + smoke → **95 passed**. Lint limpio, typecheck limpio, 531 unit tests verdes.
+- Notas:
+  - Medir **después** de F-124 — al volver estático el marketing cambian tanto el waterfall como el reparto de chunks.
+  - **Session Replay queda fuera, no aplazado.** Nunca se consultó para una página de marketing y es la integración más cara del SDK. Si se quiere para depurar el funnel, va **en `/reservar`** con `Sentry.lazyLoadIntegration("replayIntegration")`, no en el init global.
+  - **El guard no corre en el CI de PR**: necesita un build de producción, y `next build` prerenderiza rutas de marketing que leen Postgres por el driver serverless de Neon — un service container `postgres:` normal no habla ese protocolo. Hasta que el CI tenga una branch de Neon (**F-022**), el guard automático es el de `post-deploy-smoke.yml` (producción) y en PR se corre a mano con `npm run check:bundle`.
+  - Falta cerrar con Lighthouse contra el deploy para confirmar que `unused-javascript`/`legacy-javascript` caen y ver el TBT móvil — pendiente de que el PR llegue a producción.
+- Refs: F-125, F-124, F-022, `instrumentation-client.ts`, `app/global-error.tsx`, `app/components/{MobileNav,MobileNavSheet,NavMore,NavMoreMenu,AuthNav,AuthNavLinks,AuthNavSession}.tsx`, `components/ui/dropdown-menu.tsx`, `scripts/check-bundle-budget.mjs`, `booking-platform-perf`
 
 ---
 

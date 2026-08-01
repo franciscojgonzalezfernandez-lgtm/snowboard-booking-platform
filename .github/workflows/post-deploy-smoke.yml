@@ -70,3 +70,11 @@ jobs:
 
       - name: Smoke
         run: npx playwright test e2e/smoke.spec.ts --project=chromium
+
+      # F-125 — the home's JS budget (< 200 KB gz First Load) is guarded here
+      # rather than on PR CI because the check needs a production build, and
+      # `next build` prerenders marketing pages that read Postgres through the
+      # Neon serverless driver — which CI has no database for (F-022). Locally
+      # the same script runs against `.next` via `npm run check:bundle`.
+      - name: Home JS budget
+        run: node scripts/check-bundle-budget.mjs --url "$PLAYWRIGHT_BASE_URL"

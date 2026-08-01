@@ -16,6 +16,7 @@
     "test:unit:watch": "vitest",
     "test:unit:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "check:bundle": "node scripts/check-bundle-budget.mjs",
     "email:test": "tsx scripts/send-test-email.ts",
     "db:seed": "prisma db seed",
     "postinstall": "prisma generate",
@@ -84,5 +85,11 @@
     "tsx": "^4.22.1",
     "typescript": "^5",
     "vitest": "^4.1.6"
-  }
+  },
+  "browserslist": [
+    "chrome >= 111",
+    "edge >= 111",
+    "firefox >= 128",
+    "safari >= 16.4"
+  ]
 }

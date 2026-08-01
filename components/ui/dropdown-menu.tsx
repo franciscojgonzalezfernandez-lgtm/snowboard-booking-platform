@@ -23,12 +23,13 @@ function DropdownMenuContent({
   alignOffset = 0,
   side = "bottom",
   sideOffset = 4,
+  anchor,
   className,
   ...props
 }: MenuPrimitive.Popup.Props &
   Pick<
     MenuPrimitive.Positioner.Props,
-    "align" | "alignOffset" | "side" | "sideOffset"
+    "align" | "alignOffset" | "side" | "sideOffset" | "anchor"
   >) {
   return (
     <MenuPrimitive.Portal>
@@ -38,6 +39,11 @@ function DropdownMenuContent({
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
+        // F-125: lets a caller keep its trigger outside the primitive (see
+        // `NavMore`, which renders a plain button so the menu chunk can load on
+        // demand). Unset for every normal `DropdownMenuTrigger` usage, where
+        // the positioner finds its anchor itself.
+        anchor={anchor}
       >
         <MenuPrimitive.Popup
           data-slot="dropdown-menu-content"
