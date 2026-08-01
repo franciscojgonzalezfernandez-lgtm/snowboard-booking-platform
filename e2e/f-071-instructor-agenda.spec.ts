@@ -18,6 +18,11 @@ const ICS_UID_PREFIX = "f-071-";
 const ANCHOR_TIME = "09:00";
 const ATTENDEE_NAME = "Agenda Test Pupil";
 
+// Each test signs up a fresh account and then promotes it, and they all read the
+// same agenda for today. Running them against each other (the config sets
+// `fullyParallel`) made them flake on signup contention, so keep them serial.
+test.describe.configure({ mode: "serial" });
+
 // Today at UTC midnight — Booking.date is @db.Date and the agenda's default
 // window starts at today, so a class created here lands on the first day.
 function todayUtcMidnight(): Date {

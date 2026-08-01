@@ -2803,6 +2803,26 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 - Notas: medir **después** de F-124 — al volver estático el marketing cambian tanto el waterfall como el reparto de chunks.
 - Refs: F-125, F-124, `booking-platform-perf`
 
+### F-126 — Specs E2E en rojo desde hace meses: titulares obsoletos + fuga de estado del admin
+
+- Sprint: post-Sprint 5 · Estado: **done** (2026-08-01) · Prioridad: P2 (deuda de test — enmascaraba regresiones reales)
+- Depende de: —
+- Motivación: al verificar F-124 aparecieron tres specs en rojo que **no eran regresión de ese ticket** — fallaban igual en `main`. La causa de fondo es que **CI sólo corre `e2e/smoke.spec.ts`** (`.github/workflows/ci.yml:80`), así que los otros 59 specs sólo se ejecutan a mano y se pudren sin que nadie se entere.
+- Causas, verificadas:
+  1. **`f-032-home-locales` (5 tests):** constantes hard-coded del titular de la home — esperaba `"Learn to ride"`, que **F-092 (#145) eliminó** de `messages/`. Llevaba roto desde entonces.
+  2. **`f-076-admin` "All mode opens and closes a day":** el `afterAll` sólo borraba bloques de instructores con email `f076-`, pero el modo "All" abre el día para **todos** los instructores activos, seed incluidos. Los bloques de Javi/Lara/Ale quedaban huérfanos en la fecha del test (`inSeasonDate(50)` = 2027-01-18) y hacían fallar la aserción de apertura (“el día empieza cerrado”) del run siguiente, de forma permanente. Confirmado en la BD: 9/10/1 bloques `AVAILABLE` huérfanos.
+  3. **`f-071-instructor-agenda` + el resto de `f-076`:** no eran fallos propios, sino contención — todos los specs apuntan a la **misma** branch de Neon y `fullyParallel` está activo, así que dos workers mutando las mismas filas se pisan y además saturan la compilación on-demand de `next dev` (los signups empiezan a dar timeout).
+- AC:
+  - [x] `f-032`: las expectativas se **derivan de `messages/*.json`** (`home.hero_title_1`, `home.cta_primary`, `nav.signin`) en vez de repetir la copy, para que un cambio de textos no vuelva a pudrir el spec en silencio. 5/5 verde.
+  - [x] `f-076`: limpieza **por fecha y para todos los instructores**, en `beforeAll` además de `afterAll` (un run interrumpido dejaba el terreno sucio para el siguiente).
+  - [x] `f-076` y `f-071` en `test.describe.configure({ mode: "serial" })` — comparten calendario y lista global de instructores.
+  - [x] Verificado: 8/8 con `--workers=1`, y `f-032` 5/5.
+  - [x] `docs/WORKFLOW.md`: cómo correr la suite en local (`--workers=1` para specs que escriben en BD, override de `BETTER_AUTH_URL`, y la regla de limpiar por fecha/id y no por prefijo de email).
+- Notas:
+  - **Queda abierto**: que CI corra más que el smoke. Es una decisión de coste/tiempo del owner (la suite completa son varios minutos y necesita una branch de Neon dedicada, según F-022). Mientras siga así, cualquier spec puede volver a pudrirse.
+  - La contención entre ficheros no se arregla con config de Playwright (no hay límite de workers por fichero); la vía real es la branch de Neon por worker que ya contemplaba F-022.
+- Refs: F-126, F-124, F-092, F-022, `.github/workflows/ci.yml`
+
 ---
 
 ## Bloqueantes / decisiones abiertas (consolidadas)

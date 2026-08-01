@@ -98,7 +98,40 @@ function isoMonth(d: Date): string {
   return d.toISOString().slice(0, 7);
 }
 
+// These tests share global state — the admin calendar for a given day and the
+// single instructor list — so they cannot run against each other. `fullyParallel`
+// is on in the config, which is what this opts out of.
+test.describe.configure({ mode: "serial" });
+
+/** Purge the AVAILABLE blocks these tests create, for EVERY instructor. */
+async function purgeTestDayBlocks(): Promise<void> {
+  // "All mode" opens the day for every *active* instructor, seeded ones
+  // included, so cleaning up by `f076-` email left blocks behind on the seeded
+  // owner and coaches. Those leftovers made the next run's opening assertion
+  // ("the day starts closed") fail permanently — which is exactly how this spec
+  // ended up red on main. Clean up by date instead, so it covers whoever the
+  // open actually touched.
+  const days = await Promise.all([inSeasonDate(0), inSeasonDate(50)]);
+  await prisma.availabilityBlock.deleteMany({
+    where: {
+      kind: "AVAILABLE",
+      OR: days.map((day) => ({
+        startDateTime: {
+          gte: new Date(`${isoDate(day)}T00:00:00.000Z`),
+          lte: new Date(`${isoDate(day)}T23:59:59.999Z`),
+        },
+      })),
+    },
+  });
+}
+
+// Leftovers from an earlier interrupted run would fail the first assertion
+// before this run gets a chance to create anything, so clear the slate up front
+// as well as after.
+test.beforeAll(purgeTestDayBlocks);
+
 test.afterAll(async () => {
+  await purgeTestDayBlocks();
   await prisma.availabilityBlock.deleteMany({
     where: { instructor: { user: { email: { startsWith: EMAIL_PREFIX } } } },
   });

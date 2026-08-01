@@ -1,21 +1,31 @@
 import { test, expect, type Page } from "@playwright/test";
 
+import en from "../messages/en.json";
+import de from "../messages/de.json";
+import es from "../messages/es.json";
+
+// Read the expected copy from the translations rather than restating it here.
+// Hard-coded strings rotted silently once already: these assertions still
+// expected "Learn to ride" long after F-092 rewrote the headline, so the whole
+// file had been failing unnoticed.
+const MESSAGES = { en, de, es } as const;
+
 const HOME_HEADLINE = {
-  en: "Learn to ride",
-  de: "Snowboarden im",
-  es: "Aprende a montar",
+  en: MESSAGES.en.home.hero_title_1,
+  de: MESSAGES.de.home.hero_title_1,
+  es: MESSAGES.es.home.hero_title_1,
 } as const;
 
 const CTA_PRIMARY = {
-  en: "Book a lesson",
-  de: "Stunde buchen",
-  es: "Reservar clase",
+  en: MESSAGES.en.home.cta_primary,
+  de: MESSAGES.de.home.cta_primary,
+  es: MESSAGES.es.home.cta_primary,
 } as const;
 
 const CTA_SIGNIN = {
-  en: "Sign in",
-  de: "Anmelden",
-  es: "Iniciar sesión",
+  en: MESSAGES.en.nav.signin,
+  de: MESSAGES.de.nav.signin,
+  es: MESSAGES.es.nav.signin,
 } as const;
 
 type Locale = keyof typeof HOME_HEADLINE;
