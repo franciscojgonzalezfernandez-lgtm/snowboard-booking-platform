@@ -84,6 +84,8 @@ type CreditFixture = {
 
 function makeDeps(overrides?: {
   session?: CreateDraftDeps["session"];
+  /** F-122: number of live PENDING_PAYMENT holds the booker already has. */
+  liveHoldsCount?: number;
   existingBooking?: {
     id: string;
     stripePaymentIntentId: string | null;
@@ -130,6 +132,8 @@ function makeDeps(overrides?: {
     return { count: args.data.length };
   });
   const bookingFindFirst = vi.fn(async () => overrides?.existingBooking ?? null);
+  // F-122: live PENDING_PAYMENT holds the booker already has (hold-cap check).
+  const bookingCount = vi.fn(async () => overrides?.liveHoldsCount ?? 0);
   const bookingUpdate = vi.fn(
     async (args: {
       where: { id: string };
@@ -202,6 +206,7 @@ function makeDeps(overrides?: {
     booking: {
       findFirst: bookingFindFirst,
       update: bookingUpdate,
+      count: bookingCount,
     },
     accountCredit: { findMany: creditFindMany },
     $transaction: vi.fn(async (cb: (tx: unknown) => Promise<unknown>) =>
@@ -239,7 +244,7 @@ function makeDeps(overrides?: {
   const deps: CreateDraftDeps = {
     session:
       overrides?.session === undefined
-        ? { user: { id: "user_javi" } }
+        ? { user: { id: "user_javi", emailVerified: true } }
         : overrides.session,
     prisma,
     stripe,
@@ -270,6 +275,7 @@ function makeDeps(overrides?: {
       bookingCreate,
       attendeeCreateMany,
       bookingFindFirst,
+      bookingCount,
       bookingUpdate,
       seasonFindFirst,
       paymentIntentCreate,
@@ -355,6 +361,56 @@ describe("createBookingDraftWith — authorisation + validation", () => {
     const { deps, enginePrisma } = makeDeps({ session: null });
     const result = await createBookingDraftWith(deps, enginePrisma, VALID_INPUT);
     expect(result).toEqual({ ok: false, error: "UNAUTHORIZED" });
+  });
+
+  // F-122: the inventory-DoS chokepoint. An unverified session must not be able
+  // to hold a slot — no booking row, no PaymentIntent — before any payment.
+  test("rejects an unverified email with EMAIL_NOT_VERIFIED and holds no slot", async () => {
+    const { deps, enginePrisma, spies } = makeDeps({
+      session: { user: { id: "user_javi", emailVerified: false } },
+    });
+
+    const result = await createBookingDraftWith(deps, enginePrisma, VALID_INPUT);
+
+    expect(result).toEqual({ ok: false, error: "EMAIL_NOT_VERIFIED" });
+    // No hold created, no charge intent — the vector is closed before either.
+    expect(spies.bookingCreate).not.toHaveBeenCalled();
+    expect(spies.paymentIntentCreate).not.toHaveBeenCalled();
+    // Refused before the availability re-check even loads pricing.
+    expect(spies.seasonFindFirst).not.toHaveBeenCalled();
+  });
+
+  test("lets a verified email through to a real hold", async () => {
+    const { deps, enginePrisma, spies } = makeDeps({
+      session: { user: { id: "user_javi", emailVerified: true } },
+    });
+
+    const result = await createBookingDraftWith(deps, enginePrisma, VALID_INPUT);
+
+    expect(result.ok).toBe(true);
+    expect(spies.bookingCreate).toHaveBeenCalledTimes(1);
+    expect(spies.paymentIntentCreate).toHaveBeenCalledTimes(1);
+  });
+
+  // F-122 damage cap: a booker at the concurrent-hold limit cannot lock another
+  // slot even after verifying — bounds how much inventory one actor can freeze.
+  test("rejects a new hold with TOO_MANY_HOLDS at the concurrent-hold cap", async () => {
+    const { deps, enginePrisma, spies } = makeDeps({ liveHoldsCount: 2 });
+
+    const result = await createBookingDraftWith(deps, enginePrisma, VALID_INPUT);
+
+    expect(result).toEqual({ ok: false, error: "TOO_MANY_HOLDS" });
+    expect(spies.bookingCreate).not.toHaveBeenCalled();
+    expect(spies.paymentIntentCreate).not.toHaveBeenCalled();
+  });
+
+  test("allows a hold below the concurrent-hold cap", async () => {
+    const { deps, enginePrisma, spies } = makeDeps({ liveHoldsCount: 1 });
+
+    const result = await createBookingDraftWith(deps, enginePrisma, VALID_INPUT);
+
+    expect(result.ok).toBe(true);
+    expect(spies.bookingCreate).toHaveBeenCalledTimes(1);
   });
 
   test("rejects ANYONE instructor id with INVALID_INPUT", async () => {

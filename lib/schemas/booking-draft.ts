@@ -37,6 +37,12 @@ export type CreateBookingDraftInput = z.infer<typeof createBookingDraftSchema>;
 
 export type CreateBookingDraftError =
   | "UNAUTHORIZED"
+  // F-122: session belongs to an account whose email is not verified — refused
+  // before any slot hold or PaymentIntent is created.
+  | "EMAIL_NOT_VERIFIED"
+  // F-122: the booker already holds the maximum number of concurrent
+  // PENDING_PAYMENT drafts — bounds inventory a single actor can lock at once.
+  | "TOO_MANY_HOLDS"
   | "INVALID_INPUT"
   | "NO_ACTIVE_SEASON"
   | "PRICING_MISSING"
