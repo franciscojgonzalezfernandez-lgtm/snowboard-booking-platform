@@ -19,9 +19,19 @@ import type { Db } from "@/lib/db";
 const IDEMPOTENCY_WINDOW_MS = 15 * 60 * 1000;
 const ICS_DOMAIN = "rideflumserberg.ch";
 
+// F-122: cap on live PENDING_PAYMENT drafts a single booker may hold at once.
+// A hold locks a slot before any payment, so an actor who verifies once could
+// otherwise loop createBookingDraft to lock the whole calendar. Two lets a
+// booker legitimately compare/hold a second slot while deciding, and no more.
+const MAX_CONCURRENT_HOLDS = 2;
+
 export type CreateDraftDeps = {
-  /** Pre-resolved session from the framework; null if anonymous. */
-  session: { user: { id: string } } | null;
+  /**
+   * Pre-resolved session from the framework; null if anonymous. `emailVerified`
+   * gates the slot hold (F-122): a session whose email is not verified is
+   * refused before any booking row or PaymentIntent is created.
+   */
+  session: { user: { id: string; emailVerified: boolean } } | null;
   prisma: Db;
   /** Stripe-like surface; mocked in tests, real Stripe SDK in production. */
   stripe: StripeSurface;
@@ -199,6 +209,17 @@ export async function createBookingDraftWith(
     return { ok: false, error: "UNAUTHORIZED" };
   }
 
+  // F-122 chokepoint: refuse to hold a slot for an unverified account. This
+  // runs before the availability re-check, the transaction that writes the
+  // PENDING_PAYMENT row, and the PaymentIntent — the hold precedes payment, so
+  // this is the earliest point that stops the inventory-DoS vector. It is
+  // defense-in-depth behind `emailAndPassword.requireEmailVerification`: even if
+  // some path leaves an unverified session, the hold is denied here. Google and
+  // magic-link sessions carry `emailVerified: true`, so they pass untouched.
+  if (session.user.emailVerified !== true) {
+    return { ok: false, error: "EMAIL_NOT_VERIFIED" };
+  }
+
   const parsed = createBookingDraftSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: "INVALID_INPUT", issues: parsed.error.issues };
@@ -268,6 +289,23 @@ export async function createBookingDraftWith(
     duration: data.duration,
   });
   if (!available) return { ok: false, error: "SLOT_TAKEN" };
+
+  // F-122 damage cap: bound how many slots one booker can hold unpaid at once.
+  // Runs after the idempotent-resubmit reuse above (a resubmit of an existing
+  // slot returns there and never reaches this count), so it only fires for a
+  // genuinely new hold. Only holds inside the expiry window count — a draft
+  // older than the window is already dead inventory (the expire-pending cron
+  // will flip it), so it must not permanently consume a booker's quota.
+  const liveHolds = await prisma.booking.count({
+    where: {
+      bookerId: session.user.id,
+      status: BookingStatus.PENDING_PAYMENT,
+      createdAt: { gt: new Date(now.getTime() - IDEMPOTENCY_WINDOW_MS) },
+    },
+  });
+  if (liveHolds >= MAX_CONCURRENT_HOLDS) {
+    return { ok: false, error: "TOO_MANY_HOLDS" };
+  }
 
   const seasonRow = await prisma.season.findFirst({
     where: { active: true },

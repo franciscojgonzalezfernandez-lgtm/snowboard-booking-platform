@@ -33,11 +33,17 @@ type Step4AuthProps = {
  * - Google + magic link auto-create the account on first use (Better Auth
  *   default). Both leave the page briefly and return via `callbackURL`; the
  *   draft survives because it lives in the URL.
- * - Email+password uses a single "continue" submit: it attempts sign-up first
- *   and falls back to sign-in when the account already exists. This is the
- *   only fully on-page path — on success we `router.refresh()` in place so the
- *   RSC re-reads the session and Section 4 flips to the payment flow with no
- *   navigation at all.
+ * - Email+password (F-122): with `requireEmailVerification` on, a password
+ *   account can no longer hold a slot until its address is confirmed, so this
+ *   path is no longer fully on-page — it becomes a round-trip to the inbox like
+ *   magic link (accepted trade-off, D-2026-07-28). `signUp` now returns a
+ *   generic success for an existing email too (anti-enumeration) and never
+ *   auto-signs-in, so we resolve the real state with a follow-up `signIn`:
+ *     · signIn ok               → verified, correct password → refresh to pay
+ *     · signIn EMAIL_NOT_VERIFIED → new or unverified account → "confirm email"
+ *     · signIn invalid          → existing account, wrong password / passwordless
+ *   The verification link carries `callbackURL`, so confirming returns the
+ *   booker to this funnel URL (draft in the query string) already signed in.
  *
  * Copy is reused from the shared `login` namespace (client-available under the
  * root NextIntlClientProvider), same as `login-form.tsx`.
@@ -48,6 +54,10 @@ export function Step4Auth({ callbackURL }: Step4AuthProps) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [magicSent, setMagicSent] = useState(false);
+  // F-122: when set, the email whose address needs confirming — swaps the auth
+  // form for the "confirm your email" state with a resend control.
+  const [verifyEmail, setVerifyEmail] = useState<string | null>(null);
+  const [verifyResent, setVerifyResent] = useState(false);
 
   const schema = useMemo(
     () =>
@@ -68,44 +78,70 @@ export function Step4Auth({ callbackURL }: Step4AuthProps) {
   function onSubmit({ email, password }: Values) {
     setError(null);
     setMagicSent(false);
+    setVerifyResent(false);
     startTransition(async () => {
-      // Auto-provision: create the account first. If it already exists, fall
-      // back to signing in with the same credentials. This ordering keeps a
-      // wrong password on an existing account surfacing as a real sign-in
-      // error, instead of the ambiguous "invalid credentials" that a
-      // sign-in-first flow returns for both wrong-password and unknown-user.
       const name = email.split("@")[0] || email;
-      const signUp = await authClient.signUp.email({ email, password, name });
-
+      // Try to provision the account. Under `requireEmailVerification`, sign-up
+      // never creates a session and returns a generic success even when the
+      // email already exists (anti-enumeration), so it can no longer detect
+      // "already exists" — any error here is a real failure (weak password,
+      // rate limit, delivery) and must surface. `callbackURL` is threaded so the
+      // verification link returns to this funnel URL with the draft intact.
+      const signUp = await authClient.signUp.email({
+        email,
+        password,
+        name,
+        callbackURL,
+      });
       if (signUp.error) {
-        // Better Auth reports an existing account with a versioned code —
-        // `USER_ALREADY_EXISTS` in some releases, `USER_ALREADY_EXISTS_USE_
-        // ANOTHER_EMAIL` in others — so match on the prefix, not an exact
-        // string. Getting this wrong swallows the whole sign-in fallback and
-        // shows a "use another email" error to a returning user (the F-119
-        // regression this guards against).
-        const alreadyExists =
-          signUp.error.code?.startsWith("USER_ALREADY_EXISTS") ?? false;
-        if (!alreadyExists) {
-          setError(signUp.error.message ?? t("error_fallback"));
-          return;
-        }
-        const signIn = await authClient.signIn.email({ email, password });
-        if (signIn.error) {
-          // The account exists but the password did not authenticate: either a
-          // wrong password, or the account has none because it was created via
-          // Google / magic link. Better Auth returns the same generic error for
-          // both, so nudge toward the passwordless methods rather than a bare
-          // "invalid password".
-          setError(t("error_existing_account"));
-          return;
-        }
+        setError(signUp.error.message ?? t("error_fallback"));
+        return;
       }
 
-      // Session cookie is now set. Re-render the server component in place —
-      // no push, so we stay on the funnel URL and Section 4 becomes payment.
-      router.refresh();
+      // Resolve the real account state. Sign-up succeeding tells us nothing
+      // (new vs existing look identical), so sign in to branch.
+      const signIn = await authClient.signIn.email({
+        email,
+        password,
+        callbackURL,
+      });
+      if (!signIn.error) {
+        // Existing, verified, correct password. Session cookie is set — re-render
+        // the server component in place so Section 4 becomes payment, no nav.
+        router.refresh();
+        return;
+      }
+      // Correct password but the address is unverified (new account we just
+      // created, or an existing one that never confirmed). Better Auth returns
+      // 403 EMAIL_NOT_VERIFIED and re-sends the link (`sendOnSignIn`); show the
+      // confirm-your-email state instead of flipping to payment.
+      const notVerified =
+        signIn.error.code === "EMAIL_NOT_VERIFIED" ||
+        signIn.error.status === 403;
+      if (notVerified) {
+        setVerifyEmail(email);
+        return;
+      }
+      // Existing account whose password did not authenticate: wrong password, or
+      // it was created via Google / magic link and has none. Nudge toward the
+      // passwordless methods rather than a bare "invalid password".
+      setError(t("error_existing_account"));
     });
+  }
+
+  async function onResendVerification() {
+    if (!verifyEmail) return;
+    setError(null);
+    setVerifyResent(false);
+    const result = await authClient.sendVerificationEmail({
+      email: verifyEmail,
+      callbackURL,
+    });
+    if (result.error) {
+      setError(result.error.message ?? t("error_fallback"));
+      return;
+    }
+    setVerifyResent(true);
   }
 
   async function onGoogle() {
@@ -135,6 +171,53 @@ export function Step4Auth({ callbackURL }: Step4AuthProps) {
       return;
     }
     setMagicSent(true);
+  }
+
+  // F-122: address needs confirming before the slot can be held. Replace the
+  // auth methods with a focused "check your inbox" panel + resend. Google and
+  // magic link never reach here (both arrive pre-verified).
+  if (verifyEmail) {
+    return (
+      <div
+        className="mt-6 space-y-4"
+        data-testid="step4-auth-verify"
+        data-section-focus
+      >
+        <p className="text-base font-medium text-foreground">
+          {t("verify_email_title")}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          {t("verify_email_body", { email: verifyEmail })}
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={onResendVerification}
+          data-testid="step4-auth-verify-resend"
+        >
+          {t("verify_email_resend")}
+        </Button>
+        {verifyResent ? (
+          <p
+            className="text-sm text-foreground"
+            role="status"
+            data-testid="step4-auth-verify-resent"
+          >
+            {t("verify_email_resent")}
+          </p>
+        ) : null}
+        {error ? (
+          <p
+            className="text-sm text-destructive"
+            role="alert"
+            data-testid="step4-auth-error"
+          >
+            {error}
+          </p>
+        ) : null}
+      </div>
+    );
   }
 
   return (

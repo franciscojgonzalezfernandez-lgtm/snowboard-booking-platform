@@ -5,9 +5,14 @@ import { test, expect } from "@playwright/test";
  *
  * The anonymous Section 4 used to link out to `/login?next=…`. It now embeds
  * the three auth methods in-page (Google + magic link + email/password) with
- * auto-provisioning and no sign-in/sign-up toggle. Email+password is the
- * fully on-page path: on success the RSC re-renders in place and Section 4
- * flips to the authenticated booker/payment form — no navigation.
+ * auto-provisioning and no sign-in/sign-up toggle.
+ *
+ * F-122 changed the email+password contract: with `requireEmailVerification`
+ * on, that path is no longer fully on-page — a new/unverified email now lands on
+ * a "confirm your email" state instead of flipping straight to payment. The
+ * positive email+password behaviour lives in `e2e/f-122-email-verification.spec.ts`;
+ * this spec only guards what F-119 still owns: the three methods are embedded
+ * in-page with no link-out, and magic link validates inline.
  *
  * Seeded deep-link (matches the other funnel specs): a ONE_HOUR lesson on
  * 2026-12-15 at 10:00 with the owner instructor, which reveals Section 4.
@@ -23,10 +28,6 @@ const STEP4 = {
 
 function step4Url(): string {
   return `/en/reservar?${new URLSearchParams(STEP4).toString()}`;
-}
-
-function uniqueEmail(): string {
-  return `f119-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.test`;
 }
 
 test.describe("F-119 — embedded Section 4 auth", () => {
@@ -47,52 +48,9 @@ test.describe("F-119 — embedded Section 4 auth", () => {
     expect(new URL(page.url()).pathname).toBe("/en/reservar");
   });
 
-  test("email+password auto-provisions a new booker and flips Section 4 in-place", async ({
-    page,
-  }) => {
-    await page.goto(step4Url());
-
-    // No sign-up step: a brand-new email is created on submit.
-    await page.getByTestId("step4-auth-email").fill(uniqueEmail());
-    await page.getByTestId("step4-auth-password").fill("Sn0wb0ard!Strong");
-    await page.getByTestId("step4-auth-submit").click();
-
-    // Section 4 becomes the authenticated booker/payment form (data-testid
-    // "section-4") without leaving /en/reservar.
-    await expect(page.getByTestId("section-4")).toBeVisible({ timeout: 20000 });
-    await expect(page.getByTestId("step4-auth")).toHaveCount(0);
-    await expect(page.getByTestId("section-4-anonymous")).toHaveCount(0);
-    expect(new URL(page.url()).pathname).toBe("/en/reservar");
-  });
-
-  test("email+password with an EXISTING account signs in (unified submit, no 'already exists' error)", async ({
-    page,
-  }) => {
-    const email = uniqueEmail();
-    const password = "Sn0wb0ard!Strong";
-
-    // First submit auto-provisions the account and flips to payment.
-    await page.goto(step4Url());
-    await page.getByTestId("step4-auth-email").fill(email);
-    await page.getByTestId("step4-auth-password").fill(password);
-    await page.getByTestId("step4-auth-submit").click();
-    await expect(page.getByTestId("section-4")).toBeVisible({ timeout: 20000 });
-
-    // Return anonymous and submit the SAME credentials. Better Auth answers the
-    // sign-up with USER_ALREADY_EXISTS(_USE_ANOTHER_EMAIL); the unified submit
-    // must fall back to sign-in and flip to payment — NOT surface the sign-up
-    // error. Regression guard for the prefix-match bug (returning user shown
-    // "use another email").
-    await page.context().clearCookies();
-    await page.goto(step4Url());
-    await page.getByTestId("step4-auth-email").fill(email);
-    await page.getByTestId("step4-auth-password").fill(password);
-    await page.getByTestId("step4-auth-submit").click();
-
-    await expect(page.getByTestId("section-4")).toBeVisible({ timeout: 20000 });
-    await expect(page.getByTestId("step4-auth-error")).toHaveCount(0);
-    expect(new URL(page.url()).pathname).toBe("/en/reservar");
-  });
+  // The email+password positive path (new email → "confirm your email", not
+  // payment) moved to e2e/f-122-email-verification.spec.ts when F-122 turned on
+  // `requireEmailVerification`.
 
   test("magic link validates the email inline instead of leaving the funnel", async ({
     page,
