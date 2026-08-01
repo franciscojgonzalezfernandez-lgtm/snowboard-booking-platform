@@ -2823,6 +2823,22 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - La contención entre ficheros no se arregla con config de Playwright (no hay límite de workers por fichero); la vía real es la branch de Neon por worker que ya contemplaba F-022.
 - Refs: F-126, F-124, F-092, F-022, `.github/workflows/ci.yml`
 
+### F-127 — F-122 dejó en rojo los specs de "signed-in" de la nav (los helpers de signup asumen sesión inmediata)
+
+- Sprint: post-Sprint 5 · Estado: backlog · Prioridad: P2 (deuda de test, misma familia que F-126 — el rojo tapa regresiones reales de la nav)
+- Depende de: F-122 (la causa), F-126 (mismo patrón), F-022 (branch de Neon para CI)
+- Motivación: detectado 2026-08-01 al rebasar F-125 sobre `main`. **F-122 (#192) activó `emailAndPassword.requireEmailVerification = true`**, así que un signup por email+password ya **no crea sesión**. Dos specs siguen dando por hecho que sí, se quedan anónimos y acaban en `/en/login`:
+  - `e2e/f-068-global-nav.spec.ts:52` — "signed-in user sees My account + Sign out on /dashboard"
+  - `e2e/f-116-header.spec.ts:101` — "account + sign out fit without breaking the brand row at 1024px"
+  Ambos usan un helper `signUp()` que hace `waitForURL(/\/(en|de|es)\/?$/)` tras enviar el formulario. Verificado: el snapshot del fallo muestra la página de login y un CTA "Sign in", es decir que `/en/dashboard` redirigió correctamente a un visitante anónimo. **No es regresión de F-125** — el rojo aparece con o sin sus cambios; el propio PR de F-125 los tenía en verde antes del rebase.
+- AC:
+  - [ ] Que los helpers produzcan un usuario **realmente** con sesión bajo `requireEmailVerification`. Opciones a evaluar (por orden de preferencia): (a) marcar `emailVerified` en la BD justo tras el signup, como ya hace la migración de back-fill de F-122; (b) usar la vía **magic link**, que F-122 dejó exenta, si el test puede leer el token; (c) fixture de storageState con un usuario sembrado y verificado.
+  - [ ] Barrer el resto de specs que hagan signup por email+password y esperen sesión (`grep -l "submit-credentials" e2e/`), no sólo los dos que fallaron hoy.
+  - [ ] Verificar en verde con `--workers=1` (la regla de F-126 para specs que escriben en BD).
+- Notas:
+  - Consecuencia directa de lo que F-126 dejó abierto: **CI sólo corre `e2e/smoke.spec.ts`**, así que F-122 pudo entrar a `main` rompiendo dos specs sin que nada lo señalara. Mientras eso siga así, este ticket se repetirá con otro nombre.
+- Refs: F-127, F-122, F-126, F-022, `e2e/f-068-global-nav.spec.ts:9`, `e2e/f-116-header.spec.ts`, `lib/auth/index.ts`
+
 ---
 
 ## Bloqueantes / decisiones abiertas (consolidadas)
