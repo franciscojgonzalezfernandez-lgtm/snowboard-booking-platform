@@ -49,6 +49,19 @@ Todo ticket de Sprint ≥1 que toque UI o endpoint público debe:
 
 Fixtures: branch Neon dedicada (default `playwright`) con `prisma/seed.ts` recargado entre suites — decidido en F-022.
 
+### Cómo correr la suite en local (F-126)
+
+**CI sólo corre `e2e/smoke.spec.ts`.** El resto de specs se ejecutan a mano, así que se pudren en silencio si nadie los mira — pasó con `f-032-home-locales` (asertaba un titular que F-092 había reescrito) y con `f-076-admin` (dejaba bloques de disponibilidad huérfanos que rompían el run siguiente). Al tocar una zona, corre sus specs.
+
+```bash
+BETTER_AUTH_URL=http://localhost:3000 npm run dev   # en otra terminal
+npx playwright test e2e/f-0XX-*.spec.ts --workers=1
+```
+
+- **`--workers=1` para specs que escriben en la BD** (auth, admin, instructor, funnel). Todos apuntan a la **misma** branch de Neon, así que dos workers mutando las mismas filas se pisan; además saturan la compilación on-demand de `next dev` y los signups empiezan a dar timeout. Los specs de sólo lectura sí toleran el `fullyParallel` del config.
+- **`BETTER_AUTH_URL` hay que sobreescribirlo**: `.env.local` apunta a producción y Better Auth rechaza el origin con `Invalid origin: http://localhost:3000`; el síntoma es que cualquier paso de signup se queda colgado.
+- Un spec que crea estado global (abrir un día, crear instructores) **debe limpiarlo por fecha o id, no por prefijo de email** — el modo "All" del admin abre el día para *todos* los instructores activos, seed incluidos.
+
 ---
 
 ## Memoria de features y repriorización
