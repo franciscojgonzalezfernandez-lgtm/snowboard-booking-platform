@@ -4,7 +4,7 @@ import { useState } from "react";
 import { MenuIcon, PhoneIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { Wordmark } from "./Wordmark";
 import {
   Sheet,
@@ -13,7 +13,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { signOutAction } from "@/lib/auth/actions";
+import { authClient, useSession } from "@/lib/auth/client";
 import {
   OPERATIONAL_PHONE_DISPLAY,
   OPERATIONAL_PHONE_TEL,
@@ -21,13 +21,21 @@ import {
 import { LanguageSwitcher } from "./LanguageSwitcher";
 
 type MobileNavProps = {
-  signedIn: boolean;
+  /** See `AuthNav` — pre-resolution state, only the dashboard passes `true`. */
+  initialSignedIn?: boolean;
 };
 
-export function MobileNav({ signedIn }: MobileNavProps) {
+export function MobileNav({ initialSignedIn = false }: MobileNavProps) {
   const [open, setOpen] = useState(false);
   const t = useTranslations("nav");
+  const router = useRouter();
   const close = () => setOpen(false);
+
+  // F-124: the session is read here rather than passed down from the server, so
+  // SiteNav's layouts stay static. The sheet is behind a tap, so the session has
+  // always resolved by the time these controls are visible.
+  const { data, isPending } = useSession();
+  const signedIn = isPending ? initialSignedIn : !!data?.user;
 
   const linkClass =
     "block min-h-11 py-3 text-sm font-bold uppercase tracking-[0.15em] text-foreground hover:text-primary";
@@ -113,15 +121,19 @@ export function MobileNav({ signedIn }: MobileNavProps) {
               >
                 {t("dashboard_cta")}
               </Link>
-              <form action={signOutAction} onSubmit={close}>
-                <button
-                  type="submit"
-                  data-testid="mobile-nav-signout"
-                  className="block min-h-11 w-full text-center text-xs font-bold uppercase tracking-[0.15em] text-foreground transition-colors hover:text-primary"
-                >
-                  {t("sign_out")}
-                </button>
-              </form>
+              <button
+                type="button"
+                data-testid="mobile-nav-signout"
+                onClick={async () => {
+                  close();
+                  await authClient.signOut();
+                  router.push("/");
+                  router.refresh();
+                }}
+                className="block min-h-11 w-full text-center text-xs font-bold uppercase tracking-[0.15em] text-foreground transition-colors hover:text-primary"
+              >
+                {t("sign_out")}
+              </button>
             </>
           ) : (
             <Link

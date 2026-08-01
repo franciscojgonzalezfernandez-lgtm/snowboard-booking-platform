@@ -1,14 +1,12 @@
-import { headers } from "next/headers";
 import { PhoneIcon } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
-import { auth } from "@/lib/auth";
-import { signOutAction } from "@/lib/auth/actions";
 import {
   OPERATIONAL_PHONE_DISPLAY,
   OPERATIONAL_PHONE_TEL,
 } from "@/lib/contact/phone";
+import { AuthNav } from "./AuthNav";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { MobileNav } from "./MobileNav";
 import { NavMore } from "./NavMore";
@@ -16,6 +14,12 @@ import { Wordmark } from "./Wordmark";
 
 type SiteNavProps = {
   utility?: string;
+  /**
+   * Forwarded to the auth islands as their pre-resolution state (F-124). Only
+   * the dashboard sets it: its own gate guarantees a signed-in visitor. Every
+   * other surface leaves it `false` and lets the client session decide.
+   */
+  initialSignedIn?: boolean;
 };
 
 // Top nav mounted from route-group layouts (marketing / auth / dashboard).
@@ -31,10 +35,14 @@ type SiteNavProps = {
 //      Contact) + a "More" dropdown (Plan your visit · About) + the auth CTA.
 //      Phone and lang no longer compete here — that was the ~1024–1280px crowding
 //      the owner reported. Below lg everything collapses into the MobileNav Sheet.
-export async function SiteNav({ utility }: SiteNavProps) {
+//
+// F-124: this component reads NO session. It used to call
+// `auth.api.getSession({ headers: await headers() })`, and because it is mounted
+// from layouts that made every marketing route dynamic (`no-store`, permanent
+// CDN miss). The auth CTA now lives in the `AuthNav` / `MobileNav` client
+// islands, so marketing prerenders again.
+export async function SiteNav({ utility, initialSignedIn }: SiteNavProps) {
   const tNav = await getTranslations("nav");
-  const session = await auth.api.getSession({ headers: await headers() });
-  const signedIn = !!session?.user;
 
   return (
     <header data-testid="site-nav">
@@ -99,38 +107,9 @@ export async function SiteNav({ utility }: SiteNavProps) {
             />
           </nav>
 
-          <div className="hidden items-center gap-5 lg:flex">
-            {signedIn ? (
-              <>
-                <Link
-                  href="/dashboard"
-                  data-testid="site-nav-account"
-                  className="rounded-md border-2 border-foreground bg-foreground px-5 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-background transition-colors hover:bg-primary hover:border-primary"
-                >
-                  {tNav("dashboard_cta")}
-                </Link>
-                <form action={signOutAction}>
-                  <button
-                    type="submit"
-                    data-testid="site-nav-signout"
-                    className="text-xs font-bold uppercase tracking-[0.15em] text-foreground transition-colors hover:text-primary"
-                  >
-                    {tNav("sign_out")}
-                  </button>
-                </form>
-              </>
-            ) : (
-              <Link
-                href="/login"
-                data-testid="site-nav-signin"
-                className="rounded-md border-2 border-foreground bg-foreground px-5 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-background transition-colors hover:bg-primary hover:border-primary"
-              >
-                {tNav("signin")}
-              </Link>
-            )}
-          </div>
+          <AuthNav initialSignedIn={initialSignedIn} />
 
-          <MobileNav signedIn={signedIn} />
+          <MobileNav initialSignedIn={initialSignedIn} />
         </div>
       </div>
     </header>

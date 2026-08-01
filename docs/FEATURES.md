@@ -2759,26 +2759,32 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ### F-124 — Marketing sale `no-store`: recuperar el cacheado de CDN y arreglar el LCP (Lighthouse 98 → 100, y móvil dentro de presupuesto)
 
-- Sprint: post-Sprint 5 · Estado: backlog · Prioridad: **P1** (rompe el presupuesto de `booking-platform-perf`: LCP < 2.5s móvil en home)
+- Sprint: post-Sprint 5 · Estado: **review** (implementado 2026-07-31) · Prioridad: **P1** (rompe el presupuesto de `booking-platform-perf`: LCP < 2.5s móvil en home)
 - Depende de: F-090 (hero LCP-safe), F-116 (SiteNav + NavMore), `booking-platform-perf`
 - Motivación: Lighthouse contra prod (2026-07-29, `rideflumserberg.ch/es`): **desktop 95-98** — el 2% que falta es *solo* LCP (1.4s, score 0.83; FCP/TBT/CLS ya en 1.00) — y **móvil 66**, con LCP **5.6s**, FCP 2.9s, Speed Index 6.0s. El móvil está muy fuera del presupuesto del proyecto (LCP < 2.5s). Diagnóstico verificado con `curl` contra prod; tres causas encadenadas:
   1. **Todo el árbol de marketing se sirve dinámico.** `app/[locale]/(marketing)/layout.tsx` monta `<SiteNav>`, y `app/components/SiteNav.tsx:36` hace `auth.api.getSession({ headers: await headers() })`. Leer `headers()` marca dinámica **toda** la rama → Next emite `cache-control: private, no-cache, no-store, max-age=0, must-revalidate` y Vercel responde **`x-vercel-cache: MISS` siempre**. Verificado idéntico en `/es`, `/es/precios`, `/es/faq`, `/es/blog`. Coste medido: TTFB 340-500ms en caliente (1.6s en cold start) = **45% del LCP** según el desglose de Lighthouse (630ms de 1410ms). Efecto colateral: los 2 fallos de **bf-cache** del report son exactamente este `no-store` (volver atrás re-renderiza en vez de restaurar).
   2. **La propia imagen del LCP no se cachea.** `/_next/image?url=%2Fbrand%2Fhero.jpg&w=1920&q=75` responde `cache-control: public, max-age=0, must-revalidate` + `x-vercel-cache: MISS`. `next.config.ts` no define `images.minimumCacheTTL`, así que el optimizador hereda el `max-age=0` del estático de `public/`. Cada visitante re-descarga los 82 KB del hero: es el Load Delay (222ms) + Load Time (203ms) del LCP.
   3. **Falta el priority hint.** El `<Image priority>` de la home (`(marketing)/page.tsx:52-58`) sí emite el `<link rel="preload" as="image">`, pero Next 15.5 **no** pone `fetchpriority="high"` ni en el `<img>` ni en el preload → el insight `lcp-discovery-insight` de Lighthouse falla en `priorityHinted`.
+- **Hallazgo durante la implementación (2026-07-31): había una tercera causa, y era la dominante.** El layout raíz (`app/layout.tsx`) resolvía el idioma con `getLocale()` de next-intl para el `<html lang>`; al estar por encima de `[locale]` sólo podía sacarlo de la request, y esa única llamada marcaba dinámica **toda** la app — con ella, arreglar `SiteNav` no habría cambiado nada (medido: 0 páginas prerenderizadas antes, 50 después). Descartado `unstable_rootParams()` de Next 15.5: desde un layout por encima del segmento dinámico devuelve vacío y el `lang` se quedaba en "en" para los tres idiomas, que es una regresión WCAG 3.1.1. La solución es la documentada por next-intl: **dos root layouts vía grupos de ruta** — `app/(site)/[locale]` (público, `lang` del segmento) y `app/(ops)` (admin/instructor, EN). Los grupos no cambian URLs. La banda promo (`cookies()`) era la tercera: 0 imports cruzados a los directorios movidos, así que fue mover ficheros sin reconectar nada.
 - AC:
-  - [ ] **Sacar la lectura de sesión del render de servidor de marketing** para que esas rutas vuelvan a prerenderizarse y las sirva el CDN. Opción recomendada: extraer el CTA de auth de `SiteNav` a un island cliente (`authClient.useSession()`), dejando el resto de la nav como Server Component; el layout de marketing deja de tocar `headers()`. Alternativas a evaluar antes de implementar: `<Suspense>` alrededor del island, o `experimental.ppr` (canary en 15.5 — **no** adoptarlo solo por esto).
-  - [ ] Verificar tras deploy: `curl -sI https://rideflumserberg.ch/es` → `cache-control` con `s-maxage`/`stale-while-revalidate` (no `no-store`) y `x-vercel-cache: HIT` en la segunda petición. Idem `/es/precios`, `/es/faq`, `/es/blog`.
-  - [ ] **CLS 0 obligatorio** al montar el island: reservar el ancho del CTA (hoy CLS es 1.00 y no puede regresar). Estado neutro en SSR, sin salto al hidratar.
-  - [ ] `images.minimumCacheTTL` largo en `next.config.ts` (p. ej. 31536000) **o** import estático del hero (`import hero from "@/public/brand/hero.jpg"`, que da URL hasheada + inmutable). Verificar que `/_next/image` del hero pasa a `public, max-age=…, immutable` y cachea en el edge.
-  - [ ] `fetchPriority="high"` explícito en el `<Image>` del hero → `lcp-discovery-insight` en verde.
-  - [ ] Re-medir con `booking-platform-perf`: **LCP < 2.5s móvil** en `/es` (hoy 5.6s) y performance desktop **100**.
+  - [x] **Sacar la lectura de sesión del render de servidor de marketing**: el CTA de auth vive ahora en `app/components/AuthNav.tsx` (island con `useSession()`); `MobileNav` resuelve la suya; el dashboard pasa `initialSignedIn` para no parpadear "sign in". `SiteNav` ya no lee sesión.
+  - [x] Partir el root layout en `(site)` / `(ops)` + `app/root-shell.tsx` con fuentes, metadata y analytics compartidos.
+  - [x] Banda promo sin `cookies()`: HTML estático + script bloqueante en orden de parseo que marca el dismissal en `<html>` antes de parsear la banda (esconderla tras el paint habría desplazado el hero, que es el LCP). El botón escribe la cookie en cliente; `(marketing)/actions.ts` queda sin uso y se borra.
+  - [x] Verificado contra un build de producción: marketing responde `s-maxage=3600, stale-while-revalidate=31532400`; `/login`, `/dashboard`, `/reservar` y `/admin` siguen en `no-store`. **Pendiente** confirmar `x-vercel-cache: HIT` en prod tras el deploy.
+  - [x] **CLS 0**: el island reserva `min-w-[190px]` y alinea a la derecha; Lighthouse sobre el build local da CLS 0.
+  - [x] `images.minimumCacheTTL: 31536000` en `next.config.ts`.
+  - [x] `fetchPriority="high"` explícito en el hero → `lcp-discovery-insight` en verde (`priorityHinted: true`).
+  - [ ] Re-medir en **prod** tras el deploy con `booking-platform-perf`: LCP < 2.5s móvil en `/es` (era 5.6s) y desktop 100. Local sobre el build da 0.98 con LCP 1.0s, pero sin CDN no refleja la ganancia real de TTFB.
 - Tests:
-  - [ ] Playwright: respuesta de `/es` **sin** `no-store` en `cache-control`; hero `<img>` con `fetchpriority="high"`; la nav muestra el CTA correcto autenticado y anónimo (regresión de F-116).
-  - [ ] Assert explícito de CLS al montar el island de auth (además del guard de presupuesto existente).
+  - [x] `e2e/f-124-static-marketing.spec.ts`: cache-control cacheable en marketing y `no-store` en las rutas de sesión (se salta en `next dev`, que siempre responde `no-store` — requiere `PLAYWRIGHT_BASE_URL` contra un build), `fetchpriority=high` + preload en el hero, `<html lang>` por idioma, y CLS < 0.1 tras resolver el island. 14/14 contra el build.
+  - [x] Regresión de nav (F-068 + F-116): 19/19, incluidos los flujos signed-in y el sign-out.
 - Notas:
   - Ojo al medir: el número de Lighthouse varía mucho por red y cold start (el run móvil desde fuera de CH dio 66; el desktop, 95). Comparar siempre con el mismo runner y en caliente.
   - `uses-long-cache-ttl` lista dos `script.js` propios (proxy de analytics, max-age 31 días) — ruido, no tocar.
   - **No** rediseñar `SiteNav` en este ticket: mover el CTA, no el resto.
+  - Regla que queda viva (documentada en CLAUDE.md §Routing): **ningún layout compartido por las páginas públicas puede leer datos de request** (`headers()`, `cookies()`, sesión) — vuelve dinámico todo el árbol en silencio. El spec de F-124 es el guard.
+  - Trade-off aceptado en el island: un usuario ya logueado ve brevemente "Iniciar sesión" en marketing hasta que resuelve la sesión. El ancho está reservado, así que no hay salto; en el dashboard no ocurre porque pasa `initialSignedIn`.
+  - Cuando se implemente la CSP del checklist de seguridad, el script inline de la banda necesitará su hash en `script-src`.
 - Refs: F-124, F-090, F-116, `app/[locale]/(marketing)/layout.tsx`, `app/components/SiteNav.tsx:36`, `app/[locale]/(marketing)/page.tsx:52`, `next.config.ts`, `booking-platform-perf`
 
 ### F-125 — Dieta de JS en marketing: 99 KiB sin usar + 14 KiB de transpilación legacy

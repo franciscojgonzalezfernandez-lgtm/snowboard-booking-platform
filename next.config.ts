@@ -10,6 +10,13 @@ const nextConfig: NextConfig = {
     root: path.resolve(__dirname),
   },
   images: {
+    // F-124: without this the optimizer inherits the `max-age=0,
+    // must-revalidate` that Next serves `public/` assets with, so every
+    // `/_next/image` response — including the home hero, the LCP element — came
+    // back `x-vercel-cache: MISS` and was re-downloaded by every visitor. A year
+    // is safe: the query string carries width + quality, and the underlying
+    // files are versioned by deployment.
+    minimumCacheTTL: 31536000,
     // F-073: instructor photos live on Vercel Blob. Public URLs are
     // `https://<store-id>.public.blob.vercel-storage.com/<pathname>`; allow
     // any subdomain since the store id is environment-specific.
