@@ -2626,7 +2626,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ### F-120 — Ahrefs Site Audit: matar los 96 errores técnicos (hreflang duplicado por Link header, OG incompleto, email-protection 404, login indexable)
 
-- Sprint: post-Sprint 5 · Estado: código completo (en review) — pendiente sólo la acción de owner en Cloudflare + re-crawl de verificación · Prioridad: P1 (SEO — bloquea que el crawl budget y las señales i18n consoliden antes de temporada)
+- Sprint: post-Sprint 5 · Estado: done (2026-08-01) · Prioridad: P1 (SEO — bloquea que el crawl budget y las señales i18n consoliden antes de temporada)
 - Depende de: F-099 (sitemap), F-102 (pathnames), F-103 (metadata), F-108 (blog slug resolution), F-114 (canonical host)
 - Motivación: Ahrefs Site Audit (crawl 2026-07-27, proyecto Rideflumserberg) reporta **Health Score 62** ("Fair"): 96 errores, 111 warnings, 99 notices; 53/141 URLs internas con errores. El diagnóstico completo se hizo en sesión 2026-07-27 contra prod — cada issue de abajo tiene root cause verificada, no es una lista mecánica del tool.
 - Root causes verificadas:
@@ -2643,16 +2643,19 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - [x] Pasada de meta descriptions por locale: 20 outliers (11 largas >160, 9 cortas <110 según medición local) reescritas a 110–160 chars, keyword-led. (Sin acceso al export de Ahrefs; rango aplicado de forma determinista sobre todas las descriptions.)
   - [~] (Cosmético) `og:image` bajo el slug público canónico: **omitido**. La imagen la inyecta la convención `opengraph-image.tsx` (F-101/F-109) bajo la ruta del folder; forzar la URL pública arriesga doble-emisión. Sirve 200 y no es un error de Ahrefs → no vale el churn.
 - AC — fuera de código (owner/dashboard):
-  - [ ] Cloudflare → Scrape Shield → **desactivar Email Address Obfuscation** para `rideflumserberg.ch`. Verificar que contact/privacy renderizan `mailto:` limpio y `/cdn-cgi/l/email-protection` desaparece del crawl.
+  - [x] Cloudflare → Scrape Shield → **desactivar Email Address Obfuscation** para `rideflumserberg.ch`. Hecho por el owner. Verificado 2026-08-01: `/en/contact`, `/en/privacy`, `/de/kontakt` sirven 0 ocurrencias de `cdn-cgi/l/email-protection`.
 - Verificación global:
-  - [ ] Re-crawl en Ahrefs post-deploy: objetivo **Health Score ≥ 90**, 0 errores de hreflang, 0 broken links internos.
-  - [ ] `curl -sI` a `/en/pricing`, `/de/preise`, un blog post por locale: sin `Link` header hreflang; HTML con set completo OG.
+  - [x] Re-crawl en Ahrefs post-deploy (owner, 2026-08-01, tras PR #187): sin errores pendientes. El crawl intermedio de 2026-07-28 ya había subido Health **62 → 99** con 1 solo error (el hero de /about), cerrado por PR #187.
+  - [x] `curl -sI` a `/en/pricing`, `/de/preise`, `/es/precios`, `/en/blog` (2026-08-01): ningún `Link` header con hreflang. HTML con set OG completo (`og:url` self-referencial, `og:type=website`, `og:site_name=Ride Flumserberg`, `og:locale` + 2 `og:locale:alternate`). `/login` ×3 con `robots: noindex, follow` y títulos de marca (`Sign in` / `Anmelden` / `Iniciar sesión` — Ride Flumserberg).
 - Tests:
   - [x] Unit (Vitest): `lib/seo/page-metadata.test.ts` — `marketingOpenGraph` y `articleOpenGraph` emiten `og:url`/`og:type`/`og:site_name`/`og:locale`(+alternate) para ruta marketing y blog post (5 tests).
   - [x] Playwright: `e2e/f-120-technical-seo.spec.ts` — `/en/pricing` sin `Link` header con `hreflang` (y HTML hreflang F-103 intacto); `og:url` = canonical + `og:type`/`site_name`/`locale`; blog post `og:type=article`; `/login` ×3 con `robots noindex` + título de marca (7 tests). Regresión: f-101/f-103/f-109 verdes.
 - Notas:
   - Los 49 "Pages to submit to IndexNow" son un nice-to-have de Ahrefs, no un error — ignorar por ahora (Google no consume IndexNow).
   - El perfil de backlinks NO es parte de este ticket → F-121.
+  - Entregado en dos PRs: #184 (código: hreflang, OG, `/login` noindex, meta descriptions) y #187 (re-encode del hero de `/about`, 7.6 MB PNG → 277 KB mozjpeg).
+  - `og:image` sigue sirviéndose bajo la ruta física del folder (`/en/precios/opengraph-image-…`, no `/en/pricing/…`) — es la omisión cosmética documentada arriba. Verificado 2026-08-01: **200 OK**, así que no rompe el share preview ni el crawl. Si algún día molesta, va con el refactor de `getPathname` (D-EN-PREFIX).
+  - Los residuales de warnings del crawl intermedio (OG incompleto ×12, meta descriptions ×7) viven en **F-123**, que sigue abierto — F-120 sólo cubría los errores.
 - Refs: F-120, F-099, F-102, F-103, F-108, F-114, `middleware.ts:6`, `i18n/routing.ts`, `lib/seo/hreflang.ts`, `lib/seo/page-metadata.ts`
 
 ### F-121 — Plan SEO off-site: autoridad de dominio real (DR 0 → señales locales legítimas) + higiene del perfil de backlinks
