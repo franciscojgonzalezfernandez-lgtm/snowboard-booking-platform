@@ -2837,8 +2837,8 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - El SDK sigue **funcionando**: carga en idle (8 chunks tardíos) y `window.__SENTRY__` queda inicializado con la versión `10.53.1`. Comprobado sin lanzar un error de mentira al Sentry de producción.
   - `e2e/f-125-js-diet.spec.ts` contra prod → **5/5**.
   - Lighthouse (local, Chrome headless, preset por defecto): **desktop 99** (LCP 0.9s · TBT **0 ms** · CLS 0.01). **Móvil 82** con las variantes de imagen calientes (LCP 3.9s · TBT 260ms) y **62** en frío (LCP 5.8s · TBT 510ms).
-- **Lo que NO se cumplió (importante):** los dos diagnósticos que dieron nombre al ticket **no bajaron** — `unused-javascript` pasó de 99 a **166 KiB** y `legacy-javascript` de 14 a **24 KiB**. No es una regresión del payload real (el First Load JS bajó a la mitad y está medido), es que **Lighthouse cuenta bytes descargados durante el trace, y `requestIdleCallback` cae dentro de esa ventana**: el SDK de Sentry diferido (`97e1c8….js`, 167 KiB de transferencia) aparece entero como "sin usar" porque casi nada de él se ejecuta. Desglose verificado: 136 KiB de los 166 son ese chunk de Sentry y 30 KiB react-dom; de los 24 KiB "legacy", 14 son el chunk de framework de Next y 10 el propio bundle de Sentry — **ninguno de los dos lo toca nuestro `browserslist`**, porque los dos vienen precompilados de sus paquetes. Diferir mueve el coste fuera del critical path; no borra los bytes. Continúa en **F-128**.
-- Refs: F-125, F-124, F-022, F-128, F-129, `instrumentation-client.ts`, `app/global-error.tsx`, `app/components/{MobileNav,MobileNavSheet,NavMore,NavMoreMenu,AuthNav,AuthNavLinks,AuthNavSession}.tsx`, `components/ui/dropdown-menu.tsx`, `scripts/check-bundle-budget.mjs`, `booking-platform-perf`
+- **Lo que NO se cumplió (importante):** los dos diagnósticos que dieron nombre al ticket **no bajaron** — `unused-javascript` pasó de 99 a **166 KiB** y `legacy-javascript` de 14 a **24 KiB**. No es una regresión del payload real (el First Load JS bajó a la mitad y está medido), es que **Lighthouse cuenta bytes descargados durante el trace, y `requestIdleCallback` cae dentro de esa ventana**: el SDK de Sentry diferido (`97e1c8….js`, 167 KiB de transferencia) aparece entero como "sin usar" porque casi nada de él se ejecuta. Desglose verificado: 136 KiB de los 166 son ese chunk de Sentry y 30 KiB react-dom; de los 24 KiB "legacy", 14 son el chunk de framework de Next y 10 el propio bundle de Sentry — **ninguno de los dos lo toca nuestro `browserslist`**, porque los dos vienen precompilados de sus paquetes. Diferir mueve el coste fuera del critical path; no borra los bytes. Continúa en **F-130**.
+- Refs: F-125, F-124, F-022, F-130, F-131, `instrumentation-client.ts`, `app/global-error.tsx`, `app/components/{MobileNav,MobileNavSheet,NavMore,NavMoreMenu,AuthNav,AuthNavLinks,AuthNavSession}.tsx`, `components/ui/dropdown-menu.tsx`, `scripts/check-bundle-budget.mjs`, `booking-platform-perf`
 
 ### F-126 — Specs E2E en rojo desde hace meses: titulares obsoletos + fuga de estado del admin
 
@@ -2876,7 +2876,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - Consecuencia directa de lo que F-126 dejó abierto: **CI sólo corre `e2e/smoke.spec.ts`**, así que F-122 pudo entrar a `main` rompiendo dos specs sin que nada lo señalara. Mientras eso siga así, este ticket se repetirá con otro nombre.
 - Refs: F-127, F-122, F-126, F-022, `e2e/f-068-global-nav.spec.ts:9`, `e2e/f-116-header.spec.ts`, `lib/auth/index.ts`
 
-### F-128 — El chunk diferido de Sentry sigue pesando 167 KiB de los que no se ejecuta casi nada
+### F-130 — El chunk diferido de Sentry sigue pesando 167 KiB de los que no se ejecuta casi nada
 
 - Sprint: post-Sprint 5 · Estado: backlog · Prioridad: P3 (ya no está en el critical path; es ancho de banda y CPU de idle, no LCP)
 - Depende de: F-125 (lo dejó diferido pero no adelgazado)
@@ -2886,10 +2886,12 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - [ ] Si no basta, evaluar importar una entrada más estrecha en vez de `import("@sentry/nextjs")` (p. ej. armar el cliente con `BrowserClient` + sólo las integraciones que se usan), que es la vía que sí garantiza dejar rrweb fuera.
   - [ ] Medir el chunk antes/después con `curl` + gzip y confirmar con Lighthouse que `unused-javascript` baja de 166 KiB.
   - [ ] No romper lo verificado en F-125: el SDK debe seguir inicializándose en idle (`window.__SENTRY__` presente) y `e2e/f-125-js-diet.spec.ts` seguir en verde.
-- Notas: `legacy-javascript` (24 KiB) es harina de otro costal y probablemente **no** accionable: 14 KiB salen del chunk de framework de Next y 10 KiB del propio bundle de Sentry, los dos precompilados por sus paquetes y ajenos a nuestro `browserslist`.
-- Refs: F-128, F-125, `instrumentation-client.ts`, `next.config.ts`
+- Notas:
+  - **Numeración:** este ticket nació como F-128 y se renumeró a F-130 el 2026-08-03 — F-127/128/129 ya estaban cogidos por trabajo en paralelo (`f-127-commercial-product-cards`, `f-128-complete-email-verification`, `f-129-seo-keyword-strategy`). Ojo también con **F-127, que está usado dos veces**: el ticket de specs en rojo (mergeado en #194) y la branch de product cards.
+  - `legacy-javascript` (24 KiB) es harina de otro costal y probablemente **no** accionable: 14 KiB salen del chunk de framework de Next y 10 KiB del propio bundle de Sentry, los dos precompilados por sus paquetes y ajenos a nuestro `browserslist`.
+- Refs: F-130, F-125, `instrumentation-client.ts`, `next.config.ts`
 
-### F-129 — LCP móvil de la home fuera de presupuesto: 3.9 s en caliente, 5.8 s con la variante de imagen fría
+### F-131 — LCP móvil de la home fuera de presupuesto: 3.9 s en caliente, 5.8 s con la variante de imagen fría
 
 - Sprint: post-Sprint 5 · Estado: backlog · Prioridad: **P1** (presupuesto explícito de CLAUDE.md: LCP < 2.5 s en móvil; es la métrica que Google usa para rankear, en temporada y con tráfico móvil)
 - Depende de: F-124 (prerender), F-125 (dieta de JS) — ambos ya hechos, así que lo que queda **no es JS**
@@ -2904,7 +2906,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 - Notas:
   - Números tomados desde una máquina local con throttling simulado; no son de campo. Antes de dar por bueno el resultado conviene contrastar con **PSI/CrUX** o el panel de Speed Insights de Vercel, que ya está instalado.
   - No confundir con el trabajo de F-125: el JS ya está dentro de presupuesto (188.1 KB gz verificados en prod). Esto es imagen + main thread.
-- Refs: F-129, F-124, F-125, F-120, `app/(site)/[locale]/(marketing)/page.tsx`, `next.config.ts`, `booking-platform-perf`
+- Refs: F-131, F-124, F-125, F-120, `app/(site)/[locale]/(marketing)/page.tsx`, `next.config.ts`, `booking-platform-perf`
 
 ---
 
