@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { signUpVerified } from "./helpers/auth";
 
 type Locale = "en" | "de" | "es";
 
@@ -111,15 +112,8 @@ test.describe("F-033 — Login × 3 locales", () => {
     page,
   }) => {
     const email = uniqueEmail();
-    const password = "Sn0wb0ard!Strong";
 
-    await page.goto("/en/login");
-    await page.getByTestId("tab-signup").click();
-    await page.getByTestId("input-name").fill("F033 Redirect");
-    await page.getByTestId("input-email").fill(email);
-    await page.getByTestId("input-password").fill(password);
-    await page.getByTestId("submit-credentials").click();
-    await page.waitForURL(/\/(en|de|es)\/?$/);
+    await signUpVerified(page, email, "F033 Redirect");
 
     await page.goto("/de/login");
     await page.waitForURL(/\/de\/?$/);
