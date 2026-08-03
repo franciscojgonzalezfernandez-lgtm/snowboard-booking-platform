@@ -1,6 +1,5 @@
 "use client";
 
-import * as Sentry from "@sentry/nextjs";
 import NextError from "next/error";
 import { useEffect } from "react";
 
@@ -10,7 +9,13 @@ export default function GlobalError({
   error: Error & { digest?: string };
 }) {
   useEffect(() => {
-    Sentry.captureException(error);
+    // F-125: imported here rather than at module scope. `global-error` is part
+    // of every route's client bundle, so a static import pinned ~20 KB gz of
+    // the Sentry SDK to the critical path of pages that will never render it.
+    // We are already in the error path — one extra tick costs nothing.
+    void import("@sentry/nextjs").then((Sentry) => {
+      Sentry.captureException(error);
+    });
   }, [error]);
 
   return (

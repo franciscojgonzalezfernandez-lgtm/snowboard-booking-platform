@@ -1,9 +1,9 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 
-import { Link, useRouter } from "@/i18n/navigation";
-import { authClient, useSession } from "@/lib/auth/client";
+import { AuthNavLinks } from "./AuthNavLinks";
 
 type AuthNavProps = {
   /**
@@ -15,6 +15,11 @@ type AuthNavProps = {
   initialSignedIn?: boolean;
 };
 
+const AuthNavSession = dynamic(
+  () => import("./AuthNavSession").then((m) => m.AuthNavSession),
+  { ssr: false },
+);
+
 /**
  * Desktop auth CTA (F-124). This is a client island on purpose: reading the
  * session on the server made `SiteNav` — and therefore every marketing route
@@ -25,44 +30,33 @@ type AuthNavProps = {
  * content, so the anonymous first paint (the case Lighthouse and ~all marketing
  * traffic hit) settles with zero layout shift. A visitor who turns out to be
  * signed in swaps to the wider account cluster once the session resolves.
+ *
+ * F-125: the session read itself now waits for the browser to go idle, so the
+ * Better Auth client leaves the critical path. The pre-resolution markup is
+ * unchanged — it is the same `initialSignedIn` contract, just held a beat
+ * longer — so the no-layout-shift promise above still holds.
  */
 export function AuthNav({ initialSignedIn = false }: AuthNavProps) {
-  const t = useTranslations("nav");
-  const router = useRouter();
-  const { data, isPending } = useSession();
-  const signedIn = isPending ? initialSignedIn : !!data?.user;
+  const [sessionReady, setSessionReady] = useState(false);
 
-  const ctaClass =
-    "rounded-md border-2 border-foreground bg-foreground px-5 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-background transition-colors hover:bg-primary hover:border-primary";
+  useEffect(() => {
+    if (typeof window.requestIdleCallback === "function") {
+      const handle = window.requestIdleCallback(() => setSessionReady(true), {
+        timeout: 2000,
+      });
+      return () => window.cancelIdleCallback(handle);
+    }
+
+    const handle = window.setTimeout(() => setSessionReady(true), 1000);
+    return () => window.clearTimeout(handle);
+  }, []);
 
   return (
     <div className="hidden min-w-[190px] items-center justify-end gap-5 lg:flex">
-      {signedIn ? (
-        <>
-          <Link
-            href="/dashboard"
-            data-testid="site-nav-account"
-            className={ctaClass}
-          >
-            {t("dashboard_cta")}
-          </Link>
-          <button
-            type="button"
-            data-testid="site-nav-signout"
-            onClick={async () => {
-              await authClient.signOut();
-              router.push("/");
-              router.refresh();
-            }}
-            className="text-xs font-bold uppercase tracking-[0.15em] text-foreground transition-colors hover:text-primary"
-          >
-            {t("sign_out")}
-          </button>
-        </>
+      {sessionReady ? (
+        <AuthNavSession initialSignedIn={initialSignedIn} />
       ) : (
-        <Link href="/login" data-testid="site-nav-signin" className={ctaClass}>
-          {t("signin")}
-        </Link>
+        <AuthNavLinks signedIn={initialSignedIn} />
       )}
     </div>
   );
