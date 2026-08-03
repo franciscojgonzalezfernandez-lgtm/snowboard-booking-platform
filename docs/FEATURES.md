@@ -2891,9 +2891,9 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - `legacy-javascript` (24 KiB) es harina de otro costal y probablemente **no** accionable: 14 KiB salen del chunk de framework de Next y 10 KiB del propio bundle de Sentry, los dos precompilados por sus paquetes y ajenos a nuestro `browserslist`.
 - Refs: F-130, F-125, `instrumentation-client.ts`, `next.config.ts`
 
-### F-131 — LCP móvil de la home fuera de presupuesto: 3.9 s en caliente, 5.8 s con la variante de imagen fría
+### F-131 — Entrega de la imagen del hero: AVIF + caché de variantes que no se dispersa (el "LCP fuera de presupuesto" era artefacto de Lighthouse)
 
-- Sprint: post-Sprint 5 · Estado: backlog · Prioridad: **P1** (presupuesto explícito de CLAUDE.md: LCP < 2.5 s en móvil; es la métrica que Google usa para rankear, en temporada y con tráfico móvil)
+- Sprint: post-Sprint 5 · Estado: review (PR #199) · Prioridad: **P2** — *bajado desde P1 el 2026-08-03*: al medir con Chrome real en vez de con la simulación de Lighthouse, el LCP de prod resultó estar **ya dentro de presupuesto** (ver abajo). Sigue mereciendo la pena por la mejora real de descarga.
 - Depende de: F-124 (prerender), F-125 (dieta de JS) — ambos ya hechos, así que lo que queda **no es JS**
 - Motivación: medido contra prod 2026-08-03 (Lighthouse, Chrome headless, preset móvil por defecto: Slow 4G simulada + CPU 4×). Desktop está impecable (**99**, LCP 0.9 s, TBT 0 ms). Móvil se queda en **82 en caliente (LCP 3.9 s)** y **62 en frío (LCP 5.8 s)**. El elemento LCP es el hero de la home (`/_next/image?url=%2Fbrand%2Fhero.jpg&w=750&q=75`) y **no es un problema de peso**: son 32 KB de JPEG.
 - Causas medidas (desglose de fases del run en frío): TTFB 722 ms (12%) · **Load Delay 1229 ms (21%)** · **Load Time 1915 ms (33%)** · **Render Delay 1927 ms (33%)**.
@@ -2906,6 +2906,21 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 - Notas:
   - Números tomados desde una máquina local con throttling simulado; no son de campo. Antes de dar por bueno el resultado conviene contrastar con **PSI/CrUX** o el panel de Speed Insights de Vercel, que ya está instalado.
   - No confundir con el trabajo de F-125: el JS ya está dentro de presupuesto (188.1 KB gz verificados en prod). Esto es imagen + main thread.
+- **Corrección de la premisa (2026-08-03) — el número que abrió el ticket era un artefacto de medición:** Lighthouse usa por defecto throttling **simulado** (Lantern): no observa la línea de tiempo, la modela. Conduciendo un Chrome real (Pixel 5, CPU 4×, ~1.6 Mbps) y leyendo la entrada `largest-contentful-paint` del `PerformanceObserver`:
+
+  | | Lighthouse (simulado) | Medición directa |
+  |---|---|---|
+  | LCP móvil en prod | 3.9 s | **2.25 s** |
+  | pintado tras terminar de cargar la imagen | ~1900 ms | **14 ms** |
+
+  Es decir: el "Render Delay" de ~1.9 s que parecía la causa principal **no existe** — la imagen se pinta ~15 ms después de llegar, de forma consistente entre runs. El LCP de esta página es, en la práctica, el tiempo de descarga del hero y nada más. Prod ya estaba por debajo de los 2.5 s, así que esto nunca debió ser P1.
+- Entregado (PR #199), midiendo A/B en local con el mismo método y el mismo ancho elegido por el dispositivo:
+  - `images.formats = ["image/avif", "image/webp"]` — nunca se había configurado, así que el optimizador usaba su default (sólo WebP) pese a lo que pide CLAUDE.md. A igual ancho: **44.0 KB WebP → 34.5 KB AVIF (−22%)**.
+  - `deviceSizes` curado a `[640, 828, 1080, 1200, 1920]`. **Trampa encontrada y documentada:** quitar un ancho asciende a los dispositivos que lo usaban al siguiente — un primer intento con `[640, 828, 1080, 1920, 2560]` hacía que un Pixel 5 (393 × DPR 2.75 = 1081) bajara **1920** en vez de 1200, y empeoraba el LCP (1316 ms vs 1152 ms). El tope es 1920 porque el JPEG fuente mide 1376 px.
+  - `scripts/warm-image-cache.mjs` + paso en `post-deploy-smoke.yml`: cada deploy invalida todas las variantes y `minimumCacheTTL` (F-124) sólo protege a la variante **ya existente**, nunca a quien la crea.
+  - Resultado del A/B: **1380 ms → 1152 ms (−16.5%)**, todo el ahorro en la descarga.
+  - Tests: `e2e/f-131-image-delivery.spec.ts` (4). Regresión 66 passed; el único rojo es `f-116:101`, que ya venía roto de F-122 (**F-127**).
+- Pendiente: volver a medir contra prod cuando el deploy haya corrido el paso de warming, y contrastar con datos de campo (PSI/CrUX o el Speed Insights ya instalado) en vez de con throttling simulado.
 - Refs: F-131, F-124, F-125, F-120, `app/(site)/[locale]/(marketing)/page.tsx`, `next.config.ts`, `booking-platform-perf`
 
 ---
