@@ -2870,6 +2870,34 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - Consecuencia directa de lo que F-126 dejó abierto: **CI sólo corre `e2e/smoke.spec.ts`**, así que F-122 pudo entrar a `main` rompiendo dos specs sin que nada lo señalara. Mientras eso siga así, este ticket se repetirá con otro nombre.
 - Refs: F-127, F-122, F-126, F-022, `e2e/f-068-global-nav.spec.ts:9`, `e2e/f-116-header.spec.ts`, `lib/auth/index.ts`
 
+### F-129 — Estrategia de keywords: atacar el hueco de "privado / multilingüe", no el head term genérico
+
+- Sprint: pre-temporada 2026/27 · Estado: backlog · Prioridad: P2 (SEO on-site; el multiplicador real es F-121)
+- Depende de: F-103 (metadata por ruta), F-100 (schema), F-121 (GBP + autoridad off-site), F-115 (`/plan-your-visit`)
+- Motivación: el owner pidió posicionar para "snowboard flumserberg", "snowboard Zurich" y marca. Investigado 2026-08-01 con datos reales, no intuición:
+  - **Ahrefs Keywords Explorer no está en el plan** (sin volúmenes ni KD) y **GSC no tiene aún histórico**: 3 meses = 2 clics, 26 impresiones, posición media 15,6, y una sola query registrada ("lara müller"). O sea: no hay datos propios; la evidencia útil es la composición de la SERP.
+  - **SERP `snowboardkurs flumserberg` (google.ch, hl=de):** el orgánico lo copan `flumserberg.ch` (la web del resort, 4 resultados de 10), `swiss-ski-school.ch`, `startsnowboarding.ch`, `flumserberg.skischool.shop`, `ski-fun.ch` y un listado de `bergfex`. Encima, **local pack de 3** con **4.8 (397 reseñas)**, **5.0 (203)** y **4.7 (158)**.
+  - **SERP `snowboardkurs zürich`:** sin local pack; lo dominan instituciones de ciudad y agregadores — `schnee.ch` (#1), **CheckYeti (#2 y #10)**, `swiss-ski-school.ch`, `zuerich.com`, `stadt-zuerich.ch`. Para un dominio DR 0 esto **no es alcanzable** a corto plazo, y además una service-area de Flumserberg no entra en el pack de Zúrich.
+- Decisiones que salen de los datos:
+  1. **No perseguir el head term `snowboardkurs zürich`.** La vía a esa demanda es **CheckYeti** (ya rankea #2 y #10 para esa query; la solicitud de alta se envió en F-121c). Visibilidad prestada, no propia.
+  2. **No pelear de frente `snowboardkurs flumserberg`** contra el resort y las escuelas con 400 reseñas — el intent de ese término es *curso de grupo*, que no es el producto.
+  3. **Atacar el hueco real:** ninguno de los que rankean vende **clases privadas 1-a-1 en inglés/español**. `startsnowboarding.ch` es el rival más cercano (privados, Flumserberg + Pizol) pero en alemán. Ese es el nicho defendible.
+- AC — clúster de keywords (DE primero, es el idioma de búsqueda dominante):
+  - [ ] **Núcleo defendible:** `snowboard privatstunden flumserberg`, `snowboardlehrer flumserberg privat`, `snowboard privatunterricht flumserberg`, `snowboarden lernen flumserberg erwachsene`.
+  - [ ] **Diferencial multilingüe** (sin competencia visible): `snowboard lessons flumserberg english`, `english speaking snowboard instructor switzerland`, `clases de snowboard en suiza en español`, `snowboardlehrer spanisch schweiz`.
+  - [ ] **Zúrich por la puerta de atrás**, no por el head term: `snowboarden lernen in der nähe von zürich`, `flumserberg von zürich anreise`, `skigebiet nähe zürich snowboardkurs` → aterrizan en `/plan-your-visit` (F-115), que ya cubre la llegada desde Zúrich. `schnee.ch` monetiza exactamente ese ángulo ("Kurse direkt ab Zürich"); nosotros lo servimos como contenido de utilidad, no compitiendo por la ciudad.
+  - [ ] **Marca:** `ride flumserberg`, `javi snowboard flumserberg` — triviales de ganar y son las que más convierten. Verificar que la home rankea #1 para ellas antes de temporada.
+- AC — on-page:
+  - [ ] Reorientar `<title>`/description de la home DE hacia el núcleo privado: hoy es "Snowboard-Privatstunden in Flumserberg", que ya apunta bien — validar que el H1 y el primer párrafo refuerzan *privat* + *Anfänger/Erwachsene* + idiomas.
+  - [ ] **Rich snippet de precios en `/preise`.** `ski-fun.ch` sale en la SERP con la tabla parseada ("1 Stunde · 95 CHF; 2 Stunden · 199 CHF; …"). Marcar las cuatro duraciones con schema de oferta para optar al mismo tratamiento. Es la ganancia on-page más concreta detectada.
+  - [ ] Página o sección dedicada a **clases en inglés/español** (candidata: ampliar `/instructores` o una landing nueva), que es el término donde no hay competencia.
+- Notas:
+  - **Contexto competitivo de precio** (dato, no recomendación): `ski-fun.ch` publica 1h 95 / 2h 199 / 3h 295 / 4h 380 / 6h 480 CHF. Los nuestros (F-039) son 110 / 200 / 385 / 500. Estamos por encima en 1h y bastante en 6h. Decisión del owner; sólo queda registrado porque el usuario comparará.
+  - **La palanca dominante no es on-page, es el local pack**: los tres competidores suman 758 reseñas y nosotros tenemos el GBP sin verificar y 0 reseñas. Ninguna optimización de título compensa eso → **F-121b (verificación por vídeo) y el loop de reseñas de F-082 valen más que este ticket entero**. Este ticket es el complemento, no el motor.
+  - `bergfex` rankea la ficha de un competidor en el top-10 → reevaluar F-121g (lo habíamos aparcado por ser de pago).
+- Tests: [ ] N/A on-page directo; verificar con `curl` los `<title>`/description tras el cambio y re-crawl de Ahrefs sin regresiones de F-120/F-123.
+- Refs: F-129, F-121, F-103, F-100, F-115, F-039, F-082
+
 ---
 
 ## Bloqueantes / decisiones abiertas (consolidadas)
