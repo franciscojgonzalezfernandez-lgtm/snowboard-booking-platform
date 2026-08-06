@@ -42,12 +42,8 @@
     "intro_title": "I don't just teach snowboarding. I live it.",
     "intro_body": "Most schools hand you an instructor. Ride Flumserberg is me — one certified rider who has spent a lifetime on the mountain and still gets the same rush dropping in. I read how you ride, fix what's holding you back, and get you carving lines you didn't think were yours. Your progress is my favourite part of the day.",
     "classes_eyebrow": "The classes",
-    "classes_title": "Four ways to ride with me",
+    "classes_title": "Four ways to learn with me",
     "classes_sub": "Private, 1 to 4 people. Pick the time that fits — I handle the rest. Lift pass and gear aren't included; I'll point you to the rental.",
-    "class_dur_oneHour": "1 Hour",
-    "class_dur_twoHours": "2 Hours",
-    "class_dur_intensive": "4h Intensive",
-    "class_dur_fullDay": "Full Day",
     "class_blurb_oneHour": "Fix one thing, or get your nerve back. One focused hour, just the two of us.",
     "class_blurb_twoHours": "Your first day on snow — or your next breakthrough. Video feedback to take home.",
     "class_blurb_intensive": "Leave riding your linked turns — for sure, in a single day. Or go deep on freestyle and carving. Filmed, yours to keep.",
@@ -59,6 +55,8 @@
     "instructor_langs": "Lessons in English · Deutsch · Español",
     "reviews_eyebrow": "Real riders",
     "reviews_title": "What they say after a day on the snow",
+    "reviews_source": "Google review",
+    "reviews_rating": "5 out of 5 stars",
     "review_1_name": "Krishna Vyas",
     "review_1_quote": "I had an amazing experience learning to snowboard with Javi! As a complete beginner I was pretty nervous at first, but he made the whole process feel fun and manageable from the start. He was very attentive, always making sure I felt safe and understood each step before moving on. He shared great tips and tricks that helped me improve quickly, and his encouragement really built my confidence on the board. If you're looking for an instructor who is motivating and genuinely committed to helping you improve, I highly recommend Javi. Thank you for making my first snowboarding experience such a great one!",
     "review_2_name": "Pierpaolo Durante",
@@ -452,8 +450,11 @@
     "tier": {
       "oneHour": {
         "kicker": "Confidence",
+        "product": "Quick fix",
         "name": "1-hour snowboard lesson",
+        "length": "1 hour",
         "blurb": "Fix one thing, or get your nerve back. One focused hour, just us.",
+        "photo_alt": "Javi crouched beside a rider, fixing their stance on the board on freshly groomed piste",
         "points": [
           "One flaw, sorted — the toe edge, that heel chatter, whatever's nagging you.",
           "Nervous about a steeper run? That's exactly what this hour is for.",
@@ -464,8 +465,11 @@
       },
       "twoHours": {
         "kicker": "First Day",
+        "product": "First day",
         "name": "2-hour snowboard lesson",
+        "length": "2 hours",
         "blurb": "Your first day, or the basics done right. Enough time for it to actually click.",
+        "photo_alt": "A rider standing on their board on a wide run, the snowy massif behind them",
         "points": [
           "First time on a board? You'll start linking your turns — the 4-hour intensive is the one you nail them for good.",
           "Already know the basics? A proper technical tune-up.",
@@ -477,8 +481,12 @@
       },
       "intensive": {
         "kicker": "Turns Nailed",
+        "product": "Turns guaranteed",
         "name": "4-hour intensive lesson",
+        "length": "4 hours",
+        "flag": "The one I recommend",
         "blurb": "Leave riding your linked turns — for sure, in a single day. Or, past the basics, go deep on freestyle and carving.",
+        "photo_alt": "Javi and a rider carving turns together on freshly groomed piste, snow spraying off the edge",
         "points": [
           "First time on a board? This is the one you leave actually riding your linked turns — for sure, not maybe.",
           "Past the basics? Pick your line: freestyle in the park, or carving hard turns.",
@@ -489,8 +497,11 @@
       },
       "fullDay": {
         "kicker": "All Day",
+        "product": "All the way",
         "name": "Full-day snowboard lesson",
+        "length": "Full day",
         "blurb": "Everything the 4-hour intensive is — across six hours, the whole mountain, and a real break.",
+        "photo_alt": "Two riders standing high on the mountain at sunset, after a full day of runs",
         "points": [
           "All of the 4-hour intensive — freestyle or carving, filmed.",
           "Choose the resort: we can ride other spots in the canton of St. Gallen (sorted with me first).",

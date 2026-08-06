@@ -1,26 +1,29 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { Star } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { HeroAnnouncement } from "@/app/components/HeroAnnouncement";
+import { CardScroller, scrollerItem } from "@/components/marketing/card-scroller";
+import { GoogleReviewBadge } from "@/components/marketing/google-review-badge";
+import { TierPhoto } from "@/components/marketing/tier-photo";
 import { marketingAlternates, marketingOpenGraph } from "@/lib/seo/page-metadata";
+import { RECOMMENDED_TIER, TIER_KEY, TIER_ORDER } from "@/lib/pricing/tiers";
 import { Link } from "@/i18n/navigation";
 import { Reveal } from "@/lib/motion/reveal";
 import { Stagger, StaggerItem } from "@/lib/motion/stagger";
+import { cn } from "@/lib/utils";
 
 type HomePageProps = {
   params: Promise<{ locale: string }>;
 };
 
-const TIERS = [
-  { key: "oneHour", duration: "ONE_HOUR" },
-  { key: "twoHours", duration: "TWO_HOURS" },
-  { key: "intensive", duration: "INTENSIVE" },
-  { key: "fullDay", duration: "FULL_DAY" },
-] as const;
-
 const REVIEW_IDS = ["1", "2", "3", "4"] as const;
+
+// One card is ~1/4 of the 1320px canvas on desktop and a peeking 78vw on
+// mobile; without this the optimizer would ship the full 1600px source to a
+// 300px slot four times over.
+const TIER_PHOTO_SIZES =
+  "(min-width: 1320px) 320px, (min-width: 1024px) 25vw, (min-width: 640px) 50vw, 78vw";
 
 export async function generateMetadata({
   params,
@@ -138,31 +141,61 @@ export default async function HomePage({ params }: HomePageProps) {
             </p>
           </Reveal>
 
-          <Stagger className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {TIERS.map(({ key, duration }) => (
-              <StaggerItem key={key}>
-                <Link
-                  href={{ pathname: "/reservar", query: { d: duration } }}
-                  className="group flex h-full flex-col justify-between border-2 border-foreground bg-background p-7 transition-colors hover:bg-foreground hover:text-background"
-                >
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary group-hover:text-background">
-                      {tPricing(`tier.${key}.kicker`)}
-                    </p>
-                    <h3 className="mt-2 font-display text-[26px] uppercase tracking-tight">
-                      {t(`class_dur_${key}`)}
-                    </h3>
-                    <p className="mt-4 text-[15px] leading-[1.5] text-foreground/75 group-hover:text-background/80">
-                      {t(`class_blurb_${key}`)}
-                    </p>
-                  </div>
-                  <span className="mt-8 text-[12px] font-bold uppercase tracking-[0.2em]">
-                    {t("class_cta")} →
-                  </span>
-                </Link>
-              </StaggerItem>
-            ))}
-          </Stagger>
+          {/* Mobile: a snap rail — four products you swipe, not four screens
+              you scroll past. ≥sm: the grid, unchanged (F-132). */}
+          <CardScroller className="mt-12">
+            <Stagger className="flex items-stretch gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-4">
+              {TIER_ORDER.map((duration) => {
+                const key = TIER_KEY[duration];
+                const recommended = key === RECOMMENDED_TIER;
+
+                return (
+                  <StaggerItem key={duration} className={scrollerItem()}>
+                    <Link
+                      href={{ pathname: "/reservar", query: { d: duration } }}
+                      data-testid={`home-tier-${duration}`}
+                      // The accent border is reserved for the recommended
+                      // tier — hover must not borrow it, or every card looks
+                      // recommended under the cursor. Hover is carried by the
+                      // photo zoom and the CTA bar filling in.
+                      className={cn(
+                        "group flex w-full flex-col overflow-hidden border-2 bg-background",
+                        recommended ? "border-primary" : "border-foreground",
+                      )}
+                    >
+                      <TierPhoto
+                        tier={key}
+                        alt={tPricing(`tier.${key}.photo_alt`)}
+                        durationLabel={tPricing(`tier.${key}.length`)}
+                        flag={recommended ? tPricing(`tier.${key}.flag`) : undefined}
+                        sizes={TIER_PHOTO_SIZES}
+                        className="aspect-[4/3]"
+                      />
+
+                      <div className="flex flex-1 flex-col p-6">
+                        <h3 className="font-display text-[clamp(22px,2.1vw,28px)] uppercase leading-[1.05] tracking-tight text-balance">
+                          {tPricing(`tier.${key}.product`)}
+                        </h3>
+                        <p className="mt-3 text-[15px] leading-[1.5] text-foreground/75">
+                          {t(`class_blurb_${key}`)}
+                        </p>
+                      </div>
+
+                      <span className="flex items-center justify-between border-t-2 border-foreground px-6 py-4 text-[12px] font-bold uppercase tracking-[0.18em] transition-colors group-hover:bg-foreground group-hover:text-background">
+                        {t("class_cta")}
+                        <span
+                          aria-hidden
+                          className="transition-transform duration-300 ease-out group-hover:translate-x-1 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0"
+                        >
+                          →
+                        </span>
+                      </span>
+                    </Link>
+                  </StaggerItem>
+                );
+              })}
+            </Stagger>
+          </CardScroller>
         </div>
       </section>
 
@@ -188,7 +221,8 @@ export default async function HomePage({ params }: HomePageProps) {
         </div>
       </section>
 
-      {/* REVIEWS — 5 stars + names. Placeholder quotes; owner pastes real ones. */}
+      {/* REVIEWS — real Google Business reviews, attributed with the Google
+          mark (F-132) so the five stars are evidence, not decoration. */}
       <section className="border-t-2 border-foreground bg-secondary px-7 py-24 lg:py-32">
         <div className="mx-auto max-w-[1320px]">
           <Reveal>
@@ -202,29 +236,30 @@ export default async function HomePage({ params }: HomePageProps) {
             </h2>
           </Reveal>
 
-          <Stagger className="mt-12 grid gap-4 md:grid-cols-2">
-            {REVIEW_IDS.map((id) => (
-              <StaggerItem key={id}>
-                <figure className="flex h-full flex-col border-2 border-foreground bg-background p-7">
-                  <div className="mb-5 flex gap-1" role="img" aria-label="5 / 5">
-                    {[0, 1, 2, 3, 4].map((i) => (
-                      <Star
-                        key={i}
-                        className="size-4 fill-primary text-primary"
-                        aria-hidden
-                      />
-                    ))}
-                  </div>
-                  <blockquote className="flex-1 text-[17px] leading-[1.55] text-foreground/85">
-                    “{t(`review_${id}_quote`)}”
-                  </blockquote>
-                  <figcaption className="mt-6 text-[12px] font-bold uppercase tracking-[0.16em]">
-                    {t(`review_${id}_name`)}
-                  </figcaption>
-                </figure>
-              </StaggerItem>
-            ))}
-          </Stagger>
+          <CardScroller className="mt-12">
+            {/* The grid must start at the breakpoint the scroller stops
+                snapping at (`sm`), or four flex items share one row. */}
+            <Stagger className="flex items-stretch gap-4 sm:grid sm:grid-cols-2">
+              {REVIEW_IDS.map((id) => (
+                <StaggerItem key={id} className={scrollerItem("w-[86vw]")}>
+                  <figure className="flex w-full flex-col border-2 border-foreground bg-background p-7">
+                    <GoogleReviewBadge
+                      label={t("reviews_source")}
+                      rating={t("reviews_rating")}
+                    />
+                    {/* Slightly smaller on the rail: these are long real
+                        reviews and the tallest one sets the rail height. */}
+                    <blockquote className="flex-1 text-[15px] leading-[1.55] text-foreground/85 sm:text-[17px]">
+                      “{t(`review_${id}_quote`)}”
+                    </blockquote>
+                    <figcaption className="mt-6 text-[12px] font-bold uppercase tracking-[0.16em]">
+                      {t(`review_${id}_name`)}
+                    </figcaption>
+                  </figure>
+                </StaggerItem>
+              ))}
+            </Stagger>
+          </CardScroller>
         </div>
       </section>
 

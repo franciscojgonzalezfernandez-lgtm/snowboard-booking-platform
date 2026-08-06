@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { marketingAlternates, marketingOpenGraph } from "@/lib/seo/page-metadata";
-import { Duration } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
 import { routing } from "@/i18n/routing";
 import { formatChf } from "@/lib/pricing/format";
 import { getPriceCents, PriceConfigurationError } from "@/lib/pricing/get-price";
+import { TIER_KEY, TIER_ORDER } from "@/lib/pricing/tiers";
 import { Reveal } from "@/lib/motion/reveal";
 import { JsonLd } from "@/app/components/JsonLd";
 import { SITE_URL } from "@/lib/seo/site-url";
@@ -21,23 +21,9 @@ type Props = { params: Promise<{ locale: string }> };
 // within the hour — no per-request DB hit on the hot path.
 export const revalidate = 3600;
 
-// Card order = the duration ladder shown to the rider (short → full day).
-const DURATIONS: readonly Duration[] = [
-  Duration.ONE_HOUR,
-  Duration.TWO_HOURS,
-  Duration.INTENSIVE,
-  Duration.FULL_DAY,
-];
-
-// Prisma Duration → the `pricing.tier.*` i18n key (mirrors pricing-tiers.tsx),
-// used to source Course name/description for the JSON-LD from the same strings
-// the cards render — structured data can't drift from the visible copy.
-const TIER_KEY: Record<Duration, string> = {
-  ONE_HOUR: "oneHour",
-  TWO_HOURS: "twoHours",
-  INTENSIVE: "intensive",
-  FULL_DAY: "fullDay",
-};
+// Card order and the `pricing.tier.*` key map both come from `lib/pricing/tiers`
+// (F-132) — the JSON-LD sources Course name/description from the same strings
+// the cards render, so structured data can't drift from the visible copy.
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -73,7 +59,7 @@ export default async function PricingPage({ params }: Props) {
   let courses: Record<string, unknown>[] = [];
   if (season) {
     try {
-      const priced = DURATIONS.map((duration) => ({
+      const priced = TIER_ORDER.map((duration) => ({
         duration,
         cents: getPriceCents(season, duration),
       }));
