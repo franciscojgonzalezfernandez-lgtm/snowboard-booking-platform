@@ -2792,7 +2792,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ### F-125 — Dieta de JS en marketing: 99 KiB sin usar + 14 KiB de transpilación legacy
 
-- Sprint: post-Sprint 5 · Estado: review (PR abierto 2026-08-01) · Prioridad: **P1** (subida desde P3: la medición de baseline desmintió la premisa — no era margen)
+- Sprint: post-Sprint 5 · Estado: **done** (mergeado en #193, verificado contra prod 2026-08-03) · Prioridad: **P1** (subida desde P3: la medición de baseline desmintió la premisa — no era margen)
 - Depende de: F-124 (medir después, para no mezclar efectos)
 - Motivación (original): en el run de Lighthouse (2026-07-29), con TBT ya OK (40ms desktop / 210ms móvil), quedaban dos diagnósticos de payload: `unused-javascript` **99 KiB** y `legacy-javascript` **14 KiB`.
 - **Baseline real (medido 2026-08-01, no estimado):** la home servía **410 KB gz** de First Load JS contra un presupuesto de **200 KB** — 2× por encima, no "margen". Lighthouse se quedaba corto porque sólo contaba lo _no ejecutado_. Medición por build diferencial (`npm run build` + suma gzip de los chunks de la ruta) y contra prod (`node scripts/check-bundle-budget.mjs --url`), que daba **400.7 KB gz** de JS real descargado por un navegador moderno.
@@ -2831,8 +2831,14 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - Medir **después** de F-124 — al volver estático el marketing cambian tanto el waterfall como el reparto de chunks.
   - **Session Replay queda fuera, no aplazado.** Nunca se consultó para una página de marketing y es la integración más cara del SDK. Si se quiere para depurar el funnel, va **en `/reservar`** con `Sentry.lazyLoadIntegration("replayIntegration")`, no en el init global.
   - **El guard no corre en el CI de PR**: necesita un build de producción, y `next build` prerenderiza rutas de marketing que leen Postgres por el driver serverless de Neon — un service container `postgres:` normal no habla ese protocolo. Hasta que el CI tenga una branch de Neon (**F-022**), el guard automático es el de `post-deploy-smoke.yml` (producción) y en PR se corre a mano con `npm run check:bundle`.
-  - Falta cerrar con Lighthouse contra el deploy para confirmar que `unused-javascript`/`legacy-javascript` caen y ver el TBT móvil — pendiente de que el PR llegue a producción.
-- Refs: F-125, F-124, F-022, `instrumentation-client.ts`, `app/global-error.tsx`, `app/components/{MobileNav,MobileNavSheet,NavMore,NavMoreMenu,AuthNav,AuthNavLinks,AuthNavSession}.tsx`, `components/ui/dropdown-menu.tsx`, `scripts/check-bundle-budget.mjs`, `booking-platform-perf`
+- **Verificación contra producción (2026-08-03, deploy `ac509fa`):**
+  - `check-bundle-budget.mjs --url https://rideflumserberg.ch` → **188.1 KB gz, ✓ bajo presupuesto** (prod daba 400.7 KB antes del merge).
+  - Mecanismo confirmado, no sólo el número: de los 15 chunks que la home descarga sin que nadie toque nada, **rrweb/replay, el cliente de Better Auth y los primitives de Base UI están ausentes**. Lo único de Sentry que queda en ellos son las dos referencias del call site del `import()` dinámico (ni `BrowserClient` ni `makeFetchTransport`).
+  - El SDK sigue **funcionando**: carga en idle (8 chunks tardíos) y `window.__SENTRY__` queda inicializado con la versión `10.53.1`. Comprobado sin lanzar un error de mentira al Sentry de producción.
+  - `e2e/f-125-js-diet.spec.ts` contra prod → **5/5**.
+  - Lighthouse (local, Chrome headless, preset por defecto): **desktop 99** (LCP 0.9s · TBT **0 ms** · CLS 0.01). **Móvil 82** con las variantes de imagen calientes (LCP 3.9s · TBT 260ms) y **62** en frío (LCP 5.8s · TBT 510ms).
+- **Lo que NO se cumplió (importante):** los dos diagnósticos que dieron nombre al ticket **no bajaron** — `unused-javascript` pasó de 99 a **166 KiB** y `legacy-javascript` de 14 a **24 KiB**. No es una regresión del payload real (el First Load JS bajó a la mitad y está medido), es que **Lighthouse cuenta bytes descargados durante el trace, y `requestIdleCallback` cae dentro de esa ventana**: el SDK de Sentry diferido (`97e1c8….js`, 167 KiB de transferencia) aparece entero como "sin usar" porque casi nada de él se ejecuta. Desglose verificado: 136 KiB de los 166 son ese chunk de Sentry y 30 KiB react-dom; de los 24 KiB "legacy", 14 son el chunk de framework de Next y 10 el propio bundle de Sentry — **ninguno de los dos lo toca nuestro `browserslist`**, porque los dos vienen precompilados de sus paquetes. Diferir mueve el coste fuera del critical path; no borra los bytes. Continúa en **F-130**.
+- Refs: F-125, F-124, F-022, F-130, F-131, `instrumentation-client.ts`, `app/global-error.tsx`, `app/components/{MobileNav,MobileNavSheet,NavMore,NavMoreMenu,AuthNav,AuthNavLinks,AuthNavSession}.tsx`, `components/ui/dropdown-menu.tsx`, `scripts/check-bundle-budget.mjs`, `booking-platform-perf`
 
 ### F-126 — Specs E2E en rojo desde hace meses: titulares obsoletos + fuga de estado del admin
 
@@ -2897,6 +2903,53 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - `bergfex` rankea la ficha de un competidor en el top-10 → reevaluar F-121g (lo habíamos aparcado por ser de pago).
 - Tests: [ ] N/A on-page directo; verificar con `curl` los `<title>`/description tras el cambio y re-crawl de Ahrefs sin regresiones de F-120/F-123.
 - Refs: F-129, F-121, F-103, F-100, F-115, F-039, F-082
+
+### F-130 — El chunk diferido de Sentry sigue pesando 167 KiB de los que no se ejecuta casi nada
+
+- Sprint: post-Sprint 5 · Estado: backlog · Prioridad: P3 (ya no está en el critical path; es ancho de banda y CPU de idle, no LCP)
+- Depende de: F-125 (lo dejó diferido pero no adelgazado)
+- Motivación: verificando F-125 contra prod (2026-08-03), Lighthouse sigue marcando `unused-javascript` **166 KiB**, de los cuales **136 KiB son el chunk de Sentry** (`97e1c8….js`, 167 KiB de transferencia / 546 KB en crudo). Diferirlo a `requestIdleCallback` lo sacó del critical path — que era el objetivo de F-125 y está medido — pero los bytes se siguen descargando y parseando (259 ms de evaluación con la CPU al 4× de Lighthouse móvil). Inspeccionado el chunk servido: contiene `rrweb`, `replayIntegration` y `browserTracing` **aunque el init ya no llame a ninguno** — al pasar a `import()` dinámico se perdió el tree-shaking que sí funcionaba con el import estático (quitar `replayIntegration()` con import estático bajaba el chunk compartido de 247 a 207 KB gz; ahora ese código vuelve, sólo que diferido).
+- AC:
+  - [ ] Probar `bundleSizeOptimizations` en `withSentryConfig` (`next.config.ts`) — el SDK instalado (10.53.1) expone `excludeDebugStatements`, `excludeTracing`, `excludeReplayShadowDom`, `excludeReplayIframe`, `excludeReplayWorker`. Ojo: **no hay un `excludeReplay` entero**, así que puede que estas flags sólo arañen.
+  - [ ] Si no basta, evaluar importar una entrada más estrecha en vez de `import("@sentry/nextjs")` (p. ej. armar el cliente con `BrowserClient` + sólo las integraciones que se usan), que es la vía que sí garantiza dejar rrweb fuera.
+  - [ ] Medir el chunk antes/después con `curl` + gzip y confirmar con Lighthouse que `unused-javascript` baja de 166 KiB.
+  - [ ] No romper lo verificado en F-125: el SDK debe seguir inicializándose en idle (`window.__SENTRY__` presente) y `e2e/f-125-js-diet.spec.ts` seguir en verde.
+- Notas:
+  - **Numeración:** este ticket nació como F-128 y se renumeró a F-130 el 2026-08-03 — F-127/128/129 ya estaban cogidos por trabajo en paralelo (`f-127-commercial-product-cards`, `f-128-complete-email-verification`, `f-129-seo-keyword-strategy`). Ojo también con **F-127, que está usado dos veces**: el ticket de specs en rojo (mergeado en #194) y la branch de product cards.
+  - `legacy-javascript` (24 KiB) es harina de otro costal y probablemente **no** accionable: 14 KiB salen del chunk de framework de Next y 10 KiB del propio bundle de Sentry, los dos precompilados por sus paquetes y ajenos a nuestro `browserslist`.
+- Refs: F-130, F-125, `instrumentation-client.ts`, `next.config.ts`
+
+### F-131 — Entrega de la imagen del hero: AVIF + caché de variantes que no se dispersa (el "LCP fuera de presupuesto" era artefacto de Lighthouse)
+
+- Sprint: post-Sprint 5 · Estado: review (PR #199) · Prioridad: **P2** — *bajado desde P1 el 2026-08-03*: al medir con Chrome real en vez de con la simulación de Lighthouse, el LCP de prod resultó estar **ya dentro de presupuesto** (ver abajo). Sigue mereciendo la pena por la mejora real de descarga.
+- Depende de: F-124 (prerender), F-125 (dieta de JS) — ambos ya hechos, así que lo que queda **no es JS**
+- Motivación: medido contra prod 2026-08-03 (Lighthouse, Chrome headless, preset móvil por defecto: Slow 4G simulada + CPU 4×). Desktop está impecable (**99**, LCP 0.9 s, TBT 0 ms). Móvil se queda en **82 en caliente (LCP 3.9 s)** y **62 en frío (LCP 5.8 s)**. El elemento LCP es el hero de la home (`/_next/image?url=%2Fbrand%2Fhero.jpg&w=750&q=75`) y **no es un problema de peso**: son 32 KB de JPEG.
+- Causas medidas (desglose de fases del run en frío): TTFB 722 ms (12%) · **Load Delay 1229 ms (21%)** · **Load Time 1915 ms (33%)** · **Render Delay 1927 ms (33%)**.
+  1. **Variantes de `/_next/image` frías.** `curl` sobre el hero: `x-vercel-cache: MISS` en `w=640`, `w=750` y `w=1080` (los anchos que pide un móvil) y `HIT` en `w=1920`. Cada combinación (ancho, calidad) se cachea por separado, así que en un sitio con poco tráfico el visitante móvil paga la generación bajo demanda una y otra vez, mientras el ancho de escritorio va caliente. El `minimumCacheTTL` de un año que puso F-124 ayuda **una vez que la variante existe**; no evita el primer MISS. Diferencia medida entre frío y caliente: **1.9 s de LCP**.
+  2. **Render Delay de ~1.9 s** aun con la imagen ya descargada — apunta a main thread ocupado (1261 ms de evaluación de scripts, 960 ms de style/layout) y/o a que el hero espera al layout.
+- AC:
+  - [ ] Precalentar las variantes móviles del hero tras cada deploy (p. ej. un paso en `post-deploy-smoke.yml` que pida los anchos del `sizes` del hero por locale), o reducir el número de variantes fijando `sizes`/`deviceSizes` a un juego más pequeño.
+  - [ ] Atacar el Render Delay: comprobar si el hero puede pintarse sin esperar a hidratación/layout (dimensiones explícitas, `priority` ya está, revisar el `position:absolute` + `object-cover` del contenedor).
+  - [ ] Volver a medir hasta **LCP < 2.5 s en móvil**, en frío y en caliente, y anotar ambos.
+- Notas:
+  - Números tomados desde una máquina local con throttling simulado; no son de campo. Antes de dar por bueno el resultado conviene contrastar con **PSI/CrUX** o el panel de Speed Insights de Vercel, que ya está instalado.
+  - No confundir con el trabajo de F-125: el JS ya está dentro de presupuesto (188.1 KB gz verificados en prod). Esto es imagen + main thread.
+- **Corrección de la premisa (2026-08-03) — el número que abrió el ticket era un artefacto de medición:** Lighthouse usa por defecto throttling **simulado** (Lantern): no observa la línea de tiempo, la modela. Conduciendo un Chrome real (Pixel 5, CPU 4×, ~1.6 Mbps) y leyendo la entrada `largest-contentful-paint` del `PerformanceObserver`:
+
+  | | Lighthouse (simulado) | Medición directa |
+  |---|---|---|
+  | LCP móvil en prod | 3.9 s | **2.25 s** |
+  | pintado tras terminar de cargar la imagen | ~1900 ms | **14 ms** |
+
+  Es decir: el "Render Delay" de ~1.9 s que parecía la causa principal **no existe** — la imagen se pinta ~15 ms después de llegar, de forma consistente entre runs. El LCP de esta página es, en la práctica, el tiempo de descarga del hero y nada más. Prod ya estaba por debajo de los 2.5 s, así que esto nunca debió ser P1.
+- Entregado (PR #199), midiendo A/B en local con el mismo método y el mismo ancho elegido por el dispositivo:
+  - `images.formats = ["image/avif", "image/webp"]` — nunca se había configurado, así que el optimizador usaba su default (sólo WebP) pese a lo que pide CLAUDE.md. A igual ancho: **44.0 KB WebP → 34.5 KB AVIF (−22%)**.
+  - `deviceSizes` curado a `[640, 828, 1080, 1200, 1920]`. **Trampa encontrada y documentada:** quitar un ancho asciende a los dispositivos que lo usaban al siguiente — un primer intento con `[640, 828, 1080, 1920, 2560]` hacía que un Pixel 5 (393 × DPR 2.75 = 1081) bajara **1920** en vez de 1200, y empeoraba el LCP (1316 ms vs 1152 ms). El tope es 1920 porque el JPEG fuente mide 1376 px.
+  - `scripts/warm-image-cache.mjs` + paso en `post-deploy-smoke.yml`: cada deploy invalida todas las variantes y `minimumCacheTTL` (F-124) sólo protege a la variante **ya existente**, nunca a quien la crea.
+  - Resultado del A/B: **1380 ms → 1152 ms (−16.5%)**, todo el ahorro en la descarga.
+  - Tests: `e2e/f-131-image-delivery.spec.ts` (4). Regresión 66 passed; el único rojo es `f-116:101`, que ya venía roto de F-122 (**F-127**).
+- Pendiente: volver a medir contra prod cuando el deploy haya corrido el paso de warming, y contrastar con datos de campo (PSI/CrUX o el Speed Insights ya instalado) en vez de con throttling simulado.
+- Refs: F-131, F-124, F-125, F-120, `app/(site)/[locale]/(marketing)/page.tsx`, `next.config.ts`, `booking-platform-perf`
 
 ---
 
