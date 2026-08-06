@@ -78,3 +78,10 @@ jobs:
       # the same script runs against `.next` via `npm run check:bundle`.
       - name: Home JS budget
         run: node scripts/check-bundle-budget.mjs --url "$PLAYWRIGHT_BASE_URL"
+
+      # F-131 — a deploy invalidates every `/_next/image` variant, and this site
+      # gets too little mobile traffic to re-warm the phone widths on its own.
+      # Warming them here means the first real visitor after a deploy gets a
+      # cache HIT instead of paying for the optimizer. Never fails the job.
+      - name: Warm image cache
+        run: node scripts/warm-image-cache.mjs "$PLAYWRIGHT_BASE_URL"
