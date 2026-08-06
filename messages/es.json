@@ -42,12 +42,8 @@
     "intro_title": "No solo enseño snowboard. Lo vivo.",
     "intro_body": "La mayoría de escuelas te asignan un monitor. Ride Flumserberg soy yo — un rider certificado que ha pasado la vida en la montaña y sigue sintiendo el mismo subidón al tirarse. Leo cómo montas, corrijo lo que te frena y te pongo a trazar líneas que no creías tuyas. Tu progreso es mi parte favorita del día.",
     "classes_eyebrow": "Las clases",
-    "classes_title": "Cuatro formas de montar conmigo",
+    "classes_title": "Cuatro formas de aprender conmigo",
     "classes_sub": "Privadas, de 1 a 4 personas. Elige la duración que encaja — del resto me encargo yo. Forfait y equipo no incluidos; te indico el alquiler.",
-    "class_dur_oneHour": "1 hora",
-    "class_dur_twoHours": "2 horas",
-    "class_dur_intensive": "4h Intensiva",
-    "class_dur_fullDay": "Día completo",
     "class_blurb_oneHour": "Corrige un fallo concreto o recupera la confianza. Una hora enfocada, solo tú y yo.",
     "class_blurb_twoHours": "Tu primer día en la nieve — o tu siguiente salto de nivel. Videocorrección para casa.",
     "class_blurb_intensive": "Te vas bajando con tus giros enlazados — seguro, en un solo día. O a fondo con freestyle y carving. Grabado, y te lo llevas.",
@@ -59,6 +55,8 @@
     "instructor_langs": "Clases en English · Deutsch · Español",
     "reviews_eyebrow": "Riders de verdad",
     "reviews_title": "Lo que dicen tras un día en la nieve",
+    "reviews_source": "Reseña de Google",
+    "reviews_rating": "5 de 5 estrellas",
     "review_1_name": "Krishna Vyas",
     "review_1_quote": "¡Tuve una experiencia increíble aprendiendo snowboard con Javi! Como principiante total, al principio estaba bastante nerviosa, pero hizo que todo el proceso fuera divertido y llevadero desde el primer momento. Estuvo muy atento, asegurándose siempre de que me sintiera seguro y entendiera cada paso antes de avanzar. Me dio consejos y trucos buenísimos que me ayudaron a mejorar rápido, y sus ánimos me dieron mucha confianza sobre la tabla. Si buscas un instructor motivador y de verdad comprometido con tu progreso, te recomiendo muchísimo a Javi. ¡Gracias por hacer que mi primera experiencia con el snowboard fuera tan buena!",
     "review_2_name": "Pierpaolo Durante",
@@ -452,8 +450,11 @@
     "tier": {
       "oneHour": {
         "kicker": "Confianza",
+        "product": "Refuerzo rápido",
         "name": "Clase de snowboard de 1 hora",
+        "length": "1 hora",
         "blurb": "Corrige una cosa o recupera el valor. Una hora centrada, solo tú y yo.",
+        "photo_alt": "Javi agachado junto a un rider, corrigiéndole la postura sobre la tabla en una pista recién pisada",
         "points": [
           "Un fallo, resuelto — el canto de punta, ese temblor en el de talón, lo que te esté frenando.",
           "¿Nervioso con una bajada más empinada? Para eso es justo esta hora.",
@@ -464,8 +465,11 @@
       },
       "twoHours": {
         "kicker": "Primer día",
+        "product": "Primer día",
         "name": "Clase de snowboard de 2 horas",
+        "length": "2 horas",
         "blurb": "Tu primer día, o las bases bien hechas. Tiempo de sobra para que te haga clic.",
+        "photo_alt": "Un rider de pie sobre la tabla en una pista ancha, con el macizo nevado detrás",
         "points": [
           "¿Primera vez en la tabla? Empiezas a enlazar los giros — la intensiva de 4 horas es donde los dejas clavados.",
           "¿Ya tienes las bases? Un buen repaso técnico.",
@@ -477,8 +481,12 @@
       },
       "intensive": {
         "kicker": "Giros clavados",
+        "product": "Giros garantizados",
         "name": "Clase intensiva de 4 horas",
+        "length": "4 horas",
+        "flag": "La que recomiendo",
         "blurb": "Te vas bajando con tus giros enlazados — seguro, en un solo día. O, si ya tienes las bases, a fondo con freestyle y carving.",
+        "photo_alt": "Javi y una rider trazando giros juntos en una pista recién pisada, con la nieve saltando del canto",
         "points": [
           "¿Primera vez en la tabla? Es la clase de la que te vas bajando de verdad con los giros enlazados — seguro, no quizá.",
           "¿Ya tienes las bases? Elige tu línea: freestyle en el park o carving de giros fuertes.",
@@ -489,8 +497,11 @@
       },
       "fullDay": {
         "kicker": "Día completo",
+        "product": "All the way",
         "name": "Clase de snowboard de día completo",
+        "length": "Día completo",
         "blurb": "Todo lo de la intensiva de 4 horas — a lo largo de seis horas, la montaña entera y un descanso de verdad.",
+        "photo_alt": "Dos riders parados en lo alto de la montaña al atardecer, tras un día entero de bajadas",
         "points": [
           "Todo lo de la intensiva de 4 horas — freestyle o carving, grabado.",
           "Elige la estación: podemos bajar por otras estaciones del cantón de St. Gallen (hablándolo antes conmigo).",

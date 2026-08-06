@@ -2915,7 +2915,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - [ ] Medir el chunk antes/después con `curl` + gzip y confirmar con Lighthouse que `unused-javascript` baja de 166 KiB.
   - [ ] No romper lo verificado en F-125: el SDK debe seguir inicializándose en idle (`window.__SENTRY__` presente) y `e2e/f-125-js-diet.spec.ts` seguir en verde.
 - Notas:
-  - **Numeración:** este ticket nació como F-128 y se renumeró a F-130 el 2026-08-03 — F-127/128/129 ya estaban cogidos por trabajo en paralelo (`f-127-commercial-product-cards`, `f-128-complete-email-verification`, `f-129-seo-keyword-strategy`). Ojo también con **F-127, que está usado dos veces**: el ticket de specs en rojo (mergeado en #194) y la branch de product cards.
+  - **Numeración:** este ticket nació como F-128 y se renumeró a F-130 el 2026-08-03 — F-127/128/129 ya estaban cogidos por trabajo en paralelo (`f-127-commercial-product-cards`, `f-128-complete-email-verification`, `f-129-seo-keyword-strategy`). El choque de **F-127 usado dos veces** quedó resuelto el 2026-08-06: el ticket de specs en rojo (#194) se queda con F-127 por estar ya mergeado, y el de product cards pasó a **F-132** al rebasar. La branch sigue llamándose `f-127-commercial-product-cards` para no matar la PR #197 — el nombre de la branch no coincide con el del ticket a propósito.
   - `legacy-javascript` (24 KiB) es harina de otro costal y probablemente **no** accionable: 14 KiB salen del chunk de framework de Next y 10 KiB del propio bundle de Sentry, los dos precompilados por sus paquetes y ajenos a nuestro `browserslist`.
 - Refs: F-130, F-125, `instrumentation-client.ts`, `next.config.ts`
 
@@ -2950,6 +2950,27 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - Tests: `e2e/f-131-image-delivery.spec.ts` (4). Regresión 66 passed; el único rojo es `f-116:101`, que ya venía roto de F-122 (**F-127**).
 - Pendiente: volver a medir contra prod cuando el deploy haya corrido el paso de warming, y contrastar con datos de campo (PSI/CrUX o el Speed Insights ya instalado) en vez de con throttling simulado.
 - Refs: F-131, F-124, F-125, F-120, `app/(site)/[locale]/(marketing)/page.tsx`, `next.config.ts`, `booking-platform-perf`
+### F-132 — Las cuatro clases como tarjetas comerciales de producto + carrusel en móvil
+
+- Sprint: post-Sprint 5 · Estado: **done** (2026-08-06) · Prioridad: P2 (conversión)
+- Depende de: F-093 (página de precios), F-124 (marketing estático), F-125 (presupuesto de JS)
+- Motivación: las cuatro clases son **los productos** del negocio y no se leían como tales. En la home eran tiles de texto con la duración como titular (`1 HORA`), y en móvil caían en una columna de cuatro que obliga a scrollear cuatro pantallas para ver el catálogo — el punto de mayor abandono. En `/precios` los cuatro tiers compartían un slab de hairlines (`gap-px`) que los hacía leer como una tabla, no como cuatro cosas distintas que se pueden elegir. Sin foto, sin nombre propio y sin ninguna señal de cuál elegir.
+- AC:
+  - [x] **Nombres comerciales** por tier (`pricing.tier.*.product`), con la duración degradada a etiqueta de producto (`pricing.tier.*.length`): _Refuerzo rápido_ / _Primer día_ / _Giros garantizados_ / _All the way_ — en EN, DE y ES.
+  - [x] **Una foto por producto** (`public/brand/tiers/*.jpg`, 4:3, ~1365–1448px de ancho), compartida por home y precios vía `TierPhoto` para que las dos superficies no puedan divergir.
+  - [x] **Carrusel en móvil** (`CardScroller`): rail de scroll-snap con peek de la siguiente tarjeta, en las clases de la home, en las opiniones y en `/precios`. **Cero JS** — CSS scroll-snap, no una librería de carrusel.
+  - [x] **Una tarjeta recomendada** (`RECOMMENDED_TIER` = intensiva): cinta "la que recomiendo" + borde `primary`. Es opinión del owner, no un "más vendido" inventado.
+  - [x] Precio con peso real en `/precios` (display 30px) y nombres alineados entre tarjetas (`sm:min-h-[2.1em]`) para que la fila se pueda comparar de un vistazo.
+  - [x] **Opiniones atribuidas a Google**: estrellas + marca Google en sus cuatro colores oficiales, sin recolorear. Se cambió el titular de la home a "Cuatro formas de **aprender** conmigo".
+  - [x] El `tier.*.name` con keywords **sigue en pantalla** bajo el nombre comercial — es de donde se construye el `Course` JSON-LD (F-100) y por donde se busca.
+  - [x] Presupuesto, medido contra `main` **después** de F-125 (`npm run check:bundle`): home **187,6 KB gz, byte por byte igual** que `main` — el guard de F-125 pasa con 12 KB de margen sobre los 200. `/precios` sube de 187 a 192 kB de First Load JS (runtime de `next/image`, coste real de meter fotos) y no de 6, porque `PricingTiers` se convirtió a Server Component: era `"use client"` sin más motivo que `useTranslations` y arrastraba el markup de las tarjetas y tailwind-merge al navegador.
+- Tests: [x] `e2e/f-132-product-cards.spec.ts` (8/8) — cuatro productos con foto y nombre en cada locale, exactamente una tarjeta recomendada por superficie, los rails desbordan en 390px y no en 1440px, badge de Google ×4. [x] `f-124-static-marketing` 14/14 y `f-093-pricing` 7/7 contra `next build && next start` — el árbol de marketing sigue estático y cacheable.
+- Notas:
+  - Las cuatro fotos las aportó el owner y entraron como PNG; se convirtieron a JPEG q82 y se recortaron al **mayor 4:3 que cabía dentro del original**, sin reescalar hacia arriba (los PNG venían a 1536×1024 y 1448×1086, por debajo de los 1600 de ancho que se había planteado). Se sustituyen cambiando **el archivo**, no el código: mismo path, 4:3, ≥ ~1300px de ancho. Si una foto cambia, revisar su alt (`pricing.tier.*.photo_alt`).
+  - `TIER_KEY` estaba copiado en tres ficheros y la home mantenía su propia lista de tiers; todo consolidado en `lib/pricing/tiers.ts`. `Duration` se importa ahí como **type-only** para no meter Prisma en el bundle de la home.
+  - Se borraron las claves `home.class_dur_*` (sin uso tras el cambio). `tier.*.kicker` **se mantiene**: lo consume la ficha de instructor.
+  - El hover no puede usar `border-primary`: pintaba de rojo cualquier tarjeta bajo el cursor y la hacía indistinguible de la recomendada. El hover lo llevan el zoom de la foto y la barra de CTA.
+- Refs: F-132, F-093, F-100, F-124, F-125, F-126, `impeccable`, `docs/brand/voice.md`
 
 ---
 

@@ -42,12 +42,8 @@
     "intro_title": "Ich unterrichte Snowboarden nicht nur. Ich lebe es.",
     "intro_body": "Die meisten Schulen geben dir einen Lehrer. Ride Flumserberg bin ich — ein certifiziert Rider, der sein Leben auf dem Berg verbracht hat und beim Reinfahren immer noch denselben Kick spürt. Ich lese, wie du fährst, behebe, was dich bremst, und bringe dich auf Linien, die du dir nicht zugetraut hättest. Dein Fortschritt ist mein liebster Teil des Tages.",
     "classes_eyebrow": "Die Stunden",
-    "classes_title": "Vier Wege, mit mir zu fahren",
+    "classes_title": "Vier Wege, mit mir zu lernen",
     "classes_sub": "Privat, 1 bis 4 Personen. Wähl die Dauer, die passt — den Rest mache ich. Skipass und Ausrüstung nicht inklusive; ich zeige dir den Verleih.",
-    "class_dur_oneHour": "1 Stunde",
-    "class_dur_twoHours": "2 Stunden",
-    "class_dur_intensive": "4h Intensiv",
-    "class_dur_fullDay": "Ganzer Tag",
     "class_blurb_oneHour": "Einen Fehler beheben oder die Angst loswerden. Eine fokussierte Stunde, nur wir zwei.",
     "class_blurb_twoHours": "Dein erster Tag im Schnee — oder dein nächster Durchbruch. Videofeedback für zu Hause.",
     "class_blurb_intensive": "Fahr mit verbundenen Turns nach Hause — sicher, an einem einzigen Tag. Oder tief rein in Freestyle und Carving. Gefilmt, du behältst es.",
@@ -59,6 +55,8 @@
     "instructor_langs": "Stunden auf English · Deutsch · Español",
     "reviews_eyebrow": "Echte Rider",
     "reviews_title": "Was sie nach einem Tag im Schnee sagen",
+    "reviews_source": "Google Rezension",
+    "reviews_rating": "5 von 5 Sternen",
     "review_1_name": "Krishna Vyas",
     "review_1_quote": "Ich hatte ein grossartiges Erlebnis beim Snowboarden lernen mit Javi! Als kompletter Anfänger war ich zuerst ziemlich nervös, aber er liess den ganzen Prozess von Anfang an Spass machen und machbar wirken. Er war sehr aufmerksam und hat immer dafür gesorgt, dass ich mich sicher fühlte und jeden Schritt verstand, bevor es weiterging. Er gab mir tolle Tipps und Tricks, mit denen ich schnell besser wurde, und seine Ermutigung hat mein Selbstvertrauen auf dem Board richtig gestärkt. Wenn du einen Lehrer suchst, der motiviert und ehrlich daran interessiert ist, dass du besser wirst, kann ich Javi nur empfehlen. Danke, dass du mein erstes Snowboard-Erlebnis so grossartig gemacht hast!",
     "review_2_name": "Pierpaolo Durante",
@@ -452,8 +450,11 @@
     "tier": {
       "oneHour": {
         "kicker": "Sicherheit",
+        "product": "Feinschliff",
         "name": "1-stündige Snowboard-Lektion",
+        "length": "1 Stunde",
         "blurb": "Eine Sache fixen oder den Mut zurückholen. Eine fokussierte Stunde, nur wir zwei.",
+        "photo_alt": "Javi kniet neben einem Rider und korrigiert dessen Haltung auf dem Board, auf frisch präparierter Piste",
         "points": [
           "Ein Fehler, behoben — die Frontside-Kante, das Zittern auf der Heelside, was dich auch stört.",
           "Nervös vor einer steileren Abfahrt? Genau dafür ist diese Stunde da.",
@@ -464,8 +465,11 @@
       },
       "twoHours": {
         "kicker": "Erster Tag",
+        "product": "Erster Tag",
         "name": "2-stündige Snowboard-Lektion",
+        "length": "2 Stunden",
         "blurb": "Dein erster Tag oder die Basics richtig gelernt. Genug Zeit, dass es wirklich klickt.",
+        "photo_alt": "Ein Rider steht auf dem Board auf einer breiten Piste, das verschneite Massiv im Rücken",
         "points": [
           "Zum ersten Mal auf dem Board? Du fängst an, Turns zu verbinden — bei der 4-Stunden-Intensiv sitzen sie dann richtig.",
           "Basics schon drauf? Ein sauberer technischer Feinschliff.",
@@ -477,8 +481,12 @@
       },
       "intensive": {
         "kicker": "Turns sitzen",
+        "product": "Turns garantiert",
         "name": "4-stündige Intensiv-Lektion",
+        "length": "4 Stunden",
+        "flag": "Die empfehle ich",
         "blurb": "Fahr mit verbundenen Turns nach Hause — sicher, an einem einzigen Tag. Oder geh, wenn du die Basics drauf hast, tief in Freestyle und Carving.",
+        "photo_alt": "Javi und eine Riderin ziehen gemeinsam Turns auf frisch präparierter Piste, Schnee spritzt von der Kante",
         "points": [
           "Zum ersten Mal auf dem Board? Das ist die Lektion, bei der du mit wirklich verbundenen Turns nach Hause fährst — sicher, nicht vielleicht.",
           "Basics schon drauf? Wähl deine Linie: Freestyle im Park oder harte Carving-Turns.",
@@ -489,8 +497,11 @@
       },
       "fullDay": {
         "kicker": "Ganzer Tag",
+        "product": "All the way",
         "name": "Ganztägige Snowboard-Lektion",
+        "length": "Ganzer Tag",
         "blurb": "Alles aus der 4-Stunden-Intensiv-Lektion — über sechs Stunden, der ganze Berg und eine echte Pause.",
+        "photo_alt": "Zwei Rider stehen bei Sonnenuntergang oben am Berg, nach einem ganzen Tag Abfahrten",
         "points": [
           "Alles aus der 4-Stunden-Intensiv-Lektion — Freestyle oder Carving, gefilmt.",
           "Wähl das Skigebiet: Wir können andere Gebiete im Kanton St. Gallen fahren (vorher mit mir abgesprochen).",
