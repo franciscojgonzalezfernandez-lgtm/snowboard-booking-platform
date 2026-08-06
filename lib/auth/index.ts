@@ -99,4 +99,13 @@ export const auth = betterAuth({
     expiresIn: 60 * 60 * 24 * 30,
     disableSessionRefresh: true,
   },
+  // F-128: E2E only. The full auth suite fires many sign-up/sign-in requests in
+  // parallel against a production build, where Better Auth's rate limiter is on
+  // by default and 429s them — the sign-up then never creates the user and the
+  // test helper's follow-up read fails. The test server sets
+  // AUTH_RATE_LIMIT_DISABLED to turn the limiter off; production (Vercel) never
+  // sets it, so real rate limiting is unaffected.
+  ...(process.env.AUTH_RATE_LIMIT_DISABLED === "true"
+    ? { rateLimit: { enabled: false as const } }
+    : {}),
 });

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { signUpVerified } from "./helpers/auth";
 
 // F-116 — desktop header rework. The owner reported the brand row crowding at
 // ~1024–1280px: the "Ride Flumserberg" wordmark wrapped to two lines and the
@@ -8,20 +9,13 @@ import { expect, test, type Page } from "@playwright/test";
 // layout invariants across the desktop widths and both auth states.
 
 const DESKTOP_WIDTHS = [1024, 1280, 1440] as const;
-const STRONG_PASSWORD = "Sn0wb0ard!Strong";
 
 function uniqueEmail(tag: string): string {
   return `f116-${tag}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.test`;
 }
 
 async function signUp(page: Page, email: string): Promise<void> {
-  await page.goto("/en/login");
-  await page.getByTestId("tab-signup").click();
-  await page.getByTestId("input-name").fill("F116 Tester");
-  await page.getByTestId("input-email").fill(email);
-  await page.getByTestId("input-password").fill(STRONG_PASSWORD);
-  await page.getByTestId("submit-credentials").click();
-  await page.waitForURL(/\/(en|de|es)\/?$/);
+  await signUpVerified(page, email, "F116 Tester");
 }
 
 async function expectNoHorizontalOverflow(page: Page): Promise<void> {

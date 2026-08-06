@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { signUpVerified } from "./helpers/auth";
 import { config as loadDotenv } from "dotenv";
 import {
   BookingStatus,
@@ -33,13 +34,7 @@ function uniqueEmail(tag: string): string {
 
 async function signUp(page: Page, name: string): Promise<{ userId: string; email: string }> {
   const email = uniqueEmail("u");
-  await page.goto("/en/login");
-  await page.getByTestId("tab-signup").click();
-  await page.getByTestId("input-name").fill(name);
-  await page.getByTestId("input-email").fill(email);
-  await page.getByTestId("input-password").fill("Sn0wb0ard!Strong");
-  await page.getByTestId("submit-credentials").click();
-  await page.waitForURL(/\/(en|de|es)\/?$/);
+  await signUpVerified(page, email, name);
   const user = await prisma.user.findUnique({ where: { email }, select: { id: true } });
   if (!user) throw new Error(`User not found after signup: ${email}`);
   return { userId: user.id, email };

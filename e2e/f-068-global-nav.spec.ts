@@ -1,19 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
-
-const STRONG_PASSWORD = "Sn0wb0ard!Strong";
+import { signUpVerified } from "./helpers/auth";
 
 function uniqueEmail(tag: string): string {
   return `f068-${tag}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.test`;
 }
 
 async function signUp(page: Page, email: string): Promise<void> {
-  await page.goto("/en/login");
-  await page.getByTestId("tab-signup").click();
-  await page.getByTestId("input-name").fill("F068 Tester");
-  await page.getByTestId("input-email").fill(email);
-  await page.getByTestId("input-password").fill(STRONG_PASSWORD);
-  await page.getByTestId("submit-credentials").click();
-  await page.waitForURL(/\/(en|de|es)\/?$/);
+  await signUpVerified(page, email, "F068 Tester");
 }
 
 test.describe("F-068 SiteNav across chrome routes", () => {

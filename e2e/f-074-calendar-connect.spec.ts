@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { config as loadDotenv } from "dotenv";
 import { Locale as DbLocale, PrismaClient, Role } from "@prisma/client";
+import { signUpVerified } from "./helpers/auth";
 
 loadDotenv({ path: ".env.local", override: true });
 loadDotenv({ path: ".env" });
@@ -14,37 +15,16 @@ function uniqueEmail(tag: string): string {
 }
 
 async function signUpAsInstructor(page: Page): Promise<{ instructorId: string }> {
-  // Better Auth sign-up against the Neon `dev` branch occasionally 500s on a
-  // cold serverless connection; retry with a fresh email so the transient
-  // infra flake doesn't fail the F-074 wiring under test.
-  let email = "";
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
-    email = uniqueEmail("instr");
-    await page.goto("/en/login");
-    await page.getByTestId("tab-signup").click();
-    await page.getByTestId("input-name").fill("F074 Tester");
-    await page.getByTestId("input-email").fill(email);
-    await page.getByTestId("input-password").fill("Sn0wb0ard!Strong");
-    await page.getByTestId("submit-credentials").click();
-    try {
-      await page.waitForURL(/\/(en|de|es)\/?$/, { timeout: 20_000 });
-      break;
-    } catch {
-      if (attempt === 3) throw new Error(`Sign-up did not complete: ${email}`);
-    }
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { email },
-    select: { id: true },
-  });
-  if (!user) throw new Error(`User not found after signup: ${email}`);
+  // F-128: create a verified, signed-in user via the API helper (form signup no
+  // longer yields a session under F-122), then promote to instructor.
+  const email = uniqueEmail("instr");
+  const userId = await signUpVerified(page, email, "F074 Tester");
   await prisma.user.update({
-    where: { id: user.id },
+    where: { id: userId },
     data: { roles: [Role.student, Role.instructor] },
   });
   const instructor = await prisma.instructor.create({
-    data: { userId: user.id, specialties: [], languages: [DbLocale.en] },
+    data: { userId, specialties: [], languages: [DbLocale.en] },
     select: { id: true },
   });
   return { instructorId: instructor.id };

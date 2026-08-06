@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { signUpVerified } from "./helpers/auth";
 import { config as loadDotenv } from "dotenv";
 import {
   PrismaClient,
@@ -43,13 +44,7 @@ async function signUp(
   email: string,
   name = "F047 Tester",
 ): Promise<void> {
-  await page.goto("/en/login");
-  await page.getByTestId("tab-signup").click();
-  await page.getByTestId("input-name").fill(name);
-  await page.getByTestId("input-email").fill(email);
-  await page.getByTestId("input-password").fill("Sn0wb0ard!Strong");
-  await page.getByTestId("submit-credentials").click();
-  await page.waitForURL(/\/(en|de|es)\/?$/);
+  await signUpVerified(page, email, name);
 }
 
 async function findUserIdByEmail(email: string): Promise<string> {
