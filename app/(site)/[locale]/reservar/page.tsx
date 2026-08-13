@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Duration, Locale } from "@prisma/client";
 import { z } from "zod";
@@ -19,6 +20,12 @@ import {
   getCachedSlots,
 } from "@/lib/booking-engine/cache";
 import { getPriceCents } from "@/lib/pricing/get-price";
+import {
+  buildFunnelReturnUrl,
+  buildFunnelUrl,
+  FUNNEL_RETURN_PARAM,
+  parseFunnelReturnState,
+} from "@/lib/booking/funnel-return";
 import { BookingHeader } from "./booking-header";
 import { BookingStepper } from "./booking-stepper";
 import { BookerPaymentFlow } from "./booker-payment-flow";
@@ -42,6 +49,8 @@ type ReservarSearchParams = {
   l?: string;
   /** F-060: `credit=auto` expands + pre-selects redeemable credits in Step 4. */
   credit?: string;
+  /** F-134: packed return state, set only on the hop back from auth. */
+  r?: string;
 };
 
 type ReservarPageProps = {
@@ -118,15 +127,23 @@ function formatDateForLocale(isoDate: string, locale: string): string {
   }).format(date);
 }
 
+/**
+ * Where the visitor lands after authenticating in Step 4.
+ *
+ * F-134: this is handed to Better Auth as `callbackURL`, and its origin check
+ * rejects any URL containing `:`. The funnel's own query carries `t=09:00`, so
+ * the plain form was rejected with `403 INVALID_CALLBACK_URL` on every booking
+ * that got as far as Step 4 — which is all of them. The state travels packed
+ * instead; `ReservarPage` expands it on arrival.
+ */
 function buildLoginNext(locale: string, sp: ReservarSearchParams): string {
-  const qs = new URLSearchParams();
-  if (sp.d) qs.set("d", sp.d);
-  if (sp.dt) qs.set("dt", sp.dt);
-  if (sp.t) qs.set("t", sp.t);
-  if (sp.i) qs.set("i", sp.i);
-  if (sp.l) qs.set("l", sp.l);
-  const query = qs.toString();
-  return `/${locale}/reservar${query ? `?${query}` : ""}`;
+  return buildFunnelReturnUrl(locale, {
+    d: sp.d,
+    dt: sp.dt,
+    t: sp.t,
+    i: sp.i,
+    l: sp.l,
+  });
 }
 
 export default async function ReservarPage({
@@ -137,6 +154,26 @@ export default async function ReservarPage({
   setRequestLocale(locale);
 
   const sp = await searchParams;
+
+  // F-134: the hop back from auth lands here with the selection packed into
+  // `?r=` (Better Auth rejects a `callbackURL` containing the `:` of `t=09:00`).
+  // Expand it with a redirect rather than reading it inline, so `r` never
+  // coexists with the real params: everything downstream — and the URL the
+  // visitor ends up looking at — stays in the plain `?d=…&t=09:00` form.
+  // A tampered payload parses to `null` and simply drops the state.
+  const returnState = parseFunnelReturnState(sp.r);
+  if (returnState) {
+    const restored = new URLSearchParams(
+      buildFunnelUrl(locale, returnState).split("?")[1] ?? "",
+    );
+    // Preserve anything else that rode along (e.g. F-060's `credit=auto`).
+    for (const [key, value] of Object.entries(sp)) {
+      if (key === FUNNEL_RETURN_PARAM || value === undefined) continue;
+      if (!restored.has(key)) restored.set(key, value);
+    }
+    redirect(`/${locale}/reservar?${restored.toString()}`);
+  }
+
   const parsedDuration = durationSchema.safeParse(sp.d);
   const initialDuration = parsedDuration.success
     ? parsedDuration.data
