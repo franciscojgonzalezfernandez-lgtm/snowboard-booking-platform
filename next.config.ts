@@ -17,6 +17,26 @@ const nextConfig: NextConfig = {
     // is safe: the query string carries width + quality, and the underlying
     // files are versioned by deployment.
     minimumCacheTTL: 31536000,
+    // F-131: CLAUDE.md's perf budget calls for "AVIF + WebP", but `formats` was
+    // never set, so the optimizer used its default (WebP only) and prod served
+    // the home hero — the LCP element — as WebP. AVIF is listed first so it wins
+    // content negotiation where supported.
+    formats: ["image/avif", "image/webp"],
+    // F-131: Next's default `deviceSizes` is eight widths and the optimizer
+    // caches every (width, quality) pair separately, which spreads the cache
+    // thin on a site with this little traffic — measured on prod, `w=1920` was a
+    // `x-vercel-cache: HIT` while `w=640/750/1080` were all MISS.
+    //
+    // Trimmed, but NOT aggressively: dropping a width silently promotes every
+    // device that used it to the next one up. A first cut of
+    // `[640, 828, 1080, 1920, 2560]` did exactly that — a Pixel 5 (393 CSS px ×
+    // DPR 2.75 = 1081) fell past 1080 and pulled **1920** instead of the 1200 it
+    // gets on the default set. So 1200 stays.
+    //
+    // The cap is 1920 because `public/brand/hero.jpg` is 1376 px wide: the
+    // optimizer never upscales, so 2048/3840 would bill a separate cache entry
+    // for bytes identical to 1920's.
+    deviceSizes: [640, 828, 1080, 1200, 1920],
     // F-073: instructor photos live on Vercel Blob. Public URLs are
     // `https://<store-id>.public.blob.vercel-storage.com/<pathname>`; allow
     // any subdomain since the store id is environment-specific.
