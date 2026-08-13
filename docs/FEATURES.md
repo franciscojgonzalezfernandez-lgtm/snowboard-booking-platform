@@ -3009,6 +3009,102 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - [ ] **Gate de suite completa en CI** contra build de producción (no sólo smoke), con: branch Neon dedicada (F-022, evita pollution entre runs), env `BETTER_AUTH_URL` por-puerto + `AUTH_RATE_LIMIT_DISABLED=true` (bypass añadido en F-128), y `--workers=1` para specs que escriben en BD (regla F-126). Mientras siga sólo el smoke, este patrón se repetirá.
 - Refs: F-129, F-116, F-098, F-060, F-064, F-074, F-126, F-022, F-128
 
+
+### F-133 — Los `Select` enseñan el valor crudo del enum al usuario (`INTENSIVE`, `TWO_HOURS`, `BEGINNER`) en vez de la etiqueta traducida
+
+- Sprint: post-Sprint 5 · Estado: backlog · Prioridad: **P1** (se ve en el paso 1 del funnel, en los tres idiomas, en la pantalla donde el usuario decide si sigue o se va)
+- Depende de: —
+- Reportado: QA manual contra prod, 2026-08-13.
+- Motivación: al elegir una opción, el trigger del select pasa a mostrar la constante del enum. Reproducido contra prod: `/en/reservar` → elegir "4 hours — intensive" → el trigger queda con **`INTENSIVE`**. Igual con `TWO_HOURS`, y en el paso 4 con el nivel del rider (`BEGINNER`, `INTERMEDIATE`, …).
+- Causa raíz (verificada, no inferida): `SelectValue` en `components/ui/select.tsx:21` envuelve `Select.Value` de Base UI **sin children**. Base UI renderiza entonces el **valor** del item, no su texto. Las etiquetas traducidas sólo viven dentro de `SelectItem` (`{t(DURATION_LABEL_KEYS[d])}`), así que en cuanto el popup se cierra no queda nada que las muestre. Nada que ver con next-intl: los mensajes están bien y la lista abierta se ve correcta.
+- Alcance real — **4 call sites, no 2**. Los dos que faltaban no los reportó QA porque son de ops:
+  - `app/(site)/[locale]/reservar/duration-picker.tsx:159` — duración (issue reportado).
+  - `app/(site)/[locale]/reservar/booker-payment-flow.tsx:660` — nivel del rider (issue reportado).
+  - `app/(ops)/admin/_components/instructor-selector.tsx:43` y `app/(ops)/admin/cancel-day/_components/instructor-picker.tsx:45` — el valor es el **cuid** del instructor, así que ahí se está enseñando `cmpaddwe10002…` al operador.
+- AC:
+  - [ ] Arreglarlo **en el primitive**, no en cada call site: `SelectValue` debe resolver valor → etiqueta. Dos vías de Base UI a evaluar — (a) pasar `items` a `Select.Root` (el primitive mapea solo), o (b) `<Select.Value>{(value) => …}</Select.Value>`. Preferir la que no obligue a duplicar el diccionario de etiquetas en cada formulario.
+  - [ ] Los 4 call sites muestran la etiqueta correcta tras seleccionar.
+  - [ ] El `placeholder` sigue funcionando cuando no hay selección (hoy sí funciona — no romperlo), y `data-placeholder` sigue aplicando su estilo.
+  - [ ] Verificado en **en/de/es** para los dos selects del funnel.
+- Tests:
+  - [ ] E2E: seleccionar en el paso 1 y afirmar el **texto del trigger**, no sólo el estado de la URL. El spec actual pasa con este bug porque sólo mira la URL — por eso llegó a producción.
+  - [ ] Mismo patrón para el nivel del rider en el paso 4.
+- Notas: es el tipo de bug que un test de "seleccionar y continuar" no ve. Al añadir los asserts, mirar si otros specs del funnel afirman sólo estado interno.
+- Refs: F-133, `components/ui/select.tsx:21`, F-068, F-119
+
+### F-134 — El magic link del paso 4 muere con `INVALID_CALLBACK_URL`: el `:` de la hora invalida el callbackURL
+
+- Sprint: post-Sprint 5 · Estado: backlog · Prioridad: **P0** (rompe una vía de login **dentro del funnel de pago**, y lo hace en el 100% de las reservas reales — ver abajo)
+- Depende de: F-119 (login embebido en el paso 4), F-122 (verificación de email)
+- Reportado: QA manual contra prod, 2026-08-13.
+- Motivación: el email de magic link llega con un enlace que, al abrirlo, responde `403 {"message":"Invalid callbackURL","code":"INVALID_CALLBACK_URL"}`.
+- Causa raíz (aislada contra prod con un token falso, para separar la validación del callback de la del token):
+
+  | callbackURL | resultado |
+  |---|---|
+  | `/en/reservar?d=TWO_HOURS&dt=2026-11-15` | 302 OK |
+  | `/en/reservar?i=cmpaddwe1000…` | 302 OK |
+  | `/en/reservar?l=en` | 302 OK |
+  | `/en/reservar?t=09%3A00` | **403 `INVALID_CALLBACK_URL`** |
+  | `/en/reservar?x=foo:bar` | **403** |
+  | `/en/reservar:` | **403** |
+
+  No es un problema de doble encoding ni del email: el `originCheck` de Better Auth rechaza **cualquier `:`** en el callbackURL (lo lee como esquema de URL absoluta, que es justo la defensa anti open-redirect que queremos conservar). `buildLoginNext` (`app/(site)/[locale]/reservar/page.tsx:121`) mete la hora con `URLSearchParams`, que codifica `09:00` → `09%3A00`.
+- **Por qué es P0 y no un caso borde:** al paso 4 sólo se llega con hora ya elegida, así que el parámetro `t` está *siempre* presente. Es decir, el magic link está roto para todas las reservas, no para algunas.
+- Alcance acotado (comprobado, para no arreglar de más):
+  - `verify-email` **no** está afectado: responde 302 con y sin `:`. F-122 está a salvo.
+  - [ ] **Pendiente de confirmar:** `signIn.social` de Google (`step4-auth.tsx:149`) recibe el mismo `callbackURL`. Verificar antes de cerrar si comparte el fallo.
+- Decisión (owner, 2026-08-13): **empaquetar la query sólo para el callbackURL**, no cambiar el formato de hora del funnel. Se descartó `t=0900` global porque cambia el contrato de una URL pública (enlaces guardados, emails que construyen `/reservar?…`, estado del funnel y sus specs), y se descartó quitar `t` del callback porque devolvería al usuario sin hora justo después de verificar el email — el punto más caro del funnel.
+- AC:
+  - [ ] `buildLoginNext` emite un callbackURL **sin `:`**: la query del funnel viaja empaquetada en un único parámetro opaco (base64url, que no contiene `:`), p. ej. `/{locale}/reservar?r=<payload>`.
+  - [ ] El funnel expande ese parámetro al volver y restaura duración/fecha/hora/instructor/idioma. Al terminar, la URL que ve el usuario debe quedar en su forma normal, no con el parámetro opaco pegado.
+  - [ ] Payload **validado** al expandirlo (mismo `durationSchema` y compañía que ya usa la página): un `r` manipulado no debe poder inyectar estado arbitrario ni saltarse la validación de search params.
+  - [ ] Aplicado a las tres vías que reciben `callbackURL` en el paso 4 (magic link, Google, verificación), no sólo al magic link.
+- Tests:
+  - [ ] E2E: pedir magic link desde el paso 4 con hora elegida y afirmar que el enlace generado **no contiene `:` ni `%3A`** y que resuelve 302 al funnel con el estado intacto.
+  - [ ] Unit del round-trip empaquetar → expandir, incluido payload corrupto/manipulado.
+- Notas: no tocar el `originCheck` de Better Auth ni añadir el origen a una lista blanca — la validación es correcta; lo que está mal es el callbackURL que le mandamos.
+- Refs: F-134, F-119, F-122, `app/(site)/[locale]/reservar/page.tsx:121`, `app/(site)/[locale]/reservar/step4-auth.tsx`
+
+### F-135 — Formulario de riders: el input no limita la longitud y el error dice "required" cuando el problema es otro
+
+- Sprint: post-Sprint 5 · Estado: backlog · Prioridad: P2 (no bloquea, pero deja al usuario atascado sin saber qué corregir)
+- Depende de: —
+- Reportado: QA manual contra prod, 2026-08-13.
+- Motivación: escribiendo un nombre de rider muy largo, el formulario falla con un mensaje genérico tipo "required" — que además es falso, porque el campo **sí** está relleno.
+- Causa raíz: dos cosas que se suman.
+  1. `lib/schemas/attendee.ts:10` valida `name: z.string().trim().min(1).max(80)`, pero el `<Input>` del nombre no lleva `maxLength`, así que se puede escribir más de la cuenta sin ninguna señal.
+  2. `booker-payment-flow.tsx` colapsa los tres errores posibles del attendee en un único mensaje: `attendeeErrors?.age ? t("error_age_range") : t("error_required")`. Cualquier fallo que no sea de edad — nombre largo incluido — sale como "required".
+- AC:
+  - [ ] Mensajes por campo y por motivo: nombre vacío ≠ nombre demasiado largo ≠ edad fuera de rango. Nuevas claves en `messages/{en,de,es}.json`.
+  - [ ] `maxLength` en el input del nombre alineado con el schema (80), para que el límite se note al escribir y no al enviar.
+  - [ ] Revisar el mismo patrón en `bookerName` (`lib/schemas/booking-draft.ts:19`, también `max(80)`), que tiene la misma pinta.
+  - [ ] El mensaje se asocia al campo que falla (`aria-describedby` / `aria-invalid`), no sólo al bloque del attendee.
+- Tests: [ ] E2E: nombre de 81 caracteres → mensaje específico de longitud, no "required".
+- Notas: mirar de paso si el `max(80)` es el límite que queremos, o si conviene subirlo. 80 es corto para "Nombre Apellido1 Apellido2" de varias personas, pero el campo es por rider, así que probablemente sobra.
+- Refs: F-135, `lib/schemas/attendee.ts:10`, `lib/schemas/booking-draft.ts:19`, `app/(site)/[locale]/reservar/booker-payment-flow.tsx`
+
+### F-136 — Copy del checkout: "Step 5 of 4", métodos de pago que no todos tienen, y precios que dicen llevar IVA
+
+- Sprint: post-Sprint 5 · Estado: backlog · Prioridad: P2 (copy, pero el "of 4" y el IVA son incorrectos, no sólo mejorables)
+- Depende de: —
+- Reportado: QA manual contra prod, 2026-08-13. Se agrupan por ser el mismo tipo de cambio y tocar los mismos ficheros (`messages/{en,de,es}.json`), así que se verifican de una pasada.
+- AC — contador de pasos:
+  - [ ] `reservar.step5.eyebrow` dice literalmente **"Step 5 of 4 · Payment"**. Los cinco eyebrows están hardcodeados uno a uno en los mensajes (no hay cálculo), así que hay que pasar los cinco a "of 5" en `en`/`de`/`es`.
+  - [ ] Valorar derivar el "X of N" de una constante en vez de repetirlo en 15 strings, que es lo que permitió que el 5º se quedara descolgado.
+- AC — párrafo de métodos de pago:
+  - [ ] Eliminar `reservar.step5.sub` ("Card, TWINT, Apple Pay or Google Pay — choose your method below") y su render. Motivo del owner: TWINT no está disponible fuera de Suiza, así que el párrafo promete métodos que parte de los usuarios no verán. El Payment Element de Stripe ya muestra los métodos que realmente aplican.
+  - [ ] Revisar la misma frase en la FAQ (`messages/en.json:661` y equivalentes), que hace la misma promesa.
+- AC — VAT (decisión del owner, 2026-08-13: no se está cobrando ese impuesto, así que afirmarlo es incorrecto):
+  - [ ] Quitar `reservar.step5.summary_vat_note` ("CHF, VAT included.") → `booker-payment-flow.tsx:1062`.
+  - [ ] Quitar `reservar.pago.vat_note` → `app/(site)/[locale]/reservar/pago/[bookingId]/page.tsx:234`.
+  - [ ] Quitar `reservar.exito.summary_vat_note` → `app/(site)/[locale]/reservar/exito/[id]/page.tsx:235`.
+  - [ ] `/pricing` (`pricing.section_prices_body`): quitar la afirmación sobre IVA y el umbral de CHF 100 000, **manteniendo** una línea de "precio final en CHF, sin extras". La normativa suiza de indicación de precios (PBV) pide precio final al consumidor; decir nada de impuestos es correcto, pero dejar claro que no hay sorpresas ayuda a convertir.
+  - [ ] Barrer que no quede ninguna otra mención (`grep -rn "VAT\|MwSt\|IVA" messages/`), emails de confirmación y recibo incluidos.
+- Tests: [ ] E2E o unit ligero que afirme que ninguna superficie del funnel emite "VAT/MwSt/IVA" y que el eyebrow del paso 5 dice "of 5".
+- Notas: si algún día se cruza el umbral y hay que volver a cobrar IVA, esto se revierte — dejar el ticket como referencia de qué superficies hay que tocar.
+- Refs: F-136, F-039, `messages/{en,de,es}.json`, `app/(site)/[locale]/reservar/`
+
 ---
 
 ## Bloqueantes / decisiones abiertas (consolidadas)
