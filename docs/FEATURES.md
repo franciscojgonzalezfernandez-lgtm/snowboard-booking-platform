@@ -2987,13 +2987,13 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - [x] Helper compartido `e2e/helpers/auth.ts` → `signUpVerified(page, email, name)`: crea vía API → marca `emailVerified` en la BD (atajo del round-trip al inbox, igual que la migración de F-122) → firma vía API (la cookie cae en el jar del contexto). Opción (a) del AC de F-127.
   - [x] Barrido de **todos** los specs que usan `submit-credentials` (`grep -l`): 23 vía codemod + 5 a mano (STRONG_PASSWORD const, comentario en el bloque, loop de retry de instructor, bloque inline). f-005 reescrito (testea el formulario, no un helper).
   - [x] Bypass de rate-limit para el server de test: `lib/auth/index.ts` desactiva `rateLimit` cuando `AUTH_RATE_LIMIT_DISABLED=true` (Better Auth lo trae ON por defecto en build de producción — `enabled ?? isProduction` — y 429ea los signups en paralelo; su propio `test-utils` usa el mismo `{ enabled: false }`). Producción (Vercel) nunca setea la env → rate-limit real intacto.
-  - [x] `tsc` + `eslint` en verde. **Verificado el fallout de auth** contra build de producción en un subconjunto representativo (booker `f-047/f-057/f-064`, instructor `f-071/f-074`, admin `f-076`, funnel `f-119/f-122`, `f-005/f-060/f-068`): **50/54 verdes**; los 4 restantes son **no-auth y pre-existentes** (f-074×2 OAuth Google que pide consentimiento real, f-060 display del split de crédito, f-064 toast "Phone updated") → **F-129**.
+  - [x] `tsc` + `eslint` en verde. **Verificado el fallout de auth** contra build de producción en un subconjunto representativo (booker `f-047/f-057/f-064`, instructor `f-071/f-074`, admin `f-076`, funnel `f-119/f-122`, `f-005/f-060/f-068`): **50/54 verdes**; los 4 restantes son **no-auth y pre-existentes** (f-074×2 OAuth Google que pide consentimiento real, f-060 display del split de crédito, f-064 toast "Phone updated") → **F-137**.
 - Notas:
-  - **CI sólo corre `e2e/smoke.spec.ts`** (herencia de F-126) — por eso F-122 entró rompiendo ~24 specs sin señal. El gate de suite completa lo cubre F-129.
-  - **Correr la suite localmente es frágil** y por eso el verde total es un job de CI (F-129), no local: (a) el run en dev da falsos rojos por compile-thrash bajo `fullyParallel`; (b) contra `next start` hay que exportar `BETTER_AUTH_URL=http://localhost:3000` (si no, Better Auth rechaza el origin porque `.env.local` apunta a prod) **y** `AUTH_RATE_LIMIT_DISABLED=true`; (c) la branch Neon `dev` acumula datos entre runs (pollution) → CI necesita branch dedicada (F-022); (d) el server local se cae bajo carga sostenida de 4 workers.
+  - **CI sólo corre `e2e/smoke.spec.ts`** (herencia de F-126) — por eso F-122 entró rompiendo ~24 specs sin señal. El gate de suite completa lo cubre F-137.
+  - **Correr la suite localmente es frágil** y por eso el verde total es un job de CI (F-137), no local: (a) el run en dev da falsos rojos por compile-thrash bajo `fullyParallel`; (b) contra `next start` hay que exportar `BETTER_AUTH_URL=http://localhost:3000` (si no, Better Auth rechaza el origin porque `.env.local` apunta a prod) **y** `AUTH_RATE_LIMIT_DISABLED=true`; (c) la branch Neon `dev` acumula datos entre runs (pollution) → CI necesita branch dedicada (F-022); (d) el server local se cae bajo carga sostenida de 4 workers.
 - Refs: F-128, F-122, F-127, F-126, `app/(site)/[locale]/(auth)/login/login-form.tsx`, `e2e/helpers/auth.ts`, `lib/auth/index.ts`
 
-### F-129 — Reds crónicos pre-existentes de la suite E2E + gate de suite completa en CI
+### F-137 — Reds crónicos pre-existentes de la suite E2E + gate de suite completa en CI
 
 - Sprint: post-Sprint 5 (cierre MVP) · Estado: backlog · Prioridad: P2 (deuda de test; no bloquea prod pero bloquea "todos los requisitos verificados")
 - Depende de: F-128 (primero verde el fallout de F-122), F-022 (branch Neon para CI)
@@ -3007,7 +3007,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 - AC:
   - [ ] Arreglar f-095 (nav → dropdown "More"), f-097 (FAQ JSON-LD), f-060 (display split), f-064 (toast); triar f-074 (env vs bug) + barrido.
   - [ ] **Gate de suite completa en CI** contra build de producción (no sólo smoke), con: branch Neon dedicada (F-022, evita pollution entre runs), env `BETTER_AUTH_URL` por-puerto + `AUTH_RATE_LIMIT_DISABLED=true` (bypass añadido en F-128), y `--workers=1` para specs que escriben en BD (regla F-126). Mientras siga sólo el smoke, este patrón se repetirá.
-- Refs: F-129, F-116, F-098, F-060, F-064, F-074, F-126, F-022, F-128
+- Refs: F-137, F-116, F-098, F-060, F-064, F-074, F-126, F-022, F-128
 
 
 ### F-133 — Los `Select` enseñan el valor crudo del enum al usuario (`INTENSIVE`, `TWO_HOURS`, `BEGINNER`) en vez de la etiqueta traducida
@@ -3081,7 +3081,7 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - [ ] Revisar el mismo patrón en `bookerName` (`lib/schemas/booking-draft.ts:19`, también `max(80)`), que tiene la misma pinta.
   - [ ] El mensaje se asocia al campo que falla (`aria-describedby` / `aria-invalid`), no sólo al bloque del attendee.
 - Tests: [ ] E2E: nombre de 81 caracteres → mensaje específico de longitud, no "required".
-- Notas: mirar de paso si el `max(80)` es el límite que queremos, o si conviene subirlo. 80 es corto para "Nombre Apellido1 Apellido2" de varias personas, pero el campo es por rider, así que probablemente sobra.
+- Notas: el `max(80)` **se queda** (decisión del owner, 2026-08-13: va sobrado para un nombre por rider). O sea que el arreglo es de mensajes y de `maxLength`, no de tocar el schema.
 - Refs: F-135, `lib/schemas/attendee.ts:10`, `lib/schemas/booking-draft.ts:19`, `app/(site)/[locale]/reservar/booker-payment-flow.tsx`
 
 ### F-136 — Copy del checkout: "Step 5 of 4", métodos de pago que no todos tienen, y precios que dicen llevar IVA
