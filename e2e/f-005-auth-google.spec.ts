@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { signUpVerified } from "./helpers/auth";
 
 function uniqueEmail() {
   return `f005-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.test`;
@@ -26,20 +27,22 @@ test.describe("F-005 — Better Auth", () => {
     });
   }
 
-  test("email+password signup creates a session getSession can read", async ({
+  // F-122/F-128: sign-up now requires email verification, so it creates no
+  // session — the form swaps to the confirm-your-email panel instead of
+  // redirecting home. (The old "signup creates a session" contract is gone.)
+  test("email+password signup shows the confirm-email state and creates no session", async ({
     page,
   }) => {
     const email = uniqueEmail();
-    const password = "Sn0wb0ard!Strong";
 
     await page.goto("/en/login");
     await page.getByTestId("tab-signup").click();
     await page.getByTestId("input-name").fill("F005 Tester");
     await page.getByTestId("input-email").fill(email);
-    await page.getByTestId("input-password").fill(password);
+    await page.getByTestId("input-password").fill("Sn0wb0ard!Strong");
     await page.getByTestId("submit-credentials").click();
 
-    await page.waitForURL(/\/(en|de|es)\/?$/);
+    await expect(page.getByTestId("login-verify")).toBeVisible();
 
     const session = await page.evaluate(async () => {
       const res = await fetch("/api/auth/get-session", {
@@ -47,28 +50,22 @@ test.describe("F-005 — Better Auth", () => {
       });
       return res.ok ? await res.json() : null;
     });
-    expect(session?.user?.email).toBe(email);
+    expect(session?.user ?? null).toBeNull();
   });
 
-  test("email+password sign in works for an existing account", async ({
+  test("a verified email+password account signs in through the form", async ({
     page,
   }) => {
     const email = uniqueEmail();
-    const password = "Sn0wb0ard!Strong";
 
-    await page.goto("/en/login");
-    await page.getByTestId("tab-signup").click();
-    await page.getByTestId("input-name").fill("F005 Returning");
-    await page.getByTestId("input-email").fill(email);
-    await page.getByTestId("input-password").fill(password);
-    await page.getByTestId("submit-credentials").click();
-    await page.waitForURL(/\/(en|de|es)\/?$/);
-
+    // Seed a verified account (API create + verify + sign-in), then drop the
+    // session so we exercise the form's sign-in path for a verified user.
+    await signUpVerified(page, email, "F005 Returning");
     await page.context().clearCookies();
 
     await page.goto("/en/login");
     await page.getByTestId("input-email").fill(email);
-    await page.getByTestId("input-password").fill(password);
+    await page.getByTestId("input-password").fill("Sn0wb0ard!Strong");
     await page.getByTestId("submit-credentials").click();
     await page.waitForURL(/\/(en|de|es)\/?$/);
 

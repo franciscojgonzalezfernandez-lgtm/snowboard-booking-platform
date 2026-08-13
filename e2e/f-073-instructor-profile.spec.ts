@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { signUpVerified } from "./helpers/auth";
 import { config as loadDotenv } from "dotenv";
 import {
   Locale as DbLocale,
@@ -21,13 +22,7 @@ async function signUpAsInstructor(page: Page): Promise<{
   instructorId: string;
 }> {
   const email = uniqueEmail("instr");
-  await page.goto("/en/login");
-  await page.getByTestId("tab-signup").click();
-  await page.getByTestId("input-name").fill("F073 Tester");
-  await page.getByTestId("input-email").fill(email);
-  await page.getByTestId("input-password").fill("Sn0wb0ard!Strong");
-  await page.getByTestId("submit-credentials").click();
-  await page.waitForURL(/\/(en|de|es)\/?$/);
+  await signUpVerified(page, email, "F073 Tester");
 
   const user = await prisma.user.findUnique({
     where: { email },

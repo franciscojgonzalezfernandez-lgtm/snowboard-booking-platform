@@ -34,6 +34,14 @@ export function LoginForm({ locale, callbackURL }: LoginFormProps) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [magicSent, setMagicSent] = useState(false);
+  // F-128: when set, the email whose address needs confirming — swaps the form
+  // for the "confirm your email" state. Under F-122 `requireEmailVerification`,
+  // an email+password account can no longer get a session (sign-up creates none;
+  // sign-in 403s EMAIL_NOT_VERIFIED) until the inbox link is clicked, so pushing
+  // to `destination` after submit would silently drop the user, unauthenticated,
+  // with no explanation.
+  const [verifyEmail, setVerifyEmail] = useState<string | null>(null);
+  const [verifyResent, setVerifyResent] = useState(false);
 
   const credentialsSchema = useMemo(
     () =>
@@ -60,26 +68,71 @@ export function LoginForm({ locale, callbackURL }: LoginFormProps) {
 
   function onSubmit(values: CredentialsValues) {
     setError(null);
+    setVerifyResent(false);
     startTransition(async () => {
-      const result =
-        mode === "signup"
-          ? await authClient.signUp.email({
-              email: values.email,
-              password: values.password,
-              name: values.name ?? values.email.split("@")[0]!,
-            })
-          : await authClient.signIn.email({
-              email: values.email,
-              password: values.password,
-            });
+      if (mode === "signup") {
+        // Under `requireEmailVerification`, sign-up creates no session and
+        // returns a generic success even for an existing email (anti-
+        // enumeration). Any error here is a real failure (weak password, rate
+        // limit, delivery); surface it. `callbackURL` threads through so the
+        // verification link returns here already signed in.
+        const signUp = await authClient.signUp.email({
+          email: values.email,
+          password: values.password,
+          name: values.name ?? values.email.split("@")[0]!,
+          callbackURL: destination,
+        });
+        if (signUp.error) {
+          setError(signUp.error.message ?? t("error_fallback"));
+          return;
+        }
+      }
 
-      if (result.error) {
-        setError(result.error.message ?? t("error_fallback"));
+      // Resolve the real state with a sign-in (sign-up tells us nothing now).
+      const signIn = await authClient.signIn.email({
+        email: values.email,
+        password: values.password,
+        callbackURL: destination,
+      });
+      if (!signIn.error) {
+        router.push(destination);
+        router.refresh();
         return;
       }
-      router.push(destination);
-      router.refresh();
+      // Correct password but unverified address (new account, or one that never
+      // confirmed): Better Auth 403s EMAIL_NOT_VERIFIED and re-sends the link
+      // (`sendOnSignIn`). Show the confirm state instead of a raw error.
+      const notVerified =
+        signIn.error.code === "EMAIL_NOT_VERIFIED" ||
+        signIn.error.status === 403;
+      if (notVerified) {
+        setVerifyEmail(values.email);
+        return;
+      }
+      // Wrong password on an existing account, or a passwordless (Google/magic)
+      // account: in sign-up mode nudge toward those methods; in sign-in mode
+      // surface the sign-in error.
+      setError(
+        mode === "signup"
+          ? t("error_existing_account")
+          : (signIn.error.message ?? t("error_fallback")),
+      );
     });
+  }
+
+  async function onResendVerification() {
+    if (!verifyEmail) return;
+    setError(null);
+    setVerifyResent(false);
+    const result = await authClient.sendVerificationEmail({
+      email: verifyEmail,
+      callbackURL: destination,
+    });
+    if (result.error) {
+      setError(result.error.message ?? t("error_fallback"));
+      return;
+    }
+    setVerifyResent(true);
   }
 
   async function onGoogle() {
@@ -112,6 +165,49 @@ export function LoginForm({ locale, callbackURL }: LoginFormProps) {
       return;
     }
     setMagicSent(true);
+  }
+
+  // F-128: address needs confirming before a session can exist. Replace the
+  // form with a focused "check your inbox" panel + resend. Google and magic link
+  // never reach here (both arrive pre-verified).
+  if (verifyEmail) {
+    return (
+      <div className="space-y-4" data-testid="login-verify">
+        <p className="text-base font-medium text-foreground">
+          {t("verify_email_title")}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          {t("verify_email_body", { email: verifyEmail })}
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={onResendVerification}
+          data-testid="login-verify-resend"
+        >
+          {t("verify_email_resend")}
+        </Button>
+        {verifyResent ? (
+          <p
+            className="text-sm text-foreground"
+            role="status"
+            data-testid="login-verify-resent"
+          >
+            {t("verify_email_resent")}
+          </p>
+        ) : null}
+        {error ? (
+          <p
+            className="text-sm text-destructive"
+            role="alert"
+            data-testid="auth-error"
+          >
+            {error}
+          </p>
+        ) : null}
+      </div>
+    );
   }
 
   return (

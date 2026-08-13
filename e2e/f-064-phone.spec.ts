@@ -1,20 +1,12 @@
 import { test, expect, type Page } from "@playwright/test";
+import { signUpVerified } from "./helpers/auth";
 
 function uniqueEmail() {
   return `f064-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.test`;
 }
 
 async function signUp(page: Page, email: string): Promise<void> {
-  await page.goto("/en/login");
-  await page.getByTestId("tab-signup").click();
-  await page.getByTestId("input-name").fill("F064 Tester");
-  await page.getByTestId("input-email").fill(email);
-  await page.getByTestId("input-password").fill("Sn0wb0ard!Strong");
-  await page.getByTestId("submit-credentials").click();
-  // Wait for the post-signup redirect so the session cookie is set before the
-  // test navigates on; otherwise /dashboard races the cookie and the auth
-  // middleware bounces to /login (no dashboard-page / phone-edit rendered).
-  await page.waitForURL(/\/(en|de|es)\/?$/);
+  await signUpVerified(page, email, "F064 Tester");
 }
 
 test.describe("F-064b — edit phone from the dashboard", () => {

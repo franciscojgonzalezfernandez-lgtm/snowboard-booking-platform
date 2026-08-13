@@ -2974,6 +2974,43 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ---
 
+### F-128 — Completar F-122: verify-state en `/login` (bug de prod) + helper E2E de signup verificado
+
+- Sprint: post-Sprint 5 (cierre MVP) · Estado: **done** (2026-08-03) · Prioridad: **P1 (bug de prod + desbloquea la suite E2E completa)**
+- Depende de: F-122 (la causa), F-126 (mismo patrón CI-smoke)
+- Supersede: **F-127**. F-127 acotó el fallout a 2 specs de nav y lo trató como pura deuda de test. La realidad es más ancha: (a) hay un **bug de producto** además del de test, y (b) el baseline contra build de producción da ~24 specs auth en rojo, no 2.
+- Motivación:
+  - **Bug de prod (no sólo test):** F-122 activó `requireEmailVerification` globalmente, pero sólo se adaptó el funnel (`step4-auth.tsx`). El formulario `/login` (`login-form.tsx`) seguía haciendo `router.push(destination)` justo tras el signup — que ya **no crea sesión** —, así que un usuario que se registra en `/login` aterriza en la home **sin sesión y sin ningún mensaje de "confirma tu email"**. Verificado leyendo el código + baseline.
+  - **Fallout de test:** ~24 specs autenticados firman por email+password vía el formulario y hacen `waitForURL(home)`; sin redirect se cuelgan a timeout de 30s. Detectado con un run contra **build de producción** (el run en dev era ruido de compile-thrash bajo paralelismo; ver notas).
+- AC:
+  - [x] `login-form.tsx`: signup/signin que topa con `EMAIL_NOT_VERIFIED` muestra el panel "confirma tu email" + reenvío (mismo contrato que `step4-auth`, reusa las claves i18n `verify_email_*` de F-122). `callbackURL` propagado.
+  - [x] Helper compartido `e2e/helpers/auth.ts` → `signUpVerified(page, email, name)`: crea vía API → marca `emailVerified` en la BD (atajo del round-trip al inbox, igual que la migración de F-122) → firma vía API (la cookie cae en el jar del contexto). Opción (a) del AC de F-127.
+  - [x] Barrido de **todos** los specs que usan `submit-credentials` (`grep -l`): 23 vía codemod + 5 a mano (STRONG_PASSWORD const, comentario en el bloque, loop de retry de instructor, bloque inline). f-005 reescrito (testea el formulario, no un helper).
+  - [x] Bypass de rate-limit para el server de test: `lib/auth/index.ts` desactiva `rateLimit` cuando `AUTH_RATE_LIMIT_DISABLED=true` (Better Auth lo trae ON por defecto en build de producción — `enabled ?? isProduction` — y 429ea los signups en paralelo; su propio `test-utils` usa el mismo `{ enabled: false }`). Producción (Vercel) nunca setea la env → rate-limit real intacto.
+  - [x] `tsc` + `eslint` en verde. **Verificado el fallout de auth** contra build de producción en un subconjunto representativo (booker `f-047/f-057/f-064`, instructor `f-071/f-074`, admin `f-076`, funnel `f-119/f-122`, `f-005/f-060/f-068`): **50/54 verdes**; los 4 restantes son **no-auth y pre-existentes** (f-074×2 OAuth Google que pide consentimiento real, f-060 display del split de crédito, f-064 toast "Phone updated") → **F-129**.
+- Notas:
+  - **CI sólo corre `e2e/smoke.spec.ts`** (herencia de F-126) — por eso F-122 entró rompiendo ~24 specs sin señal. El gate de suite completa lo cubre F-129.
+  - **Correr la suite localmente es frágil** y por eso el verde total es un job de CI (F-129), no local: (a) el run en dev da falsos rojos por compile-thrash bajo `fullyParallel`; (b) contra `next start` hay que exportar `BETTER_AUTH_URL=http://localhost:3000` (si no, Better Auth rechaza el origin porque `.env.local` apunta a prod) **y** `AUTH_RATE_LIMIT_DISABLED=true`; (c) la branch Neon `dev` acumula datos entre runs (pollution) → CI necesita branch dedicada (F-022); (d) el server local se cae bajo carga sostenida de 4 workers.
+- Refs: F-128, F-122, F-127, F-126, `app/(site)/[locale]/(auth)/login/login-form.tsx`, `e2e/helpers/auth.ts`, `lib/auth/index.ts`
+
+### F-129 — Reds crónicos pre-existentes de la suite E2E + gate de suite completa en CI
+
+- Sprint: post-Sprint 5 (cierre MVP) · Estado: backlog · Prioridad: P2 (deuda de test; no bloquea prod pero bloquea "todos los requisitos verificados")
+- Depende de: F-128 (primero verde el fallout de F-122), F-022 (branch Neon para CI)
+- Motivación: el baseline contra build de producción destapó rojos **anteriores a F-122** (no-auth) que el gate de smoke ocultaba. Confirmados deterministas en aislamiento tras F-128:
+  - `e2e/f-095-about.spec.ts:47` — "nav About link" busca un link directo en la nav, pero **F-116** movió "About" al dropdown "More"; el spec nunca se actualizó.
+  - `e2e/f-097-faq.spec.ts:57` — el aserto de `FAQPage` JSON-LD falla (rápido, no timeout) en en/de/es. Investigar si el JSON-LD dejó de emitirse o el aserto quedó obsoleto.
+  - `e2e/f-060-credit-checkout.spec.ts:298` — el split de crédito muestra `step4-credits-total` = CHF 200 (valor nominal del crédito) donde el test espera CHF 110 (aplicado, capado al precio de la lección). Los otros dos casos de F-060 (zero-charge, parcial) pasan. Verificar si es bug de display o expectativa obsoleta.
+  - `e2e/f-064-phone.spec.ts:13` — tras guardar el teléfono no aparece el toast "Phone updated" (el caso "rejects invalid number" sí pasa).
+  - `e2e/f-074-calendar-connect.spec.ts:41,77` — OAuth de Google Calendar; piden consentimiento real / token cifrado. Probablemente **env-dependent** (necesitan `ENCRYPTION_KEY` + consent screen del owner), no bug de código. Confirmar y, si es env, marcarlos skip condicional.
+  - Barrer por más rojos crónicos una vez el gate corra la suite completa.
+- AC:
+  - [ ] Arreglar f-095 (nav → dropdown "More"), f-097 (FAQ JSON-LD), f-060 (display split), f-064 (toast); triar f-074 (env vs bug) + barrido.
+  - [ ] **Gate de suite completa en CI** contra build de producción (no sólo smoke), con: branch Neon dedicada (F-022, evita pollution entre runs), env `BETTER_AUTH_URL` por-puerto + `AUTH_RATE_LIMIT_DISABLED=true` (bypass añadido en F-128), y `--workers=1` para specs que escriben en BD (regla F-126). Mientras siga sólo el smoke, este patrón se repetirá.
+- Refs: F-129, F-116, F-098, F-060, F-064, F-074, F-126, F-022, F-128
+
+---
+
 ## Bloqueantes / decisiones abiertas (consolidadas)
 
 | Ref     | Decisión                           | Bloquea                           | Acción                               |
