@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { buildFunnelReturnUrl } from "@/lib/booking/funnel-return";
 import { formatChf } from "@/lib/pricing/format";
 import {
   encodeAttendees,
@@ -367,13 +368,17 @@ export function BookerPaymentFlow({
 
       switch (result.error) {
         case "UNAUTHORIZED": {
-          const next = `/${locale}/reservar?${new URLSearchParams({
+          // F-134: packed, not plain. `/login` hands this straight to Better
+          // Auth as the `callbackURL`, whose origin check rejects the `:` in
+          // `t=09:00` — so a session that expired mid-checkout used to send the
+          // booker to a magic link that answered 403.
+          const next = buildFunnelReturnUrl(locale, {
             d: duration,
             dt: date,
             t: time,
             i: instructorId,
             l: language,
-          }).toString()}`;
+          });
           router.push(`/${locale}/login?next=${encodeURIComponent(next)}`);
           return;
         }
