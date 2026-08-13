@@ -186,6 +186,13 @@ export function BookerPaymentFlow({
 }: Props) {
   const t = useTranslations("reservar.step4");
   const tStep5 = useTranslations("reservar.step5");
+  // F-133: the rider-level select showed `BEGINNER` once chosen — `Select.Value`
+  // renders the raw value unless the root is handed the value→label mapping.
+  // One array now drives both the options and the trigger.
+  const levelItems = useMemo(
+    () => LEVELS.map((level) => ({ value: level, label: t(`level_${level}`) })),
+    [t],
+  );
   const router = useRouter();
   const queryClient = useQueryClient();
   const [pending, startTransition] = useTransition();
@@ -652,6 +659,7 @@ export function BookerPaymentFlow({
                           name={`attendees.${index}.level`}
                           render={({ field: levelField }) => (
                             <Select
+                              items={levelItems}
                               value={levelField.value}
                               onValueChange={(value) =>
                                 levelField.onChange(value as Level)
@@ -665,13 +673,13 @@ export function BookerPaymentFlow({
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                {LEVELS.map((level) => (
+                                {levelItems.map((item) => (
                                   <SelectItem
-                                    key={level}
-                                    value={level}
-                                    data-testid={`attendee-${index}-level-${level}`}
+                                    key={item.value}
+                                    value={item.value}
+                                    data-testid={`attendee-${index}-level-${item.value}`}
                                   >
-                                    {t(`level_${level}`)}
+                                    {item.label}
                                   </SelectItem>
                                 ))}
                               </SelectContent>

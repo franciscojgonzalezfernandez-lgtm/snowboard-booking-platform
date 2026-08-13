@@ -6,7 +6,40 @@ import { Select as SelectPrimitive } from "@base-ui/react/select"
 import { cn } from "@/lib/utils"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
-const Select = SelectPrimitive.Root
+/**
+ * F-133: pass `items` — `[{ value, label }]` or a `Record<value, label>`.
+ *
+ * `Select.Value` renders the *value* of the selected item unless the root knows
+ * how to map values to labels. Labels written inside `SelectItem` do not help:
+ * the popup is portaled and unmounted until it opens, so once it closes there
+ * is nothing left holding the text. Shipping without `items` is how the funnel
+ * ended up showing `INTENSIVE` and `TWO_HOURS` to bookers in all three
+ * languages, and the admin pickers showing instructor cuids.
+ *
+ * The dev warning below exists because that failure is invisible in review and
+ * in any test that asserts state rather than rendered text. If you genuinely
+ * want custom rendering instead, pass a function child to `SelectValue` and the
+ * warning goes away.
+ */
+function Select<Value, Multiple extends boolean | undefined = false>({
+  items,
+  children,
+  ...props
+}: SelectPrimitive.Root.Props<Value, Multiple>) {
+  if (process.env.NODE_ENV !== "production" && items === undefined) {
+    console.warn(
+      "[ui/select] No `items` passed to <Select>. <SelectValue> will render the raw value " +
+        "(e.g. `TWO_HOURS`) instead of the item's label. Pass `items={[{ value, label }]}` " +
+        "or give <SelectValue> a function child. See F-133.",
+    )
+  }
+
+  return (
+    <SelectPrimitive.Root items={items} {...props}>
+      {children}
+    </SelectPrimitive.Root>
+  )
+}
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (
