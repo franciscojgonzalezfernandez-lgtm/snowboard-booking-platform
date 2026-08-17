@@ -3105,6 +3105,22 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 - Notas: si algún día se cruza el umbral y hay que volver a cobrar IVA, esto se revierte — dejar el ticket como referencia de qué superficies hay que tocar.
 - Refs: F-136, F-039, `messages/{en,de,es}.json`, `app/(site)/[locale]/reservar/`
 
+
+### F-138 — El magic link caducaba a los 5 minutos: nunca se configuró `expiresIn`
+
+- Sprint: post-Sprint 5 · Estado: review (PR abierto 2026-08-17) · Prioridad: P1 (es una vía de login del funnel de pago, y el fallo es indistinguible de un enlace roto)
+- Depende de: F-134 (mismo flujo; este se destapó al verificarlo)
+- Motivación: tras desplegar F-134 el enlace seguía "fallando" en QA. El callbackURL ya estaba bien — lo que caducaba era el token. `magicLink()` nunca recibió `expiresIn`, así que aplicaba el **default de Better Auth: 300 s**. Ojo con la confusión que lo escondió: `lib/auth/index.ts` sí tiene un `expiresIn`, pero es el de `session`, no el del plugin.
+- Evidencia (filas reales de `Verification` en producción): enlace pedido a las `08:04:26`, muerto a las `08:09:26`. Cinco minutos para que el email se entregue, el usuario lo vea y lo abra. El síntoma para el booker es "el enlace no funciona", idéntico al fallo de F-134 que acababa de arreglarse — por eso pareció que el fix no había servido.
+- AC:
+  - [x] `expiresIn` explícito en el plugin: **30 minutos** (`MAGIC_LINK_EXPIRY_SECONDS`). Cubre una bandeja lenta sin convertir el enlace en una credencial de larga vida; sigue siendo de un solo uso y la sesión que abre la gobierna `session.expiresIn` aparte.
+  - [x] La constante se exporta y se fija con tests, para que volver al default silencioso requiera romper un test.
+- Tests: [x] `lib/auth/magic-link-expiry.test.ts` (3) — que no es el default de la librería, que cae en una ventana razonable (15-60 min) y que vale 1800 s.
+- Notas:
+  - **Sin verificación en runtime todavía**: comprobar el `expiresAt` real exige pedir un magic link contra una base de datos, y hoy `.env.local` apunta a **producción** (ver **F-139**). No se ha hecho a propósito, para no escribir más filas de prueba en prod. Queda pendiente de que F-139 dé una base no productiva.
+  - Reglas del propio Better Auth: el cálculo es `Date.now() + (opts.expiresIn || 300) * 1000`, así que omitir el campo no es "sin caducidad", es cinco minutos.
+- Refs: F-138, F-134, F-139, `lib/auth/index.ts`
+
 ---
 
 ## Bloqueantes / decisiones abiertas (consolidadas)
