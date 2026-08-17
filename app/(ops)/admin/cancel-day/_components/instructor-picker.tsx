@@ -36,8 +36,16 @@ export function InstructorPicker({ instructors, selectedId }: Props) {
     router.push(`/admin/cancel-day?${next.toString()}`);
   }
 
+  // F-133: without `items` the trigger renders the raw value, which here is the
+  // instructor's cuid — the operator was reading `cmpaddwe10002…` instead of a
+  // name. One array drives both the options and the trigger label.
+  const items = [
+    { value: "all", label: "All instructors" },
+    ...instructors.map((i) => ({ value: i.id, label: i.name })),
+  ];
+
   return (
-    <Select value={selectedId} onValueChange={onChange}>
+    <Select items={items} value={selectedId} onValueChange={onChange}>
       <SelectTrigger
         data-testid="cancel-day-instructor-select"
         className="w-full"
@@ -45,16 +53,13 @@ export function InstructorPicker({ instructors, selectedId }: Props) {
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="all" data-testid="cancel-day-instructor-option-all">
-          All instructors
-        </SelectItem>
-        {instructors.map((i) => (
+        {items.map((item) => (
           <SelectItem
-            key={i.id}
-            value={i.id}
-            data-testid={`cancel-day-instructor-option-${i.id}`}
+            key={item.value}
+            value={item.value}
+            data-testid={`cancel-day-instructor-option-${item.value}`}
           >
-            {i.name}
+            {item.label}
           </SelectItem>
         ))}
       </SelectContent>

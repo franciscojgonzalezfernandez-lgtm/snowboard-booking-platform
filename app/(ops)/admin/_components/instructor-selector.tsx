@@ -29,8 +29,13 @@ type Props = {
 export function InstructorSelector({ instructors, selectedId, month }: Props) {
   const router = useRouter();
 
+  // F-133: `items` is what makes the trigger show the instructor's name; without
+  // it Base UI renders the raw value, which here is the cuid.
+  const items = instructors.map((i) => ({ value: i.id, label: i.name }));
+
   return (
     <Select
+      items={items}
       value={selectedId}
       onValueChange={(value) =>
         router.push(`/admin?instructor=${value}&month=${month}`)

@@ -74,6 +74,19 @@ export function DurationPicker({ initialDuration }: Props) {
       : undefined;
   }, [state.duration]);
 
+  // F-133: `Select.Value` renders the raw value unless the root is told how to
+  // map values to labels. Building the options from one array means the trigger
+  // and the popup can never drift apart — the previous shape kept the labels
+  // only inside `SelectItem`, so closing the popup left `INTENSIVE` on screen.
+  const durationItems = useMemo(
+    () =>
+      DURATIONS.map((d) => ({
+        value: d,
+        label: t(DURATION_LABEL_KEYS[d]),
+      })),
+    [t],
+  );
+
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -144,6 +157,7 @@ export function DurationPicker({ initialDuration }: Props) {
                     events, breaking the funnel before Step 2).
                   */}
                   <Select
+                    items={durationItems}
                     value={field.value ?? ""}
                     onValueChange={(v) =>
                       field.onChange(v as FormValues["duration"])
@@ -159,13 +173,13 @@ export function DurationPicker({ initialDuration }: Props) {
                       <SelectValue placeholder={t("duration_placeholder")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {DURATIONS.map((d) => (
+                      {durationItems.map((item) => (
                         <SelectItem
-                          key={d}
-                          value={d}
-                          data-testid={`select-duration-${d}`}
+                          key={item.value}
+                          value={item.value}
+                          data-testid={`select-duration-${item.value}`}
                         >
-                          {t(DURATION_LABEL_KEYS[d])}
+                          {item.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
