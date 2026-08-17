@@ -11,6 +11,21 @@ import { sendVerificationEmail } from "@/lib/email/send-verification-email";
 import { getEmailLocaleFromRequest } from "@/lib/email/locale";
 import type { Locale } from "@prisma/client";
 
+/**
+ * How long a magic link stays usable.
+ *
+ * F-138: Better Auth falls back to **300 s** when `expiresIn` is omitted, and it
+ * was omitted — five minutes to receive an email, notice it, and click it.
+ * Measured against production rows: a link requested at 08:04:26 was already
+ * dead at 08:09:26. To the booker that reads as "the link is broken", which is
+ * indistinguishable from the F-134 failure it happened to follow.
+ *
+ * 30 minutes covers a slow inbox without turning the link into a long-lived
+ * credential: it stays single-use, and the session it opens is governed
+ * separately by `session.expiresIn`.
+ */
+export const MAGIC_LINK_EXPIRY_SECONDS = 60 * 30;
+
 const MAGIC_LINK_DELIVERY_FAILED_MESSAGE: Record<Locale, string> = {
   en: "Could not send the sign-in email. Please try again in a moment.",
   de: "Anmelde-E-Mail konnte nicht gesendet werden. Bitte versuche es gleich erneut.",
@@ -79,6 +94,7 @@ export const auth = betterAuth({
   },
   plugins: [
     magicLink({
+      expiresIn: MAGIC_LINK_EXPIRY_SECONDS,
       sendMagicLink: async ({ email, url }, ctx) => {
         const locale = getEmailLocaleFromRequest(ctx?.request);
         try {
