@@ -3117,16 +3117,22 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - `.env.example:6`: `BETTER_AUTH_URL=http://localhost:3000`.
 - Antigüedad: el fichero está gitignored, así que **no hay historial**. Sus timestamps dicen creado y modificado el **2026-06-19** y sin tocar desde entonces (el repo no tiene commits ese día; los vecinos son 06-17 y 06-21). O sea que lleva ~2 meses así, y todo el trabajo local de F-119 en adelante ha corrido contra producción.
 - Lo que ya ha pasado (auditado el 2026-08-17, ventana de 24 h): **5 usuarios `@example.test`** creados por specs E2E (`f-068`, `f-133`) y por scripts de verificación, y **4 filas de `Verification`**. **0 reservas creadas** y **0 canceladas** — la única reserva del día era la QA real del owner. No se destruyó nada, pero fue suerte: `f-079` cancela en lote todas las reservas activas de un día y `f-076` abre/cierra días para todos los instructores.
+- Alcance del daño, acotado: **las claves de Stripe en ese mismo fichero son de test** (`pk_test_…` / `sk_test_…`), así que el problema es de datos, no de dinero — desde local no se ha podido cobrar nada real.
 - AC:
   - [ ] Apuntar `.env.local` a la branch Neon `dev` (`DATABASE_URL` + `DIRECT_URL`) y `BETTER_AUTH_URL` a `http://localhost:3000`, que es lo que dice `.env.example`.
   - [ ] Sembrar esa branch (`npm run db:seed`) para que los specs con deep-link (`instr_javi`, fechas sembradas) sigan resolviendo.
   - [ ] **Guard, no sólo corrección**: que algo falle ruidosamente si la suite apunta a producción. Opción barata — que `playwright.config.ts` aborte si `DATABASE_URL` coincide con el host de prod o si `BETTER_AUTH_URL` no es localhost. Sin guard, esto vuelve en cuanto alguien copie el fichero.
   - [ ] Decidir qué hacer con los 5 usuarios `@example.test` que ya están en prod (borrarlos o dejarlos; no bloquean nada).
   - [ ] Revisar si el mismo fichero se copió a worktrees vivos (`scripts/new-worktree.sh` lo propaga) y re-sembrarlos.
+- AC — reenvío de webhooks de Stripe en local (detectado 2026-08-17 en la misma revisión):
+  - El script **no falta**: `scripts/dev.mjs` sigue sincronizando `STRIPE_WEBHOOK_SECRET` y levantando `stripe listen --forward-to localhost:3000/api/webhooks/stripe` junto a `next dev`. Lo que faltaba en la máquina nueva era el **login de la CLI** — vive en `~/.config/stripe/config.toml`, fuera del repo, así que no viaja con el proyecto. Sin él, `stripe listen --print-secret` responde *"You have not configured API keys yet"*, `dev.mjs` entra por su rama fail-soft y arranca sólo Next. Se resuelve con `stripe login` una vez.
+  - [ ] Documentar `stripe login` como paso de alta de máquina (README + `docs/WORKFLOW.md`), junto al de sembrar `.env.local`. Es el único requisito del entorno que no está ni en el repo ni en el fichero de env, y por eso se pierde en silencio al cambiar de ordenador.
+  - [ ] Subir el volumen del fail-soft: hoy el aviso es una línea amarilla entre el ruido de arranque de Next. Que diga explícitamente que **los pagos locales no recibirán webhooks** hasta hacer `stripe login`, que es la consecuencia real.
+  - [ ] Ojo al acoplamiento con este ticket: `dev.mjs` **reescribe** `.env.local` en cada arranque (`patchEnvLocal`). Cualquier automatización que se añada aquí tiene que convivir con eso — y conviene comprobar que no pisa el `DATABASE_URL` corregido.
 - Notas:
   - La memoria de sesión ya tenía anotado *".env.local es prod"* como *gotcha* para tests — se convivió con ello en vez de arreglarlo. Este ticket es para arreglarlo.
   - Encaja con F-022: CI tampoco tiene base de datos propia. La misma branch de Neon dedicada resolvería los dos.
-- Refs: F-139, F-022, F-138, F-134, `CLAUDE.md`, `.env.example`, `scripts/new-worktree.sh`, `playwright.config.ts`
+- Refs: F-139, F-022, F-138, F-134, F-043 (webhook Stripe), `CLAUDE.md`, `.env.example`, `scripts/new-worktree.sh`, `scripts/dev.mjs`, `playwright.config.ts`
 
 ---
 
