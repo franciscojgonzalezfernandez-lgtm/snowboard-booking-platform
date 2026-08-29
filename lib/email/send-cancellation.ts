@@ -7,6 +7,7 @@ import { formatChf } from "@/lib/pricing/format";
 import { OPERATIONAL_PHONE_DISPLAY } from "@/lib/contact/phone";
 import type { Db } from "@/lib/db";
 import { DURATION_LABELS, INTL_TAG } from "./labels";
+import { dedupeEmails, OPS_NOTIFICATION_EMAIL } from "./recipients";
 import { sendEmail, type EmailClient } from "./send-email";
 import {
   CancellationOpsNotifEmail,
@@ -26,7 +27,6 @@ import {
 } from "./templates/cancellation-user-ops";
 
 const APP_BASE_URL = "https://rideflumserberg.ch";
-const OPS_EMAIL = "franciscojgonzalezfernandez@gmail.com";
 const OPS_LOCALE: Locale = "en" as Locale;
 
 const BOOKING_SELECT = {
@@ -38,7 +38,7 @@ const BOOKING_SELECT = {
   cancellationEmailSentAt: true,
   opsCancellationNotifSentAt: true,
   booker: { select: { name: true, email: true } },
-  instructor: { select: { user: { select: { name: true } } } },
+  instructor: { select: { user: { select: { name: true, email: true } } } },
   attendees: { select: { id: true } },
 } satisfies Prisma.BookingSelect;
 
@@ -110,7 +110,7 @@ export async function sendCancellationEmailsWith(
   const instructorName =
     booking.instructor.user.name ?? "Ride Flumserberg instructor";
   const baseUrl = deps.appBaseUrl ?? APP_BASE_URL;
-  const opsEmail = deps.opsEmail ?? OPS_EMAIL;
+  const opsEmail = deps.opsEmail ?? OPS_NOTIFICATION_EMAIL;
   const contactPhone = deps.contactPhone ?? OPERATIONAL_PHONE_DISPLAY;
 
   const bookerDateLabel = formatDateLabel(booking.date, locale);
@@ -274,9 +274,16 @@ export async function sendCancellationEmailsWith(
     opsResult = { sent: false, reason: "ALREADY_SENT" };
   } else {
     const opsCopy = getCancellationOpsNotifCopy();
+    // F-140: notify the acting instructor too, not just the admin. One email to
+    // the deduped {instructor, admin} set — the owner cancelling his own lesson
+    // gets exactly one, never a duplicate.
+    const opsRecipients = dedupeEmails([
+      booking.instructor.user.email,
+      opsEmail,
+    ]);
     const sent = await deps.send(
       {
-        to: opsEmail,
+        to: opsRecipients,
         subject: opsCopy.subject({
           date: opsDateLabel,
           time: booking.anchorTime,

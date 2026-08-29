@@ -3148,6 +3148,30 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - La memoria de sesión ya tenía anotado *".env.local es prod"* como *gotcha* para tests — se convivió con ello en vez de arreglarlo. Este ticket es para arreglarlo.
   - Encaja con F-022: CI tampoco tiene base de datos propia. La misma branch de Neon dedicada resolvería los dos.
 - Refs: F-139, F-022, F-138, F-134, F-043 (webhook Stripe), `CLAUDE.md`, `.env.example`, `scripts/new-worktree.sh`, `scripts/dev.mjs`, `playwright.config.ts`
+### F-140 — Avisar al instructor y al admin en cada reserva y cancelación (un solo email, sin duplicar)
+
+- Sprint: post-Sprint 5 · Estado: review (PR abierto 2026-08-29) · Prioridad: P2 (operativa: hoy nadie del equipo se entera de una reserva nueva salvo mirando el panel)
+- Depende de: —
+- Motivación: cuando entra o se cae una reserva, el instructor que la da y el admin (owner) tienen que enterarse por email. Estado previo: la confirmación de reserva sólo iba al booker (ningún aviso a ops/instructor); la cancelación ya avisaba al admin (`OPS_EMAIL` hardcodeado) pero **no** al instructor. Con la expansión multi-instructor (Lara ya está en el seed) el instructor que da la clase puede no ser el admin.
+- Decisiones (confirmadas por el owner, 2026-08-29):
+  - Admin = se reutiliza el buzón ops existente (constante `OPS_NOTIFICATION_EMAIL`), no lookup por rol ni env var nueva.
+  - **Un único email operativo compartido** → destinatarios `{email del instructor, admin}`, deduplicados _case-insensitive_. Javi dando su propia clase ⇒ instructor == admin ⇒ **un** email, nunca dos. Lara dando clase ⇒ dos destinatarios, un email.
+  - Aviso de reserva nueva: mismo disparador que la confirmación del booker (webhook `payment_intent.succeeded` **y** el camino zero-charge/crédito en `reservar/actions.ts`), para cubrir toda reserva confirmada.
+  - Cancelaciones: se añade el instructor al ops-notif ya existente, en **todos** los tipos (user credit/forfeit + ops cash/credit/mixed/no_charge).
+- Qué se tocó:
+  - Schema: `Booking.opsBookingNotifSentAt DateTime?` (guard de idempotencia, hermano de `opsCancellationNotifSentAt`). Migración `20260829125055_booking_ops_notif_sent_at`.
+  - `lib/email/recipients.ts` (nuevo): `dedupeEmails()` + `OPS_NOTIFICATION_EMAIL` (fuente única del buzón admin; sustituye a la constante local que vivía en `send-cancellation.ts`).
+  - `lib/email/templates/booking-ops-notif.tsx` + `lib/email/send-booking-ops-notif.ts` (nuevos): email EN al set deduplicado, best-effort, guard por `opsBookingNotifSentAt`.
+  - `lib/email/send-cancellation.ts`: el ops-notif ahora va a `dedupeEmails([instructor, admin])`.
+  - Wiring en `app/api/webhooks/stripe/route.ts` y `app/(site)/[locale]/reservar/actions.ts`, best-effort (un fallo del aviso no tumba el webhook ni la reserva; Sentry captura).
+- Tests:
+  - [x] `lib/email/send-booking-ops-notif.test.ts` — fan-out a dos, dedup del owner (case-insensitive), cuerpo EN, idempotencia, not-found.
+  - [x] `lib/email/recipients.test.ts` — `dedupeEmails` (orden, casing, blanks/nullish).
+  - [x] `lib/email/send-cancellation.test.ts` — ops-notif ahora a `[instructor, admin]` + test de dedup del owner.
+  - [x] `lib/email/templates/booking-ops-notif.snapshot.test.tsx` — snapshot.
+  - [x] `tsc --noEmit` + `eslint` en verde.
+- Notas: EN-only a propósito (superficie de ops). El buzón admin sigue siendo constante; si aparece un segundo admin, cambiar `OPS_NOTIFICATION_EMAIL` por env var / query de rol en `recipients.ts`. No confundir con **F-139** (reservado para dar una base de datos no productiva).
+- Refs: F-140, F-044, F-060, F-078, `lib/email/`, `app/api/webhooks/stripe/route.ts`, `app/(site)/[locale]/reservar/actions.ts`, `prisma/schema.prisma`
 
 ---
 

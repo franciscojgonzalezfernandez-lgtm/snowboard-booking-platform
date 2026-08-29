@@ -227,6 +227,11 @@ model Booking {
   stripeRefundId          String?       @unique
   failureReason           String?       @db.Text
   confirmationEmailSentAt DateTime?
+  /// F-140: guards the ops/instructor "new booking" notification, sent to the
+  /// instructor + admin alongside the booker confirmation. Separate from
+  /// confirmationEmailSentAt so a booker-email success can't suppress the notif
+  /// (and vice versa). Mirrors opsCancellationNotifSentAt on the cancel side.
+  opsBookingNotifSentAt   DateTime?
   reminder24hSentAt       DateTime?
   postClassEmailSentAt    DateTime?
   cancellationEmailSentAt    DateTime?

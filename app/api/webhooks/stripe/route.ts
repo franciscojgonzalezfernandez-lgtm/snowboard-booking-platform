@@ -7,6 +7,7 @@ import { AVAILABILITY_TAGS } from "@/lib/booking-engine/cache";
 import { getStripe } from "@/lib/stripe/server";
 import { handleStripeWebhook } from "@/lib/stripe/handle-webhook";
 import { sendBookingConfirmedEmail } from "@/lib/email/send-booking-confirmed";
+import { sendBookingOpsNotif } from "@/lib/email/send-booking-ops-notif";
 import { buildCalendarSyncDeps, insertEventWith } from "@/lib/calendar/sync";
 import { prisma } from "@/lib/db";
 
@@ -28,6 +29,17 @@ export async function POST(request: Request) {
     },
     dispatchBookingConfirmedEmail: async (bookingId) => {
       await sendBookingConfirmedEmail({ bookingId });
+      // F-140: notify the instructor + admin (single deduped email). Best-effort
+      // — a notif failure must not fail the webhook, or Stripe retries the whole
+      // event. Idempotency-guarded by opsBookingNotifSentAt against those retries.
+      try {
+        await sendBookingOpsNotif({ bookingId });
+      } catch (err) {
+        Sentry.captureException(err, {
+          tags: { source: "stripe-webhook-ops-notif" },
+          extra: { bookingId },
+        });
+      }
     },
     syncCalendarOnConfirm: async (bookingId) => {
       // F-075: best-effort Google Calendar insert. The helper swallows its own
