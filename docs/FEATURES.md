@@ -3173,6 +3173,19 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 - Notas: EN-only a propósito (superficie de ops). El buzón admin sigue siendo constante; si aparece un segundo admin, cambiar `OPS_NOTIFICATION_EMAIL` por env var / query de rol en `recipients.ts`. No confundir con **F-139** (reservado para dar una base de datos no productiva).
 - Refs: F-140, F-044, F-060, F-078, `lib/email/`, `app/api/webhooks/stripe/route.ts`, `app/(site)/[locale]/reservar/actions.ts`, `prisma/schema.prisma`
 
+### F-143 — El job `db-migrate` de CI lleva meses en rojo: `npm ci` con npm 10 no resuelve un lockfile de npm 11
+
+- Sprint: post-Sprint 5 · Estado: review (PR abierto 2026-08-29, va con F-140) · Prioridad: P2 (no bloquea merges hoy porque el check no es required, pero enmascara que las migraciones no se aplican a Neon por esa vía)
+- Depende de: —
+- Reportado: detectado 2026-08-29 al abrir el PR de F-140 — el check `migrate + seed → Neon dev` salió rojo.
+- Motivación: `db-migrate.yml` corría `npm ci` directamente sobre el npm 10 que trae Node 20. El `package-lock.json` se genera en local con npm 11, y los majors de npm deduplican el lock distinto, así que `npm ci` bajo npm 10 aborta con `Missing: @swc/helpers@0.5.23 from lock file`. `ci.yml` ya lo había resuelto fijando `npm install -g npm@11` antes del `npm ci` (ver `ci.yml:43`); `db-migrate.yml` nunca recibió el mismo paso.
+- Evidencia: rojo en `main` desde hace meses — push de f-122 (2026-08-01) y de f-087 (2026-06-14), ambos failure. El fallo es en *Install dependencies*, antes de tocar Prisma o Neon, así que **las migraciones no se estaban aplicando** por esta vía (el drift de la BD lo tapaba que cada worktree corre `prisma migrate dev` a mano — ver F-139).
+- AC:
+  - [x] Añadir el step `Pin npm to 11` (`npm install -g npm@11`) antes del `npm ci` en los dos jobs (`migrate-dev` y `migrate-main`), igual que `ci.yml`.
+- Tests: [x] El propio check `migrate + seed → Neon dev` en verde en este PR.
+- Notas: la causa de fondo es que el lockfile pide npm 11; la alternativa sería regenerarlo con npm 10, pero se alinea con lo que ya hace `ci.yml` en vez de divergir. Si algún día se sube el npm del runner, quitar el pin en los dos workflows a la vez.
+- Refs: F-143, F-139, F-022, `.github/workflows/db-migrate.yml`, `.github/workflows/ci.yml`
+
 ---
 
 ## Bloqueantes / decisiones abiertas (consolidadas)
