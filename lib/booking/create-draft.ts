@@ -7,7 +7,11 @@ import { durationMinutes } from "@/lib/booking-engine/duration";
 import { instructorAvailableAt } from "@/lib/booking-engine/availability";
 import { loadEngineContext } from "@/lib/booking-engine/load-context";
 import { setUtcTime, startOfUtcDay } from "@/lib/booking-engine/time";
-import { PriceConfigurationError, getPriceCents } from "@/lib/pricing/get-price";
+import {
+  getPromoLabel,
+  PriceConfigurationError,
+  resolvePriceCents,
+} from "@/lib/pricing/get-price";
 import {
   createBookingDraftSchema,
   type CreateBookingDraftInput,
@@ -250,7 +254,13 @@ export async function createBookingDraftWith(
       createdAt: { gt: new Date(now.getTime() - IDEMPOTENCY_WINDOW_MS) },
       stripePaymentIntentId: { not: null },
     },
-    select: { id: true, stripePaymentIntentId: true, totalPriceCents: true },
+    select: {
+      id: true,
+      stripePaymentIntentId: true,
+      totalPriceCents: true,
+      originalPriceCents: true,
+      promoLabel: true,
+    },
   });
 
   if (existing?.stripePaymentIntentId) {
@@ -269,6 +279,8 @@ export async function createBookingDraftWith(
         totalPriceCents: existing.totalPriceCents,
         chargeAmountCents: pi.amount,
         creditsAppliedCents: Number.isFinite(reusedCredits) ? reusedCredits : 0,
+        originalPriceCents: existing.originalPriceCents,
+        promoLabel: existing.promoLabel,
         reused: true,
       };
     }
@@ -309,17 +321,29 @@ export async function createBookingDraftWith(
 
   const seasonRow = await prisma.season.findFirst({
     where: { active: true },
-    select: { id: true, priceCentsByDuration: true },
+    select: {
+      id: true,
+      priceCentsByDuration: true,
+      promoPriceCentsByDuration: true,
+      promoLabelByDuration: true,
+    },
   });
   if (!seasonRow) return { ok: false, error: "NO_ACTIVE_SEASON" };
 
+  // F-141: charge the EFFECTIVE (promo-aware) price and snapshot the promo so
+  // post-purchase surfaces render the strikethrough without re-reading the
+  // season (immune to later promo edits). `promoLabel` is resolved in the
+  // booker's own language.
   let totalPriceCents: number;
+  let originalPriceCents: number | null;
+  let promoLabelSnapshot: string | null;
   try {
-    totalPriceCents = getPriceCents(
-      // The pricing helper accepts the subset of Season fields it needs.
-      { id: seasonRow.id, priceCentsByDuration: seasonRow.priceCentsByDuration as never },
-      data.duration,
-    );
+    const resolved = resolvePriceCents(seasonRow, data.duration);
+    totalPriceCents = resolved.cents;
+    originalPriceCents = resolved.isPromo ? resolved.originalCents : null;
+    promoLabelSnapshot = resolved.isPromo
+      ? getPromoLabel(seasonRow, data.duration, data.language)
+      : null;
   } catch (err) {
     if (err instanceof PriceConfigurationError) {
       return { ok: false, error: "PRICING_MISSING" };
@@ -386,6 +410,9 @@ export async function createBookingDraftWith(
             ? BookingStatus.CONFIRMED
             : BookingStatus.PENDING_PAYMENT,
           totalPriceCents,
+          // F-141: promo snapshot (null when no promo applied).
+          originalPriceCents,
+          promoLabel: promoLabelSnapshot,
           // F-084: persist the net charge + applied credits so the
           // resume-payment flow bills the right amount without re-reading the
           // Stripe PaymentIntent. `chargeAmountCents` is the Stripe charge (0 on
@@ -533,6 +560,8 @@ export async function createBookingDraftWith(
       totalPriceCents,
       chargeAmountCents: 0,
       creditsAppliedCents,
+      originalPriceCents,
+      promoLabel: promoLabelSnapshot,
       reused: false,
     };
   }
@@ -572,6 +601,8 @@ export async function createBookingDraftWith(
     totalPriceCents,
     chargeAmountCents,
     creditsAppliedCents,
+    originalPriceCents,
+    promoLabel: promoLabelSnapshot,
     reused: false,
   };
 }

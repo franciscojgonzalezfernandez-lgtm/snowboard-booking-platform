@@ -4,7 +4,8 @@ import { unstable_cache } from "next/cache";
 import { Duration } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
-import { getPriceCents } from "@/lib/pricing/get-price";
+import { MARKETING_TAGS } from "@/lib/marketing/cache";
+import { resolvePriceCents } from "@/lib/pricing/get-price";
 
 // The LocalBusiness node (F-100) lives in the marketing layout, so it renders on
 // every marketing page. Reading the active Season for `priceRange` on each render
@@ -27,11 +28,17 @@ async function readSeasonPriceRange(): Promise<string | null> {
     const season = await prisma.season.findFirst({
       where: { active: true },
       orderBy: { startDate: "asc" },
-      select: { id: true, priceCentsByDuration: true },
+      select: {
+        id: true,
+        priceCentsByDuration: true,
+        promoPriceCentsByDuration: true,
+      },
     });
     if (!season) return null;
 
-    const prices = DURATIONS.map((d) => getPriceCents(season, d));
+    // Effective (promo-aware) prices, so the advertised range matches what a
+    // customer actually pays (F-141).
+    const prices = DURATIONS.map((d) => resolvePriceCents(season, d).cents);
     const min = Math.min(...prices);
     const max = Math.max(...prices);
     return `CHF ${CHF.format(min / 100)}–${CHF.format(max / 100)}`;
@@ -47,5 +54,7 @@ async function readSeasonPriceRange(): Promise<string | null> {
 export const getSeasonPriceRange = unstable_cache(
   readSeasonPriceRange,
   ["seo-season-price-range"],
-  { revalidate: 3600 },
+  // Tagged so a pricing/promo edit busts it immediately (F-141), with the 1h
+  // window as a fallback.
+  { revalidate: 3600, tags: [MARKETING_TAGS.pricing] },
 );

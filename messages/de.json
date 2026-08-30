@@ -21,11 +21,10 @@
     "phone_label": "Anrufen"
   },
   "hero_announcement": {
-    "enabled": "true",
-    "body": "Team- oder Gruppentag am Berg geplant? Den ganzen Winter gebe ich private Kurse.",
-    "cta_label": "Melde dich",
-    "cta_href": "phone",
-    "close_label": "Hinweis schließen"
+    "close_label": "Hinweis schließen",
+    "region_label": "Ankündigungen",
+    "previous": "Vorherige Ankündigung",
+    "next": "Nächste Ankündigung"
   },
   "home": {
     "metadata_title": "Snowboard-Privatstunden in Flumserberg",
@@ -444,6 +443,7 @@
     "heading": "Wähl, wie lang wir fahren.",
     "intro": "Vier Arten, mit mir zu fahren. Nimm die, die zu deinem Stand passt — der Preis bleibt gleich, ob du allein kommst oder drei Kollegen mitbringst.",
     "price_suffix": "bis zu 4 Personen",
+    "regular_price_a11y": "Regulärer Preis",
     "best_for_label": "Ideal für",
     "meeting_label": "Wir treffen uns",
     "cta": "Diese Lektion buchen",

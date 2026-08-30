@@ -21,11 +21,10 @@
     "phone_label": "Call us"
   },
   "hero_announcement": {
-    "enabled": "true",
-    "body": "Planning a team or group day on the mountain? I run private sessions all winter.",
-    "cta_label": "Get in touch",
-    "cta_href": "phone",
-    "close_label": "Dismiss announcement"
+    "close_label": "Dismiss announcement",
+    "region_label": "Announcements",
+    "previous": "Previous announcement",
+    "next": "Next announcement"
   },
   "home": {
     "metadata_title": "Private snowboard lessons in Flumserberg, Switzerland",
@@ -444,6 +443,7 @@
     "heading": "Pick how long we ride.",
     "intro": "Four ways to ride with me. Choose the one that fits where you are — the price is the same whether you come solo or bring three friends.",
     "price_suffix": "up to 4 riders",
+    "regular_price_a11y": "Regular price",
     "best_for_label": "Best for",
     "meeting_label": "We meet at",
     "cta": "Book this lesson",

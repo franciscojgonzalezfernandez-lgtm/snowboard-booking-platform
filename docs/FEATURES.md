@@ -3149,6 +3149,28 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - Encaja con F-022: CI tampoco tiene base de datos propia. La misma branch de Neon dedicada resolvería los dos.
 - Refs: F-139, F-022, F-138, F-134, F-043 (webhook Stripe), `CLAUDE.md`, `.env.example`, `scripts/new-worktree.sh`, `scripts/dev.mjs`, `playwright.config.ts`
 
+### F-141 — Precios promocionales (precio tachado + copy por duración)
+
+- Sprint: post-Sprint 5 · Estado: en PR
+- Motivación: poder lanzar promociones simples sobre el precio de las clases sin fechas de fin ni límite de stock (eso queda para más adelante). El cliente ve el precio final, el precio original tachado y un copy corto de promoción ("Season opening") en su idioma.
+- Decisiones (con el owner): promo **por duración** (precio promo opcional junto a cada uno de los 4 precios); **un copy por duración promocionada**, obligatorio en los 3 idiomas; se muestra en **home + página de precios + funnel + email**.
+- Modelo: dos columnas JSON nullable en `Season` — `promoPriceCentsByDuration` (mapa parcial `Duration → cents`) y `promoLabelByDuration` (parcial `Duration → {en,de,es}`). Snapshot en `Booking`: `originalPriceCents Int?` + `promoLabel String?` (el `totalPriceCents` pasa a ser el precio efectivo/cobrado). Migración `20260830090000_f141_promo_and_banners`.
+- Núcleo: `lib/pricing/get-price.ts:resolvePriceCents()` es la ÚNICA fuente de "qué precio aplica" (promo sólo si presente, entero y estrictamente < regular) — futuras puertas (fechas/stock) se añaden ahí. `getPromoLabel()` resuelve el copy por locale.
+- Editor admin (extiende F-080): campo promo por duración + al rellenarlo se revelan los 3 inputs de copy; validación en cliente y servidor (`0 < promo < regular`, 3 idiomas obligatorios). El home/precios leen vía `unstable_cache` con tag `marketing-pricing`, invalidado por la acción — sin salir de estático (F-124: home 193 KB, sigue SSG).
+- AC: [x] resolver + tests; [x] editor con promo + copy condicional; [x] home cards con precio + tachado; [x] página de precios + JSON-LD al precio efectivo; [x] funnel §5 + resume + éxito + email; [x] `getSeasonPriceRange` al precio efectivo; [x] E2E `e2e/f-141-promo-pricing.spec.ts`.
+- Refs: F-141, F-080, F-039, F-100 (JSON-LD), F-124 (estático), `booking-platform-perf`
+
+### F-142 — Sistema de banners (home) gestionable desde admin + rotación
+
+- Sprint: post-Sprint 5 · Estado: en PR (junto a F-141)
+- Motivación: acoplado a F-141 — si hay promo, el owner **debe** configurar el/los banner(s) del hero de la home; y si hay más de uno, que roten cada 5 s.
+- Decisiones (con el owner): lista curada de banners (sección admin propia), independiente de las promos; una promo **fuerza ≥1 banner habilitado** (bloqueo duro). Se **migra** el banner de F-053 (antes en `messages/*.json`) a la nueva tabla.
+- Modelo: nueva tabla `AdBanner` (`enabled`, `sortIndex`, `body {en,de,es}`, `ctaLabel {en,de,es}?`, `ctaHref?` — href validado con `isAllowedCtaHref`). Seed migra el copy de F-053 como primer banner idempotente.
+- Acoplamiento promo↔banner: forward en `lib/admin/pricing.ts` (`PROMO_REQUIRES_BANNER`), reverse en `lib/admin/announcements.ts` (`BANNER_REQUIRED_BY_PROMO`, al deshabilitar/borrar el último con promo viva). Comparten `activeSeasonHasPromo()`.
+- Render: `HeroAnnouncement` pasa a leer de BD (`unstable_cache` tag `ad-banners`). 1 banner = HTML estático (LCP-safe, F-124); 2+ = isla cliente `HeroAnnouncementCarousel` que rota 5 s con fundido en sitio (altura fija, sin CLS), **gated tras `prefers-reduced-motion`** (reduce = estático + prev/next manuales), pausa en hover/focus, y el descarte por cookie de F-124 intacto.
+- AC: [x] `AdBanner` + migración + seed; [x] CRUD admin (`/admin/announcements`) + toggle/reorder/borrar; [x] guards cruzados + tests; [x] carrusel con reduced-motion; [x] E2E `e2e/f-142-ad-banner.spec.ts`. Pendiente: pinta fina de diseño del banner con Impeccable.
+- Refs: F-142, F-141, F-053 (migrado), F-124, `lib/hero-announcement.ts`
+
 ---
 
 ## Bloqueantes / decisiones abiertas (consolidadas)
