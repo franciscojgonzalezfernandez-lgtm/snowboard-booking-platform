@@ -187,3 +187,15 @@
     display: none;
   }
 }
+
+/* F-142: crossfade for the rotating hero announcement band. Applied only via
+   Tailwind's `motion-safe:` variant, so `prefers-reduced-motion` visitors see an
+   instant swap (no animation) while auto-advance is disabled in JS. */
+@keyframes hero-announcement-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

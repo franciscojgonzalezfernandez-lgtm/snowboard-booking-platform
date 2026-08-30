@@ -60,12 +60,21 @@ export default async function AdminPricingPage() {
   // header renders as the current state.
   const fields = DURATION_ORDER.map((duration) => {
     const cents = pricing.priceCentsByDuration[duration];
+    const promo = pricing.promoByDuration[duration];
     return {
       duration,
       label: DURATION_LABEL[duration],
       cents,
       francs: cents === null ? null : centsToFrancs(cents),
       formatted: cents === null ? "—" : formatChf(cents),
+      // F-141 promo pre-fill (francs for display + 3-locale copy).
+      promoFrancs: promo ? centsToFrancs(promo.priceCents) : null,
+      promoFormatted: promo ? formatChf(promo.priceCents) : null,
+      promoLabels: {
+        en: promo?.label?.en ?? "",
+        de: promo?.label?.de ?? "",
+        es: promo?.label?.es ?? "",
+      },
     };
   });
 
@@ -118,6 +127,8 @@ export default async function AdminPricingPage() {
             duration: f.duration,
             label: f.label,
             francs: f.francs,
+            promoFrancs: f.promoFrancs,
+            promoLabels: f.promoLabels,
           }))}
         />
       </section>

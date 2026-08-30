@@ -30,6 +30,10 @@ export type DraftSnapshot = {
   chargeAmountCents: number;
   /** F-060: sum of credits consumed by this draft (0 when none selected). */
   creditsAppliedCents: number;
+  /** F-141: regular (pre-promo) price, set only when a promo applied (else null). */
+  originalPriceCents: number | null;
+  /** F-141: resolved promo copy in the booking's language, set only when a promo applied. */
+  promoLabel: string | null;
 };
 
 type GuardContextValue = {

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Duration } from "@prisma/client";
 
+import { PromoPrice } from "@/components/pricing/promo-price";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { resumePaymentWith } from "@/lib/booking/resume-payment";
@@ -63,6 +64,7 @@ export default async function ResumePaymentPage({ params }: Props) {
   const t = await getTranslations({ locale, namespace: "reservar.resume" });
   const tStep1 = await getTranslations({ locale, namespace: "reservar.step1" });
   const tStep5 = await getTranslations({ locale, namespace: "reservar.step5" });
+  const tPricing = await getTranslations({ locale, namespace: "pricing" });
 
   const result = await resumePaymentWith(
     {
@@ -101,6 +103,8 @@ export default async function ResumePaymentPage({ params }: Props) {
       date: true,
       anchorTime: true,
       duration: true,
+      originalPriceCents: true,
+      promoLabel: true,
       instructor: { select: { user: { select: { name: true } } } },
       _count: { select: { attendees: true } },
     },
@@ -112,6 +116,10 @@ export default async function ResumePaymentPage({ params }: Props) {
   const instructorName = details.instructor.user.name ?? "—";
   const attendeesCount = details._count.attendees;
   const hasCredits = result.creditsAppliedCents > 0;
+  const originalPriceLabel =
+    details.originalPriceCents != null
+      ? formatChf(details.originalPriceCents)
+      : null;
 
   const meta: Array<{ label: string; value: string }> = [
     { label: tStep5("summary_time"), value: details.anchorTime },
@@ -188,8 +196,15 @@ export default async function ResumePaymentPage({ params }: Props) {
                   <dt className="text-muted-foreground">
                     {tStep5("summary_lesson_price")}
                   </dt>
-                  <dd className="tabular-nums">
-                    {formatChf(result.totalPriceCents)}
+                  <dd>
+                    <PromoPrice
+                      className="items-end text-right"
+                      priceClassName="text-sm font-medium"
+                      priceLabel={formatChf(result.totalPriceCents)}
+                      originalPriceLabel={originalPriceLabel}
+                      promoLabel={details.promoLabel}
+                      regularPriceA11yLabel={tPricing("regular_price_a11y")}
+                    />
                   </dd>
                 </div>
                 <div
@@ -218,6 +233,24 @@ export default async function ResumePaymentPage({ params }: Props) {
                 {formatChf(result.chargeAmountCents)}
               </dd>
             </div>
+            {!hasCredits && originalPriceLabel ? (
+              <div
+                data-testid="resume-promo"
+                className="flex items-center justify-end gap-2.5"
+              >
+                <span className="text-sm text-muted-foreground line-through tabular-nums">
+                  <span className="sr-only">
+                    {tPricing("regular_price_a11y")}:{" "}
+                  </span>
+                  {originalPriceLabel}
+                </span>
+                {details.promoLabel ? (
+                  <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary">
+                    {details.promoLabel}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
           </dl>
 
           <PaymentBlock

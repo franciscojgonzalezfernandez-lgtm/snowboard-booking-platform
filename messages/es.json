@@ -21,11 +21,10 @@
     "phone_label": "Llamar"
   },
   "hero_announcement": {
-    "enabled": "true",
-    "body": "¿Un día de equipo o grupo en la montaña? Doy clases privadas todo el invierno.",
-    "cta_label": "Escríbeme",
-    "cta_href": "phone",
-    "close_label": "Cerrar aviso"
+    "close_label": "Cerrar aviso",
+    "region_label": "Anuncios",
+    "previous": "Anuncio anterior",
+    "next": "Anuncio siguiente"
   },
   "home": {
     "metadata_title": "Clases privadas de snowboard en Suiza — Flumserberg",
@@ -444,6 +443,7 @@
     "heading": "Elige cuánto rato bajamos.",
     "intro": "Cuatro formas de salir conmigo. Elige la que encaje con tu nivel — el precio es el mismo vengas solo o traigas a tres colegas.",
     "price_suffix": "hasta 4 personas",
+    "regular_price_a11y": "Precio habitual",
     "best_for_label": "Ideal para",
     "meeting_label": "Quedamos en",
     "cta": "Reservar esta clase",

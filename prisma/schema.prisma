@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -168,18 +167,18 @@ model AvailabilityBlock {
 /// time, so a FK would be redundant and would require a backfill if season
 /// boundaries ever shift.
 model Season {
-  id                  String   @id @default(cuid())
-  name                String
-  startDate           DateTime @db.Date
-  endDate             DateTime @db.Date
-  active              Boolean  @default(true)
+  id                        String   @id @default(cuid())
+  name                      String
+  startDate                 DateTime @db.Date
+  endDate                   DateTime @db.Date
+  active                    Boolean  @default(true)
   /// 24h "HH:MM" strings, e.g. ["09:00","11:00","13:00","15:00"].
   /// Order does not matter; the booking engine sorts.
-  anchorTimes         String[]
+  anchorTimes               String[]
   /// 24h "HH:MM" — earliest start time a class may begin in this season.
-  operatingHoursStart String
+  operatingHoursStart       String
   /// 24h "HH:MM" — latest end time a class may end in this season.
-  operatingHoursEnd   String
+  operatingHoursEnd         String
   /// CHF cents (VAT inclusive) per Duration enum value. Invariant: every
   /// active Season MUST populate all four keys (ONE_HOUR, TWO_HOURS,
   /// INTENSIVE, FULL_DAY). Read via lib/pricing/get-price.ts which throws
@@ -187,48 +186,93 @@ model Season {
   /// `@default("{}")` exists only to make the ADD COLUMN migration safe on
   /// the existing Season row; the seed overwrites with real prices right
   /// after migrate runs.
-  priceCentsByDuration Json   @default("{}")
+  priceCentsByDuration      Json     @default("{}")
+  /// F-141: optional promotional price in CHF cents per Duration. Partial map —
+  /// only promoted durations appear (e.g. `{ "ONE_HOUR": 9500 }`). Invariant
+  /// enforced on write (lib/schemas/pricing.ts) AND defensively on read
+  /// (lib/pricing/get-price.ts:resolvePriceCents): a promo is honored only when
+  /// present, an integer, and strictly below the regular price. Nullable so the
+  /// ADD COLUMN migration is safe and "no promotions" is the natural default.
+  promoPriceCentsByDuration Json?
+  /// F-141: localized promo copy per promoted Duration —
+  /// `Partial<Record<Duration, { en: string; de: string; es: string }>>`, e.g.
+  /// `{ "ONE_HOUR": { "en": "Season opening", "de": "…", "es": "…" } }`. Every
+  /// key present here MUST have all three non-empty strings and a matching entry
+  /// in `promoPriceCentsByDuration` (admin validation guarantees both).
+  promoLabelByDuration      Json?
 
   @@index([active, startDate, endDate])
 }
 
+/// AdBanner (F-142) — the home hero announcement band, owner-authored via the
+/// admin panel (replaces the F-053 messages-only band). Multiple enabled
+/// banners rotate on the home; a banner is mandatory while any promotion is
+/// active (cross-checked in lib/admin/pricing.ts + lib/admin/announcements.ts).
+model AdBanner {
+  id        String   @id @default(cuid())
+  enabled   Boolean  @default(true)
+  /// Display + rotation order (ascending). Ties broken by createdAt.
+  sortIndex Int      @default(0)
+  /// `{ en: string; de: string; es: string }` — all three non-empty.
+  body      Json
+  /// `{ en: string; de: string; es: string } | null` — optional CTA label per
+  /// locale. When set, all three are non-empty and `ctaHref` is present.
+  ctaLabel  Json?
+  /// Internal path ("/reservar", "/precios") or an allow-listed external URL;
+  /// validated via lib/hero-announcement.ts:isAllowedCtaHref before persisting.
+  ctaHref   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([enabled, sortIndex])
+}
+
 model Booking {
-  id                    String        @id @default(cuid())
-  bookerId              String
-  instructorId          String
-  date                  DateTime      @db.Date
-  anchorTime            String
-  duration              Duration
-  language              Locale
-  status                BookingStatus
-  totalPriceCents       Int
+  id                         String        @id @default(cuid())
+  bookerId                   String
+  instructorId               String
+  date                       DateTime      @db.Date
+  anchorTime                 String
+  duration                   Duration
+  language                   Locale
+  status                     BookingStatus
+  totalPriceCents            Int
   // F-084: net amount actually charged via Stripe (totalPriceCents minus credits
   // applied at checkout). Persisted so the resume-payment flow knows what to bill
   // without re-reading the Stripe PaymentIntent. Null for legacy rows + the
   // zero-charge path (charge is 0); resume falls back to totalPriceCents when null.
-  chargeAmountCents     Int?
+  chargeAmountCents          Int?
   // F-084: total credit value applied to this booking at draft creation. Snapshot
   // for display / audit; the authoritative credit ledger lives in AccountCredit.
-  creditsAppliedCents   Int?
-  stripePaymentIntentId String?       @unique
-  icsUid                String        @unique
-  googleEventId         String?
-  notes                 String?       @db.Text
-  cancelledByUserAt     DateTime?
-  cancelledByOpsAt      DateTime?
-  opsReason             String?
-  paidAt                DateTime?
-  refundedAt            DateTime?
-  refundAmountCents       Int?
+  creditsAppliedCents        Int?
+  // F-141: promo snapshot. `totalPriceCents` is always the CHARGED (effective)
+  // price. `originalPriceCents` holds the pre-promo regular price, set only when
+  // a promotion applied at booking time (else null) — so post-purchase surfaces
+  // (funnel summary, success page, email, dashboard) can render the struck-through
+  // original without re-reading the season, staying correct after the promo is
+  // later edited or removed. `promoLabel` is the resolved copy in the booking's
+  // own `language`, snapshotted the same way.
+  originalPriceCents         Int?
+  promoLabel                 String?
+  stripePaymentIntentId      String?       @unique
+  icsUid                     String        @unique
+  googleEventId              String?
+  notes                      String?       @db.Text
+  cancelledByUserAt          DateTime?
+  cancelledByOpsAt           DateTime?
+  opsReason                  String?
+  paidAt                     DateTime?
+  refundedAt                 DateTime?
+  refundAmountCents          Int?
   /// F-078: Stripe refund id for ops-cancellations of cash-paid bookings.
   /// Persisted so the action is idempotent — a second `cancelBookingByOps`
   /// call sees the booking already CANCELLED_BY_OPS + the refund id set
   /// and short-circuits without re-hitting Stripe.
-  stripeRefundId          String?       @unique
-  failureReason           String?       @db.Text
-  confirmationEmailSentAt DateTime?
-  reminder24hSentAt       DateTime?
-  postClassEmailSentAt    DateTime?
+  stripeRefundId             String?       @unique
+  failureReason              String?       @db.Text
+  confirmationEmailSentAt    DateTime?
+  reminder24hSentAt          DateTime?
+  postClassEmailSentAt       DateTime?
   cancellationEmailSentAt    DateTime?
   opsCancellationNotifSentAt DateTime?
   autoCompletedAt            DateTime?
@@ -236,9 +280,9 @@ model Booking {
   /// (progress, real level observed, preferences, warnings). Never shown to
   /// the booker. `instructorNoteSetAt` tracks the last edit; both are cleared
   /// together when the note is emptied.
-  instructorNote          String?       @db.Text
-  instructorNoteSetAt     DateTime?
-  createdAt               DateTime      @default(now())
+  instructorNote             String?       @db.Text
+  instructorNoteSetAt        DateTime?
+  createdAt                  DateTime      @default(now())
 
   booker          User            @relation(fields: [bookerId], references: [id], onDelete: Restrict)
   instructor      Instructor      @relation(fields: [instructorId], references: [id], onDelete: Restrict)

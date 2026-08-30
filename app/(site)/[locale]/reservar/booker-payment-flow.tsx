@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { PromoPrice } from "@/components/pricing/promo-price";
 import { buildFunnelReturnUrl } from "@/lib/booking/funnel-return";
 import { formatChf } from "@/lib/pricing/format";
 import {
@@ -186,6 +187,7 @@ export function BookerPaymentFlow({
 }: Props) {
   const t = useTranslations("reservar.step4");
   const tStep5 = useTranslations("reservar.step5");
+  const tPricing = useTranslations("pricing");
   // F-133: the rider-level select showed `BEGINNER` once chosen — `Select.Value`
   // renders the raw value unless the root is handed the value→label mapping.
   // One array now drives both the options and the trigger.
@@ -358,6 +360,8 @@ export function BookerPaymentFlow({
           totalPriceCents: result.totalPriceCents,
           chargeAmountCents: result.chargeAmountCents,
           creditsAppliedCents: result.creditsAppliedCents,
+          originalPriceCents: result.originalPriceCents,
+          promoLabel: result.promoLabel,
         });
         return;
       }
@@ -1035,11 +1039,19 @@ export function BookerPaymentFlow({
                     ? tStep5("summary_lesson_price")
                     : tStep5("summary_total")}
                 </span>
-                <span
-                  className="font-display text-2xl tracking-tight"
-                  data-testid="step5-summary-total"
-                >
-                  {formatChf(draft.totalPriceCents)}
+                <span data-testid="step5-summary-total">
+                  <PromoPrice
+                    className="items-end text-right"
+                    priceClassName="font-display text-2xl"
+                    priceLabel={formatChf(draft.totalPriceCents)}
+                    originalPriceLabel={
+                      draft.originalPriceCents != null
+                        ? formatChf(draft.originalPriceCents)
+                        : null
+                    }
+                    promoLabel={draft.promoLabel}
+                    regularPriceA11yLabel={tPricing("regular_price_a11y")}
+                  />
                 </span>
               </div>
               {draft.creditsAppliedCents > 0 ? (

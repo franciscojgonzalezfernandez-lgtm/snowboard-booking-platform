@@ -44,6 +44,17 @@ import {
 } from "@/lib/admin/pricing";
 import type { UpdateSeasonPricingInput } from "@/lib/schemas/pricing";
 import {
+  createAnnouncementWith,
+  deleteAnnouncementWith,
+  reorderAnnouncementsWith,
+  setAnnouncementEnabledWith,
+  updateAnnouncementWith,
+  type AdminAnnouncementsDeps,
+  type AnnouncementResult,
+} from "@/lib/admin/announcements";
+import type { AnnouncementInput } from "@/lib/schemas/announcement";
+import { MARKETING_TAGS } from "@/lib/marketing/cache";
+import {
   activateSeasonWith,
   createSeasonWith,
   deactivateSeasonWith,
@@ -280,7 +291,78 @@ export async function updateSeasonPricing(
     revalidatePath("/admin/pricing");
     // Step 1 reads the active season price; bust every locale's funnel page.
     revalidatePath("/[locale]/reservar", "page");
+    // Home tier cards + /precios read the active season via the `pricing` tag
+    // (F-141) — bust it so a new price/promo shows across all locales at once.
+    revalidateTag(MARKETING_TAGS.pricing);
   }
+  return result;
+}
+
+// --- F-142: ad-banner section ---------------------------------------------
+// Wraps the pure announcement cores: validates the admin session, runs the
+// core (which enforces the promo↔banner cross-invariant), and busts the
+// `banners` tag so the home hero band reflects the change immediately.
+
+function announcementsDeps(): AdminAnnouncementsDeps {
+  return { prisma };
+}
+
+function revalidateBanners() {
+  revalidatePath("/admin/announcements");
+  revalidateTag(MARKETING_TAGS.banners);
+}
+
+export async function createAnnouncement(
+  input: AnnouncementInput,
+): Promise<AnnouncementResult> {
+  await requireAdmin();
+  const result = await createAnnouncementWith(announcementsDeps(), input);
+  if (result.ok) revalidateBanners();
+  return result;
+}
+
+export async function updateAnnouncement(
+  input: AnnouncementInput & { id: string },
+): Promise<AnnouncementResult> {
+  await requireAdmin();
+  const { id, ...rest } = input;
+  const result = await updateAnnouncementWith(announcementsDeps(), id, rest);
+  if (result.ok) revalidateBanners();
+  return result;
+}
+
+export async function setAnnouncementEnabled(input: {
+  id: string;
+  enabled: boolean;
+}): Promise<AnnouncementResult> {
+  await requireAdmin();
+  const result = await setAnnouncementEnabledWith(
+    announcementsDeps(),
+    input.id,
+    input.enabled,
+  );
+  if (result.ok) revalidateBanners();
+  return result;
+}
+
+export async function deleteAnnouncement(input: {
+  id: string;
+}): Promise<AnnouncementResult> {
+  await requireAdmin();
+  const result = await deleteAnnouncementWith(announcementsDeps(), input.id);
+  if (result.ok) revalidateBanners();
+  return result;
+}
+
+export async function reorderAnnouncements(input: {
+  orderedIds: string[];
+}): Promise<AnnouncementResult> {
+  await requireAdmin();
+  const result = await reorderAnnouncementsWith(
+    announcementsDeps(),
+    input.orderedIds,
+  );
+  if (result.ok) revalidateBanners();
   return result;
 }
 
