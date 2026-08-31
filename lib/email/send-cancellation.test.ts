@@ -28,7 +28,11 @@ function makeBooking(
     language: Locale.en,
     cancellationEmailSentAt: null,
     opsCancellationNotifSentAt: null,
-    booker: { name: "Lara Tester", email: "lara@example.test" },
+    booker: {
+      name: "Lara Tester",
+      email: "lara@example.test",
+      phone: "+41791234567",
+    },
     // Default fixture = a non-owner instructor (Lara), so the ops notif fans out
     // to two distinct recipients {instructor, admin}. The owner-teaches-own-lesson
     // dedup case has its own test below.
@@ -228,6 +232,13 @@ describe("sendCancellationEmailsWith — forfeit variant", () => {
     await sendCancellationEmailsWith(deps, forfeitArgs);
     const calls = callsOf(client);
     expect(calls[1]![0].text as string).toContain("forfeited");
+  });
+
+  test("ops notif includes the booker phone when on file", async () => {
+    const { deps, client } = makeDeps();
+    await sendCancellationEmailsWith(deps, forfeitArgs);
+    const calls = callsOf(client);
+    expect(calls[1]![0].text as string).toContain("Phone: +41791234567");
   });
 });
 

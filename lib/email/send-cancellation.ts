@@ -37,7 +37,7 @@ const BOOKING_SELECT = {
   language: true,
   cancellationEmailSentAt: true,
   opsCancellationNotifSentAt: true,
-  booker: { select: { name: true, email: true } },
+  booker: { select: { name: true, email: true, phone: true } },
   instructor: { select: { user: { select: { name: true, email: true } } } },
   attendees: { select: { id: true } },
 } satisfies Prisma.BookingSelect;
@@ -296,6 +296,7 @@ export async function sendCancellationEmailsWith(
           anchorTime: booking.anchorTime,
           bookerName,
           bookerEmail: booking.booker.email,
+          bookerPhone: booking.booker.phone,
           attendeeCount: booking.attendees.length,
           cancellationVariant: opsNotifVariant(args),
         }),
@@ -307,6 +308,7 @@ export async function sendCancellationEmailsWith(
           anchorTime: booking.anchorTime,
           bookerName,
           bookerEmail: booking.booker.email,
+          bookerPhone: booking.booker.phone,
           attendeeCount: booking.attendees.length,
           cancellationVariant: opsNotifVariant(args),
         }),
@@ -487,6 +489,7 @@ function buildOpsNotifPlainText(args: {
   anchorTime: string;
   bookerName: string;
   bookerEmail: string;
+  bookerPhone: string | null;
   attendeeCount: number;
   cancellationVariant: OpsNotifVariant;
 }): string {
@@ -507,7 +510,7 @@ function buildOpsNotifPlainText(args: {
         return copy.variantOpsNoCharge;
     }
   })();
-  return [
+  const lines = [
     copy.intro,
     "",
     copy.summaryTitle,
@@ -520,11 +523,12 @@ function buildOpsNotifPlainText(args: {
     copy.bookerTitle,
     `${copy.bookerNameLabel}: ${args.bookerName}`,
     `${copy.bookerEmailLabel}: ${args.bookerEmail}`,
-    "",
-    `${copy.variantLabel}: ${variantLine}`,
-    "",
-    copy.signoff,
-  ].join("\n");
+  ];
+  if (args.bookerPhone) {
+    lines.push(`${copy.bookerPhoneLabel}: ${args.bookerPhone}`);
+  }
+  lines.push("", `${copy.variantLabel}: ${variantLine}`, "", copy.signoff);
+  return lines.join("\n");
 }
 
 export async function sendCancellationEmails(

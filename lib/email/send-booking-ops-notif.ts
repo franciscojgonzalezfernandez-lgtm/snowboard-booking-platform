@@ -24,7 +24,7 @@ const BOOKING_SELECT = {
   duration: true,
   totalPriceCents: true,
   opsBookingNotifSentAt: true,
-  booker: { select: { name: true, email: true } },
+  booker: { select: { name: true, email: true, phone: true } },
   instructor: { select: { user: { select: { name: true, email: true } } } },
   attendees: { select: { id: true } },
 } satisfies Prisma.BookingSelect;
@@ -84,6 +84,9 @@ export async function sendBookingOpsNotifWith(
     attendeeCount: booking.attendees.length,
     bookerName,
     bookerEmail: booking.booker.email,
+    // F-140: phone lets the instructor/admin reach the booker directly. Captured
+    // by the funnel (create-draft backfill, F-064); null for legacy/seed bookers.
+    bookerPhone: booking.booker.phone,
     totalLabel,
   };
 
@@ -132,10 +135,11 @@ function buildOpsNotifPlainText(args: {
   attendeeCount: number;
   bookerName: string;
   bookerEmail: string;
+  bookerPhone: string | null;
   totalLabel: string;
 }): string {
   const { copy } = args;
-  return [
+  const lines = [
     copy.intro,
     "",
     copy.summaryTitle,
@@ -149,9 +153,12 @@ function buildOpsNotifPlainText(args: {
     copy.bookerTitle,
     `${copy.bookerNameLabel}: ${args.bookerName}`,
     `${copy.bookerEmailLabel}: ${args.bookerEmail}`,
-    "",
-    copy.signoff,
-  ].join("\n");
+  ];
+  if (args.bookerPhone) {
+    lines.push(`${copy.bookerPhoneLabel}: ${args.bookerPhone}`);
+  }
+  lines.push("", copy.signoff);
+  return lines.join("\n");
 }
 
 /**

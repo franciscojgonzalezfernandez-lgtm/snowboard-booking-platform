@@ -12,6 +12,7 @@ const baseProps = {
   attendeeCount: 2,
   bookerName: "Lara Tester",
   bookerEmail: "lara@example.test",
+  bookerPhone: "+41791234567",
   totalLabel: "CHF 110.00",
 };
 

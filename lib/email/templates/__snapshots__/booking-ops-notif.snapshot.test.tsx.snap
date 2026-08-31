@@ -247,6 +247,27 @@ exports[`booking-ops-notif email template — snapshot > renders the new-booking
                                 </tr>
                               </tbody>
                             </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Phone
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    +41791234567
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
                           </td>
                         </tr>
                       </tbody>

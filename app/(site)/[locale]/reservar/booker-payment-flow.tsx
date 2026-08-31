@@ -134,6 +134,8 @@ type Props = {
   publishableKey: string;
   bookerEmail: string;
   bookerName: string;
+  // F-140: booker's saved phone (E.164) or "" if none — prefills the phone field.
+  bookerPhone: string;
   duration: Duration;
   date: string;
   time: string;
@@ -169,6 +171,7 @@ export function BookerPaymentFlow({
   publishableKey,
   bookerEmail,
   bookerName,
+  bookerPhone,
   duration,
   date,
   time,
@@ -209,10 +212,11 @@ export function BookerPaymentFlow({
     mode: "onTouched",
     defaultValues: {
       bookerName: bookerName ?? "",
-      // Start empty so the input reads as "to be filled". A pre-typed "+41 "
-      // looks already-completed to a first-time booker but fails the E.164
-      // regex — they then can't tell why the submit button is greyed out.
-      bookerPhone: "",
+      // F-140: prefill the phone we already have on file (a complete E.164 that
+      // passes validation), so a returning booker isn't asked to retype it. Only
+      // empty when there's none saved — never a partial "+41 " prefix, which
+      // looks done to a first-time booker but fails E.164 and greys the button.
+      bookerPhone: bookerPhone ?? "",
       attendees: [
         {
           name: "",

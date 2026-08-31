@@ -27,7 +27,11 @@ function makeBooking(
     duration: Duration.ONE_HOUR,
     totalPriceCents: 11_000,
     opsBookingNotifSentAt: null,
-    booker: { name: "Lara Tester", email: "lara@example.test" },
+    booker: {
+      name: "Lara Tester",
+      email: "lara@example.test",
+      phone: "+41791234567",
+    },
     // Default = non-owner instructor → two distinct recipients.
     instructor: { user: { name: "Lara", email: "lara@rideflumserberg.ch" } },
     attendees: [{ id: "att_1" }, { id: "att_2" }],
@@ -138,10 +142,22 @@ describe("sendBookingOpsNotifWith", () => {
     const text = payload.text as string;
     expect(text).toContain("Lara Tester");
     expect(text).toContain("lara@example.test");
+    expect(text).toContain("Phone: +41791234567");
     // formatChf (de-CH) separates "CHF" from the amount with a non-breaking
     // space, so assert on the amount alone to stay robust to that codepoint.
     expect(text).toContain("110.00");
     expect(text).toContain("2 riders");
+  });
+
+  test("omits the phone line when the booker has none on file", async () => {
+    const { deps, client } = makeDeps({
+      booking: makeBooking({
+        booker: { name: "No Phone", email: "nophone@example.test", phone: null },
+      }),
+    });
+    await sendBookingOpsNotifWith(deps, "book_1");
+    const [payload] = firstCall(client);
+    expect(payload.text as string).not.toContain("Phone:");
   });
 
   test("is idempotent — second invocation returns ALREADY_SENT, no send", async () => {

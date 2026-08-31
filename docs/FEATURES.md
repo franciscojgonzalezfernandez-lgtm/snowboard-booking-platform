@@ -3171,7 +3171,11 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - [x] `lib/email/templates/booking-ops-notif.snapshot.test.tsx` — snapshot.
   - [x] `tsc --noEmit` + `eslint` en verde.
 - Notas: EN-only a propósito (superficie de ops). El buzón admin sigue siendo constante; si aparece un segundo admin, cambiar `OPS_NOTIFICATION_EMAIL` por env var / query de rol en `recipients.ts`. No confundir con **F-139** (reservado para dar una base de datos no productiva).
-- Refs: F-140, F-044, F-060, F-078, `lib/email/`, `app/api/webhooks/stripe/route.ts`, `app/(site)/[locale]/reservar/actions.ts`, `prisma/schema.prisma`
+- Ampliación (2026-08-31, mismo branch):
+  - **Teléfono del booker en el ops-notif** (reserva **y** cancelación). `User.phone` (E.164, capturado por el funnel — F-064) se añade al `select` del booker y se pinta como fila "Phone" en `booking-ops-notif.tsx` y `cancellation-ops-notif.tsx`. Condicional: nullable ⇒ se omite la fila (bookers seed/legacy). Sin migración — la columna ya existía.
+  - **Prefill del teléfono en el funnel** (Section 4). El campo `bookerPhone` de `booker-payment-flow.tsx` arrancaba vacío a propósito; ahora se rellena con el `User.phone` guardado (leído en `page.tsx` junto a season/credits) — editable, vacío sólo si no hay dato. Se sustituye el comentario del "start empty" (su motivo era no pre-teclear un `+41 ` parcial que rompe E.164; un número completo guardado sí valida). Sin bug para los E2E: `booker-phone` se rellena con `.fill()` que sobrescribe.
+  - Tests: `send-booking-ops-notif.test.ts` (+phone, +caso sin teléfono), `send-cancellation.test.ts` (+phone en ops text), snapshots de ambos ops-notif regenerados (sólo la fila Phone).
+- Refs: F-140, F-044, F-060, F-064, F-078, `lib/email/`, `app/api/webhooks/stripe/route.ts`, `app/(site)/[locale]/reservar/actions.ts`, `app/(site)/[locale]/reservar/page.tsx`, `app/(site)/[locale]/reservar/booker-payment-flow.tsx`, `prisma/schema.prisma`
 
 ### F-143 — El job `db-migrate` de CI lleva meses en rojo: `npm ci` con npm 10 no resuelve un lockfile de npm 11
 

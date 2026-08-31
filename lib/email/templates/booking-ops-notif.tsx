@@ -24,6 +24,8 @@ export type BookingOpsNotifEmailProps = {
   attendeeCount: number;
   bookerName: string;
   bookerEmail: string;
+  /** E.164 phone the booker gave in the funnel; null for legacy/seed bookers. */
+  bookerPhone: string | null;
   totalLabel: string;
 };
 
@@ -42,6 +44,7 @@ type Copy = {
   bookerTitle: string;
   bookerNameLabel: string;
   bookerEmailLabel: string;
+  bookerPhoneLabel: string;
   signoff: string;
 };
 
@@ -60,6 +63,7 @@ const COPY: Copy = {
   bookerTitle: "Booker",
   bookerNameLabel: "Name",
   bookerEmailLabel: "Email",
+  bookerPhoneLabel: "Phone",
   signoff: "— automated notification",
 };
 
@@ -76,6 +80,7 @@ export function BookingOpsNotifEmail(props: BookingOpsNotifEmailProps) {
     attendeeCount,
     bookerName,
     bookerEmail,
+    bookerPhone,
     totalLabel,
   } = props;
   const t = getBookingOpsNotifCopy();
@@ -103,6 +108,9 @@ export function BookingOpsNotifEmail(props: BookingOpsNotifEmailProps) {
             <Text style={summaryTitle}>{t.bookerTitle}</Text>
             <Row label={t.bookerNameLabel} value={bookerName} />
             <Row label={t.bookerEmailLabel} value={bookerEmail} />
+            {bookerPhone ? (
+              <Row label={t.bookerPhoneLabel} value={bookerPhone} />
+            ) : null}
           </Section>
 
           <Text style={signoff}>{t.signoff}</Text>
