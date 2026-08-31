@@ -382,6 +382,11 @@ export async function createBookingDraftWith(
           anchorTime: data.time,
           duration: data.duration,
           language: data.language,
+          // F-140: snapshot the phone the booker gave for THIS booking (E.164,
+          // already normalised by the draft schema) so the ops/instructor email
+          // shows exactly what they entered — not their profile User.phone, which
+          // may differ or have been set on an earlier booking.
+          bookerPhone: data.bookerPhone,
           status: isZeroCharge
             ? BookingStatus.CONFIRMED
             : BookingStatus.PENDING_PAYMENT,

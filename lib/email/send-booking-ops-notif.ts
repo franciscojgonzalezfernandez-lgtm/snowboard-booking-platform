@@ -24,6 +24,7 @@ const BOOKING_SELECT = {
   duration: true,
   totalPriceCents: true,
   opsBookingNotifSentAt: true,
+  bookerPhone: true,
   booker: { select: { name: true, email: true, phone: true } },
   instructor: { select: { user: { select: { name: true, email: true } } } },
   attendees: { select: { id: true } },
@@ -84,9 +85,10 @@ export async function sendBookingOpsNotifWith(
     attendeeCount: booking.attendees.length,
     bookerName,
     bookerEmail: booking.booker.email,
-    // F-140: phone lets the instructor/admin reach the booker directly. Captured
-    // by the funnel (create-draft backfill, F-064); null for legacy/seed bookers.
-    bookerPhone: booking.booker.phone,
+    // F-140: phone lets the instructor/admin reach the booker directly. Prefer
+    // the per-booking snapshot (what they typed in the funnel for THIS booking);
+    // fall back to profile User.phone for legacy rows created before the column.
+    bookerPhone: booking.bookerPhone ?? booking.booker.phone,
     totalLabel,
   };
 

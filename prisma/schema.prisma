@@ -200,6 +200,11 @@ model Booking {
   anchorTime            String
   duration              Duration
   language              Locale
+  // F-140: the contact phone the booker entered in the funnel for THIS booking
+  // (E.164). Snapshot per booking so the ops/instructor email shows exactly what
+  // they typed, even if their profile User.phone differs or was set earlier.
+  // Nullable only for legacy rows created before this column existed.
+  bookerPhone           String?
   status                BookingStatus
   totalPriceCents       Int
   // F-084: net amount actually charged via Stripe (totalPriceCents minus credits

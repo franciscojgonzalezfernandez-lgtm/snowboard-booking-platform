@@ -27,6 +27,9 @@ function makeBooking(
     duration: Duration.ONE_HOUR,
     totalPriceCents: 11_000,
     opsBookingNotifSentAt: null,
+    // Per-booking phone (what the booker typed in the funnel). Authoritative for
+    // the email; booker.phone (profile) is only the legacy fallback.
+    bookerPhone: "+41791234567",
     booker: {
       name: "Lara Tester",
       email: "lara@example.test",
@@ -149,15 +152,35 @@ describe("sendBookingOpsNotifWith", () => {
     expect(text).toContain("2 riders");
   });
 
-  test("omits the phone line when the booker has none on file", async () => {
+  test("omits the phone line when neither booking nor profile has one", async () => {
     const { deps, client } = makeDeps({
       booking: makeBooking({
+        bookerPhone: null,
         booker: { name: "No Phone", email: "nophone@example.test", phone: null },
       }),
     });
     await sendBookingOpsNotifWith(deps, "book_1");
     const [payload] = firstCall(client);
     expect(payload.text as string).not.toContain("Phone:");
+  });
+
+  test("prefers the per-booking phone over the profile phone", async () => {
+    // The booker edited the number for THIS booking; the email must show what
+    // they typed, not the older profile number (the core F-140 phone fix).
+    const { deps, client } = makeDeps({
+      booking: makeBooking({
+        bookerPhone: "+41780000000",
+        booker: {
+          name: "Lara Tester",
+          email: "lara@example.test",
+          phone: "+41791111111",
+        },
+      }),
+    });
+    await sendBookingOpsNotifWith(deps, "book_1");
+    const [payload] = firstCall(client);
+    expect(payload.text as string).toContain("Phone: +41780000000");
+    expect(payload.text as string).not.toContain("+41791111111");
   });
 
   test("is idempotent — second invocation returns ALREADY_SENT, no send", async () => {

@@ -28,6 +28,7 @@ function makeBooking(
     language: Locale.en,
     cancellationEmailSentAt: null,
     opsCancellationNotifSentAt: null,
+    bookerPhone: "+41791234567",
     booker: {
       name: "Lara Tester",
       email: "lara@example.test",
