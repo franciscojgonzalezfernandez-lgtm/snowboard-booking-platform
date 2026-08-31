@@ -3148,6 +3148,48 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - La memoria de sesión ya tenía anotado *".env.local es prod"* como *gotcha* para tests — se convivió con ello en vez de arreglarlo. Este ticket es para arreglarlo.
   - Encaja con F-022: CI tampoco tiene base de datos propia. La misma branch de Neon dedicada resolvería los dos.
 - Refs: F-139, F-022, F-138, F-134, F-043 (webhook Stripe), `CLAUDE.md`, `.env.example`, `scripts/new-worktree.sh`, `scripts/dev.mjs`, `playwright.config.ts`
+### F-140 — Avisar al instructor y al admin en cada reserva y cancelación (un solo email, sin duplicar)
+
+- Sprint: post-Sprint 5 · Estado: review (PR abierto 2026-08-29) · Prioridad: P2 (operativa: hoy nadie del equipo se entera de una reserva nueva salvo mirando el panel)
+- Depende de: —
+- Motivación: cuando entra o se cae una reserva, el instructor que la da y el admin (owner) tienen que enterarse por email. Estado previo: la confirmación de reserva sólo iba al booker (ningún aviso a ops/instructor); la cancelación ya avisaba al admin (`OPS_EMAIL` hardcodeado) pero **no** al instructor. Con la expansión multi-instructor (Lara ya está en el seed) el instructor que da la clase puede no ser el admin.
+- Decisiones (confirmadas por el owner, 2026-08-29):
+  - Admin = se reutiliza el buzón ops existente (constante `OPS_NOTIFICATION_EMAIL`), no lookup por rol ni env var nueva.
+  - **Un único email operativo compartido** → destinatarios `{email del instructor, admin}`, deduplicados _case-insensitive_. Javi dando su propia clase ⇒ instructor == admin ⇒ **un** email, nunca dos. Lara dando clase ⇒ dos destinatarios, un email.
+  - Aviso de reserva nueva: mismo disparador que la confirmación del booker (webhook `payment_intent.succeeded` **y** el camino zero-charge/crédito en `reservar/actions.ts`), para cubrir toda reserva confirmada.
+  - Cancelaciones: se añade el instructor al ops-notif ya existente, en **todos** los tipos (user credit/forfeit + ops cash/credit/mixed/no_charge).
+- Qué se tocó:
+  - Schema: `Booking.opsBookingNotifSentAt DateTime?` (guard de idempotencia, hermano de `opsCancellationNotifSentAt`). Migración `20260829125055_booking_ops_notif_sent_at`.
+  - `lib/email/recipients.ts` (nuevo): `dedupeEmails()` + `OPS_NOTIFICATION_EMAIL` (fuente única del buzón admin; sustituye a la constante local que vivía en `send-cancellation.ts`).
+  - `lib/email/templates/booking-ops-notif.tsx` + `lib/email/send-booking-ops-notif.ts` (nuevos): email EN al set deduplicado, best-effort, guard por `opsBookingNotifSentAt`.
+  - `lib/email/send-cancellation.ts`: el ops-notif ahora va a `dedupeEmails([instructor, admin])`.
+  - Wiring en `app/api/webhooks/stripe/route.ts` y `app/(site)/[locale]/reservar/actions.ts`, best-effort (un fallo del aviso no tumba el webhook ni la reserva; Sentry captura).
+- Tests:
+  - [x] `lib/email/send-booking-ops-notif.test.ts` — fan-out a dos, dedup del owner (case-insensitive), cuerpo EN, idempotencia, not-found.
+  - [x] `lib/email/recipients.test.ts` — `dedupeEmails` (orden, casing, blanks/nullish).
+  - [x] `lib/email/send-cancellation.test.ts` — ops-notif ahora a `[instructor, admin]` + test de dedup del owner.
+  - [x] `lib/email/templates/booking-ops-notif.snapshot.test.tsx` — snapshot.
+  - [x] `tsc --noEmit` + `eslint` en verde.
+- Notas: EN-only a propósito (superficie de ops). El buzón admin sigue siendo constante; si aparece un segundo admin, cambiar `OPS_NOTIFICATION_EMAIL` por env var / query de rol en `recipients.ts`. No confundir con **F-139** (reservado para dar una base de datos no productiva).
+- Ampliación (2026-08-31, mismo branch):
+  - **Teléfono del booker en el ops-notif** (reserva **y** cancelación), fila "Phone" en `booking-ops-notif.tsx` y `cancellation-ops-notif.tsx`.
+  - **Snapshot del teléfono por reserva** (decisión del owner, 2026-08-31: *"si el cliente metió el teléfono en el form, debe llegar al correo"*). El problema: `data.bookerPhone` sólo hacía backfill de `User.phone` **si estaba null** (`where: { phone: null }`) — un booker que edita el número prefilled dejaba el perfil intacto y el correo mostraba el viejo. Fix: nueva columna `Booking.bookerPhone String?` (migración `20260831093000_booking_booker_phone`), seteada en `create-draft.ts` con el número **normalizado del form** de ESA reserva. El correo lee `booking.bookerPhone ?? booker.phone` (per-reserva manda; el perfil es fallback para filas legacy). `bookerPhone` es obligatorio en el draft ⇒ toda reserva del funnel lleva teléfono ⇒ la fila **no se omite**. El backfill de perfil (F-064) se mantiene (alimenta el prefill).
+  - **Prefill del teléfono en el funnel** (Section 4). El campo `bookerPhone` de `booker-payment-flow.tsx` arrancaba vacío a propósito; ahora se rellena con el `User.phone` guardado (leído en `page.tsx` junto a season/credits) — editable, vacío sólo si no hay dato. Se sustituye el comentario del "start empty" (su motivo era no pre-teclear un `+41 ` parcial que rompe E.164; un número completo guardado sí valida). Sin bug para los E2E: `booker-phone` se rellena con `.fill()` que sobrescribe.
+  - Tests: `send-booking-ops-notif.test.ts` (+phone, caso sin teléfono, **per-reserva gana al perfil**), `send-cancellation.test.ts` (+phone en ops text), `create-draft.test.ts` (booking snapshotea el teléfono aun con perfil ya seteado), snapshots de ambos ops-notif regenerados (sólo la fila Phone).
+- Refs: F-140, F-044, F-060, F-064, F-078, `lib/email/`, `lib/booking/create-draft.ts`, `app/api/webhooks/stripe/route.ts`, `app/(site)/[locale]/reservar/actions.ts`, `app/(site)/[locale]/reservar/page.tsx`, `app/(site)/[locale]/reservar/booker-payment-flow.tsx`, `prisma/schema.prisma`
+
+### F-143 — El job `db-migrate` de CI lleva meses en rojo: `npm ci` con npm 10 no resuelve un lockfile de npm 11
+
+- Sprint: post-Sprint 5 · Estado: review (PR abierto 2026-08-29, va con F-140) · Prioridad: P2 (no bloquea merges hoy porque el check no es required, pero enmascara que las migraciones no se aplican a Neon por esa vía)
+- Depende de: —
+- Reportado: detectado 2026-08-29 al abrir el PR de F-140 — el check `migrate + seed → Neon dev` salió rojo.
+- Motivación: `db-migrate.yml` corría `npm ci` directamente sobre el npm 10 que trae Node 20. El `package-lock.json` se genera en local con npm 11, y los majors de npm deduplican el lock distinto, así que `npm ci` bajo npm 10 aborta con `Missing: @swc/helpers@0.5.23 from lock file`. `ci.yml` ya lo había resuelto fijando `npm install -g npm@11` antes del `npm ci` (ver `ci.yml:43`); `db-migrate.yml` nunca recibió el mismo paso.
+- Evidencia: rojo en `main` desde hace meses — push de f-122 (2026-08-01) y de f-087 (2026-06-14), ambos failure. El fallo es en *Install dependencies*, antes de tocar Prisma o Neon, así que **las migraciones no se estaban aplicando** por esta vía (el drift de la BD lo tapaba que cada worktree corre `prisma migrate dev` a mano — ver F-139).
+- AC:
+  - [x] Añadir el step `Pin npm to 11` (`npm install -g npm@11`) antes del `npm ci` en los dos jobs (`migrate-dev` y `migrate-main`), igual que `ci.yml`.
+- Tests: [x] El propio check `migrate + seed → Neon dev` en verde en este PR.
+- Notas: la causa de fondo es que el lockfile pide npm 11; la alternativa sería regenerarlo con npm 10, pero se alinea con lo que ya hace `ci.yml` en vez de divergir. Si algún día se sube el npm del runner, quitar el pin en los dos workflows a la vez.
+- Refs: F-143, F-139, F-022, `.github/workflows/db-migrate.yml`, `.github/workflows/ci.yml`
 
 ### F-142 — Ningún control interactivo enseña el cursor de mano: el Preflight de Tailwind v4 quitó `cursor: pointer` de los `<button>`
 

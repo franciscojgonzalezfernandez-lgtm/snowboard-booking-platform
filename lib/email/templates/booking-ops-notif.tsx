@@ -10,26 +10,23 @@ import {
   Text,
 } from "@react-email/components";
 
-import type { Locale } from "@prisma/client";
-
-export type CancellationOpsNotifEmailProps = {
-  locale: Locale;
+/**
+ * F-140: internal "new booking" notification for the instructor + admin. Sent
+ * alongside the booker's confirmation email, to the deduped {instructor, admin}
+ * recipient set. English-only, like every ops surface. Mirrors the shape of
+ * `CancellationOpsNotifEmail` so the two operational emails read as a pair.
+ */
+export type BookingOpsNotifEmailProps = {
   instructorName: string;
   bookingDateLabel: string;
-  bookingDurationLabel: string;
   anchorTime: string;
+  bookingDurationLabel: string;
+  attendeeCount: number;
   bookerName: string;
   bookerEmail: string;
   /** E.164 phone the booker gave in the funnel; null for legacy/seed bookers. */
   bookerPhone: string | null;
-  attendeeCount: number;
-  cancellationVariant:
-    | "credit"
-    | "forfeit"
-    | "ops_cash"
-    | "ops_credit"
-    | "ops_mixed"
-    | "ops_no_charge";
+  totalLabel: string;
 };
 
 type Copy = {
@@ -43,77 +40,50 @@ type Copy = {
   durationLabel: string;
   instructorLabel: string;
   attendeesLabel: (count: number) => string;
+  totalLabel: string;
   bookerTitle: string;
   bookerNameLabel: string;
   bookerEmailLabel: string;
   bookerPhoneLabel: string;
-  variantLabel: string;
-  variantCredit: string;
-  variantForfeit: string;
-  variantOpsCash: string;
-  variantOpsCredit: string;
-  variantOpsMixed: string;
-  variantOpsNoCharge: string;
   signoff: string;
 };
 
 const COPY: Copy = {
-  subject: ({ date, time }) => `Booking cancelled — ${date} ${time}`,
-  preview: "A booking was cancelled.",
+  subject: ({ date, time }) => `New booking — ${date} ${time}`,
+  preview: "A new lesson was booked.",
   heading: "Ride Flumserberg · Ops",
-  intro: "A booking was cancelled. The slot is now free.",
-  summaryTitle: "Released slot",
+  intro: "A new lesson was booked and paid. The slot is now held.",
+  summaryTitle: "Booked slot",
   dateLabel: "Date",
   timeLabel: "Start",
   durationLabel: "Length",
   instructorLabel: "Instructor",
   attendeesLabel: (count) => (count === 1 ? "1 rider" : `${count} riders`),
+  totalLabel: "Total",
   bookerTitle: "Booker",
   bookerNameLabel: "Name",
   bookerEmailLabel: "Email",
   bookerPhoneLabel: "Phone",
-  variantLabel: "Outcome",
-  variantCredit: "Booker received credit",
-  variantForfeit: "Booker forfeited payment",
-  variantOpsCash: "Ops cancel · cash refund issued",
-  variantOpsCredit: "Ops cancel · credit re-emitted",
-  variantOpsMixed: "Ops cancel · cash refund + credit re-emitted",
-  variantOpsNoCharge: "Ops cancel · never paid, slot released",
   signoff: "— automated notification",
 };
 
-export function getCancellationOpsNotifCopy(): Copy {
+export function getBookingOpsNotifCopy(): Copy {
   return COPY;
 }
 
-const VARIANT_LABEL: Record<
-  CancellationOpsNotifEmailProps["cancellationVariant"],
-  (copy: Copy) => string
-> = {
-  credit: (c) => c.variantCredit,
-  forfeit: (c) => c.variantForfeit,
-  ops_cash: (c) => c.variantOpsCash,
-  ops_credit: (c) => c.variantOpsCredit,
-  ops_mixed: (c) => c.variantOpsMixed,
-  ops_no_charge: (c) => c.variantOpsNoCharge,
-};
-
-export function CancellationOpsNotifEmail(
-  props: CancellationOpsNotifEmailProps,
-) {
+export function BookingOpsNotifEmail(props: BookingOpsNotifEmailProps) {
   const {
     instructorName,
     bookingDateLabel,
-    bookingDurationLabel,
     anchorTime,
+    bookingDurationLabel,
+    attendeeCount,
     bookerName,
     bookerEmail,
     bookerPhone,
-    attendeeCount,
-    cancellationVariant,
+    totalLabel,
   } = props;
-  const t = getCancellationOpsNotifCopy();
-  const variantLine = VARIANT_LABEL[cancellationVariant](t);
+  const t = getBookingOpsNotifCopy();
 
   return (
     <Html lang="en">
@@ -131,6 +101,7 @@ export function CancellationOpsNotifEmail(
             <Row label={t.durationLabel} value={bookingDurationLabel} />
             <Row label={t.instructorLabel} value={instructorName} />
             <Row label={t.attendeesLabel(attendeeCount)} value="" />
+            <Row label={t.totalLabel} value={totalLabel} />
           </Section>
 
           <Section style={summary}>
@@ -140,11 +111,6 @@ export function CancellationOpsNotifEmail(
             {bookerPhone ? (
               <Row label={t.bookerPhoneLabel} value={bookerPhone} />
             ) : null}
-          </Section>
-
-          <Section style={summary}>
-            <Text style={summaryTitle}>{t.variantLabel}</Text>
-            <Text style={variantBody}>{variantLine}</Text>
           </Section>
 
           <Text style={signoff}>{t.signoff}</Text>
@@ -240,12 +206,6 @@ const rowValue = {
   lineHeight: "1.6",
   padding: "0",
   textAlign: "right" as const,
-};
-
-const variantBody = {
-  fontSize: "14px",
-  lineHeight: "1.6",
-  margin: "0",
 };
 
 const signoff = {

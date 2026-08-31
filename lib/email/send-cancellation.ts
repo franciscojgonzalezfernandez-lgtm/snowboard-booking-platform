@@ -7,6 +7,7 @@ import { formatChf } from "@/lib/pricing/format";
 import { OPERATIONAL_PHONE_DISPLAY } from "@/lib/contact/phone";
 import type { Db } from "@/lib/db";
 import { DURATION_LABELS, INTL_TAG } from "./labels";
+import { dedupeEmails, OPS_NOTIFICATION_EMAIL } from "./recipients";
 import { sendEmail, type EmailClient } from "./send-email";
 import {
   CancellationOpsNotifEmail,
@@ -26,7 +27,6 @@ import {
 } from "./templates/cancellation-user-ops";
 
 const APP_BASE_URL = "https://rideflumserberg.ch";
-const OPS_EMAIL = "franciscojgonzalezfernandez@gmail.com";
 const OPS_LOCALE: Locale = "en" as Locale;
 
 const BOOKING_SELECT = {
@@ -37,8 +37,9 @@ const BOOKING_SELECT = {
   language: true,
   cancellationEmailSentAt: true,
   opsCancellationNotifSentAt: true,
-  booker: { select: { name: true, email: true } },
-  instructor: { select: { user: { select: { name: true } } } },
+  bookerPhone: true,
+  booker: { select: { name: true, email: true, phone: true } },
+  instructor: { select: { user: { select: { name: true, email: true } } } },
   attendees: { select: { id: true } },
 } satisfies Prisma.BookingSelect;
 
@@ -110,7 +111,7 @@ export async function sendCancellationEmailsWith(
   const instructorName =
     booking.instructor.user.name ?? "Ride Flumserberg instructor";
   const baseUrl = deps.appBaseUrl ?? APP_BASE_URL;
-  const opsEmail = deps.opsEmail ?? OPS_EMAIL;
+  const opsEmail = deps.opsEmail ?? OPS_NOTIFICATION_EMAIL;
   const contactPhone = deps.contactPhone ?? OPERATIONAL_PHONE_DISPLAY;
 
   const bookerDateLabel = formatDateLabel(booking.date, locale);
@@ -274,9 +275,16 @@ export async function sendCancellationEmailsWith(
     opsResult = { sent: false, reason: "ALREADY_SENT" };
   } else {
     const opsCopy = getCancellationOpsNotifCopy();
+    // F-140: notify the acting instructor too, not just the admin. One email to
+    // the deduped {instructor, admin} set — the owner cancelling his own lesson
+    // gets exactly one, never a duplicate.
+    const opsRecipients = dedupeEmails([
+      booking.instructor.user.email,
+      opsEmail,
+    ]);
     const sent = await deps.send(
       {
-        to: opsEmail,
+        to: opsRecipients,
         subject: opsCopy.subject({
           date: opsDateLabel,
           time: booking.anchorTime,
@@ -289,6 +297,7 @@ export async function sendCancellationEmailsWith(
           anchorTime: booking.anchorTime,
           bookerName,
           bookerEmail: booking.booker.email,
+          bookerPhone: booking.bookerPhone ?? booking.booker.phone,
           attendeeCount: booking.attendees.length,
           cancellationVariant: opsNotifVariant(args),
         }),
@@ -300,6 +309,7 @@ export async function sendCancellationEmailsWith(
           anchorTime: booking.anchorTime,
           bookerName,
           bookerEmail: booking.booker.email,
+          bookerPhone: booking.bookerPhone ?? booking.booker.phone,
           attendeeCount: booking.attendees.length,
           cancellationVariant: opsNotifVariant(args),
         }),
@@ -480,6 +490,7 @@ function buildOpsNotifPlainText(args: {
   anchorTime: string;
   bookerName: string;
   bookerEmail: string;
+  bookerPhone: string | null;
   attendeeCount: number;
   cancellationVariant: OpsNotifVariant;
 }): string {
@@ -500,7 +511,7 @@ function buildOpsNotifPlainText(args: {
         return copy.variantOpsNoCharge;
     }
   })();
-  return [
+  const lines = [
     copy.intro,
     "",
     copy.summaryTitle,
@@ -513,11 +524,12 @@ function buildOpsNotifPlainText(args: {
     copy.bookerTitle,
     `${copy.bookerNameLabel}: ${args.bookerName}`,
     `${copy.bookerEmailLabel}: ${args.bookerEmail}`,
-    "",
-    `${copy.variantLabel}: ${variantLine}`,
-    "",
-    copy.signoff,
-  ].join("\n");
+  ];
+  if (args.bookerPhone) {
+    lines.push(`${copy.bookerPhoneLabel}: ${args.bookerPhone}`);
+  }
+  lines.push("", `${copy.variantLabel}: ${variantLine}`, "", copy.signoff);
+  return lines.join("\n");
 }
 
 export async function sendCancellationEmails(

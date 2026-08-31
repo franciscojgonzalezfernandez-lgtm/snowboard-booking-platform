@@ -200,6 +200,11 @@ model Booking {
   anchorTime            String
   duration              Duration
   language              Locale
+  // F-140: the contact phone the booker entered in the funnel for THIS booking
+  // (E.164). Snapshot per booking so the ops/instructor email shows exactly what
+  // they typed, even if their profile User.phone differs or was set earlier.
+  // Nullable only for legacy rows created before this column existed.
+  bookerPhone           String?
   status                BookingStatus
   totalPriceCents       Int
   // F-084: net amount actually charged via Stripe (totalPriceCents minus credits
@@ -227,6 +232,11 @@ model Booking {
   stripeRefundId          String?       @unique
   failureReason           String?       @db.Text
   confirmationEmailSentAt DateTime?
+  /// F-140: guards the ops/instructor "new booking" notification, sent to the
+  /// instructor + admin alongside the booker confirmation. Separate from
+  /// confirmationEmailSentAt so a booker-email success can't suppress the notif
+  /// (and vice versa). Mirrors opsCancellationNotifSentAt on the cancel side.
+  opsBookingNotifSentAt   DateTime?
   reminder24hSentAt       DateTime?
   postClassEmailSentAt    DateTime?
   cancellationEmailSentAt    DateTime?
