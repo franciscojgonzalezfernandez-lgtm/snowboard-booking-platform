@@ -3149,6 +3149,21 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - Encaja con F-022: CI tampoco tiene base de datos propia. La misma branch de Neon dedicada resolvería los dos.
 - Refs: F-139, F-022, F-138, F-134, F-043 (webhook Stripe), `CLAUDE.md`, `.env.example`, `scripts/new-worktree.sh`, `scripts/dev.mjs`, `playwright.config.ts`
 
+### F-142 — Ningún control interactivo enseña el cursor de mano: el Preflight de Tailwind v4 quitó `cursor: pointer` de los `<button>`
+
+- Sprint: post-Sprint 5 · Estado: review (PR abierto 2026-08-31) · Prioridad: P2 (pulido de UX; se nota sobre todo en el funnel de `/reservar`, donde casi todo es clicable)
+- Depende de: —
+- Reportado: revisión manual de UI del owner, 2026-08-31. Empezó por el funnel (SIGUIENTE/ANTERIOR del calendario, continuar del paso 1, el Select, la cuadrícula de días, las horas/monitor/idioma del paso 3, "añadir otro rider", "usar todo", los checkbox de saldo y de términos, continuar con el pago) y la cabecera ("cerrar sesión", el desplegable "Más").
+- Causa raíz: el proyecto corre **Tailwind CSS v4** (`package.json` → `"tailwindcss": "^4"`). El Preflight de v4 **eliminó** la regla que traía v3, `button, [role="button"] { cursor: pointer }`, y no la sustituyó nada. Ninguna primitiva shadcn/Base UI fija un `cursor-pointer` en reposo (`button.tsx` no trae `cursor-*`; `select.tsx`/`checkbox.tsx` sólo traen `disabled:cursor-not-allowed`), así que **todo** `<button>` — Button de shadcn, el trigger del Select, el Checkbox, y los `<button>` crudos de la rejilla del calendario, las horas, los monitores y los chips de idioma — quedó con la flecha por defecto.
+- Hallazgo que simplificó el fix: cada clicable del funnel es un `<button>` real (no hay `<div>`/`<td>` con `onClick`), así que **una sola regla global** sobre `<button>` los arregla todos de una vez. Los enlaces (`<a>`/`Link` de next-intl) ya reciben el puntero por los estilos del user-agent, así que no necesitan nada.
+- AC:
+  - [x] Regla global en `@layer base` (`app/globals.css`): `button:not(:disabled):not([aria-disabled="true"]):not([data-disabled]), [role="button"]:not(...) { cursor: pointer }`. Vive en `@layer base` a propósito, para que cualquier utilidad `cursor-*` explícita (p.ej. `disabled:cursor-not-allowed`) siga ganando; los deshabilitados quedan excluidos y conservan su cursor `not-allowed`/por defecto.
+  - [x] Opciones de los desplegables a puntero también (decisión del owner: "todo lo clicable = mano"). Como el `cursor-default` de esas filas es una **utilidad** (capa utilities, gana a `@layer base`), se cambia en las propias primitivas: `SelectItem` (`components/ui/select.tsx`) y las filas clicables de `components/ui/dropdown-menu.tsx` (`DropdownMenuItem`, `SubTrigger`, `CheckboxItem`, `RadioItem`) pasan `cursor-default` → `cursor-pointer`.
+  - Fuera de alcance a propósito: los `<Label>` que envuelven los checkbox de saldo/términos (contienen texto seleccionable y los enlaces al modal de términos/privacidad — el control del checkbox ya recibe el puntero); las flechas de scroll del Select (`select.tsx:193,212`), que son afordancia de mantener pulsado, no un tap.
+- Tests: N/A — el estilo de cursor no se afirma en E2E; verificación manual por hover en los pasos 1-4 y la cabecera, más comprobación de regresión de que un control deshabilitado (día pasado, hora no disponible, mes previo en el borde del rango) sigue mostrando `not-allowed` y no la mano.
+- Notas: es una regresión heredada del salto a Tailwind v4, no un descuido puntual — arreglarlo en un sitio (globals + dos primitivas) evita ir clase a clase por decenas de botones y cubre también los paneles de admin/instructor.
+- Refs: F-142, `app/globals.css`, `components/ui/select.tsx`, `components/ui/dropdown-menu.tsx`, `components/ui/button.tsx`
+
 ---
 
 ## Bloqueantes / decisiones abiertas (consolidadas)
