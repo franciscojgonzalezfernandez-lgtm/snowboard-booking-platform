@@ -152,6 +152,21 @@
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
+
+  /*
+   * Pointer cursor on interactive controls (F-142). Tailwind v4's Preflight
+   * dropped the v3 `button, [role="button"] { cursor: pointer }` default, and
+   * none of the shadcn/Base UI primitives set an idle pointer — so every
+   * <button> (shadcn Button, Select trigger, Checkbox, and the raw buttons in
+   * the booking funnel calendar/time/instructor/language grids) rendered with
+   * the default arrow. Restore it globally here. Lives in @layer base so any
+   * explicit `cursor-*` utility (e.g. `disabled:cursor-not-allowed`) still
+   * wins; disabled controls are excluded so they keep their not-allowed cursor.
+   */
+  button:not(:disabled):not([aria-disabled="true"]):not([data-disabled]),
+  [role="button"]:not([aria-disabled="true"]):not([data-disabled]) {
+    cursor: pointer;
+  }
   h1, h2, h3 {
     font-family: var(--font-archivo-black), var(--font-archivo), system-ui, sans-serif;
     text-transform: uppercase;
