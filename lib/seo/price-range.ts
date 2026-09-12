@@ -13,6 +13,10 @@ import { getPriceCents } from "@/lib/pricing/get-price";
 // min–max. Any misconfigured season degrades to `null` → the node simply omits
 // `priceRange`.
 
+// Cache tag so an owner price edit (F-144) can bust this immediately via
+// `revalidateTag`, instead of waiting out the 1h window with a stale range.
+export const SEASON_PRICE_RANGE_TAG = "seo-season-price-range";
+
 const DURATIONS: readonly Duration[] = [
   Duration.ONE_HOUR,
   Duration.TWO_HOURS,
@@ -46,6 +50,6 @@ async function readSeasonPriceRange(): Promise<string | null> {
 
 export const getSeasonPriceRange = unstable_cache(
   readSeasonPriceRange,
-  ["seo-season-price-range"],
-  { revalidate: 3600 },
+  [SEASON_PRICE_RANGE_TAG],
+  { revalidate: 3600, tags: [SEASON_PRICE_RANGE_TAG] },
 );

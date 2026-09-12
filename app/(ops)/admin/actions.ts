@@ -43,6 +43,7 @@ import {
   type UpdateSeasonPricingResult,
 } from "@/lib/admin/pricing";
 import type { UpdateSeasonPricingInput } from "@/lib/schemas/pricing";
+import { SEASON_PRICE_RANGE_TAG } from "@/lib/seo/price-range";
 import {
   activateSeasonWith,
   createSeasonWith,
@@ -264,8 +265,12 @@ export async function deactivateInstructor(input: {
 // --- F-080: season pricing editor -----------------------------------------
 // Wraps the pure `updateSeasonPricingWith` core. The owner edits prices in CHF
 // (the client form converts francs → cents); this validates the admin session,
-// writes the active `Season.priceCentsByDuration`, and revalidates both the
-// pricing page and the booking funnel (Step 1) so a new price shows at once.
+// writes the active `Season.priceCentsByDuration`, and revalidates EVERY surface
+// that reads the active-season price so a new price shows at once (F-144): the
+// pricing editor, the booking funnel (Step 1), the public `/precios` marketing
+// page (ISR), and the LocalBusiness JSON-LD price range on the whole marketing
+// tree. Missing the last two left `/precios` and the structured data stale for
+// up to an hour after an edit — a public mispricing.
 
 function pricingDeps(): AdminPricingDeps {
   return { prisma };
@@ -280,6 +285,9 @@ export async function updateSeasonPricing(
     revalidatePath("/admin/pricing");
     // Step 1 reads the active season price; bust every locale's funnel page.
     revalidatePath("/[locale]/reservar", "page");
+    // Public pricing page (ISR) + LocalBusiness JSON-LD price range (F-144).
+    revalidatePath("/[locale]/precios", "page");
+    revalidateTag(SEASON_PRICE_RANGE_TAG);
   }
   return result;
 }
@@ -497,9 +505,11 @@ export async function cancelDayByOps(input: {
 // --- F-105: season management ---------------------------------------------
 // Thin wrappers over the pure season cores. Every action re-checks the admin
 // session and revalidates the surfaces that read "the active season": the
-// seasons page, the pricing editor (gated on an active season) and — for
-// activate/deactivate/edit — the booking funnel (Step 1) + availability cache,
-// since the active season drives engine pricing and slot generation.
+// seasons page, the pricing editor (gated on an active season), the booking
+// funnel (Step 1) + availability cache, and the price surfaces the active
+// season feeds — the public `/precios` page (ISR) and the LocalBusiness JSON-LD
+// price range (F-144) — since activating/editing a season can change the
+// displayed prices, not just slot generation.
 
 function seasonsDeps(): AdminSeasonsDeps {
   return { prisma };
@@ -509,7 +519,9 @@ function revalidateActiveSeasonSurfaces() {
   revalidatePath("/admin/seasons");
   revalidatePath("/admin/pricing");
   revalidatePath("/[locale]/reservar", "page");
+  revalidatePath("/[locale]/precios", "page");
   revalidateTag(AVAILABILITY_TAGS.root);
+  revalidateTag(SEASON_PRICE_RANGE_TAG);
 }
 
 export async function createSeason(
