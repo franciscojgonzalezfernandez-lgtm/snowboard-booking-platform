@@ -18,7 +18,7 @@
 
 **[Live Demo →](https://rideflumserberg.ch)** · **[PRD](docs/PRD.md)** · **[Architecture](docs/Architecture.md)** · **[Workflow](docs/WORKFLOW.md)** · **[Backlog](docs/FEATURES.md)**
 
-![Editorial landing page](docs/screenshots/hero.png)
+![Ride Flumserberg — editorial landing hero](docs/screenshots/hero.jpg)
 
 ---
 
@@ -30,52 +30,65 @@ A real product I'm shipping for **a snowboard school in Flumserberg, Switzerland
 
 ---
 
-## The Booking Flow (Steps 1 → 3)
+## The Booking Flow
 
-A three-step funnel optimized for conversion: **duration → smart calendar → instructor**. Language is a per-instructor attribute revealed only at Step 3 — never a Step 1 filter (thin supply + hard filter = lost sales).
+A single-page stepper — **Lesson → Date → Time → Details → Pay** — that never navigates away, so no server round-trip resets your progress. The three decisions that matter for conversion: **duration → smart calendar → time + instructor**. Language is a per-instructor attribute revealed only once you've picked an instructor — never a Step 1 filter (thin supply + a hard filter = lost sales).
 
-| Step 1 — Duration | Step 2 — Smart calendar | Step 3 — Anchor time + instructor |
+| 1 — Duration | 2 — Smart calendar | 3 — Time + instructor |
 |---|---|---|
-| ![Step 1](docs/screenshots/step1.png) | ![Step 2](docs/screenshots/step2.png) | ![Step 3](docs/screenshots/step3.png) |
+| ![Lesson length](docs/screenshots/funnel-lesson.jpg) | ![Smart availability calendar](docs/screenshots/funnel-calendar.jpg) | ![Anchor time, instructor and language](docs/screenshots/funnel-instructor.jpg) |
 
-**Mobile-first.** Every screen designed for thumb-reach and one-handed use first; desktop is the secondary canvas.
+Solid days on the calendar have at least one instructor free; the instructor step shows each coach's teaching languages inline, then defaults the lesson to their primary. **Details** and **Pay** (Stripe Payment Element — Card · TWINT · Apple/Google Pay) close out the flow.
+
+**Mobile-first.** Every screen is designed for thumb-reach and one-handed use first; desktop is the secondary canvas.
 
 <p align="center">
-  <img src="docs/screenshots/mobile.png" alt="Mobile booking flow" width="320">
+  <img src="docs/screenshots/mobile.png" alt="Mobile-first landing and booking" width="300">
 </p>
 
 ---
 
 ## Architecture at a glance
 
-```mermaid
-flowchart LR
-  user(("Student<br/>browser")) -->|HTTPS| vercel["Vercel Edge<br/>Next.js 15 RSC + Server Actions"]
+<a href="https://claude.ai/code/artifact/3772c0e7-1120-4b8e-962f-b188f4fabd57">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/architecture-dark.png">
+    <img alt="Ride Flumserberg system architecture — Cloudflare DNS in front of the Vercel edge, Next.js 15 compute, Neon Postgres, and external services (Stripe, Resend, Google, Sentry)" src="docs/diagrams/architecture-light.png">
+  </picture>
+</a>
 
-  subgraph runtime["Runtime"]
-    vercel
-    cron["Vercel Cron<br/>reminders · calendar resync"]
-  end
+Three tiers, left to right — **edge → compute → state**. Compute (Next.js 15 on Vercel) is the only tier that reaches Neon; marketing and blog render static at the edge, while the booking funnel and both operator panels run dynamically. External services hang off compute. Cloudflare owns DNS/TLS and the SPF/DKIM records Resend sends under, and routes inbound mail to Gmail.
 
-  vercel -->|Prisma + Neon adapter| neon[("Neon Postgres<br/>main / dev branches")]
-  vercel -->|Payment Element<br/>Card · TWINT · Apple/Google Pay| stripe["Stripe"]
-  stripe -->|webhook<br/>signature-verified, idempotent| vercel
-  vercel -->|React Email| resend["Resend<br/>receipts · reminders"]
-  vercel -->|ICS + Google Calendar API| gcal["Google Calendar<br/>instructor"]
-  vercel -->|errors + RUM| sentry["Sentry · Vercel<br/>Analytics + Speed Insights"]
-  cron --> vercel
+### Booking data flow
 
-  subgraph cicd["CI/CD"]
-    gh["GitHub Actions"]
-    gh -->|lint · typecheck · vitest · playwright smoke| vercel
-    gh -->|prisma migrate deploy + seed| neon
-  end
+<a href="https://claude.ai/code/artifact/d4e35e6f-6d54-4383-82c8-d7b22329f4f7">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/dataflow-dark.png">
+    <img alt="Booking data flow — availability search, draft booking, Stripe payment, signed webhook, idempotent confirm transaction, then notifications and calendar" src="docs/diagrams/dataflow-light.png">
+  </picture>
+</a>
 
-  pr(("Pull Request")) --> gh
-  gh -->|preview deploy| vercel
-```
+One booking, end to end: availability comes from a 30-minute server cache (only a full miss hits Neon), a draft holds the slot as `PENDING_PAYMENT` before any charge, and payment success arrives as a **signed Stripe webhook** — never trusted from the client. Confirm runs as a single Prisma `$transaction` (booking + `availabilityBlock` + credit), then fans out to Resend (student receipt + `.ics`; instructor and admin notified, deduped) and the instructor's Google Calendar.
+
+> Both diagrams are static exports of interactive [Archify](https://github.com/tt-a1i/archify) diagrams — click either to open the live version (search nodes, trace call paths, switch themes).
 
 Every dependency is intentional. See [`docs/Architecture.md`](docs/Architecture.md) for the full data model + ADRs.
+
+---
+
+## Operator surface
+
+Two audiences, one codebase. Students get the trilingual booking flow + dashboard; the owner gets an English-only operator cockpit.
+
+| Student dashboard | Admin · all bookings | Admin · calendar |
+|---|---|---|
+| ![Student dashboard](docs/screenshots/dashboard.png) | ![Admin — all bookings](docs/screenshots/admin-bookings.png) | ![Admin — instructor calendar](docs/screenshots/admin-calendar.png) |
+
+- **Student dashboard** — upcoming / past / cancelled lessons, receipts and account-credit balance in one place.
+- **Admin** — every reservation across the season with attendee, payment and credit-ledger detail; a month calendar of every instructor's classes with availability editing; plus students, instructors, pricing, seasons and a day-cancellation tool.
+- **Instructor panel** — a per-coach calendar, week timeline and availability editor, scoped to that instructor's own schedule.
+
+> Operator screenshots are captured against **seeded demo data** — no real customer information.
 
 ---
 
@@ -269,7 +282,8 @@ booking-platform/
 │   ├── FEATURES.md                 ← living backlog (source of truth for scope)
 │   ├── WORKFLOW.md                 ← subagent orchestration
 │   ├── design-system.md            ← editorial tokens, typography, spacing
-│   └── screenshots/                ← README + portfolio assets
+│   ├── screenshots/                ← README product screenshots
+│   └── diagrams/                   ← Archify architecture + data-flow exports
 │
 ├── .github/workflows/
 │   ├── ci.yml                      ← lint · typecheck · unit · e2e smoke
