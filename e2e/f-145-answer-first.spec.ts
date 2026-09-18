@@ -36,17 +36,17 @@ const POSTS: PostEntry[] = [
     en: {
       slug: "group-vs-private-snowboard-lesson",
       q: "What's the difference between a group and a private snowboard lesson?",
-      lead: "the time is entirely yours",
+      lead: "the difference is focus",
     },
     de: {
       slug: "snowboard-gruppenkurs-vs-privat",
       q: "Was ist der Unterschied zwischen einem Snowboard-Gruppenkurs und einer Privatstunde?",
-      lead: "gehört der Kurs nur dir",
+      lead: "der Unterschied ist der Fokus",
     },
     es: {
       slug: "clase-snowboard-grupal-vs-privada",
       q: "¿Qué diferencia hay entre una clase de snowboard grupal y una privada?",
-      lead: "la clase es solo tuya",
+      lead: "la diferencia es el foco",
     },
   },
   {
@@ -90,17 +90,17 @@ const POSTS: PostEntry[] = [
     en: {
       slug: "best-ways-to-learn-snowboarding",
       q: "What are the best ways to learn snowboarding?",
-      lead: "There are four real paths",
+      lead: "a coach who watches and films you",
     },
     de: {
       slug: "snowboard-lernen-beste-optionen",
       q: "Was sind die besten Möglichkeiten, Snowboarden zu lernen?",
-      lead: "Es gibt vier echte Wege",
+      lead: "Coach, der dich sieht und filmt",
     },
     es: {
       slug: "mejores-opciones-aprender-snowboard",
       q: "¿Cuáles son las mejores opciones para aprender a hacer snowboard?",
-      lead: "Hay cuatro caminos reales",
+      lead: "un coach que te ve y te graba",
     },
   },
   {
