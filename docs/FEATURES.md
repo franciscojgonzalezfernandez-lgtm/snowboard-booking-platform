@@ -3397,6 +3397,39 @@ Las 28 acciones GenScore quedan cubiertas; F-148 es aditivo (gap de la auditorí
 
 ---
 
+## Pagos / cumplimiento
+
+### F-153 — Aviso legal (Impressum) con identidad de la empresa para desbloquear TWINT
+
+- Sprint: post-Sprint 7 · Estado: review (PR abierto 2026-09-18) · Prioridad: P1 (bloquea que TWINT — el método de pago dominante en CH — aparezca en el checkout)
+- Depende de: — (contenido/i18n; no toca el motor de pagos)
+- Motivación: la capability `twint_payments` de la cuenta Stripe (`acct_1TUTDkDAqToL3N4S`) está `inactive` con `requirements.disabled_reason: "rejected.other"` (solicitada 2026-09-04, rechazada). No es falta de datos (`currently_due: []`, `errors: []`) sino un rechazo explícito de la revisión de onboarding de TWINT. Los requisitos de TWINT (docs.stripe.com/payments/twint) exigen que la web muestre, visible en aviso legal / T&C / condiciones: **nombre y forma jurídica** de la empresa (en Einzelfirma, además nombre y apellidos del titular), **dirección completa** y **contacto**. Estado previo: la web sólo mostraba la marca "Ride Flumserberg" y la localidad (Flumserberg · St. Gallen); no aparecía la entidad legal ni la dirección registrada → causa muy probable del rechazo.
+- Datos legales (confirmados por el owner, 2026-09-18):
+  - Firma: **Gonzalez Fernandez Snowball Effect** (sin tildes, tal cual registrada), forma jurídica **Einzelfirma**.
+  - Titular: **Francisco Javier González Fernández**.
+  - Domicilio legal registrado: **Josefstrasse 4, 8610 Uster** (cantón Zúrich) — distinto del lugar de operación (Flumserberg/SG). Se usa el domicilio registrado en el Impressum; **no** se inyecta en el `BUSINESS` de Schema.org (sigue siendo negocio de área de servicio, geo/postal parked F-112).
+  - Contacto: email `franciscojgonzalezfernandez@gmail.com` + teléfono operativo (constante `OPERATIONAL_PHONE_DISPLAY`).
+- Qué se tocó:
+  - `lib/legal/entity.ts` (nuevo): constante `LEGAL_ENTITY` — fuente única de la identidad legal (nombre, forma, titular, dirección, email, teléfono). Separada a propósito de `lib/seo/business.ts`.
+  - `app/(site)/[locale]/(marketing)/impressum/page.tsx` (nuevo): página `/impressum` (RSC, `generateStaticParams` + `generateMetadata` con canonical/hreflang/OG como el resto de marketing). Bloque `<dl>` con nombre + forma + titular + dirección + email + teléfono.
+  - `i18n/routing.ts`: `/impressum` añadido a `pathnames` (slug idéntico en los 3 locales, como `/terms` y `/privacy`; contenido traducido).
+  - `app/sitemap.ts`: `/impressum` en `STATIC_ROUTES` (priority 0.2, yearly).
+  - `app/components/SiteFooter.tsx`: enlace a `/impressum` + línea "Operated by {legalName}, {legalForm}".
+  - `messages/{en,de,es}.json`: namespace `impressum` + claves de footer (`impressum_link`, `operated_by`); `privacy.section_controller_body` actualizado para nombrar la entidad legal real (antes decía sólo "Ride Flumserberg, the website operator").
+- AC:
+  - [x] `/{en,de,es}/impressum` responde 200 y muestra nombre + forma jurídica + titular + dirección completa + contacto.
+  - [x] El footer enlaza el Impressum en cada locale y nombra al operador.
+  - [x] La entidad legal aparece también en la sección "Responsable" de privacidad.
+- Tests:
+  - [x] `e2e/f-153-impressum.spec.ts` — 200 + todos los campos obligatorios en el bloque de identidad (los 3 locales) + enlace del footer con label/href localizado + línea de operador.
+- Notas:
+  - Tras mergear/desplegar, **reapelar a Stripe Support**: pedir el motivo exacto de `rejected.other` y solicitar re-revisión indicando que la web ya muestra la identidad legal requerida en `/impressum` (borrador en `~/.claude/plans/veo-que-me-han-mossy-meadow.md`). **No** cambiar `business_type` en Stripe: para una Einzelfirma, `individual` es lo correcto.
+  - Sin cambios de código: el checkout usa Dynamic Payment Methods (`automatic_payment_methods`); TWINT aparecerá solo cuando Stripe active la capability (CHF ≤ 5000, cliente CH).
+  - Abierto para revisión legal (D-LEG): los T&C fijan jurisdicción en **Mels (SG)** mientras el domicilio legal es **Uster (ZH)** — coherente en Einzelfirma (sede ≠ lugar de operación), pero conviene que el bufete lo confirme. No se tocó la cláusula de jurisdicción.
+- Refs: F-153, F-102, F-099, F-103, F-112, D-LEG, `lib/legal/entity.ts`, `app/(site)/[locale]/(marketing)/impressum/page.tsx`, docs.stripe.com/payments/twint
+
+---
+
 ## Bloqueantes / decisiones abiertas (consolidadas)
 
 | Ref     | Decisión                           | Bloquea                           | Acción                               |
