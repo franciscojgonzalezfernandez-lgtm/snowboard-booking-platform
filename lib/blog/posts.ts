@@ -16,6 +16,10 @@ import { routing, type Locale } from "@/i18n/routing";
 
 const CONTENT_ROOT = path.join(process.cwd(), "content", "blog");
 
+/** Answer-first Q&A pair. Shape matches `FaqEntry` in `lib/seo/structured-data`
+ * so a post's `faq` frontmatter can feed `buildFaqPage` directly. */
+export type BlogFaqEntry = { q: string; a: string };
+
 export type BlogFrontmatter = {
   /** Stable id shared across locales; links translations for hreflang. */
   id: string;
@@ -28,6 +32,13 @@ export type BlogFrontmatter = {
   /** Optional cover image path under /public; falls back to an editorial block. */
   cover?: string;
   coverAlt?: string;
+  /**
+   * Optional answer-first Q&A pairs (F-145). When present, the post page also
+   * emits FAQPage JSON-LD alongside BlogPosting so the answer can surface
+   * directly in AI/search answers. Convention: the first entry's `q` is the
+   * post title (the question) and its `a` the two-sentence direct answer.
+   */
+  faq?: BlogFaqEntry[];
 };
 
 export type BlogPost = BlogFrontmatter & {
@@ -52,6 +63,34 @@ function assertFrontmatter(
       throw new Error(`Blog post ${file} is missing frontmatter field "${key}"`);
     }
   }
+
+  // Optional `faq`: an array of {q, a} string pairs. Validated eagerly so a
+  // malformed authoring mistake fails the build, not silently at runtime.
+  let faq: BlogFaqEntry[] | undefined;
+  if (data.faq !== undefined) {
+    const ok =
+      Array.isArray(data.faq) &&
+      data.faq.length > 0 &&
+      data.faq.every((entry) => {
+        const e = entry as Record<string, unknown>;
+        return (
+          typeof e?.q === "string" &&
+          e.q.length > 0 &&
+          typeof e?.a === "string" &&
+          e.a.length > 0
+        );
+      });
+    if (!ok) {
+      throw new Error(
+        `Blog post ${file} has an invalid "faq" frontmatter (expected a non-empty array of { q, a } strings)`,
+      );
+    }
+    faq = (data.faq as { q: string; a: string }[]).map((e) => ({
+      q: e.q,
+      a: e.a,
+    }));
+  }
+
   return {
     id: data.id as string,
     slug: data.slug as string,
@@ -60,6 +99,7 @@ function assertFrontmatter(
     date: data.date as string,
     cover: typeof data.cover === "string" ? data.cover : undefined,
     coverAlt: typeof data.coverAlt === "string" ? data.coverAlt : undefined,
+    faq,
   };
 }
 

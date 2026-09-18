@@ -57,18 +57,37 @@ test.describe("F-097 — FAQ page", () => {
     test(`/${locale}/faq emits valid FAQPage JSON-LD`, async ({ page }) => {
       await page.goto(`/${locale}/faq`);
 
-      const raw = await page
+      // Every marketing page also emits LocalBusiness JSON-LD from the layout
+      // (F-100), so the FAQPage node is NOT necessarily the first ld+json script.
+      // Select it by @type rather than by position.
+      type FaqNode = {
+        "@type": string;
+        mainEntity: {
+          "@type": string;
+          name: string;
+          acceptedAnswer: { "@type": string; text: string };
+        }[];
+      };
+      const scripts = await page
         .locator('script[type="application/ld+json"]')
-        .first()
-        .textContent();
-      expect(raw).toBeTruthy();
+        .allTextContents();
+      const nodes = scripts.map(
+        (s) => JSON.parse(s) as Record<string, unknown>,
+      );
+      const data = nodes.find((node) => node["@type"] === "FAQPage") as
+        | FaqNode
+        | undefined;
+      expect(data, "FAQPage JSON-LD should be present").toBeTruthy();
+      expect(Array.isArray(data!.mainEntity)).toBe(true);
+      // Structured data must mirror the visible accordion exactly (no drift) —
+      // assert against the rendered item count, not a hard-coded number.
+      const renderedCount = await page
+        .locator('[data-testid^="faq-item-"]')
+        .count();
+      expect(renderedCount).toBeGreaterThan(0);
+      expect(data!.mainEntity.length).toBe(renderedCount);
 
-      const data = JSON.parse(raw!);
-      expect(data["@type"]).toBe("FAQPage");
-      expect(Array.isArray(data.mainEntity)).toBe(true);
-      expect(data.mainEntity.length).toBe(12);
-
-      for (const entry of data.mainEntity) {
+      for (const entry of data!.mainEntity) {
         expect(entry["@type"]).toBe("Question");
         expect(typeof entry.name).toBe("string");
         expect(entry.name.length).toBeGreaterThan(0);
@@ -79,7 +98,7 @@ test.describe("F-097 — FAQ page", () => {
 
       // First question matches the rendered accordion — structured data and UI
       // share one source.
-      expect(data.mainEntity[0].name).toBe(FIRST_Q[locale]);
+      expect(data!.mainEntity[0]!.name).toBe(FIRST_Q[locale]);
     });
 
     test(`/${locale}/faq CTAs link to the funnel and pricing`, async ({

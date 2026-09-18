@@ -3273,13 +3273,13 @@ Diagnóstico: **casi nunca te nombra ni te cita, pero cuando lo hace rankeas bie
 
 ### F-145 — Contenido answer-first: páginas Q&A para las consultas "vacías" (+27 pt)
 
-- Sprint: 7 · Estado: backlog · Prioridad: P1
-- Depende de: F-148 (fix del test FAQ JSON-LD)
+- Sprint: 7 · Estado: in-progress · Prioridad: P1
+- Depende de: F-148 (fix del test FAQ JSON-LD — resuelto en el primer PR de F-145)
 - Motivación: 13 consultas informativas donde **ni tú ni ningún competidor** aparecéis (bucket "Aumentar visibilidad de marca", el mayor: +27 pt). Consultas libres: se las lleva quien publique primero la mejor respuesta. Incluye el patrón de prominencia (aparecer *antes*) aplicado a páginas existentes.
 - Patrón answer-first (obligatorio por página): **H1 en forma de pregunta**, respuesta directa en las **dos primeras frases**, dato concreto arriba, luego desarrollo, y `FAQPage`/`HowTo` JSON-LD (reutiliza `buildFaqPage` de `lib/seo/structured-data.ts`).
 - Implementación: preguntas de alto valor → páginas guía MDX (reutiliza `lib/blog/posts.ts` + `content/blog/`, con `id` cross-locale y `slug` localizado); preguntas cortas → items del namespace `faq` (el mismo array alimenta la página y el JSON-LD). ES primero, luego DE/EN.
 - AC (orden por puntos):
-  - [ ] 1.2 (+4) "¿Cómo se organizan las clases de snowboard para adultos con diferentes niveles?"
+  - [x] 1.2 (+4) "¿Cómo se organizan las clases de snowboard para adultos con diferentes niveles?" — publicada como post del blog en ES/DE/EN (`id: adult-levels`), answer-first (H1-pregunta + respuesta directa en el lead) con `FAQPage` + `BlogPosting` JSON-LD y hreflang recíproco
   - [ ] 2.7 (+4) "¿Qué diferencia hay entre una clase grupal y una privada?"
   - [ ] 2.8 (+3) "¿Qué considerar al elegir un instructor privado?"
   - [ ] 2.9 (+3) coach para trucos de freestyle
@@ -3293,6 +3293,7 @@ Diagnóstico: **casi nunca te nombra ni te cita, pero cuando lo hace rankeas bie
   - [ ] Cada página: respuesta en las 2 primeras frases + H1-pregunta + JSON-LD válido + entra en `app/sitemap.ts` (automático vía blog) + enlaces internos
 - Tests: Playwright/unit afirma que cada página emite `FAQPage`/`HowTo` JSON-LD válido y que el H1 es interrogativo.
 - Notas: prioriza dentro del ticket las consultas con intención Flumserberg/comercial. Refs: GenScore recs 1.2, 1.3, 2.2, 2.7–2.18 · PRD §7.3.
+- **Entregado (2026-09-18, primer PR — patrón + 1.2):** las páginas answer-first se publican como posts del blog (decisión del owner) reutilizando `blog/[slug]/page.tsx`. Mecanismo: frontmatter opcional `faq: [{q,a}]` en el MDX → `lib/blog/posts.ts` lo valida/transporta y la página emite además `FAQPage` JSON-LD vía `buildFaqPage` junto al `BlogPosting`. Sin cambios de routing; sitemap/hreflang/OG ya cubren los posts. Contenido: `content/blog/{es,de,en}/…-adults-*.mdx` (`id: adult-levels`). Tests: `e2e/f-145-answer-first.spec.ts` (×3 locales). Pendiente en este ticket: 2.7–2.18, 2.2, 1.3.
 
 ### F-146 — Ganar las consultas donde aparecen los rivales, por méritos propios (+14 pt)
 
@@ -3330,7 +3331,7 @@ Diagnóstico: **casi nunca te nombra ni te cita, pero cuando lo hace rankeas bie
 - AC:
   - [ ] `app/robots.ts`: reglas explícitas para `GPTBot`, `OAI-SearchBot`, `ChatGPT-User`, `ClaudeBot`, `Claude-Web`, `PerplexityBot`, `Google-Extended` — por defecto **allow** (queremos visibilidad IA)
   - [ ] `app/llms.txt/route.ts`: variantes por locale + `llms-full.txt`; evaluar generación automática desde rutas/blog en vez de mantenimiento manual
-  - [ ] Verificar/arreglar el test del `FAQPage` JSON-LD (dependencia de F-145)
+  - [x] Verificar/arreglar el test del `FAQPage` JSON-LD (dependencia de F-145) — hecho en el primer PR de F-145: `e2e/f-097-faq.spec.ts` cogía el **primer** `ld+json` (el `LocalBusiness` que el layout inyecta en toda página marketing, F-100) en vez del `FAQPage`; ahora filtra por `@type`. Aserto obsoleto, no regresión
 - Tests: E2E de `/robots.txt` afirma las reglas de UA; E2E de `/llms.txt` (+ variantes) responde 200 `text/plain`; el test del FAQPage vuelve a verde de forma estable.
 - Decisiones pendientes: ¿bloquear algún crawler IA de entrenamiento (`Google-Extended`, `GPTBot`) o permitir todos? Recomendado: permitir todos (objetivo = visibilidad).
 - Notas: Refs: `app/robots.ts`, `app/llms.txt/route.ts`.

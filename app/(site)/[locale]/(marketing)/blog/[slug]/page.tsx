@@ -16,7 +16,7 @@ import {
 import { SITE_URL, toAbsoluteUrl } from "@/lib/seo/site-url";
 import { articleOpenGraph } from "@/lib/seo/page-metadata";
 import { JsonLd } from "@/app/components/JsonLd";
-import { buildBlogPosting } from "@/lib/seo/structured-data";
+import { buildBlogPosting, buildFaqPage } from "@/lib/seo/structured-data";
 import { blogMdxComponents } from "../mdx-components";
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
@@ -115,6 +115,12 @@ export default async function BlogPostPage({ params }: Props) {
       className="mx-auto max-w-[820px] px-6 py-16 sm:py-24 lg:px-7"
     >
       <JsonLd data={blogPostingJsonLd} />
+      {/* Answer-first posts (F-145) also emit FAQPage JSON-LD so the direct
+          answer can surface in AI/search answers. Built from the post's own
+          `faq` frontmatter → structured data can't drift from the copy. */}
+      {post.faq && post.faq.length > 0 ? (
+        <JsonLd data={buildFaqPage(post.faq)} />
+      ) : null}
       <Link
         href="/blog"
         className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-primary"
