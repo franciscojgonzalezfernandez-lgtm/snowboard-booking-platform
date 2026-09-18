@@ -1,6 +1,6 @@
 import { Duration } from "@prisma/client";
 
-import { BUSINESS, BUSINESS_ID } from "@/lib/seo/business";
+import { BUSINESS, BUSINESS_ID, LANGUAGES, SEASON } from "@/lib/seo/business";
 
 // F-100 — Schema.org structured data builders. Each builder returns a single
 // node WITHOUT `@context`; the `<JsonLd>` component injects `@context` (and wraps
@@ -105,6 +105,15 @@ export type CourseInput = {
   url: string;
   duration: Duration;
   priceCents: number;
+  /**
+   * ISO date (YYYY-MM-DD) the price is guaranteed through. Defaults to the
+   * season end ({@link SEASON.priceValidUntil}). This is what makes the Offer a
+   * dated, citable fact for AEO (F-147) — an AI answer can attribute the price to
+   * a season with a validity window instead of an undated number.
+   */
+  priceValidUntil?: string;
+  /** BCP-47 languages the course is taught in. Defaults to {@link LANGUAGES}. */
+  inLanguage?: readonly string[];
 };
 
 export function buildCourse(input: CourseInput): JsonLdNode {
@@ -114,6 +123,11 @@ export function buildCourse(input: CourseInput): JsonLdNode {
     priceCurrency: CURRENCY,
     availability: "https://schema.org/InStock",
     url: input.url,
+    // Dated validity window (F-147): prices hold from season open through end.
+    // `validFrom`/`priceValidUntil` turn the Offer into a fact an answer engine
+    // can cite with a date rather than a bare figure.
+    validFrom: SEASON.startDate,
+    priceValidUntil: input.priceValidUntil ?? SEASON.priceValidUntil,
   };
 
   return {
@@ -122,6 +136,7 @@ export function buildCourse(input: CourseInput): JsonLdNode {
     description: input.description,
     url: input.url,
     provider: ORGANIZATION_REF,
+    inLanguage: [...(input.inLanguage ?? LANGUAGES)],
     offers: offer,
     hasCourseInstance: {
       "@type": "CourseInstance",
