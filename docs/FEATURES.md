@@ -3206,6 +3206,32 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 - Notas: es una regresión heredada del salto a Tailwind v4, no un descuido puntual — arreglarlo en un sitio (globals + dos primitivas) evita ir clase a clase por decenas de botones y cubre también los paneles de admin/instructor.
 - Refs: F-142, `app/globals.css`, `components/ui/select.tsx`, `components/ui/dropdown-menu.tsx`, `components/ui/button.tsx`
 
+### F-152 — Avisar al admin por email cuando se crea una cuenta nueva (monitorizar altas)
+
+- Sprint: post-Sprint 5 · Estado: review (PR abierto 2026-09-18) · Prioridad: P3 (monitorización; no bloquea ningún flujo)
+- Depende de: F-140 (reutiliza su infra de ops-notif)
+- Motivación: el owner quiere enterarse por correo de cada alta para saber cuánta gente se registra. Estado previo: al crear una cuenta no se disparaba nada hacia ops — el único efecto era el correo de verificación al propio usuario (F-122). El panel admin sólo lista usuarios con ≥1 reserva (`lib/admin/students.ts`), así que las altas que nunca reservan eran invisibles y no había ninguna métrica de signups.
+- Decisiones (confirmadas por el owner, 2026-09-18):
+  - Disparador = **sólo cuentas nuevas**, un email por cuenta, cubriendo las tres vías (email+contraseña, magic link, Google). No es por cada login.
+  - Sin verificar: se avisa **al crear la fila** de usuario, uniforme para las tres vías (no se espera a la verificación de email). Consecuencia aceptada: un alta email+contraseña que nunca verifica igual genera un aviso.
+  - Contenido: email (siempre) + nombre (si lo hay) + método de alta + idioma + **total acumulado** de cuentas (responde a "cuánta gente").
+  - Destinatario = se reutiliza el buzón ops (`OPS_NOTIFICATION_EMAIL`), sin env var nueva. Igual que F-140.
+- Qué se tocó:
+  - `lib/email/templates/signup-ops-notif.tsx` (nuevo): email EN-only, mismo lenguaje visual que `booking-ops-notif.tsx`. Asunto `New signup #<total> — <email>` (el total va en el asunto para verlo de un vistazo en la bandeja).
+  - `lib/email/send-signup-ops-notif.ts` (nuevo): patrón DI `...With(deps,args)` + wrapper de producción; cuenta con `prisma.user.count()`, envía a `[OPS_NOTIFICATION_EMAIL]`, `idempotencyKey: signup-ops-notif-<userId>`. Incluye `resolveSignupMethod(context)`, que deriva el método del `path` del endpoint de Better Auth.
+  - `lib/auth/index.ts`: `databaseHooks.user.create.after` → `sendSignupOpsNotif(...)`, best-effort (try/catch + Sentry). **No** relanza: un fallo del aviso nunca bloquea ni revierte el alta (a diferencia de los senders de verificación/magic-link, donde el email ES el flujo).
+  - Sin migración: `create.after` dispara una vez por inserción, así que no hace falta columna "sent"; la idempotencia de Resend cubre un doble disparo accidental.
+- AC:
+  - [x] Un correo al buzón ops por cada cuenta nueva, en las tres vías.
+  - [x] Lleva email, nombre (— si falta), método, idioma y total acumulado.
+  - [x] Un fallo del envío no rompe el registro (best-effort + Sentry).
+- Tests:
+  - [x] `lib/email/send-signup-ops-notif.test.ts` — destinatario ops, asunto con total, plaintext (email/nombre/método/idioma/total), idempotencyKey, override, nombre en blanco → "—", mapeo de `resolveSignupMethod`.
+  - [x] `lib/email/templates/signup-ops-notif.snapshot.test.tsx` — snapshot (con nombre y sin nombre).
+  - [x] `tsc --noEmit` + `eslint` en verde.
+- Notas: EN-only a propósito (superficie de ops). El buzón admin sigue siendo la constante `OPS_NOTIFICATION_EMAIL`; si aparece un segundo admin, cambiar por env var / query de rol en `recipients.ts` (misma nota que F-140). El hook `after` se **espera** (no fire-and-forget) para que el envío termine antes de que la función serverless se congele; el coste de latencia en el alta es asumible por un aviso de monitorización fiable. Número de ticket = **F-152**: el bloque F-145–F-151 está reservado para el sprint GEO/AEO (PR #210), así que esta feature va justo detrás para no colisionar.
+- Refs: F-152, F-140, F-122, `lib/auth/index.ts`, `lib/email/send-signup-ops-notif.ts`, `lib/email/templates/signup-ops-notif.tsx`, `lib/email/recipients.ts`
+
 ---
 
 ## Bloqueantes / decisiones abiertas (consolidadas)
