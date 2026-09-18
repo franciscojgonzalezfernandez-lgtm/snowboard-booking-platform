@@ -3297,18 +3297,19 @@ Diagnóstico: **casi nunca te nombra ni te cita, pero cuando lo hace rankeas bie
 
 ### F-146 — Ganar las consultas donde aparecen los rivales, por méritos propios (+14 pt)
 
-- Sprint: 7 · Estado: backlog · Prioridad: P1
-- Depende de: —
+- Sprint: 7 · Estado: done · Prioridad: P1
+- Depende de: — (comparte el patrón answer-first + infra `faq`/`FAQPage` de F-145; este PR va apilado sobre `f-145-answer-first`)
 - Motivación: consultas donde los competidores aparecen y tú no. Objetivo: ocupar esas respuestas con contenido propio más completo — **sin tabla comparativa explícita ni head-to-head nombrando a Start Snowboarding** (decisión del owner, 2026-09-18). Nos posicionamos por lo que ofrecemos, no comparándonos con ellos.
 - Enfoque: páginas de respuesta fuertes y auto-suficientes por consulta (grupos pequeños, familias, alternativas a escuelas tradicionales, reseñas de instructores, precio de día completo, particulares para niños), más una página "clases de snowboard en Flumserberg" que cubra opciones/criterios de forma neutral (qué mirar al elegir), sin nombrar competidores en clave comparativa. Las páginas que la IA cita para los rivales (startsnowboarding.ch, ski-fun.ch, checkyeti.com) se usan sólo como **referencia interna del listón** a superar, nunca como objeto de comparación publicada.
 - AC:
-  - [ ] 1.1 (+10) cubrir las 16 consultas donde sale **Start Snowboarding** y tú no, con contenido propio que responda mejor (grupos pequeños, alternativas a escuelas tradicionales, familias, reseñas de instructores)
-  - [ ] 2.3 (+5) cubrir las 8 consultas donde sale **Ski School SkiFun**
-  - [ ] 2.4 (+5) cubrir las 7 consultas donde sale **CheckYeti**
-  - [ ] 2.5 — página que cubra los criterios de elección de forma neutral (sin tabla comparativa que nombre competidores)
-  - [ ] Cada página con datos citables propios (fechas, precios) para ser fuente
+  - [x] 1.1 (+10) cubrir las 16 consultas donde sale **Start Snowboarding** y tú no, con contenido propio que responda mejor — clusters: grupos reducidos (`small-group-lessons`), familias (`family-lessons`), particulares niños (`kids-private-lessons`), alternativas a escuelas tradicionales (`private-vs-ski-school`), reseñas/opiniones de instructores (`your-instructor`)
+  - [x] 2.3 (+5) cubrir las 8 consultas donde sale **Ski School SkiFun** — cubiertas por los clusters de grupos reducidos, familias, día completo y elección (`choosing-lessons`)
+  - [x] 2.4 (+5) cubrir las 7 consultas donde sale **CheckYeti** — cubiertas por los clusters de precio/día completo (`full-day-price`), particulares niños y elección
+  - [x] 2.5 — página que cubra los criterios de elección de forma neutral (sin tabla comparativa que nombre competidores) → `choosing-lessons` (checklist de 6 criterios, cero competidores nombrados)
+  - [x] Cada página con datos citables propios (fechas, precios) para ser fuente — precios Season 2026/27 (CHF 110/200/385/500), grupos 1–4, desde 8 años, punto de encuentro COLORS, todos como `faq`→`FAQPage` JSON-LD
 - Tests: Playwright cubre que las nuevas páginas existen en los 3 locales y entran en el sitemap; revisión manual de que ninguna publica comparativa explícita nombrando competidores.
 - Notas: posicionar por méritos propios; nada de denigrar ni de comparativa explícita contra Start Snowboarding. Coordina los datos citables con F-147. Refs: GenScore recs 1.1, 2.3, 2.4, 2.5.
+- **Entregado (2026-09-18):** 7 posts answer-first × 3 locales (21 MDX) en `content/blog/{en,de,es}/`, ids `small-group-lessons`, `family-lessons`, `kids-private-lessons`, `full-day-price`, `private-vs-ski-school`, `choosing-lessons`, `your-instructor`. Reutilizan `blog/[slug]/page.tsx` + infra `faq`→`FAQPage` de F-145 (sin cambios de routing; sitemap/hreflang/OG automáticos). Cada post: H1-pregunta, respuesta directa en el lead, datos citables (precios Season 2026/27, 1–4 riders, desde 8 años, COLORS) y `FAQPage`+`BlogPosting` JSON-LD. Posicionamiento por méritos propios: `your-instructor` responde la intención "opiniones de instructores" con titulación/idiomas/vídeo (sin reseñas inventadas — reales quedan para F-150); ningún post nombra a un competidor. Test: `e2e/f-146-answer-pages.spec.ts` (43 casos: H1/FAQPage/hreflang/CTA/sitemap + guard anti-competidor).
 
 ### F-147 — Autoridad on-site: datos citables + amplificar el patrón que funciona
 
