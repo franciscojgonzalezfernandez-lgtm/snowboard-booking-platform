@@ -3311,15 +3311,15 @@ Diagnóstico: **casi nunca te nombra ni te cita, pero cuando lo hace rankeas bie
 
 ### F-147 — Autoridad on-site: datos citables + amplificar el patrón que funciona
 
-- Sprint: 7 · Estado: backlog · Prioridad: P1
+- Sprint: 7 · Estado: in progress (mecánica on-site entregada; pattern-analysis + copy de páginas pendientes) · Prioridad: P1
 - Depende de: —
 - Motivación: **Autoridad = 15**, la métrica más baja. La IA te nombra pero se apoya en otras webs como fuente. Para que te cite necesita hechos concretos, fechados y atribuibles en tu web.
 - AC:
-  - [ ] 2.20–2.23 — añadir a las páginas que responden esas consultas un **dato concreto con fecha y fuente** (precio "temporada 2026/27", duración, estadística) — consultas: alternativas a escuelas tradicionales, mañana vs tarde, opiniones, día completo (+0,3)
-  - [ ] 2.6 — analizar las **12 consultas donde la IA ya te cita**, extraer el patrón (formato, longitud, estructura de la página citada) y aplicarlo a las páginas débiles
-  - [ ] 2.1 (parte on-site) — hacer las páginas *citables*: datos únicos y verificables que otras webs quieran enlazar (la parte off-site va en F-149)
-  - [ ] Enriquecer el JSON-LD existente (`buildCourse`/Offer ya llevan precios — extender con datos fechados)
-- Tests: unit sobre los builders de JSON-LD extendidos; verificación manual del patrón documentado.
+  - [x] Enriquecer el JSON-LD existente — `buildCourse`/Offer ahora llevan `validFrom` + `priceValidUntil` (ventana de temporada) e `inLanguage`; `Offer` deja de ser un precio sin fecha. Fuente única de fechas de temporada e idiomas en `lib/seo/business.ts` (`SEASON`, `LANGUAGES`); `openingHours` lee de `SEASON` (cero drift).
+  - [x] 2.1 (parte on-site) — `lib/seo/citable-facts.ts`: fuente única de datos citables (dato + `asOf` + `source`), estructurada y locale-independiente, para que las páginas trilingües de F-145/F-146 rendericen su copy sin que ningún número/fecha derive entre locales. Incluye `datedPriceRange()` para enmarcar precios de la BD como dato fechado sin re-hardcodearlos. **Esta es la dependencia de datos citables que F-146 coordina.**
+  - [ ] 2.20–2.23 — cablear los datos de `citable-facts.ts` en la copy visible de las páginas que responden esas consultas (alternativas, mañana vs tarde, opiniones, día completo). Aterriza junto con las páginas de F-145/F-146 (esas páginas aún no existen); requiere claves i18n en 3 locales.
+  - [ ] 2.6 — analizar las **12 consultas donde la IA ya te cita**, extraer el patrón y aplicarlo a las páginas débiles. **Ops**: necesita los datos del dashboard GenScore (no in-repo). Bloqueado hasta tener el export de esas consultas.
+- Tests: [x] unit sobre los builders de JSON-LD extendidos (`structured-data.test.ts`) + `citable-facts.test.ts` (contrato de citabilidad: dato + fecha + fuente, sin drift). Pendiente: verificación manual del patrón documentado (2.6).
 - Notas: reutiliza `lib/seo/business.ts` (fuente única de identidad) y `lib/seo/structured-data.ts`. Refs: GenScore recs 2.1 (on-site), 2.6, 2.20–2.23.
 
 ### F-148 — Infra AEO: reglas de crawlers IA + llms.txt + fix FAQ JSON-LD
