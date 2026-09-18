@@ -76,6 +76,8 @@
     "terms_link": "Términos",
     "privacy_link": "Privacidad",
     "contact_link": "Contacto",
+    "impressum_link": "Aviso legal",
+    "operated_by": "Operado por",
     "nav_aria": "Pie de página",
     "phone_label": "Teléfono"
   },
@@ -110,7 +112,7 @@
     "last_updated": "Última actualización: 19 de mayo de 2026",
     "intro": "Esta página explica qué datos personales recogemos cuando reservas una clase, quién los trata por cuenta nuestra y cómo ejercer tus derechos bajo la nLPD suiza y el RGPD europeo.",
     "section_controller_title": "Responsable del tratamiento",
-    "section_controller_body": "Ride Flumserberg, operador de este sitio web. Contacto: franciscojgonzalezfernandez@gmail.com. Operamos desde Flumserberg, cantón de St. Gallen, Suiza.",
+    "section_controller_body": "Gonzalez Fernandez Snowball Effect (Einzelfirma), titular Francisco Javier González Fernández, Josefstrasse 4, 8610 Uster, Suiza — opera bajo la marca Ride Flumserberg. Contacto: franciscojgonzalezfernandez@gmail.com. Las clases se imparten en Flumserberg, cantón de St. Gallen.",
     "section_data_title": "Datos que recogemos",
     "section_data_body": "Nombre, dirección de correo electrónico, número de teléfono y los datos necesarios para completar el pago. Los datos de tarjeta los gestiona directamente Stripe y no pasan nunca por nuestros servidores. Además, almacenamos una cookie de sesión emitida por nuestra librería de autenticación; es estrictamente necesaria para mantenerte autenticado y no contiene información de rastreo.",
     "section_processors_title": "Proveedores de servicio",
@@ -121,6 +123,22 @@
     "section_rights_body": "Puedes solicitar en cualquier momento el acceso, la rectificación o la supresión de tus datos personales. Bajo la nLPD y el RGPD también tienes derecho a la portabilidad de los datos y a oponerte al tratamiento. Responderemos en un plazo de 30 días.",
     "section_contact_title": "Contacto",
     "section_contact_body": "Para ejercer estos derechos o plantear cualquier consulta de privacidad, escribe a franciscojgonzalezfernandez@gmail.com. Si crees que tus derechos han sido vulnerados, también puedes presentar una reclamación ante el Comisionado Federal de Protección de Datos e Información de Suiza (FDPIC)."
+  },
+  "impressum": {
+    "metadata_title": "Aviso legal — Ride Flumserberg",
+    "metadata_description": "Aviso legal (Impressum) de Ride Flumserberg: nombre, forma jurídica, dirección registrada y datos de contacto del operador.",
+    "last_updated": "Última actualización: 18 de septiembre de 2026",
+    "heading": "Aviso legal",
+    "intro": "rideflumserberg.ch está operado por la empresa individual que se indica a continuación. Las clases de snowboard se imparten en Flumserberg, cantón de St. Gallen.",
+    "label_company": "Empresa",
+    "label_legal_form": "Forma jurídica",
+    "legal_form_gloss": "empresa individual",
+    "label_owner": "Titular",
+    "label_address": "Dirección registrada",
+    "label_email": "Correo electrónico",
+    "label_phone": "Teléfono",
+    "country": "Suiza",
+    "vat_note": "No sujeto al IVA suizo: la facturación anual está por debajo del umbral de CHF 100 000. Esto cambia automáticamente una vez superado el umbral."
   },
   "login": {
     "metadata_title": "Iniciar sesión — Ride Flumserberg",
