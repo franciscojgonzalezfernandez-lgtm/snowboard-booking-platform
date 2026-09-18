@@ -453,7 +453,7 @@ Un mismo `User` puede tener múltiples roles (`student`, `instructor`, `admin`) 
 - Server-rendered content (no client-only para SEO)
 - **Contenido local útil (post-MVP):** página "Plan your visit" para queries de temporada/acceso/alquiler cerca de Flumserberg + link temático a los horarios oficiales del resort (F-115). El enlace saliente aporta relevancia temática, no equity propio.
 - **Sinergia canal YouTube (post-MVP):** embeber (facade, sin coste de perf) tutoriales del canal del owner en posts del blog donde el idioma casa + byline enlazando el canal (señal de autoría/EEAT) (F-117).
-- **AEO / visibilidad en respuestas de IA (GEO) (post-MVP):** que los asistentes de IA (ChatGPT, Claude, Gemini, Perplexity) nombren y citen a Ride Flumserberg. Contenido answer-first, autoridad citable, reglas de crawlers IA y `llms.txt`. Medido con GenScore (baseline GEO 42/100, 18 sept 2026). Tracked en Sprint 7 (F-144–F-150).
+- **AEO / visibilidad en respuestas de IA (GEO) (post-MVP):** que los asistentes de IA (ChatGPT, Claude, Gemini, Perplexity) nombren y citen a Ride Flumserberg. Contenido answer-first, autoridad citable, reglas de crawlers IA y `llms.txt`. Medido con GenScore (baseline GEO 42/100, 18 sept 2026). Tracked en Sprint 7 (F-145–F-151).
 
 ### 7.4 Seguridad
 
