@@ -8,7 +8,7 @@ import {
   buildLocalBusiness,
   buildPerson,
 } from "@/lib/seo/structured-data";
-import { BUSINESS, BUSINESS_ID } from "@/lib/seo/business";
+import { BUSINESS, BUSINESS_ID, LANGUAGES, SEASON } from "@/lib/seo/business";
 
 describe("buildLocalBusiness", () => {
   it("emits a LocalBusiness/SportsActivityLocation with locality, area and hours", () => {
@@ -93,6 +93,37 @@ describe("buildCourse", () => {
     const instance = node.hasCourseInstance as Record<string, unknown>;
     expect(instance.courseWorkload).toBe("PT2H");
     expect((instance.location as Record<string, unknown>)["@id"]).toBe(BUSINESS_ID);
+  });
+
+  it("stamps the Offer with a dated validity window and the course languages (F-147)", () => {
+    const node = buildCourse({
+      name: "2-hour snowboard lesson",
+      description: "First day on a board.",
+      url: "https://rideflumserberg.ch/en/precios",
+      duration: Duration.TWO_HOURS,
+      priceCents: 24000,
+    });
+
+    const offer = node.offers as Record<string, unknown>;
+    expect(offer.validFrom).toBe(SEASON.startDate);
+    expect(offer.priceValidUntil).toBe(SEASON.priceValidUntil);
+    expect(node.inLanguage).toEqual([...LANGUAGES]);
+  });
+
+  it("honours explicit priceValidUntil and inLanguage overrides (F-147)", () => {
+    const node = buildCourse({
+      name: "x",
+      description: "y",
+      url: "u",
+      duration: Duration.ONE_HOUR,
+      priceCents: 11000,
+      priceValidUntil: "2028-01-01",
+      inLanguage: ["en"],
+    });
+
+    const offer = node.offers as Record<string, unknown>;
+    expect(offer.priceValidUntil).toBe("2028-01-01");
+    expect(node.inLanguage).toEqual(["en"]);
   });
 
   it("maps each duration to its ISO 8601 workload", () => {

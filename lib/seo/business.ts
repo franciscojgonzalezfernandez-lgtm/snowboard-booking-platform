@@ -42,6 +42,31 @@ export const LOCATION_PENDING = {
   googleCid: "15514449138658354283",
 } as const;
 
+/**
+ * The active winter season, as dated facts (F-147). ISO date strings so the
+ * Schema.org builders can stamp offers/courses with a verifiable validity window
+ * and pages can cite "as of the 2026/27 season". This is the single source for
+ * the season dates — `BUSINESS.openingHours` reads back into it, so the operating
+ * window and the citable season window can never drift apart. `priceValidUntil`
+ * is the last day the published prices are guaranteed to hold (season end), so a
+ * Schema.org `Offer.priceValidUntil` is never emitted as a stale past date.
+ */
+export const SEASON = {
+  /** Human/marketing label for the season, e.g. "2026/27". */
+  label: "2026/27",
+  startDate: "2026-11-15",
+  endDate: "2027-04-30",
+  /** Offers hold through season end; owner re-prices for 2027/28 afterwards. */
+  priceValidUntil: "2027-04-30",
+} as const;
+
+/**
+ * Teaching languages, as BCP-47 codes (F-147). Single source for the trilingual
+ * claim carried across marketing copy, `BUSINESS.description` and the
+ * `Course.inLanguage` structured data. Order = English, German, Spanish.
+ */
+export const LANGUAGES = ["en", "de", "es"] as const;
+
 export const BUSINESS = {
   name: "Ride Flumserberg",
   url: SITE_URL,
@@ -55,7 +80,9 @@ export const BUSINESS = {
     country: "CH",
   },
   areaServed: ["Flumserberg", "St. Gallen", "Northern Switzerland"],
-  /** Winter operating window + daily hours from the active Season (seed F-021). */
+  /** Winter operating window + daily hours from the active Season (seed F-021).
+   * Dates read from {@link SEASON} so the operating window and the citable season
+   * window (F-147) stay in lockstep. */
   openingHours: {
     days: [
       "Monday",
@@ -68,8 +95,8 @@ export const BUSINESS = {
     ],
     opens: "08:00",
     closes: "17:00",
-    validFrom: "2026-11-15",
-    validThrough: "2027-04-30",
+    validFrom: SEASON.startDate,
+    validThrough: SEASON.endDate,
   },
   /**
    * Off-platform profiles for `sameAs`. Instagram is live. Still pending (F-112):
