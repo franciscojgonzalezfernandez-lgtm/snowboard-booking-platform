@@ -3208,6 +3208,151 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
 
 ---
 
+## Sprint 7 — AEO / visibilidad en respuestas de IA (GEO)
+
+**Objetivo:** que los asistentes de IA (ChatGPT, Claude, Gemini, Perplexity) nombren y **citen** a Ride Flumserberg —por delante de los rivales— cuando alguien pregunta por clases de snowboard en Flumserberg.
+
+**Origen:** auditoría GEO de [GenScore](https://www.genscore.es) sobre `rideflumserberg.ch`, escaneo del **18 sept 2026**. Puntuación GEO **42/100** y 28 acciones recomendadas. Sub-métricas (baseline):
+
+| Métrica | Valor | Lectura |
+| --- | --- | --- |
+| Presencia | 22 | Con qué frecuencia la IA te nombra en tus consultas. **Débil.** |
+| Prominencia | 95 | Cuando te nombra, si es pronto. **Fuerte** — cuando sales, sales primero. |
+| Cuota de voz | 33 | Tu espacio frente a competidores. Ellos pesan más. |
+| Autoridad | 15 | Con qué frecuencia la IA usa tu web como fuente citada. **La más baja.** |
+
+Diagnóstico: **casi nunca te nombra ni te cita, pero cuando lo hace rankeas bien.** Palanca doble → (1) aparecer en muchas más respuestas y (2) convertirte en fuente citable.
+
+**Decisiones de este sprint:** tickets temáticos (no 1:1 con las 28 recs; tabla de trazabilidad al final) · orden por **puntos GEO** (mayor primero) · contenido **ES primero** (GenScore escanea consultas en español), luego DE + EN vía la i18n trilingüe existente (sitemap/hreflang ya cubren los tres). Base SEO ya enviada y reutilizable: `lib/seo/structured-data.ts`, `lib/seo/business.ts`, `lib/blog/posts.ts` + `content/blog/`, namespace `faq` + `faq/page.tsx`, `app/robots.ts`, `app/llms.txt/route.ts`, `app/sitemap.ts`.
+
+> Nota estratégica (no anula el orden por puntos): varias recs de "consulta vacía" de mucho valor son consultas **genéricas** globales en español (p.ej. "¿cómo se organizan las clases de snowboard para adultos?"). Una escuela de Flumserberg rankeando ahí gana puntos GEO pero tráfico poco cualificado. Las consultas con **intención Flumserberg + comercial** (precios, clases privadas/niños, reseñas, "…en Flumserberg") convierten mucho mejor: priorizarlas cuando los puntos empatan.
+
+### F-144 — Contenido answer-first: páginas Q&A para las consultas "vacías" (+27 pt)
+
+- Sprint: 7 · Estado: backlog · Prioridad: P1
+- Depende de: F-147 (fix del test FAQ JSON-LD)
+- Motivación: 13 consultas informativas donde **ni tú ni ningún competidor** aparecéis (bucket "Aumentar visibilidad de marca", el mayor: +27 pt). Consultas libres: se las lleva quien publique primero la mejor respuesta. Incluye el patrón de prominencia (aparecer *antes*) aplicado a páginas existentes.
+- Patrón answer-first (obligatorio por página): **H1 en forma de pregunta**, respuesta directa en las **dos primeras frases**, dato concreto arriba, luego desarrollo, y `FAQPage`/`HowTo` JSON-LD (reutiliza `buildFaqPage` de `lib/seo/structured-data.ts`).
+- Implementación: preguntas de alto valor → páginas guía MDX (reutiliza `lib/blog/posts.ts` + `content/blog/`, con `id` cross-locale y `slug` localizado); preguntas cortas → items del namespace `faq` (el mismo array alimenta la página y el JSON-LD). ES primero, luego DE/EN.
+- AC (orden por puntos):
+  - [ ] 1.2 (+4) "¿Cómo se organizan las clases de snowboard para adultos con diferentes niveles?"
+  - [ ] 2.7 (+4) "¿Qué diferencia hay entre una clase grupal y una privada?"
+  - [ ] 2.8 (+3) "¿Qué considerar al elegir un instructor privado?"
+  - [ ] 2.9 (+3) coach para trucos de freestyle
+  - [ ] 2.10 (+3) mejores opciones para aprender snowboard
+  - [ ] 2.11 (+3) precio promedio de una hora de clase particular
+  - [ ] 2.12 (+3) mejorar técnica de carving con instructor
+  - [ ] 2.13 (+2) clases particulares para niños
+  - [ ] 2.14–2.18 (+1..+0,7) grupos pequeños / reseñas / familias / opiniones / día completo
+  - [ ] 2.2 — bloque de Q&A (tres preguntas, respuesta de dos frases cada una) en la web
+  - [ ] 1.3 — reestructurar answer-first las páginas donde ya apareces tarde (precios, clases privadas) para salir antes
+  - [ ] Cada página: respuesta en las 2 primeras frases + H1-pregunta + JSON-LD válido + entra en `app/sitemap.ts` (automático vía blog) + enlaces internos
+- Tests: Playwright/unit afirma que cada página emite `FAQPage`/`HowTo` JSON-LD válido y que el H1 es interrogativo.
+- Notas: prioriza dentro del ticket las consultas con intención Flumserberg/comercial. Refs: GenScore recs 1.2, 1.3, 2.2, 2.7–2.18 · PRD §7.3.
+
+### F-145 — Ganar las consultas donde aparecen los rivales, por méritos propios (+14 pt)
+
+- Sprint: 7 · Estado: backlog · Prioridad: P1
+- Depende de: —
+- Motivación: consultas donde los competidores aparecen y tú no. Objetivo: ocupar esas respuestas con contenido propio más completo — **sin tabla comparativa explícita ni head-to-head nombrando a Start Snowboarding** (decisión del owner, 2026-09-18). Nos posicionamos por lo que ofrecemos, no comparándonos con ellos.
+- Enfoque: páginas de respuesta fuertes y auto-suficientes por consulta (grupos pequeños, familias, alternativas a escuelas tradicionales, reseñas de instructores, precio de día completo, particulares para niños), más una página "clases de snowboard en Flumserberg" que cubra opciones/criterios de forma neutral (qué mirar al elegir), sin nombrar competidores en clave comparativa. Las páginas que la IA cita para los rivales (startsnowboarding.ch, ski-fun.ch, checkyeti.com) se usan sólo como **referencia interna del listón** a superar, nunca como objeto de comparación publicada.
+- AC:
+  - [ ] 1.1 (+10) cubrir las 16 consultas donde sale **Start Snowboarding** y tú no, con contenido propio que responda mejor (grupos pequeños, alternativas a escuelas tradicionales, familias, reseñas de instructores)
+  - [ ] 2.3 (+5) cubrir las 8 consultas donde sale **Ski School SkiFun**
+  - [ ] 2.4 (+5) cubrir las 7 consultas donde sale **CheckYeti**
+  - [ ] 2.5 — página que cubra los criterios de elección de forma neutral (sin tabla comparativa que nombre competidores)
+  - [ ] Cada página con datos citables propios (fechas, precios) para ser fuente
+- Tests: Playwright cubre que las nuevas páginas existen en los 3 locales y entran en el sitemap; revisión manual de que ninguna publica comparativa explícita nombrando competidores.
+- Notas: posicionar por méritos propios; nada de denigrar ni de comparativa explícita contra Start Snowboarding. Coordina los datos citables con F-146. Refs: GenScore recs 1.1, 2.3, 2.4, 2.5.
+
+### F-146 — Autoridad on-site: datos citables + amplificar el patrón que funciona
+
+- Sprint: 7 · Estado: backlog · Prioridad: P1
+- Depende de: —
+- Motivación: **Autoridad = 15**, la métrica más baja. La IA te nombra pero se apoya en otras webs como fuente. Para que te cite necesita hechos concretos, fechados y atribuibles en tu web.
+- AC:
+  - [ ] 2.20–2.23 — añadir a las páginas que responden esas consultas un **dato concreto con fecha y fuente** (precio "temporada 2026/27", duración, estadística) — consultas: alternativas a escuelas tradicionales, mañana vs tarde, opiniones, día completo (+0,3)
+  - [ ] 2.6 — analizar las **12 consultas donde la IA ya te cita**, extraer el patrón (formato, longitud, estructura de la página citada) y aplicarlo a las páginas débiles
+  - [ ] 2.1 (parte on-site) — hacer las páginas *citables*: datos únicos y verificables que otras webs quieran enlazar (la parte off-site va en F-148)
+  - [ ] Enriquecer el JSON-LD existente (`buildCourse`/Offer ya llevan precios — extender con datos fechados)
+- Tests: unit sobre los builders de JSON-LD extendidos; verificación manual del patrón documentado.
+- Notas: reutiliza `lib/seo/business.ts` (fuente única de identidad) y `lib/seo/structured-data.ts`. Refs: GenScore recs 2.1 (on-site), 2.6, 2.20–2.23.
+
+### F-147 — Infra AEO: reglas de crawlers IA + llms.txt + fix FAQ JSON-LD
+
+- Sprint: 7 · Estado: backlog · Prioridad: P1
+- Depende de: —
+- Motivación: gap detectado en la auditoría del repo (no está en GenScore). Sin reglas de crawlers IA ni un llms.txt sólido, el contenido nuevo no se sirve bien para respuestas de IA. Además el test del `FAQPage` JSON-LD está marcado como intermitente (known issues de este archivo) y bloquea F-144.
+- AC:
+  - [ ] `app/robots.ts`: reglas explícitas para `GPTBot`, `OAI-SearchBot`, `ChatGPT-User`, `ClaudeBot`, `Claude-Web`, `PerplexityBot`, `Google-Extended` — por defecto **allow** (queremos visibilidad IA)
+  - [ ] `app/llms.txt/route.ts`: variantes por locale + `llms-full.txt`; evaluar generación automática desde rutas/blog en vez de mantenimiento manual
+  - [ ] Verificar/arreglar el test del `FAQPage` JSON-LD (dependencia de F-144)
+- Tests: E2E de `/robots.txt` afirma las reglas de UA; E2E de `/llms.txt` (+ variantes) responde 200 `text/plain`; el test del FAQPage vuelve a verde de forma estable.
+- Decisiones pendientes: ¿bloquear algún crawler IA de entrenamiento (`Google-Extended`, `GPTBot`) o permitir todos? Recomendado: permitir todos (objetivo = visibilidad).
+- Notas: Refs: `app/robots.ts`, `app/llms.txt/route.ts`.
+
+### F-148 — Autoridad off-site: listados y citaciones en agregadores
+
+- Sprint: 7 · Estado: backlog · Prioridad: P2
+- Depende de: F-121 (autoridad off-site / backlinks)
+- Motivación: la IA se apoya en agregadores (startsnowboarding.ch, flumserberg.ch, ski-fun.ch, checkyeti.com, flumserberg.skischool.shop) en consultas donde tu dominio no aparece como fuente. Estar listado ahí = aparecer donde ya mira la IA. Acciones del owner, mayormente fuera del repo.
+- AC:
+  - [ ] 2.1 (parte off-site) — conseguir que las 6 webs citadas te mencionen; empezar por `flumserberg.skischool.shop` y contactar a quien la publica
+  - [ ] Alta/claim de ficha en **CheckYeti**, **Maison Sport**, **Superprof**, `flumserberg.skischool.shop`
+  - [ ] Outreach a `flumserberg.ch` / `heidiland.com` / `graubuenden.ch` para inclusión
+- Tests: N/A (acciones off-site del owner).
+- Notas: bloqueado por acciones del owner. Extiende F-121. Refs: GenScore rec 2.1 (off-site).
+
+### F-149 — Señal de reseñas/rating para AEO
+
+- Sprint: 7 · Estado: backlog · Prioridad: P2
+- Depende de: F-112 (GBP/geo/aggregateRating parked)
+- Motivación: las reseñas son un tema recurrente en las consultas de IA (reseñas/opiniones de instructores en 2.15/2.17/2.22; CheckYeti gana la de reseñas en 1.1). Señal de confianza y autoridad que la IA valora.
+- AC:
+  - [ ] Verificar Google Business Profile (owner) — desbloquea F-112
+  - [ ] Activar `aggregateRating` JSON-LD (ya está gateado en `lib/seo/structured-data.ts`, off hasta tener reseñas reales)
+  - [ ] Flujo de captura/superficie de reseñas en la web
+- Tests: unit del builder con `aggregateRating` activo una vez haya datos.
+- Notas: depende de F-112, owner-dependent (mismo bloqueo que GBP). Refs: F-112, GenScore recs 1.1, 2.15, 2.17, 2.22.
+
+### F-150 — Bucle de medición GenScore
+
+- Sprint: 7 · Estado: backlog · Prioridad: P2
+- Depende de: —
+- Motivación: cerrar el loop — seguir a los competidores emergentes, re-escanear tras cada entrega y medir el delta.
+- AC:
+  - [ ] 2.19 — añadir **Superprof** como competidor en GenScore (aparece en 7 respuestas)
+  - [ ] 2.24 — añadir **Switch Snowboard Club** (4 respuestas)
+  - [ ] 2.25 — añadir **Outdoor Switzerland** (4 respuestas)
+  - [ ] Baseline registrado: GEO 42/100 · Presencia 22 · Prominencia 95 · Cuota 33 · Autoridad 15 (18 sept 2026)
+  - [ ] Re-escaneo mensual; revisar deltas tras cada ticket entregado; marcar recs GenScore como "hecho" según se envían
+- Tests: N/A (ops en el dashboard GenScore).
+- Notas: acciones fuera del repo. Refs: GenScore recs 2.19, 2.24, 2.25.
+
+#### Trazabilidad: 28 recomendaciones GenScore → tickets
+
+| Rec GenScore | Pts | Ticket |
+| --- | --- | --- |
+| 1.1 Disputa Start Snowboarding (16 consultas) | +10 | F-145 |
+| 1.2 "clases adultos distintos niveles" | +4 | F-144 |
+| 1.3 Adelanta Start Snowboarding (prominencia) | +1 | F-144 |
+| 2.1 6 webs citadas te mencionen | +8 | F-146 (on-site) + F-148 (off-site) |
+| 2.2 Bloque de Q&A | — | F-144 |
+| 2.3 Disputa Ski School SkiFun (8) | +5 | F-145 |
+| 2.4 Disputa CheckYeti (7) | +5 | F-145 |
+| 2.5 Publica comparativa → *reformulado: criterios neutrales, sin tabla vs competidor* | — | F-145 |
+| 2.6 Repite lo que funciona (12 consultas) | — | F-146 |
+| 2.7–2.18 "Aparece en …" (12 consultas vacías) | +3..+0,7 | F-144 |
+| 2.19 Añade Superprof | — | F-150 |
+| 2.20–2.23 Consigue que te citen (dato+fecha) | +0,3 | F-146 |
+| 2.24 Añade Switch Snowboard Club | — | F-150 |
+| 2.25 Añade Outdoor Switzerland | — | F-150 |
+| (gap de auditoría: crawlers IA + llms.txt) | — | F-147 |
+
+Las 28 acciones GenScore quedan cubiertas; F-147 es aditivo (gap de la auditoría del repo, no de GenScore).
+
+---
+
 ## Bloqueantes / decisiones abiertas (consolidadas)
 
 | Ref     | Decisión                           | Bloquea                           | Acción                               |
