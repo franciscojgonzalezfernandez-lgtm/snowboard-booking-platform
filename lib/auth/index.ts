@@ -8,6 +8,10 @@ import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/db";
 import { sendMagicLinkEmail } from "@/lib/email/send-magic-link-email";
 import { sendVerificationEmail } from "@/lib/email/send-verification-email";
+import {
+  resolveSignupMethod,
+  sendSignupOpsNotif,
+} from "@/lib/email/send-signup-ops-notif";
 import { getEmailLocaleFromRequest } from "@/lib/email/locale";
 import type { Locale } from "@prisma/client";
 
@@ -77,6 +81,37 @@ export const auth = betterAuth({
     google: {
       clientId: process.env.GOOGLE_ID!,
       clientSecret: process.env.GOOGLE_SECRET!,
+    },
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        // F-152: notify the admin once per new account — across all three
+        // creation paths (email+password, magic link, Google) — so signups can
+        // be monitored. `create.after` fires exactly once per inserted row, so
+        // no per-user "sent" flag is needed. Best-effort: a failed or slow send
+        // must never block or roll back account creation, so we swallow after
+        // Sentry (unlike the verification/magic-link senders below, where the
+        // email IS the flow and a failure aborts it). Awaited rather than
+        // fire-and-forget so the send completes before the serverless function
+        // can freeze; the small added latency buys a reliable monitoring signal.
+        after: async (user, context) => {
+          try {
+            await sendSignupOpsNotif({
+              id: user.id,
+              email: user.email,
+              name: user.name ?? null,
+              // `locale` is a custom column the Better Auth User type omits.
+              locale: (user as { locale?: Locale }).locale ?? "en",
+              method: resolveSignupMethod(context),
+            });
+          } catch (err) {
+            Sentry.captureException(err, {
+              tags: { feature: "auth.signup-ops-notif" },
+            });
+          }
+        },
+      },
     },
   },
   account: {
