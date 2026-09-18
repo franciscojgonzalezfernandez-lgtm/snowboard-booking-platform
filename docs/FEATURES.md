@@ -3178,6 +3178,24 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - Tests: `send-booking-ops-notif.test.ts` (+phone, caso sin teléfono, **per-reserva gana al perfil**), `send-cancellation.test.ts` (+phone en ops text), `create-draft.test.ts` (booking snapshotea el teléfono aun con perfil ya seteado), snapshots de ambos ops-notif regenerados (sólo la fila Phone).
 - Refs: F-140, F-044, F-060, F-064, F-078, `lib/email/`, `lib/booking/create-draft.ts`, `app/api/webhooks/stripe/route.ts`, `app/(site)/[locale]/reservar/actions.ts`, `app/(site)/[locale]/reservar/page.tsx`, `app/(site)/[locale]/reservar/booker-payment-flow.tsx`, `prisma/schema.prisma`
 
+### F-144 — Editar el precio en el admin no limpia las cachés públicas: `/precios` y el JSON-LD siguen con el precio viejo hasta 1h
+
+- Sprint: post-Sprint 5 · Estado: review (PR abierto 2026-09-12) · Prioridad: P1 (mispricing público en producción — el owner cambió la clase de 1h a CHF 110 y `/precios` seguía anunciando CHF 0.50)
+- Depende de: —
+- Reportado: el owner en producción, 2026-09-11. Cambió el precio de 1 hora en `/admin/pricing` y la página pública de precios seguía mostrando el valor anterior.
+- Verificado en prod: `/admin/pricing` mostraba **CHF 110.00** (el write a `Season.priceCentsByDuration` fue correcto) mientras `/es/precios` seguía con **CHF 0.50** en la tarjeta de 1 hora. No es bug de escritura — es invalidación de caché incompleta. El funnel `/reservar` (que sí se revalidaba) cobraba el precio nuevo, así que el daño era sólo el display público.
+- Causa raíz: `updateSeasonPricing` (`app/(ops)/admin/actions.ts`) sólo revalidaba `/admin/pricing` y el funnel `/[locale]/reservar`. Las dos superficies públicas que leen el precio de la season activa nunca se busteaban:
+  - `/[locale]/precios` (`precios/page.tsx`) es ISR `revalidate=3600` → precio viejo hasta 1h.
+  - `getSeasonPriceRange` (`lib/seo/price-range.ts`) es un `unstable_cache` (1h) **sin tag**, que alimenta el `priceRange` del nodo LocalBusiness JSON-LD en TODA la marketing tree (vía el layout, F-100) → structured data desactualizada, y sin tag no había forma de bustearlo.
+  Mismo hueco en `revalidateActiveSeasonSurfaces` (crear/activar/editar season, F-105).
+- AC:
+  - [x] `updateSeasonPricing` añade `revalidatePath("/[locale]/precios", "page")` + `revalidateTag(SEASON_PRICE_RANGE_TAG)`.
+  - [x] `revalidateActiveSeasonSurfaces` añade las mismas dos invalidaciones (una season activada/editada puede cambiar los precios mostrados, no sólo la generación de slots).
+  - [x] `getSeasonPriceRange` pasa a llevar `tags: [SEASON_PRICE_RANGE_TAG]` (constante exportada desde `price-range.ts`) para poder bustearlo por tag; antes sólo tenía la cache key, sin tag.
+- Tests: [x] `e2e/f-144-price-cache-invalidation.spec.ts` — edita las 4 duraciones en `/admin/pricing` y afirma que `/es/precios` (tarjetas de 1h y día completo) y el `priceRange` del JSON-LD reflejan el precio nuevo de inmediato. **Gated en `PLAYWRIGHT_BASE_URL`**: la staleness sólo es observable contra un build (`next dev` renderiza fresco y el test pasaría con o sin fix), igual que las asserts de cache-control de F-124. Verificado contra un build local: **FALLA sin el fix** (`/precios` mostraba `CHF 110.00` tras editar a 117), **PASA con el fix**.
+- Notas: para correr el spec contra un build hay que desactivar el rate limiter de auth (`AUTH_RATE_LIMIT_DISABLED=true`) para el sign-up del admin y apuntar `BETTER_AUTH_URL` al origin del server de test. El sign-up del helper debe ocurrir antes de cualquier `page.goto` (si no, Better Auth 403 `MISSING_OR_NULL_ORIGIN`).
+- Refs: F-144, F-080, F-100, F-105, F-124, F-132, `app/(ops)/admin/actions.ts`, `lib/seo/price-range.ts`, `app/(site)/[locale]/(marketing)/precios/page.tsx`, `app/(site)/[locale]/(marketing)/layout.tsx`, `e2e/f-144-price-cache-invalidation.spec.ts`
+
 ### F-143 — El job `db-migrate` de CI lleva meses en rojo: `npm ci` con npm 10 no resuelve un lockfile de npm 11
 
 - Sprint: post-Sprint 5 · Estado: review (PR abierto 2026-08-29, va con F-140) · Prioridad: P2 (no bloquea merges hoy porque el check no es required, pero enmascara que las migraciones no se aplican a Neon por esa vía)
