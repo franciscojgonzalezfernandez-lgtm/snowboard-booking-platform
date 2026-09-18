@@ -3280,20 +3280,23 @@ Diagnóstico: **casi nunca te nombra ni te cita, pero cuando lo hace rankeas bie
 - Implementación: preguntas de alto valor → páginas guía MDX (reutiliza `lib/blog/posts.ts` + `content/blog/`, con `id` cross-locale y `slug` localizado); preguntas cortas → items del namespace `faq` (el mismo array alimenta la página y el JSON-LD). ES primero, luego DE/EN.
 - AC (orden por puntos):
   - [x] 1.2 (+4) "¿Cómo se organizan las clases de snowboard para adultos con diferentes niveles?" — publicada como post del blog en ES/DE/EN (`id: adult-levels`), answer-first (H1-pregunta + respuesta directa en el lead) con `FAQPage` + `BlogPosting` JSON-LD y hreflang recíproco
-  - [ ] 2.7 (+4) "¿Qué diferencia hay entre una clase grupal y una privada?"
-  - [ ] 2.8 (+3) "¿Qué considerar al elegir un instructor privado?"
-  - [ ] 2.9 (+3) coach para trucos de freestyle
-  - [ ] 2.10 (+3) mejores opciones para aprender snowboard
-  - [ ] 2.11 (+3) precio promedio de una hora de clase particular
-  - [ ] 2.12 (+3) mejorar técnica de carving con instructor
-  - [ ] 2.13 (+2) clases particulares para niños
-  - [ ] 2.14–2.18 (+1..+0,7) grupos pequeños / reseñas / familias / opiniones / día completo
-  - [ ] 2.2 — bloque de Q&A (tres preguntas, respuesta de dos frases cada una) en la web
-  - [ ] 1.3 — reestructurar answer-first las páginas donde ya apareces tarde (precios, clases privadas) para salir antes
-  - [ ] Cada página: respuesta en las 2 primeras frases + H1-pregunta + JSON-LD válido + entra en `app/sitemap.ts` (automático vía blog) + enlaces internos
-- Tests: Playwright/unit afirma que cada página emite `FAQPage`/`HowTo` JSON-LD válido y que el H1 es interrogativo.
+  - [x] 2.7 (+4) grupal vs privada — `group-vs-private` (incluye 2.14 grupos pequeños como sub-Q)
+  - [x] 2.8 (+3) elegir instructor privado — `choosing-instructor`
+  - [x] 2.9 (+3) coach para freestyle — consolidado en `advanced-coaching` (sub-Q)
+  - [x] 2.10 (+3) mejores opciones para aprender snowboard — `learn-options`
+  - [x] 2.11 (+3) precio de clase particular por hora — `private-prices` (con precios citables temporada 2026/27, tie-in F-147)
+  - [x] 2.12 (+3) mejorar técnica de carving con instructor — `advanced-coaching`
+  - [x] 2.13 (+2) clases particulares para niños — `kids-families`
+  - [x] 2.14 (+1) grupos pequeños — cubierto en `group-vs-private`
+  - [x] 2.16 (+1) familias con niños — cubierto en `kids-families`
+  - [x] 2.18 (+0,7) día completo — cubierto en `private-prices`
+  - [ ] 2.15 (+1) / 2.17 (+1) reseñas/opiniones de instructores — **diferido a F-149**: sin reseñas públicas reales (F-112/F-149 owner-blocked), una página "dónde leer reseñas" sin reseñas sería thin/deshonesta
+  - [ ] 2.2 — bloque de Q&A (tres preguntas, respuesta de dos frases cada una) en la web — follow-up
+  - [ ] 1.3 — reestructurar answer-first las páginas donde ya apareces tarde (precios, clases privadas) para salir antes — follow-up
+  - [x] Cada página: respuesta en las 2 primeras frases + H1-pregunta + JSON-LD válido + entra en `app/sitemap.ts` (automático vía blog) + enlaces internos
+- Tests: Playwright `e2e/f-145-answer-first.spec.ts` afirma por post × locale: H1 = pregunta, lead visible, `BlogPosting` + `FAQPage` JSON-LD (por `@type`) y hreflang recíproco.
 - Notas: prioriza dentro del ticket las consultas con intención Flumserberg/comercial. Refs: GenScore recs 1.2, 1.3, 2.2, 2.7–2.18 · PRD §7.3.
-- **Entregado (2026-09-18, primer PR — patrón + 1.2):** las páginas answer-first se publican como posts del blog (decisión del owner) reutilizando `blog/[slug]/page.tsx`. Mecanismo: frontmatter opcional `faq: [{q,a}]` en el MDX → `lib/blog/posts.ts` lo valida/transporta y la página emite además `FAQPage` JSON-LD vía `buildFaqPage` junto al `BlogPosting`. Sin cambios de routing; sitemap/hreflang/OG ya cubren los posts. Contenido: `content/blog/{es,de,en}/…-adults-*.mdx` (`id: adult-levels`). Tests: `e2e/f-145-answer-first.spec.ts` (×3 locales). Pendiente en este ticket: 2.7–2.18, 2.2, 1.3.
+- **Entregado (2026-09-18):** patrón answer-first + **7 páginas** que cubren las consultas 1.2 y 2.7–2.18 (menos 2.15/2.17). Las páginas se publican como posts del blog (decisión del owner) reutilizando `blog/[slug]/page.tsx`. Mecanismo: frontmatter opcional `faq: [{q,a}]` en el MDX → `lib/blog/posts.ts` lo valida/transporta y la página emite además `FAQPage` JSON-LD vía `buildFaqPage` junto al `BlogPosting`. Sin cambios de routing; sitemap/hreflang/OG ya cubren los posts. Consultas solapadas consolidadas en una página rica (cada sub-pregunta vive en el FAQPage JSON-LD) para evitar thin content. Contenido (`content/blog/{es,de,en}/`, id compartido): `adult-levels` (1.2), `group-vs-private` (2.7+2.14), `choosing-instructor` (2.8), `advanced-coaching` (2.12+2.9), `learn-options` (2.10), `private-prices` (2.11+2.18, precios citables 2026/27), `kids-families` (2.13+2.16). Tests: `e2e/f-145-answer-first.spec.ts` (7 posts × 3 locales). **Pendiente:** 2.2 (bloque Q&A UI) y 1.3 (reestructura de precios/privadas) → follow-up; 2.15/2.17 → F-149.
 
 ### F-146 — Ganar las consultas donde aparecen los rivales, por méritos propios (+14 pt)
 
