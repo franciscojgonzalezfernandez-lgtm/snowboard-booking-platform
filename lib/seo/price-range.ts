@@ -53,3 +53,30 @@ export const getSeasonPriceRange = unstable_cache(
   [SEASON_PRICE_RANGE_TAG],
   { revalidate: 3600, tags: [SEASON_PRICE_RANGE_TAG] },
 );
+
+// All four active-season prices (integer CHF cents), for surfaces that need the
+// exact numbers rather than the min–max range — e.g. the price answer-post whose
+// copy interpolates live prices (F-145). Cached under the SAME tag as the range
+// so an owner price edit (F-144) busts it too, with no admin-side change. Any
+// misconfigured/absent season degrades to `null` (caller supplies a fallback).
+async function readActiveSeasonPrices(): Promise<Record<Duration, number> | null> {
+  try {
+    const season = await prisma.season.findFirst({
+      where: { active: true },
+      orderBy: { startDate: "asc" },
+      select: { id: true, priceCentsByDuration: true },
+    });
+    if (!season) return null;
+    return Object.fromEntries(
+      DURATIONS.map((d) => [d, getPriceCents(season, d)]),
+    ) as Record<Duration, number>;
+  } catch {
+    return null;
+  }
+}
+
+export const getActiveSeasonPrices = unstable_cache(
+  readActiveSeasonPrices,
+  [`${SEASON_PRICE_RANGE_TAG}:all`],
+  { revalidate: 3600, tags: [SEASON_PRICE_RANGE_TAG] },
+);

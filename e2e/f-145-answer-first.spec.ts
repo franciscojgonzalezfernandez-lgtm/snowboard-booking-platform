@@ -32,42 +32,6 @@ const POSTS: PostEntry[] = [
     },
   },
   {
-    id: "group-vs-private",
-    en: {
-      slug: "group-vs-private-snowboard-lesson",
-      q: "What's the difference between a group and a private snowboard lesson?",
-      lead: "the difference is focus",
-    },
-    de: {
-      slug: "snowboard-gruppenkurs-vs-privat",
-      q: "Was ist der Unterschied zwischen einem Snowboard-Gruppenkurs und einer Privatstunde?",
-      lead: "der Unterschied ist der Fokus",
-    },
-    es: {
-      slug: "clase-snowboard-grupal-vs-privada",
-      q: "¿Qué diferencia hay entre una clase de snowboard grupal y una privada?",
-      lead: "la diferencia es el foco",
-    },
-  },
-  {
-    id: "choosing-instructor",
-    en: {
-      slug: "choosing-private-snowboard-instructor",
-      q: "What should I look for when choosing a private snowboard instructor?",
-      lead: "Look at three things",
-    },
-    de: {
-      slug: "privaten-snowboardlehrer-auswaehlen",
-      q: "Worauf sollte ich bei der Wahl eines privaten Snowboardlehrers achten?",
-      lead: "Achte auf drei Dinge",
-    },
-    es: {
-      slug: "como-elegir-instructor-snowboard-privado",
-      q: "¿Qué debo considerar al elegir un instructor privado de snowboard?",
-      lead: "Mira tres cosas",
-    },
-  },
-  {
     id: "advanced-coaching",
     en: {
       slug: "improve-carving-snowboard-instructor",
@@ -101,42 +65,6 @@ const POSTS: PostEntry[] = [
       slug: "mejores-opciones-aprender-snowboard",
       q: "¿Cuáles son las mejores opciones para aprender a hacer snowboard?",
       lead: "un coach que te ve y te graba",
-    },
-  },
-  {
-    id: "private-prices",
-    en: {
-      slug: "private-snowboard-lesson-price",
-      q: "How much does a private snowboard lesson cost in Flumserberg?",
-      lead: "A 1-hour private lesson costs CHF 110",
-    },
-    de: {
-      slug: "privatstunde-snowboard-preis",
-      q: "Was kostet eine private Snowboardstunde in Flumserberg?",
-      lead: "kostet CHF 110",
-    },
-    es: {
-      slug: "precio-clase-particular-snowboard",
-      q: "¿Cuánto cuesta una clase particular de snowboard en Flumserberg?",
-      lead: "cuesta CHF 110",
-    },
-  },
-  {
-    id: "kids-families",
-    en: {
-      slug: "kids-family-snowboard-lessons-flumserberg",
-      q: "Where can I find private snowboard lessons for kids in Flumserberg?",
-      lead: "Right here with me",
-    },
-    de: {
-      slug: "snowboardkurse-kinder-familien-flumserberg",
-      q: "Wo finde ich private Snowboardkurse für Kinder in Flumserberg?",
-      lead: "Direkt bei mir",
-    },
-    es: {
-      slug: "clases-snowboard-ninos-familias-flumserberg",
-      q: "¿Dónde encontrar clases particulares de snowboard para niños en Flumserberg?",
-      lead: "doy clases privadas de snowboard para niños",
     },
   },
 ];

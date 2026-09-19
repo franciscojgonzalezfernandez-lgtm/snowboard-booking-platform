@@ -45,7 +45,7 @@ Las plataformas de reserva genéricas (Bókun, Peek, FareHarbor) son funcionales
 - No incluye reserva de equipamiento ni alquiler
 - No incluye seguros (gestionados offline por la escuela)
 - No incluye gestión de nóminas/pagos a instructores (offline)
-- No incluye clases grupales abiertas (solo privadas)
+- La reserva **online** cubre clases de 1 a 4 personas (privadas, incl. grupos pequeños que reservan juntos). Las **clases grupales grandes** (amigos/empresas, sin tope fijo) **sí se ofrecen**, pero se organizan **por privado y se presupuestan aparte** — cada grupo es a medida (vía contacto), no por el funnel de autoservicio
 - No incluye reservas de glaciar verano ni indoor (solo invierno)
 - No incluye app móvil nativa (web responsive PWA-ready)
 
