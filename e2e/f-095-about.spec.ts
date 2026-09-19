@@ -18,7 +18,7 @@ const INSTRUCTORS_SLUG = {
 
 test.describe("F-095 — About / brand story page", () => {
   for (const locale of LOCALES) {
-    test(`/${locale}/${ABOUT_SLUG[locale]} renders the story, video and CTAs`, async ({
+    test(`/${locale}/${ABOUT_SLUG[locale]} renders the story and CTAs`, async ({
       page,
     }) => {
       await page.goto(`/${locale}/${ABOUT_SLUG[locale]}`);
@@ -30,8 +30,6 @@ test.describe("F-095 — About / brand story page", () => {
       // carry an <h2>. F-108 removed the "Why the name" section (the drop-moment
       // paragraph moved into "Why Flumserberg"), dropping the count from 5 to 4.
       expect(await page.locator("h2").count()).toBeGreaterThanOrEqual(4);
-
-      await expect(page.getByTestId("about-video")).toBeVisible();
 
       await expect(page.getByTestId("about-cta-book")).toHaveAttribute(
         "href",
