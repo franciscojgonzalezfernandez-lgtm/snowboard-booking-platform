@@ -3273,41 +3273,40 @@ Diagnóstico: **casi nunca te nombra ni te cita, pero cuando lo hace rankeas bie
 
 ### F-145 — Contenido answer-first: páginas Q&A para las consultas "vacías" (+27 pt)
 
-- Sprint: 7 · Estado: backlog · Prioridad: P1
-- Depende de: F-148 (fix del test FAQ JSON-LD)
-- Motivación: 13 consultas informativas donde **ni tú ni ningún competidor** aparecéis (bucket "Aumentar visibilidad de marca", el mayor: +27 pt). Consultas libres: se las lleva quien publique primero la mejor respuesta. Incluye el patrón de prominencia (aparecer *antes*) aplicado a páginas existentes.
-- Patrón answer-first (obligatorio por página): **H1 en forma de pregunta**, respuesta directa en las **dos primeras frases**, dato concreto arriba, luego desarrollo, y `FAQPage`/`HowTo` JSON-LD (reutiliza `buildFaqPage` de `lib/seo/structured-data.ts`).
-- Implementación: preguntas de alto valor → páginas guía MDX (reutiliza `lib/blog/posts.ts` + `content/blog/`, con `id` cross-locale y `slug` localizado); preguntas cortas → items del namespace `faq` (el mismo array alimenta la página y el JSON-LD). ES primero, luego DE/EN.
-- AC (orden por puntos):
-  - [ ] 1.2 (+4) "¿Cómo se organizan las clases de snowboard para adultos con diferentes niveles?"
-  - [ ] 2.7 (+4) "¿Qué diferencia hay entre una clase grupal y una privada?"
-  - [ ] 2.8 (+3) "¿Qué considerar al elegir un instructor privado?"
-  - [ ] 2.9 (+3) coach para trucos de freestyle
-  - [ ] 2.10 (+3) mejores opciones para aprender snowboard
-  - [ ] 2.11 (+3) precio promedio de una hora de clase particular
-  - [ ] 2.12 (+3) mejorar técnica de carving con instructor
-  - [ ] 2.13 (+2) clases particulares para niños
-  - [ ] 2.14–2.18 (+1..+0,7) grupos pequeños / reseñas / familias / opiniones / día completo
-  - [ ] 2.2 — bloque de Q&A (tres preguntas, respuesta de dos frases cada una) en la web
-  - [ ] 1.3 — reestructurar answer-first las páginas donde ya apareces tarde (precios, clases privadas) para salir antes
-  - [ ] Cada página: respuesta en las 2 primeras frases + H1-pregunta + JSON-LD válido + entra en `app/sitemap.ts` (automático vía blog) + enlaces internos
-- Tests: Playwright/unit afirma que cada página emite `FAQPage`/`HowTo` JSON-LD válido y que el H1 es interrogativo.
-- Notas: prioriza dentro del ticket las consultas con intención Flumserberg/comercial. Refs: GenScore recs 1.2, 1.3, 2.2, 2.7–2.18 · PRD §7.3.
+- Sprint: 7 · Estado: **done** · Prioridad: P1
+- Depende de: F-148 (fix del test FAQ JSON-LD — resuelto en el primer PR de F-145)
+- Motivación: consultas informativas donde **ni tú ni ningún competidor** aparecéis (bucket "Aumentar visibilidad de marca", +27 pt). Consultas libres: se las lleva quien publique primero la mejor respuesta.
+- Patrón answer-first (obligatorio por página): **H1 en forma de pregunta**, respuesta directa en las **dos primeras frases**, dato concreto arriba, luego desarrollo, y `FAQPage` + `BlogPosting` JSON-LD (`buildFaqPage` de `lib/seo/structured-data.ts`).
+- Implementación: posts del blog MDX (reutiliza `lib/blog/posts.ts` + `blog/[slug]/page.tsx`, `id` cross-locale + `slug` localizado). Frontmatter opcional `faq: [{q,a}]` → la página emite `FAQPage` junto al `BlogPosting`. Sin cambios de routing; sitemap/hreflang/OG automáticos. ES primero, luego DE/EN.
+- AC (tras consolidar F-146 en la misma rama — ver F-146):
+  - [x] 1.2 (+4) clases de adultos con distintos niveles — `adult-levels` (con el matiz de grupos de nivel mixto: foco rotado, corrección compartida cuando sirve a todos, en paralelo si no)
+  - [x] 2.9 (+3) coach de freestyle + 2.12 (+3) carving con instructor — `advanced-coaching`
+  - [x] 2.10 (+3) mejores opciones para aprender snowboard — `learn-options`
+  - [x] Cada página: respuesta en 2 frases + H1-pregunta + JSON-LD válido + sitemap + **enlaces internos localizados** (`/es|de|en/…`, regla F-102) + portada
+  - [→] 2.7 / 2.8 / 2.11 / 2.13 / 2.14 / 2.16 / 2.18 **y** 2.15 / 2.17: **servidas por F-146** (páginas de clusters de competidores). F-146 supersede los 4 stubs originales de F-145 (`group-vs-private`, `choosing-instructor`, `private-prices`, `kids-families`), sustituidos por páginas más ricas.
+  - [ ] 2.2 (bloque Q&A UI) y 1.3 (reestructura answer-first de precios/privadas) → follow-up
+- Tests: Playwright `e2e/f-145-answer-first.spec.ts` (3 posts retenidos × 3 locales): H1 = pregunta, lead visible, `BlogPosting` + `FAQPage` JSON-LD (por `@type`), hreflang recíproco.
+- **Modelo de negocio (privada + grupal):** el owner da **privadas** (individual o grupo pequeño de 1 a 4 que reserva junto) y **grupales** grandes (amigos/empresas, sin tope fijo, presupuesto a medida → /contacto). Todo el contenido retenido y el de F-146 refleja este modelo (se descartó el marco erróneo "solo privadas"). PRD §2.3 actualizado en este PR.
+- **Precios en vivo desde BD (2026-09-19):** los posts de precio ya no llevan cifras a pelo — usan tokens `{{ONE_HOUR}}…{{FULL_DAY}}`, `{{PER_HOUR_*}}`, `{{PER_PERSON_FULL_DAY}}` que la página interpola desde la temporada activa (`getActiveSeasonPrices` en `lib/seo/price-range.ts`, `interpolatePrices` en `lib/blog/prices.ts`) sobre body + description + faq (así lead, meta y JSON-LD quedan vivos). Lectura cacheada con el tag `SEASON_PRICE_RANGE_TAG` de F-144 → una edición de precios en admin la invalida sin cambios en admin. Blog `[slug]` pasa a ISR (`revalidate=3600`). Fallback a precios seed si la BD falla.
+- Refs: GenScore recs 1.2, 2.9, 2.10 · F-146 (resto) · PRD §7.3.
 
-### F-146 — Ganar las consultas donde aparecen los rivales, por méritos propios (+14 pt)
+### F-146 — Contenido para clusters de consultas de competidores (por méritos propios, +14 pt)
 
-- Sprint: 7 · Estado: backlog · Prioridad: P1
-- Depende de: —
-- Motivación: consultas donde los competidores aparecen y tú no. Objetivo: ocupar esas respuestas con contenido propio más completo — **sin tabla comparativa explícita ni head-to-head nombrando a Start Snowboarding** (decisión del owner, 2026-09-18). Nos posicionamos por lo que ofrecemos, no comparándonos con ellos.
-- Enfoque: páginas de respuesta fuertes y auto-suficientes por consulta (grupos pequeños, familias, alternativas a escuelas tradicionales, reseñas de instructores, precio de día completo, particulares para niños), más una página "clases de snowboard en Flumserberg" que cubra opciones/criterios de forma neutral (qué mirar al elegir), sin nombrar competidores en clave comparativa. Las páginas que la IA cita para los rivales (startsnowboarding.ch, ski-fun.ch, checkyeti.com) se usan sólo como **referencia interna del listón** a superar, nunca como objeto de comparación publicada.
+- Sprint: 7 · Estado: **done** · Prioridad: P1
+- Depende de: F-145 (apilado/consolidado en su misma rama, PR #214)
+- Motivación: consultas donde los competidores aparecen y tú no. Ocupar esas respuestas con contenido propio más completo — **sin tabla comparativa ni head-to-head nombrando rivales** (decisión del owner). Nos posicionamos por lo que ofrecemos.
+- Enfoque: 7 páginas answer-first por cluster; las páginas que la IA cita para rivales se usan sólo como referencia interna del listón, nunca como objeto de comparación publicada. **Consolidación (excepción, decisión del owner 2026-09-19):** en vez de un PR aparte (#216), estas páginas viven en la rama de F-145 y todo va en un solo PR (#214); **#216 cerrada** apuntando a #214. Supersede los 4 stubs de F-145 (12 MDX borrados).
+- Páginas (7 ids × 3 locales, `content/blog/{es,de,en}/`): `small-group-lessons`, `family-lessons`, `kids-private-lessons`, `full-day-price`, `private-vs-ski-school`, `choosing-lessons`, `your-instructor`.
 - AC:
-  - [ ] 1.1 (+10) cubrir las 16 consultas donde sale **Start Snowboarding** y tú no, con contenido propio que responda mejor (grupos pequeños, alternativas a escuelas tradicionales, familias, reseñas de instructores)
-  - [ ] 2.3 (+5) cubrir las 8 consultas donde sale **Ski School SkiFun**
-  - [ ] 2.4 (+5) cubrir las 7 consultas donde sale **CheckYeti**
-  - [ ] 2.5 — página que cubra los criterios de elección de forma neutral (sin tabla comparativa que nombre competidores)
-  - [ ] Cada página con datos citables propios (fechas, precios) para ser fuente
-- Tests: Playwright cubre que las nuevas páginas existen en los 3 locales y entran en el sitemap; revisión manual de que ninguna publica comparativa explícita nombrando competidores.
-- Notas: posicionar por méritos propios; nada de denigrar ni de comparativa explícita contra Start Snowboarding. Coordina los datos citables con F-147. Refs: GenScore recs 1.1, 2.3, 2.4, 2.5.
+  - [x] 1.1 (+10) cubrir consultas donde sale **Start Snowboarding** — clusters grupos pequeños, familias, niños, privado-vs-escuela, tu instructor
+  - [x] 2.3 (+5) **Ski School SkiFun** y [x] 2.4 (+5) **CheckYeti** — clusters grupos pequeños, familias, día completo, elegir clases, niños
+  - [x] 2.5 — página de criterios de elección neutral (sin tabla que nombre competidores) — `choosing-lessons`
+  - [x] Recs heredadas de F-145: 2.7 (`private-vs-ski-school`), 2.8 (`choosing-lessons`), 2.11/2.18 (`full-day-price`), 2.13 (`kids-private-lessons`), 2.14 (`small-group-lessons`), 2.16 (`family-lessons`)
+  - [x] 2.15 / 2.17 reseñas/opiniones de instructores — `your-instructor` (net-new; antes diferido a F-149)
+  - [x] Cada página con datos citables (precios **en vivo desde BD**, infra de F-145) + portada donde aplica + enlaces internos localizados
+  - [x] Guard anti-competidores en test: el cuerpo no menciona startsnowboarding/skifun/checkyeti/superprof/maison sport
+- Tests: Playwright `e2e/f-146-answer-pages.spec.ts` (7 posts × 3 locales): id/faq, 200, H1=título, CTA `/reservar`, `FAQPage` JSON-LD (`mainEntity[0].name===título`), hreflang recíproco, guard anti-competidores, y un test de sitemap (los 21 slugs presentes).
+- Notas: portadas rebindeadas desde las que el owner subió (`private_vs_group`→private-vs-ski-school, `price_in_flumserberg`→full-day-price, `choosing_private_instructor`→choosing-lessons, `classes_for_kids`→kids-private-lessons); `family-lessons`, `small-group-lessons`, `your-instructor` quedan sin portada (fallback editorial) hasta que el owner suba imagen. Refs: GenScore recs 1.1, 2.3, 2.4, 2.5, 2.7, 2.8, 2.11, 2.13, 2.14, 2.15, 2.16, 2.17, 2.18.
 
 ### F-147 — Autoridad on-site: datos citables + amplificar el patrón que funciona
 
@@ -3330,7 +3329,7 @@ Diagnóstico: **casi nunca te nombra ni te cita, pero cuando lo hace rankeas bie
 - AC:
   - [ ] `app/robots.ts`: reglas explícitas para `GPTBot`, `OAI-SearchBot`, `ChatGPT-User`, `ClaudeBot`, `Claude-Web`, `PerplexityBot`, `Google-Extended` — por defecto **allow** (queremos visibilidad IA)
   - [ ] `app/llms.txt/route.ts`: variantes por locale + `llms-full.txt`; evaluar generación automática desde rutas/blog en vez de mantenimiento manual
-  - [ ] Verificar/arreglar el test del `FAQPage` JSON-LD (dependencia de F-145)
+  - [x] Verificar/arreglar el test del `FAQPage` JSON-LD (dependencia de F-145) — hecho en el primer PR de F-145: `e2e/f-097-faq.spec.ts` cogía el **primer** `ld+json` (el `LocalBusiness` que el layout inyecta en toda página marketing, F-100) en vez del `FAQPage`; ahora filtra por `@type`. Aserto obsoleto, no regresión
 - Tests: E2E de `/robots.txt` afirma las reglas de UA; E2E de `/llms.txt` (+ variantes) responde 200 `text/plain`; el test del FAQPage vuelve a verde de forma estable.
 - Decisiones pendientes: ¿bloquear algún crawler IA de entrenamiento (`Google-Extended`, `GPTBot`) o permitir todos? Recomendado: permitir todos (objetivo = visibilidad).
 - Notas: Refs: `app/robots.ts`, `app/llms.txt/route.ts`.
