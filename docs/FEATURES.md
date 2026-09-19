@@ -1908,8 +1908,8 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - [x] Copy/labels trilingüe namespace `instructors.*` (en/de/es)
 - Tests: [x] Playwright `e2e/f-094-instructores.spec.ts` — index lista instructores × 3 locales, perfil resuelve por slug, card navega, CTA → funnel, 404 en slug inexistente. Vitest `lib/instructor/slugify.test.ts` (slug derivado + folding de diacríticos)
 - Notas:
-  - Foto estática (`/instructors/javi.png`) hasta que F-068 popule `Instructor.photo` en Blob; instructores sin foto (Lara) caen a placeholder con inicial
-  - Multi-instructor ready (grid escala); el seed dev ya trae 3 activos (javi, lara-muller, alejandra-gracia)
+  - Foto estática (`/instructors/javi.png`) hasta que F-068 popule `Instructor.photo` en Blob; instructores sin foto caen a placeholder con inicial
+  - Multi-instructor ready (grid escala), pero el seed prod-ready (F-154) trae **solo al owner (javi)** — Lara y las reservas demo se retiraron para dejar los datos listos para producción
   - **Slug derivado del nombre** (`slugifyName`, `lib/instructor/slugify.ts`), no hay columna `slug`. Colisión de nombres = primer match gana — añadir `Instructor.slug` si el onboarding self-service permite nombres duplicados
   - Nav `instructors` (SiteNav + MobileNav) ahora apunta a `/instructores` (antes `/`)
   - **Slug F-102 hecho**: la clave interna sigue siendo `instructores`; el mapa `pathnames` la sirve como `/instructors` · `/instruktoren` · `/instructores` por locale
@@ -3426,6 +3426,25 @@ Las 28 acciones GenScore quedan cubiertas; F-148 es aditivo (gap de la auditorí
   - Sin cambios de código: el checkout usa Dynamic Payment Methods (`automatic_payment_methods`); TWINT aparecerá solo cuando Stripe active la capability (CHF ≤ 5000, cliente CH).
   - Abierto para revisión legal (D-LEG): los T&C fijan jurisdicción en **Mels (SG)** mientras el domicilio legal es **Uster (ZH)** — coherente en Einzelfirma (sede ≠ lugar de operación), pero conviene que el bufete lo confirme. No se tocó la cláusula de jurisdicción.
 - Refs: F-153, F-102, F-099, F-103, F-112, D-LEG, `lib/legal/entity.ts`, `app/(site)/[locale]/(marketing)/impressum/page.tsx`, docs.stripe.com/payments/twint
+
+### F-154 — Seed listo para producción (un instructor) + retirar vídeo placeholder de About
+
+- Sprint: pre-launch · Estado: done · Prioridad: P2
+- Depende de: — (re-subir el vídeo real queda abierto en D-VIDEO)
+- Motivación: preparar los datos del seed para el lanzamiento real. El seed dev modelaba un demo multi-instructor (Javi + Lara Müller + reservas demo F-036 + historial "Mia Veteran" F-087); producción arranca con **un solo instructor (el owner)**. Además `/about` mostraba un `<video>` con poster de muestra (Unsplash) sin `.mp4` real — mala imagen — que se retira hasta tener el clip bueno.
+- AC:
+  - [x] `prisma/seed.ts`: solo el owner (Javi) + temporada. Eliminados Lara, `upsertSeedBooker`/`upsertHistoryBooker`, `reseedBookings` (F-036) y `reseedStudentHistory` (F-087).
+  - [x] Disponibilidad de Javi = **toda la temporada** (2026-11-15 → 2027-04-30) **menos domingos y lunes** y menos el **break navideño 2026-12-28 → 2027-01-08** (110 bloques `AVAILABLE` 08:00–17:00; días excluidos = sin bloque, absence = no reservable).
+  - [x] `/about`: retirado el `<figure>`/`<video>` de `sobre/page.tsx`, la clave i18n `about.video_caption` (en/de/es) y la aserción `about-video` de `e2e/f-095-about.spec.ts`. El `.mp4` nunca existió (solo se veía el poster de Unsplash).
+  - [x] `scripts/cleanup-instructors.ts`: script one-off guardado (dry-run por defecto, `CONFIRM_DELETE=true` para aplicar) que borra de la BD viva a Lara y cualquier "… Gracia" sobrantes; **rechaza** los que tengan reservas (FK `Booking→Instructor`/`booker` es `Restrict`).
+  - [ ] **Subir el vídeo real** de About: reintroducir `<figure>`/`<video>` + `about.video_caption` + aserción `about-video`. Abierto en **D-VIDEO**.
+- Tests: [x] Vitest `tests/seed.test.ts` reescrito (single instructor + reglas de disponibilidad + guardas de que no reaparezcan Lara/reservas demo). Specs de funnel con fecha sembrada movidos de lunes `2026-11-16` → martes `2026-11-17` (f-027/f-043 son `describe.skip`; `f-060` activo además salta Sun/Mon + break al buscar hueco libre).
+- Notas:
+  - El seed sigue guardado contra producción (`assertNotProduction` / `ALLOW_PRODUCTION_SEED`).
+  - El seed **no** toca filas ya existentes en la BD viva → limpiar dev/prod con `scripts/cleanup-instructors.ts`.
+  - No existía un instructor "Ale Gracia" en el código del seed (solo en docs); el script lo cubre por si sigue en la BD.
+  - El post-mortem histórico de F-125 ("Javi/Lara/Ale") se deja intacto: describe el estado de entonces.
+- Refs: F-154, F-095, F-021, F-036, F-087, D-VIDEO, `prisma/seed.ts`, `scripts/cleanup-instructors.ts`, `app/(site)/[locale]/(marketing)/sobre/page.tsx`, `messages/{en,de,es}.json`, `e2e/f-095-about.spec.ts`
 
 ---
 
