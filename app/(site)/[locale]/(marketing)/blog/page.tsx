@@ -8,8 +8,14 @@ import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { formatBlogDate } from "@/lib/blog/format";
 import { getAllPosts } from "@/lib/blog/posts";
+import { getActiveSeasonPrices } from "@/lib/seo/price-range";
+import { hasPriceTokens, interpolatePrices } from "@/lib/blog/prices";
 
 type Props = { params: Promise<{ locale: string }> };
+
+// ISR (mirrors the post page): the index card of a price post interpolates live
+// prices into its description, so it must revalidate when prices change (F-144).
+export const revalidate = 3600;
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -31,7 +37,17 @@ export default async function BlogIndexPage({ params }: Props) {
   setRequestLocale(locale);
   const typedLocale = locale as Locale;
   const t = await getTranslations({ locale, namespace: "blog" });
-  const posts = getAllPosts(typedLocale);
+  const rawPosts = getAllPosts(typedLocale);
+  // Interpolate live prices into any card whose description carries {{price}}
+  // tokens (the price answer-post), so the listing never shows raw tokens.
+  const prices = rawPosts.some((p) => hasPriceTokens(p.description))
+    ? await getActiveSeasonPrices()
+    : null;
+  const posts = rawPosts.map((p) =>
+    hasPriceTokens(p.description)
+      ? { ...p, description: interpolatePrices(p.description, prices) }
+      : p,
+  );
 
   return (
     <main
