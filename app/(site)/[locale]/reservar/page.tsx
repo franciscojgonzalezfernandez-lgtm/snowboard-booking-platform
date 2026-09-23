@@ -242,6 +242,10 @@ export default async function ReservarPage({
   let resolvedLanguage: Locale | undefined = parsedLanguage;
   let publishableKey: string | undefined;
   let lessonPriceCents = 0;
+  // F-140: the booker's saved phone (E.164) prefills the Section 4 phone field
+  // so a returning booker isn't asked to retype what we already have. Null when
+  // logged out or none on file → the field renders empty as before.
+  let bookerPhone: string | null = null;
   let redeemableCredits: Array<{
     id: string;
     amountCents: number;
@@ -268,7 +272,7 @@ export default async function ReservarPage({
     // and the Step 5 charge breakdown. The server action re-validates both, so
     // these are display-only — a stale value can never over-discount a charge.
     if (initialDuration && session?.user) {
-      const [season, credits] = await Promise.all([
+      const [season, credits, bookerRow] = await Promise.all([
         prisma.season.findFirst({
           where: { active: true },
           select: { id: true, priceCentsByDuration: true },
@@ -282,7 +286,12 @@ export default async function ReservarPage({
           orderBy: { expiresAt: "asc" },
           select: { id: true, amountCents: true, expiresAt: true },
         }),
+        prisma.user.findUnique({
+          where: { id: session.user.id },
+          select: { phone: true },
+        }),
       ]);
+      bookerPhone = bookerRow?.phone ?? null;
       if (season) {
         try {
           lessonPriceCents = getPriceCents(season, initialDuration);
@@ -449,6 +458,7 @@ export default async function ReservarPage({
                 publishableKey={publishableKey}
                 bookerEmail={session.user.email ?? ""}
                 bookerName={session.user.name ?? ""}
+                bookerPhone={bookerPhone ?? ""}
                 duration={initialDuration}
                 date={parsedDateStr}
                 time={parsedTime}

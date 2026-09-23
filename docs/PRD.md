@@ -45,7 +45,7 @@ Las plataformas de reserva genéricas (Bókun, Peek, FareHarbor) son funcionales
 - No incluye reserva de equipamiento ni alquiler
 - No incluye seguros (gestionados offline por la escuela)
 - No incluye gestión de nóminas/pagos a instructores (offline)
-- No incluye clases grupales abiertas (solo privadas)
+- La reserva **online** cubre clases de 1 a 4 personas (privadas, incl. grupos pequeños que reservan juntos). Las **clases grupales grandes** (amigos/empresas, sin tope fijo) **sí se ofrecen**, pero se organizan **por privado y se presupuestan aparte** — cada grupo es a medida (vía contacto), no por el funnel de autoservicio
 - No incluye reservas de glaciar verano ni indoor (solo invierno)
 - No incluye app móvil nativa (web responsive PWA-ready)
 
@@ -453,6 +453,7 @@ Un mismo `User` puede tener múltiples roles (`student`, `instructor`, `admin`) 
 - Server-rendered content (no client-only para SEO)
 - **Contenido local útil (post-MVP):** página "Plan your visit" para queries de temporada/acceso/alquiler cerca de Flumserberg + link temático a los horarios oficiales del resort (F-115). El enlace saliente aporta relevancia temática, no equity propio.
 - **Sinergia canal YouTube (post-MVP):** embeber (facade, sin coste de perf) tutoriales del canal del owner en posts del blog donde el idioma casa + byline enlazando el canal (señal de autoría/EEAT) (F-117).
+- **AEO / visibilidad en respuestas de IA (GEO) (post-MVP):** que los asistentes de IA (ChatGPT, Claude, Gemini, Perplexity) nombren y citen a Ride Flumserberg. Contenido answer-first, autoridad citable, reglas de crawlers IA y `llms.txt`. Medido con GenScore (baseline GEO 42/100, 18 sept 2026). Tracked en Sprint 7 (F-145–F-151).
 
 ### 7.4 Seguridad
 

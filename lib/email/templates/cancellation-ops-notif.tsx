@@ -20,6 +20,8 @@ export type CancellationOpsNotifEmailProps = {
   anchorTime: string;
   bookerName: string;
   bookerEmail: string;
+  /** E.164 phone the booker gave in the funnel; null for legacy/seed bookers. */
+  bookerPhone: string | null;
   attendeeCount: number;
   cancellationVariant:
     | "credit"
@@ -44,6 +46,7 @@ type Copy = {
   bookerTitle: string;
   bookerNameLabel: string;
   bookerEmailLabel: string;
+  bookerPhoneLabel: string;
   variantLabel: string;
   variantCredit: string;
   variantForfeit: string;
@@ -68,6 +71,7 @@ const COPY: Copy = {
   bookerTitle: "Booker",
   bookerNameLabel: "Name",
   bookerEmailLabel: "Email",
+  bookerPhoneLabel: "Phone",
   variantLabel: "Outcome",
   variantCredit: "Booker received credit",
   variantForfeit: "Booker forfeited payment",
@@ -104,6 +108,7 @@ export function CancellationOpsNotifEmail(
     anchorTime,
     bookerName,
     bookerEmail,
+    bookerPhone,
     attendeeCount,
     cancellationVariant,
   } = props;
@@ -132,6 +137,9 @@ export function CancellationOpsNotifEmail(
             <Text style={summaryTitle}>{t.bookerTitle}</Text>
             <Row label={t.bookerNameLabel} value={bookerName} />
             <Row label={t.bookerEmailLabel} value={bookerEmail} />
+            {bookerPhone ? (
+              <Row label={t.bookerPhoneLabel} value={bookerPhone} />
+            ) : null}
           </Section>
 
           <Section style={summary}>

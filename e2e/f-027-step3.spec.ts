@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 
-const SEEDED_DATE = "2026-11-16"; // Monday inside the seeded Nov-2026 window
+const SEEDED_DATE = "2026-11-17"; // Tuesday inside the seeded Nov-2026 window (Sun/Mon are closed)
 const HEADING_LOCALE = {
   en: /Pick a time and instructor/iu,
   de: /Wähle Zeit und Coach/iu,
@@ -163,12 +163,11 @@ test.describe.skip("F-027 — Step 3 anchor time + instructor + language", () =>
     await expect(page.getByTestId("step4-anonymous-cta")).toBeVisible();
   });
 
-  test("instructor cards render a photo for Javi and an initials fallback for Lara", async ({
+  test("instructor card renders Javi's photo", async ({
     page,
   }) => {
     await gotoStep3(page);
-    // 11:00 on a Monday in the seeded window: both Javi (photo) and
-    // Lara (photo = null per F-036 seed) are candidates.
+    // 11:00 on a seeded open day: Javi (photo) is the only candidate.
     await page.getByTestId("anchor-11:00").click();
 
     // Anyone-row avatar is mounted as soon as an anchor is picked.
@@ -183,13 +182,5 @@ test.describe.skip("F-027 — Step 3 anchor time + instructor + language", () =>
       'button[data-testid^="instructor-"]:not([data-testid="instructor-anyone"]) [data-testid="instructor-photo"]',
     );
     expect(await photos.count()).toBeGreaterThan(0);
-
-    // At least one named card falls back to initials (Lara, photo = null).
-    const fallbacks = page.locator(
-      'button[data-testid^="instructor-"]:not([data-testid="instructor-anyone"]) [data-testid="instructor-photo-fallback"]',
-    );
-    expect(await fallbacks.count()).toBeGreaterThan(0);
-    // Initials are uppercase letters from the instructor name.
-    await expect(fallbacks.first()).toHaveText(/^[A-ZÄÖÜ]{1,2}$/u);
   });
 });

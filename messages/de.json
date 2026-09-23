@@ -75,6 +75,8 @@
     "terms_link": "AGB",
     "privacy_link": "Datenschutz",
     "contact_link": "Kontakt",
+    "impressum_link": "Impressum",
+    "operated_by": "Betrieben von",
     "nav_aria": "Fusszeile",
     "phone_label": "Telefon"
   },
@@ -109,7 +111,7 @@
     "last_updated": "Zuletzt aktualisiert am 19. Mai 2026",
     "intro": "Diese Seite erklärt, welche personenbezogenen Daten wir bei einer Buchung erheben, wer sie in unserem Auftrag verarbeitet und wie Sie Ihre Rechte nach Schweizer revidiertem Datenschutzgesetz (revDSG) und EU-DSGVO ausüben können.",
     "section_controller_title": "Verantwortlicher",
-    "section_controller_body": "Ride Flumserberg, Betreiber dieser Website. Kontakt: franciscojgonzalezfernandez@gmail.com. Tätigkeitsort: Flumserberg, Kanton St. Gallen, Schweiz.",
+    "section_controller_body": "Gonzalez Fernandez Snowball Effect (Einzelfirma), Inhaber Francisco Javier González Fernández, Josefstrasse 4, 8610 Uster, Schweiz — Auftritt als Ride Flumserberg. Kontakt: franciscojgonzalezfernandez@gmail.com. Der Unterricht findet auf Flumserberg (Kanton St. Gallen) statt.",
     "section_data_title": "Welche Daten wir erheben",
     "section_data_body": "Name, E-Mail-Adresse, Telefonnummer sowie die zur Zahlungsabwicklung notwendigen Angaben. Kartendaten werden direkt von Stripe verarbeitet und gelangen nie auf unsere Server. Zusätzlich speichern wir ein Sitzungscookie unserer Authentifizierungsbibliothek; es ist strikt notwendig, um Sie eingeloggt zu halten, und enthält keine Tracking-Informationen.",
     "section_processors_title": "Dienstleister",
@@ -120,6 +122,22 @@
     "section_rights_body": "Sie können jederzeit Auskunft, Berichtigung oder Löschung Ihrer personenbezogenen Daten verlangen. Nach revDSG und EU-DSGVO haben Sie zudem das Recht auf Datenübertragbarkeit und auf Widerspruch gegen die Verarbeitung. Wir antworten innerhalb von 30 Tagen.",
     "section_contact_title": "Kontakt",
     "section_contact_body": "Zur Ausübung dieser Rechte oder bei Fragen zum Datenschutz schreiben Sie an franciscojgonzalezfernandez@gmail.com. Sind Sie der Meinung, dass Ihre Rechte verletzt wurden, können Sie zusätzlich Beschwerde beim Eidgenössischen Datenschutz- und Öffentlichkeitsbeauftragten (EDÖB) einreichen."
+  },
+  "impressum": {
+    "metadata_title": "Impressum — Ride Flumserberg",
+    "metadata_description": "Impressum von Ride Flumserberg: Name, Rechtsform, eingetragene Adresse und Kontaktangaben des Betreibers.",
+    "last_updated": "Zuletzt aktualisiert am 18. September 2026",
+    "heading": "Impressum",
+    "intro": "rideflumserberg.ch wird von der nachstehend genannten Einzelfirma betrieben. Die Snowboardstunden finden auf Flumserberg (Kanton St. Gallen) statt.",
+    "label_company": "Firma",
+    "label_legal_form": "Rechtsform",
+    "legal_form_gloss": "Einzelunternehmen",
+    "label_owner": "Inhaber",
+    "label_address": "Eingetragene Adresse",
+    "label_email": "E-Mail",
+    "label_phone": "Telefon",
+    "country": "Schweiz",
+    "vat_note": "Nicht mehrwertsteuerpflichtig: Der Jahresumsatz liegt unter der Schwelle von CHF 100'000. Dies ändert sich automatisch, sobald die Schwelle überschritten wird."
   },
   "login": {
     "metadata_title": "Anmelden — Ride Flumserberg",
@@ -567,7 +585,6 @@
     "me_title": "Mit wem du fährst",
     "me_body_1": "Ich bin zertifizierter Coach aus Spanien und unterrichte seit mehreren Jahren Erwachsene wie Kinder — von den ersten Turns bis Carving und Freestyle.",
     "me_body_2": "Kinder bekommen ein Erlebnis, das darauf baut, wie gern ich mit ihnen fahre. Und ein Ingenieurskopf sorgt dafür, dass ich es erklären kann, wenn ein Erwachsener verstehen will, warum ein Turn wirklich funktioniert.",
-    "video_caption": "Ich, irgendwo am Hang. (Der echte Clip kommt bald hierhin.)",
     "philosophy_title": "Worum es in einer Stunde mit mir wirklich geht",
     "philosophy_body": "Es geht um Vertrauen. Am liebsten sehe ich, wie jemand einer Angst begegnet, mit der er gekommen ist — also bauen wir dieses Vertrauen Schritt für Schritt auf und halten jede Einheit sicher und richtig spassig.",
     "mountain_title": "Warum Flumserberg",

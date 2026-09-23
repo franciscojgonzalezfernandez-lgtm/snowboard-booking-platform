@@ -1908,8 +1908,8 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - [x] Copy/labels trilingüe namespace `instructors.*` (en/de/es)
 - Tests: [x] Playwright `e2e/f-094-instructores.spec.ts` — index lista instructores × 3 locales, perfil resuelve por slug, card navega, CTA → funnel, 404 en slug inexistente. Vitest `lib/instructor/slugify.test.ts` (slug derivado + folding de diacríticos)
 - Notas:
-  - Foto estática (`/instructors/javi.png`) hasta que F-068 popule `Instructor.photo` en Blob; instructores sin foto (Lara) caen a placeholder con inicial
-  - Multi-instructor ready (grid escala); el seed dev ya trae 3 activos (javi, lara-muller, alejandra-gracia)
+  - Foto estática (`/instructors/javi.png`) hasta que F-068 popule `Instructor.photo` en Blob; instructores sin foto caen a placeholder con inicial
+  - Multi-instructor ready (grid escala), pero el seed prod-ready (F-154) trae **solo al owner (javi)** — Lara y las reservas demo se retiraron para dejar los datos listos para producción
   - **Slug derivado del nombre** (`slugifyName`, `lib/instructor/slugify.ts`), no hay columna `slug`. Colisión de nombres = primer match gana — añadir `Instructor.slug` si el onboarding self-service permite nombres duplicados
   - Nav `instructors` (SiteNav + MobileNav) ahora apunta a `/instructores` (antes `/`)
   - **Slug F-102 hecho**: la clave interna sigue siendo `instructores`; el mapa `pathnames` la sirve como `/instructors` · `/instruktoren` · `/instructores` por locale
@@ -3148,6 +3148,303 @@ Critical path: **F-076 → F-077 → F-078 → F-079** (cadena ops-cancel) — *
   - La memoria de sesión ya tenía anotado *".env.local es prod"* como *gotcha* para tests — se convivió con ello en vez de arreglarlo. Este ticket es para arreglarlo.
   - Encaja con F-022: CI tampoco tiene base de datos propia. La misma branch de Neon dedicada resolvería los dos.
 - Refs: F-139, F-022, F-138, F-134, F-043 (webhook Stripe), `CLAUDE.md`, `.env.example`, `scripts/new-worktree.sh`, `scripts/dev.mjs`, `playwright.config.ts`
+### F-140 — Avisar al instructor y al admin en cada reserva y cancelación (un solo email, sin duplicar)
+
+- Sprint: post-Sprint 5 · Estado: review (PR abierto 2026-08-29) · Prioridad: P2 (operativa: hoy nadie del equipo se entera de una reserva nueva salvo mirando el panel)
+- Depende de: —
+- Motivación: cuando entra o se cae una reserva, el instructor que la da y el admin (owner) tienen que enterarse por email. Estado previo: la confirmación de reserva sólo iba al booker (ningún aviso a ops/instructor); la cancelación ya avisaba al admin (`OPS_EMAIL` hardcodeado) pero **no** al instructor. Con la expansión multi-instructor (Lara ya está en el seed) el instructor que da la clase puede no ser el admin.
+- Decisiones (confirmadas por el owner, 2026-08-29):
+  - Admin = se reutiliza el buzón ops existente (constante `OPS_NOTIFICATION_EMAIL`), no lookup por rol ni env var nueva.
+  - **Un único email operativo compartido** → destinatarios `{email del instructor, admin}`, deduplicados _case-insensitive_. Javi dando su propia clase ⇒ instructor == admin ⇒ **un** email, nunca dos. Lara dando clase ⇒ dos destinatarios, un email.
+  - Aviso de reserva nueva: mismo disparador que la confirmación del booker (webhook `payment_intent.succeeded` **y** el camino zero-charge/crédito en `reservar/actions.ts`), para cubrir toda reserva confirmada.
+  - Cancelaciones: se añade el instructor al ops-notif ya existente, en **todos** los tipos (user credit/forfeit + ops cash/credit/mixed/no_charge).
+- Qué se tocó:
+  - Schema: `Booking.opsBookingNotifSentAt DateTime?` (guard de idempotencia, hermano de `opsCancellationNotifSentAt`). Migración `20260829125055_booking_ops_notif_sent_at`.
+  - `lib/email/recipients.ts` (nuevo): `dedupeEmails()` + `OPS_NOTIFICATION_EMAIL` (fuente única del buzón admin; sustituye a la constante local que vivía en `send-cancellation.ts`).
+  - `lib/email/templates/booking-ops-notif.tsx` + `lib/email/send-booking-ops-notif.ts` (nuevos): email EN al set deduplicado, best-effort, guard por `opsBookingNotifSentAt`.
+  - `lib/email/send-cancellation.ts`: el ops-notif ahora va a `dedupeEmails([instructor, admin])`.
+  - Wiring en `app/api/webhooks/stripe/route.ts` y `app/(site)/[locale]/reservar/actions.ts`, best-effort (un fallo del aviso no tumba el webhook ni la reserva; Sentry captura).
+- Tests:
+  - [x] `lib/email/send-booking-ops-notif.test.ts` — fan-out a dos, dedup del owner (case-insensitive), cuerpo EN, idempotencia, not-found.
+  - [x] `lib/email/recipients.test.ts` — `dedupeEmails` (orden, casing, blanks/nullish).
+  - [x] `lib/email/send-cancellation.test.ts` — ops-notif ahora a `[instructor, admin]` + test de dedup del owner.
+  - [x] `lib/email/templates/booking-ops-notif.snapshot.test.tsx` — snapshot.
+  - [x] `tsc --noEmit` + `eslint` en verde.
+- Notas: EN-only a propósito (superficie de ops). El buzón admin sigue siendo constante; si aparece un segundo admin, cambiar `OPS_NOTIFICATION_EMAIL` por env var / query de rol en `recipients.ts`. No confundir con **F-139** (reservado para dar una base de datos no productiva).
+- Ampliación (2026-08-31, mismo branch):
+  - **Teléfono del booker en el ops-notif** (reserva **y** cancelación), fila "Phone" en `booking-ops-notif.tsx` y `cancellation-ops-notif.tsx`.
+  - **Snapshot del teléfono por reserva** (decisión del owner, 2026-08-31: *"si el cliente metió el teléfono en el form, debe llegar al correo"*). El problema: `data.bookerPhone` sólo hacía backfill de `User.phone` **si estaba null** (`where: { phone: null }`) — un booker que edita el número prefilled dejaba el perfil intacto y el correo mostraba el viejo. Fix: nueva columna `Booking.bookerPhone String?` (migración `20260831093000_booking_booker_phone`), seteada en `create-draft.ts` con el número **normalizado del form** de ESA reserva. El correo lee `booking.bookerPhone ?? booker.phone` (per-reserva manda; el perfil es fallback para filas legacy). `bookerPhone` es obligatorio en el draft ⇒ toda reserva del funnel lleva teléfono ⇒ la fila **no se omite**. El backfill de perfil (F-064) se mantiene (alimenta el prefill).
+  - **Prefill del teléfono en el funnel** (Section 4). El campo `bookerPhone` de `booker-payment-flow.tsx` arrancaba vacío a propósito; ahora se rellena con el `User.phone` guardado (leído en `page.tsx` junto a season/credits) — editable, vacío sólo si no hay dato. Se sustituye el comentario del "start empty" (su motivo era no pre-teclear un `+41 ` parcial que rompe E.164; un número completo guardado sí valida). Sin bug para los E2E: `booker-phone` se rellena con `.fill()` que sobrescribe.
+  - Tests: `send-booking-ops-notif.test.ts` (+phone, caso sin teléfono, **per-reserva gana al perfil**), `send-cancellation.test.ts` (+phone en ops text), `create-draft.test.ts` (booking snapshotea el teléfono aun con perfil ya seteado), snapshots de ambos ops-notif regenerados (sólo la fila Phone).
+- Refs: F-140, F-044, F-060, F-064, F-078, `lib/email/`, `lib/booking/create-draft.ts`, `app/api/webhooks/stripe/route.ts`, `app/(site)/[locale]/reservar/actions.ts`, `app/(site)/[locale]/reservar/page.tsx`, `app/(site)/[locale]/reservar/booker-payment-flow.tsx`, `prisma/schema.prisma`
+
+### F-144 — Editar el precio en el admin no limpia las cachés públicas: `/precios` y el JSON-LD siguen con el precio viejo hasta 1h
+
+- Sprint: post-Sprint 5 · Estado: review (PR abierto 2026-09-12) · Prioridad: P1 (mispricing público en producción — el owner cambió la clase de 1h a CHF 110 y `/precios` seguía anunciando CHF 0.50)
+- Depende de: —
+- Reportado: el owner en producción, 2026-09-11. Cambió el precio de 1 hora en `/admin/pricing` y la página pública de precios seguía mostrando el valor anterior.
+- Verificado en prod: `/admin/pricing` mostraba **CHF 110.00** (el write a `Season.priceCentsByDuration` fue correcto) mientras `/es/precios` seguía con **CHF 0.50** en la tarjeta de 1 hora. No es bug de escritura — es invalidación de caché incompleta. El funnel `/reservar` (que sí se revalidaba) cobraba el precio nuevo, así que el daño era sólo el display público.
+- Causa raíz: `updateSeasonPricing` (`app/(ops)/admin/actions.ts`) sólo revalidaba `/admin/pricing` y el funnel `/[locale]/reservar`. Las dos superficies públicas que leen el precio de la season activa nunca se busteaban:
+  - `/[locale]/precios` (`precios/page.tsx`) es ISR `revalidate=3600` → precio viejo hasta 1h.
+  - `getSeasonPriceRange` (`lib/seo/price-range.ts`) es un `unstable_cache` (1h) **sin tag**, que alimenta el `priceRange` del nodo LocalBusiness JSON-LD en TODA la marketing tree (vía el layout, F-100) → structured data desactualizada, y sin tag no había forma de bustearlo.
+  Mismo hueco en `revalidateActiveSeasonSurfaces` (crear/activar/editar season, F-105).
+- AC:
+  - [x] `updateSeasonPricing` añade `revalidatePath("/[locale]/precios", "page")` + `revalidateTag(SEASON_PRICE_RANGE_TAG)`.
+  - [x] `revalidateActiveSeasonSurfaces` añade las mismas dos invalidaciones (una season activada/editada puede cambiar los precios mostrados, no sólo la generación de slots).
+  - [x] `getSeasonPriceRange` pasa a llevar `tags: [SEASON_PRICE_RANGE_TAG]` (constante exportada desde `price-range.ts`) para poder bustearlo por tag; antes sólo tenía la cache key, sin tag.
+- Tests: [x] `e2e/f-144-price-cache-invalidation.spec.ts` — edita las 4 duraciones en `/admin/pricing` y afirma que `/es/precios` (tarjetas de 1h y día completo) y el `priceRange` del JSON-LD reflejan el precio nuevo de inmediato. **Gated en `PLAYWRIGHT_BASE_URL`**: la staleness sólo es observable contra un build (`next dev` renderiza fresco y el test pasaría con o sin fix), igual que las asserts de cache-control de F-124. Verificado contra un build local: **FALLA sin el fix** (`/precios` mostraba `CHF 110.00` tras editar a 117), **PASA con el fix**.
+- Notas: para correr el spec contra un build hay que desactivar el rate limiter de auth (`AUTH_RATE_LIMIT_DISABLED=true`) para el sign-up del admin y apuntar `BETTER_AUTH_URL` al origin del server de test. El sign-up del helper debe ocurrir antes de cualquier `page.goto` (si no, Better Auth 403 `MISSING_OR_NULL_ORIGIN`).
+- Refs: F-144, F-080, F-100, F-105, F-124, F-132, `app/(ops)/admin/actions.ts`, `lib/seo/price-range.ts`, `app/(site)/[locale]/(marketing)/precios/page.tsx`, `app/(site)/[locale]/(marketing)/layout.tsx`, `e2e/f-144-price-cache-invalidation.spec.ts`
+
+### F-143 — El job `db-migrate` de CI lleva meses en rojo: `npm ci` con npm 10 no resuelve un lockfile de npm 11
+
+- Sprint: post-Sprint 5 · Estado: review (PR abierto 2026-08-29, va con F-140) · Prioridad: P2 (no bloquea merges hoy porque el check no es required, pero enmascara que las migraciones no se aplican a Neon por esa vía)
+- Depende de: —
+- Reportado: detectado 2026-08-29 al abrir el PR de F-140 — el check `migrate + seed → Neon dev` salió rojo.
+- Motivación: `db-migrate.yml` corría `npm ci` directamente sobre el npm 10 que trae Node 20. El `package-lock.json` se genera en local con npm 11, y los majors de npm deduplican el lock distinto, así que `npm ci` bajo npm 10 aborta con `Missing: @swc/helpers@0.5.23 from lock file`. `ci.yml` ya lo había resuelto fijando `npm install -g npm@11` antes del `npm ci` (ver `ci.yml:43`); `db-migrate.yml` nunca recibió el mismo paso.
+- Evidencia: rojo en `main` desde hace meses — push de f-122 (2026-08-01) y de f-087 (2026-06-14), ambos failure. El fallo es en *Install dependencies*, antes de tocar Prisma o Neon, así que **las migraciones no se estaban aplicando** por esta vía (el drift de la BD lo tapaba que cada worktree corre `prisma migrate dev` a mano — ver F-139).
+- AC:
+  - [x] Añadir el step `Pin npm to 11` (`npm install -g npm@11`) antes del `npm ci` en los dos jobs (`migrate-dev` y `migrate-main`), igual que `ci.yml`.
+- Tests: [x] El propio check `migrate + seed → Neon dev` en verde en este PR.
+- Notas: la causa de fondo es que el lockfile pide npm 11; la alternativa sería regenerarlo con npm 10, pero se alinea con lo que ya hace `ci.yml` en vez de divergir. Si algún día se sube el npm del runner, quitar el pin en los dos workflows a la vez.
+- Refs: F-143, F-139, F-022, `.github/workflows/db-migrate.yml`, `.github/workflows/ci.yml`
+
+### F-142 — Ningún control interactivo enseña el cursor de mano: el Preflight de Tailwind v4 quitó `cursor: pointer` de los `<button>`
+
+- Sprint: post-Sprint 5 · Estado: review (PR abierto 2026-08-31) · Prioridad: P2 (pulido de UX; se nota sobre todo en el funnel de `/reservar`, donde casi todo es clicable)
+- Depende de: —
+- Reportado: revisión manual de UI del owner, 2026-08-31. Empezó por el funnel (SIGUIENTE/ANTERIOR del calendario, continuar del paso 1, el Select, la cuadrícula de días, las horas/monitor/idioma del paso 3, "añadir otro rider", "usar todo", los checkbox de saldo y de términos, continuar con el pago) y la cabecera ("cerrar sesión", el desplegable "Más").
+- Causa raíz: el proyecto corre **Tailwind CSS v4** (`package.json` → `"tailwindcss": "^4"`). El Preflight de v4 **eliminó** la regla que traía v3, `button, [role="button"] { cursor: pointer }`, y no la sustituyó nada. Ninguna primitiva shadcn/Base UI fija un `cursor-pointer` en reposo (`button.tsx` no trae `cursor-*`; `select.tsx`/`checkbox.tsx` sólo traen `disabled:cursor-not-allowed`), así que **todo** `<button>` — Button de shadcn, el trigger del Select, el Checkbox, y los `<button>` crudos de la rejilla del calendario, las horas, los monitores y los chips de idioma — quedó con la flecha por defecto.
+- Hallazgo que simplificó el fix: cada clicable del funnel es un `<button>` real (no hay `<div>`/`<td>` con `onClick`), así que **una sola regla global** sobre `<button>` los arregla todos de una vez. Los enlaces (`<a>`/`Link` de next-intl) ya reciben el puntero por los estilos del user-agent, así que no necesitan nada.
+- AC:
+  - [x] Regla global en `@layer base` (`app/globals.css`): `button:not(:disabled):not([aria-disabled="true"]):not([data-disabled]), [role="button"]:not(...) { cursor: pointer }`. Vive en `@layer base` a propósito, para que cualquier utilidad `cursor-*` explícita (p.ej. `disabled:cursor-not-allowed`) siga ganando; los deshabilitados quedan excluidos y conservan su cursor `not-allowed`/por defecto.
+  - [x] Opciones de los desplegables a puntero también (decisión del owner: "todo lo clicable = mano"). Como el `cursor-default` de esas filas es una **utilidad** (capa utilities, gana a `@layer base`), se cambia en las propias primitivas: `SelectItem` (`components/ui/select.tsx`) y las filas clicables de `components/ui/dropdown-menu.tsx` (`DropdownMenuItem`, `SubTrigger`, `CheckboxItem`, `RadioItem`) pasan `cursor-default` → `cursor-pointer`.
+  - Fuera de alcance a propósito: los `<Label>` que envuelven los checkbox de saldo/términos (contienen texto seleccionable y los enlaces al modal de términos/privacidad — el control del checkbox ya recibe el puntero); las flechas de scroll del Select (`select.tsx:193,212`), que son afordancia de mantener pulsado, no un tap.
+- Tests: N/A — el estilo de cursor no se afirma en E2E; verificación manual por hover en los pasos 1-4 y la cabecera, más comprobación de regresión de que un control deshabilitado (día pasado, hora no disponible, mes previo en el borde del rango) sigue mostrando `not-allowed` y no la mano.
+- Notas: es una regresión heredada del salto a Tailwind v4, no un descuido puntual — arreglarlo en un sitio (globals + dos primitivas) evita ir clase a clase por decenas de botones y cubre también los paneles de admin/instructor.
+- Refs: F-142, `app/globals.css`, `components/ui/select.tsx`, `components/ui/dropdown-menu.tsx`, `components/ui/button.tsx`
+
+### F-152 — Avisar al admin por email cuando se crea una cuenta nueva (monitorizar altas)
+
+- Sprint: post-Sprint 5 · Estado: review (PR abierto 2026-09-18) · Prioridad: P3 (monitorización; no bloquea ningún flujo)
+- Depende de: F-140 (reutiliza su infra de ops-notif)
+- Motivación: el owner quiere enterarse por correo de cada alta para saber cuánta gente se registra. Estado previo: al crear una cuenta no se disparaba nada hacia ops — el único efecto era el correo de verificación al propio usuario (F-122). El panel admin sólo lista usuarios con ≥1 reserva (`lib/admin/students.ts`), así que las altas que nunca reservan eran invisibles y no había ninguna métrica de signups.
+- Decisiones (confirmadas por el owner, 2026-09-18):
+  - Disparador = **sólo cuentas nuevas**, un email por cuenta, cubriendo las tres vías (email+contraseña, magic link, Google). No es por cada login.
+  - Sin verificar: se avisa **al crear la fila** de usuario, uniforme para las tres vías (no se espera a la verificación de email). Consecuencia aceptada: un alta email+contraseña que nunca verifica igual genera un aviso.
+  - Contenido: email (siempre) + nombre (si lo hay) + método de alta + idioma + **total acumulado** de cuentas (responde a "cuánta gente").
+  - Destinatario = se reutiliza el buzón ops (`OPS_NOTIFICATION_EMAIL`), sin env var nueva. Igual que F-140.
+- Qué se tocó:
+  - `lib/email/templates/signup-ops-notif.tsx` (nuevo): email EN-only, mismo lenguaje visual que `booking-ops-notif.tsx`. Asunto `New signup #<total> — <email>` (el total va en el asunto para verlo de un vistazo en la bandeja).
+  - `lib/email/send-signup-ops-notif.ts` (nuevo): patrón DI `...With(deps,args)` + wrapper de producción; cuenta con `prisma.user.count()`, envía a `[OPS_NOTIFICATION_EMAIL]`, `idempotencyKey: signup-ops-notif-<userId>`. Incluye `resolveSignupMethod(context)`, que deriva el método del `path` del endpoint de Better Auth.
+  - `lib/auth/index.ts`: `databaseHooks.user.create.after` → `sendSignupOpsNotif(...)`, best-effort (try/catch + Sentry). **No** relanza: un fallo del aviso nunca bloquea ni revierte el alta (a diferencia de los senders de verificación/magic-link, donde el email ES el flujo).
+  - Sin migración: `create.after` dispara una vez por inserción, así que no hace falta columna "sent"; la idempotencia de Resend cubre un doble disparo accidental.
+- AC:
+  - [x] Un correo al buzón ops por cada cuenta nueva, en las tres vías.
+  - [x] Lleva email, nombre (— si falta), método, idioma y total acumulado.
+  - [x] Un fallo del envío no rompe el registro (best-effort + Sentry).
+- Tests:
+  - [x] `lib/email/send-signup-ops-notif.test.ts` — destinatario ops, asunto con total, plaintext (email/nombre/método/idioma/total), idempotencyKey, override, nombre en blanco → "—", mapeo de `resolveSignupMethod`.
+  - [x] `lib/email/templates/signup-ops-notif.snapshot.test.tsx` — snapshot (con nombre y sin nombre).
+  - [x] `tsc --noEmit` + `eslint` en verde.
+- Notas: EN-only a propósito (superficie de ops). El buzón admin sigue siendo la constante `OPS_NOTIFICATION_EMAIL`; si aparece un segundo admin, cambiar por env var / query de rol en `recipients.ts` (misma nota que F-140). El hook `after` se **espera** (no fire-and-forget) para que el envío termine antes de que la función serverless se congele; el coste de latencia en el alta es asumible por un aviso de monitorización fiable. Número de ticket = **F-152**: el bloque F-145–F-151 está reservado para el sprint GEO/AEO (PR #210), así que esta feature va justo detrás para no colisionar.
+- Refs: F-152, F-140, F-122, `lib/auth/index.ts`, `lib/email/send-signup-ops-notif.ts`, `lib/email/templates/signup-ops-notif.tsx`, `lib/email/recipients.ts`
+
+---
+
+## Sprint 7 — AEO / visibilidad en respuestas de IA (GEO)
+
+**Objetivo:** que los asistentes de IA (ChatGPT, Claude, Gemini, Perplexity) nombren y **citen** a Ride Flumserberg —por delante de los rivales— cuando alguien pregunta por clases de snowboard en Flumserberg.
+
+**Origen:** auditoría GEO de [GenScore](https://www.genscore.es) sobre `rideflumserberg.ch`, escaneo del **18 sept 2026**. Puntuación GEO **42/100** y 28 acciones recomendadas. Sub-métricas (baseline):
+
+| Métrica | Valor | Lectura |
+| --- | --- | --- |
+| Presencia | 22 | Con qué frecuencia la IA te nombra en tus consultas. **Débil.** |
+| Prominencia | 95 | Cuando te nombra, si es pronto. **Fuerte** — cuando sales, sales primero. |
+| Cuota de voz | 33 | Tu espacio frente a competidores. Ellos pesan más. |
+| Autoridad | 15 | Con qué frecuencia la IA usa tu web como fuente citada. **La más baja.** |
+
+Diagnóstico: **casi nunca te nombra ni te cita, pero cuando lo hace rankeas bien.** Palanca doble → (1) aparecer en muchas más respuestas y (2) convertirte en fuente citable.
+
+**Decisiones de este sprint:** tickets temáticos (no 1:1 con las 28 recs; tabla de trazabilidad al final) · orden por **puntos GEO** (mayor primero) · contenido **ES primero** (GenScore escanea consultas en español), luego DE + EN vía la i18n trilingüe existente (sitemap/hreflang ya cubren los tres). Base SEO ya enviada y reutilizable: `lib/seo/structured-data.ts`, `lib/seo/business.ts`, `lib/blog/posts.ts` + `content/blog/`, namespace `faq` + `faq/page.tsx`, `app/robots.ts`, `app/llms.txt/route.ts`, `app/sitemap.ts`.
+
+> Nota estratégica (no anula el orden por puntos): varias recs de "consulta vacía" de mucho valor son consultas **genéricas** globales en español (p.ej. "¿cómo se organizan las clases de snowboard para adultos?"). Una escuela de Flumserberg rankeando ahí gana puntos GEO pero tráfico poco cualificado. Las consultas con **intención Flumserberg + comercial** (precios, clases privadas/niños, reseñas, "…en Flumserberg") convierten mucho mejor: priorizarlas cuando los puntos empatan.
+
+### F-145 — Contenido answer-first: páginas Q&A para las consultas "vacías" (+27 pt)
+
+- Sprint: 7 · Estado: **done** · Prioridad: P1
+- Depende de: F-148 (fix del test FAQ JSON-LD — resuelto en el primer PR de F-145)
+- Motivación: consultas informativas donde **ni tú ni ningún competidor** aparecéis (bucket "Aumentar visibilidad de marca", +27 pt). Consultas libres: se las lleva quien publique primero la mejor respuesta.
+- Patrón answer-first (obligatorio por página): **H1 en forma de pregunta**, respuesta directa en las **dos primeras frases**, dato concreto arriba, luego desarrollo, y `FAQPage` + `BlogPosting` JSON-LD (`buildFaqPage` de `lib/seo/structured-data.ts`).
+- Implementación: posts del blog MDX (reutiliza `lib/blog/posts.ts` + `blog/[slug]/page.tsx`, `id` cross-locale + `slug` localizado). Frontmatter opcional `faq: [{q,a}]` → la página emite `FAQPage` junto al `BlogPosting`. Sin cambios de routing; sitemap/hreflang/OG automáticos. ES primero, luego DE/EN.
+- AC (tras consolidar F-146 en la misma rama — ver F-146):
+  - [x] 1.2 (+4) clases de adultos con distintos niveles — `adult-levels` (con el matiz de grupos de nivel mixto: foco rotado, corrección compartida cuando sirve a todos, en paralelo si no)
+  - [x] 2.9 (+3) coach de freestyle + 2.12 (+3) carving con instructor — `advanced-coaching`
+  - [x] 2.10 (+3) mejores opciones para aprender snowboard — `learn-options`
+  - [x] Cada página: respuesta en 2 frases + H1-pregunta + JSON-LD válido + sitemap + **enlaces internos localizados** (`/es|de|en/…`, regla F-102) + portada
+  - [→] 2.7 / 2.8 / 2.11 / 2.13 / 2.14 / 2.16 / 2.18 **y** 2.15 / 2.17: **servidas por F-146** (páginas de clusters de competidores). F-146 supersede los 4 stubs originales de F-145 (`group-vs-private`, `choosing-instructor`, `private-prices`, `kids-families`), sustituidos por páginas más ricas.
+  - [ ] 2.2 (bloque Q&A UI) y 1.3 (reestructura answer-first de precios/privadas) → follow-up
+- Tests: Playwright `e2e/f-145-answer-first.spec.ts` (3 posts retenidos × 3 locales): H1 = pregunta, lead visible, `BlogPosting` + `FAQPage` JSON-LD (por `@type`), hreflang recíproco.
+- **Modelo de negocio (privada + grupal):** el owner da **privadas** (individual o grupo pequeño de 1 a 4 que reserva junto) y **grupales** grandes (amigos/empresas, sin tope fijo, presupuesto a medida → /contacto). Todo el contenido retenido y el de F-146 refleja este modelo (se descartó el marco erróneo "solo privadas"). PRD §2.3 actualizado en este PR.
+- **Precios en vivo desde BD (2026-09-19):** los posts de precio ya no llevan cifras a pelo — usan tokens `{{ONE_HOUR}}…{{FULL_DAY}}`, `{{PER_HOUR_*}}`, `{{PER_PERSON_FULL_DAY}}` que la página interpola desde la temporada activa (`getActiveSeasonPrices` en `lib/seo/price-range.ts`, `interpolatePrices` en `lib/blog/prices.ts`) sobre body + description + faq (así lead, meta y JSON-LD quedan vivos). Lectura cacheada con el tag `SEASON_PRICE_RANGE_TAG` de F-144 → una edición de precios en admin la invalida sin cambios en admin. Blog `[slug]` pasa a ISR (`revalidate=3600`). Fallback a precios seed si la BD falla.
+- Refs: GenScore recs 1.2, 2.9, 2.10 · F-146 (resto) · PRD §7.3.
+
+### F-146 — Contenido para clusters de consultas de competidores (por méritos propios, +14 pt)
+
+- Sprint: 7 · Estado: **done** · Prioridad: P1
+- Depende de: F-145 (apilado/consolidado en su misma rama, PR #214)
+- Motivación: consultas donde los competidores aparecen y tú no. Ocupar esas respuestas con contenido propio más completo — **sin tabla comparativa ni head-to-head nombrando rivales** (decisión del owner). Nos posicionamos por lo que ofrecemos.
+- Enfoque: 7 páginas answer-first por cluster; las páginas que la IA cita para rivales se usan sólo como referencia interna del listón, nunca como objeto de comparación publicada. **Consolidación (excepción, decisión del owner 2026-09-19):** en vez de un PR aparte (#216), estas páginas viven en la rama de F-145 y todo va en un solo PR (#214); **#216 cerrada** apuntando a #214. Supersede los 4 stubs de F-145 (12 MDX borrados).
+- Páginas (7 ids × 3 locales, `content/blog/{es,de,en}/`): `small-group-lessons`, `family-lessons`, `kids-private-lessons`, `full-day-price`, `private-vs-ski-school`, `choosing-lessons`, `your-instructor`.
+- AC:
+  - [x] 1.1 (+10) cubrir consultas donde sale **Start Snowboarding** — clusters grupos pequeños, familias, niños, privado-vs-escuela, tu instructor
+  - [x] 2.3 (+5) **Ski School SkiFun** y [x] 2.4 (+5) **CheckYeti** — clusters grupos pequeños, familias, día completo, elegir clases, niños
+  - [x] 2.5 — página de criterios de elección neutral (sin tabla que nombre competidores) — `choosing-lessons`
+  - [x] Recs heredadas de F-145: 2.7 (`private-vs-ski-school`), 2.8 (`choosing-lessons`), 2.11/2.18 (`full-day-price`), 2.13 (`kids-private-lessons`), 2.14 (`small-group-lessons`), 2.16 (`family-lessons`)
+  - [x] 2.15 / 2.17 reseñas/opiniones de instructores — `your-instructor` (net-new; antes diferido a F-149)
+  - [x] Cada página con datos citables (precios **en vivo desde BD**, infra de F-145) + portada donde aplica + enlaces internos localizados
+  - [x] Guard anti-competidores en test: el cuerpo no menciona startsnowboarding/skifun/checkyeti/superprof/maison sport
+- Tests: Playwright `e2e/f-146-answer-pages.spec.ts` (7 posts × 3 locales): id/faq, 200, H1=título, CTA `/reservar`, `FAQPage` JSON-LD (`mainEntity[0].name===título`), hreflang recíproco, guard anti-competidores, y un test de sitemap (los 21 slugs presentes).
+- Notas: portadas rebindeadas desde las que el owner subió (`private_vs_group`→private-vs-ski-school, `price_in_flumserberg`→full-day-price, `choosing_private_instructor`→choosing-lessons, `classes_for_kids`→kids-private-lessons); `family-lessons`, `small-group-lessons`, `your-instructor` quedan sin portada (fallback editorial) hasta que el owner suba imagen. Refs: GenScore recs 1.1, 2.3, 2.4, 2.5, 2.7, 2.8, 2.11, 2.13, 2.14, 2.15, 2.16, 2.17, 2.18.
+
+### F-147 — Autoridad on-site: datos citables + amplificar el patrón que funciona
+
+- Sprint: 7 · Estado: backlog · Prioridad: P1
+- Depende de: —
+- Motivación: **Autoridad = 15**, la métrica más baja. La IA te nombra pero se apoya en otras webs como fuente. Para que te cite necesita hechos concretos, fechados y atribuibles en tu web.
+- AC:
+  - [ ] 2.20–2.23 — añadir a las páginas que responden esas consultas un **dato concreto con fecha y fuente** (precio "temporada 2026/27", duración, estadística) — consultas: alternativas a escuelas tradicionales, mañana vs tarde, opiniones, día completo (+0,3)
+  - [ ] 2.6 — analizar las **12 consultas donde la IA ya te cita**, extraer el patrón (formato, longitud, estructura de la página citada) y aplicarlo a las páginas débiles
+  - [ ] 2.1 (parte on-site) — hacer las páginas *citables*: datos únicos y verificables que otras webs quieran enlazar (la parte off-site va en F-149)
+  - [ ] Enriquecer el JSON-LD existente (`buildCourse`/Offer ya llevan precios — extender con datos fechados)
+- Tests: unit sobre los builders de JSON-LD extendidos; verificación manual del patrón documentado.
+- Notas: reutiliza `lib/seo/business.ts` (fuente única de identidad) y `lib/seo/structured-data.ts`. Refs: GenScore recs 2.1 (on-site), 2.6, 2.20–2.23.
+
+### F-148 — Infra AEO: reglas de crawlers IA + llms.txt + fix FAQ JSON-LD
+
+- Sprint: 7 · Estado: backlog · Prioridad: P1
+- Depende de: —
+- Motivación: gap detectado en la auditoría del repo (no está en GenScore). Sin reglas de crawlers IA ni un llms.txt sólido, el contenido nuevo no se sirve bien para respuestas de IA. Además el test del `FAQPage` JSON-LD está marcado como intermitente (known issues de este archivo) y bloquea F-145.
+- AC:
+  - [ ] `app/robots.ts`: reglas explícitas para `GPTBot`, `OAI-SearchBot`, `ChatGPT-User`, `ClaudeBot`, `Claude-Web`, `PerplexityBot`, `Google-Extended` — por defecto **allow** (queremos visibilidad IA)
+  - [ ] `app/llms.txt/route.ts`: variantes por locale + `llms-full.txt`; evaluar generación automática desde rutas/blog en vez de mantenimiento manual
+  - [x] Verificar/arreglar el test del `FAQPage` JSON-LD (dependencia de F-145) — hecho en el primer PR de F-145: `e2e/f-097-faq.spec.ts` cogía el **primer** `ld+json` (el `LocalBusiness` que el layout inyecta en toda página marketing, F-100) en vez del `FAQPage`; ahora filtra por `@type`. Aserto obsoleto, no regresión
+- Tests: E2E de `/robots.txt` afirma las reglas de UA; E2E de `/llms.txt` (+ variantes) responde 200 `text/plain`; el test del FAQPage vuelve a verde de forma estable.
+- Decisiones pendientes: ¿bloquear algún crawler IA de entrenamiento (`Google-Extended`, `GPTBot`) o permitir todos? Recomendado: permitir todos (objetivo = visibilidad).
+- Notas: Refs: `app/robots.ts`, `app/llms.txt/route.ts`.
+
+### F-149 — Autoridad off-site: listados y citaciones en agregadores
+
+- Sprint: 7 · Estado: backlog · Prioridad: P2
+- Depende de: F-121 (autoridad off-site / backlinks)
+- Motivación: la IA se apoya en agregadores (startsnowboarding.ch, flumserberg.ch, ski-fun.ch, checkyeti.com, flumserberg.skischool.shop) en consultas donde tu dominio no aparece como fuente. Estar listado ahí = aparecer donde ya mira la IA. Acciones del owner, mayormente fuera del repo.
+- AC:
+  - [ ] 2.1 (parte off-site) — conseguir que las 6 webs citadas te mencionen; empezar por `flumserberg.skischool.shop` y contactar a quien la publica
+  - [ ] Alta/claim de ficha en **CheckYeti**, **Maison Sport**, **Superprof**, `flumserberg.skischool.shop`
+  - [ ] Outreach a `flumserberg.ch` / `heidiland.com` / `graubuenden.ch` para inclusión
+- Tests: N/A (acciones off-site del owner).
+- Notas: bloqueado por acciones del owner. Extiende F-121. Refs: GenScore rec 2.1 (off-site).
+
+### F-150 — Señal de reseñas/rating para AEO
+
+- Sprint: 7 · Estado: backlog · Prioridad: P2
+- Depende de: F-112 (GBP/geo/aggregateRating parked)
+- Motivación: las reseñas son un tema recurrente en las consultas de IA (reseñas/opiniones de instructores en 2.15/2.17/2.22; CheckYeti gana la de reseñas en 1.1). Señal de confianza y autoridad que la IA valora.
+- AC:
+  - [ ] Verificar Google Business Profile (owner) — desbloquea F-112
+  - [ ] Activar `aggregateRating` JSON-LD (ya está gateado en `lib/seo/structured-data.ts`, off hasta tener reseñas reales)
+  - [ ] Flujo de captura/superficie de reseñas en la web
+- Tests: unit del builder con `aggregateRating` activo una vez haya datos.
+- Notas: depende de F-112, owner-dependent (mismo bloqueo que GBP). Refs: F-112, GenScore recs 1.1, 2.15, 2.17, 2.22.
+
+### F-151 — Bucle de medición GenScore
+
+- Sprint: 7 · Estado: backlog · Prioridad: P2
+- Depende de: —
+- Motivación: cerrar el loop — seguir a los competidores emergentes, re-escanear tras cada entrega y medir el delta.
+- AC:
+  - [ ] 2.19 — añadir **Superprof** como competidor en GenScore (aparece en 7 respuestas)
+  - [ ] 2.24 — añadir **Switch Snowboard Club** (4 respuestas)
+  - [ ] 2.25 — añadir **Outdoor Switzerland** (4 respuestas)
+  - [ ] Baseline registrado: GEO 42/100 · Presencia 22 · Prominencia 95 · Cuota 33 · Autoridad 15 (18 sept 2026)
+  - [ ] Re-escaneo mensual; revisar deltas tras cada ticket entregado; marcar recs GenScore como "hecho" según se envían
+- Tests: N/A (ops en el dashboard GenScore).
+- Notas: acciones fuera del repo. Refs: GenScore recs 2.19, 2.24, 2.25.
+
+#### Trazabilidad: 28 recomendaciones GenScore → tickets
+
+| Rec GenScore | Pts | Ticket |
+| --- | --- | --- |
+| 1.1 Disputa Start Snowboarding (16 consultas) | +10 | F-146 |
+| 1.2 "clases adultos distintos niveles" | +4 | F-145 |
+| 1.3 Adelanta Start Snowboarding (prominencia) | +1 | F-145 |
+| 2.1 6 webs citadas te mencionen | +8 | F-147 (on-site) + F-149 (off-site) |
+| 2.2 Bloque de Q&A | — | F-145 |
+| 2.3 Disputa Ski School SkiFun (8) | +5 | F-146 |
+| 2.4 Disputa CheckYeti (7) | +5 | F-146 |
+| 2.5 Publica comparativa → *reformulado: criterios neutrales, sin tabla vs competidor* | — | F-146 |
+| 2.6 Repite lo que funciona (12 consultas) | — | F-147 |
+| 2.7–2.18 "Aparece en …" (12 consultas vacías) | +3..+0,7 | F-145 |
+| 2.19 Añade Superprof | — | F-151 |
+| 2.20–2.23 Consigue que te citen (dato+fecha) | +0,3 | F-147 |
+| 2.24 Añade Switch Snowboard Club | — | F-151 |
+| 2.25 Añade Outdoor Switzerland | — | F-151 |
+| (gap de auditoría: crawlers IA + llms.txt) | — | F-148 |
+
+Las 28 acciones GenScore quedan cubiertas; F-148 es aditivo (gap de la auditoría del repo, no de GenScore).
+
+---
+
+## Pagos / cumplimiento
+
+### F-153 — Aviso legal (Impressum) con identidad de la empresa para desbloquear TWINT
+
+- Sprint: post-Sprint 7 · Estado: review (PR abierto 2026-09-18) · Prioridad: P1 (bloquea que TWINT — el método de pago dominante en CH — aparezca en el checkout)
+- Depende de: — (contenido/i18n; no toca el motor de pagos)
+- Motivación: la capability `twint_payments` de la cuenta Stripe (`acct_1TUTDkDAqToL3N4S`) está `inactive` con `requirements.disabled_reason: "rejected.other"` (solicitada 2026-09-04, rechazada). No es falta de datos (`currently_due: []`, `errors: []`) sino un rechazo explícito de la revisión de onboarding de TWINT. Los requisitos de TWINT (docs.stripe.com/payments/twint) exigen que la web muestre, visible en aviso legal / T&C / condiciones: **nombre y forma jurídica** de la empresa (en Einzelfirma, además nombre y apellidos del titular), **dirección completa** y **contacto**. Estado previo: la web sólo mostraba la marca "Ride Flumserberg" y la localidad (Flumserberg · St. Gallen); no aparecía la entidad legal ni la dirección registrada → causa muy probable del rechazo.
+- Datos legales (confirmados por el owner, 2026-09-18):
+  - Firma: **Gonzalez Fernandez Snowball Effect** (sin tildes, tal cual registrada), forma jurídica **Einzelfirma**.
+  - Titular: **Francisco Javier González Fernández**.
+  - Domicilio legal registrado: **Josefstrasse 4, 8610 Uster** (cantón Zúrich) — distinto del lugar de operación (Flumserberg/SG). Se usa el domicilio registrado en el Impressum; **no** se inyecta en el `BUSINESS` de Schema.org (sigue siendo negocio de área de servicio, geo/postal parked F-112).
+  - Contacto: email `franciscojgonzalezfernandez@gmail.com` + teléfono operativo (constante `OPERATIONAL_PHONE_DISPLAY`).
+- Qué se tocó:
+  - `lib/legal/entity.ts` (nuevo): constante `LEGAL_ENTITY` — fuente única de la identidad legal (nombre, forma, titular, dirección, email, teléfono). Separada a propósito de `lib/seo/business.ts`.
+  - `app/(site)/[locale]/(marketing)/impressum/page.tsx` (nuevo): página `/impressum` (RSC, `generateStaticParams` + `generateMetadata` con canonical/hreflang/OG como el resto de marketing). Bloque `<dl>` con nombre + forma + titular + dirección + email + teléfono.
+  - `i18n/routing.ts`: `/impressum` añadido a `pathnames` (slug idéntico en los 3 locales, como `/terms` y `/privacy`; contenido traducido).
+  - `app/sitemap.ts`: `/impressum` en `STATIC_ROUTES` (priority 0.2, yearly).
+  - `app/components/SiteFooter.tsx`: enlace a `/impressum` + línea "Operated by {legalName}, {legalForm}".
+  - `messages/{en,de,es}.json`: namespace `impressum` + claves de footer (`impressum_link`, `operated_by`); `privacy.section_controller_body` actualizado para nombrar la entidad legal real (antes decía sólo "Ride Flumserberg, the website operator").
+- AC:
+  - [x] `/{en,de,es}/impressum` responde 200 y muestra nombre + forma jurídica + titular + dirección completa + contacto.
+  - [x] El footer enlaza el Impressum en cada locale y nombra al operador.
+  - [x] La entidad legal aparece también en la sección "Responsable" de privacidad.
+- Tests:
+  - [x] `e2e/f-153-impressum.spec.ts` — 200 + todos los campos obligatorios en el bloque de identidad (los 3 locales) + enlace del footer con label/href localizado + línea de operador.
+- Notas:
+  - Tras mergear/desplegar, **reapelar a Stripe Support**: pedir el motivo exacto de `rejected.other` y solicitar re-revisión indicando que la web ya muestra la identidad legal requerida en `/impressum` (borrador en `~/.claude/plans/veo-que-me-han-mossy-meadow.md`). **No** cambiar `business_type` en Stripe: para una Einzelfirma, `individual` es lo correcto.
+  - Sin cambios de código: el checkout usa Dynamic Payment Methods (`automatic_payment_methods`); TWINT aparecerá solo cuando Stripe active la capability (CHF ≤ 5000, cliente CH).
+  - Abierto para revisión legal (D-LEG): los T&C fijan jurisdicción en **Mels (SG)** mientras el domicilio legal es **Uster (ZH)** — coherente en Einzelfirma (sede ≠ lugar de operación), pero conviene que el bufete lo confirme. No se tocó la cláusula de jurisdicción.
+- Refs: F-153, F-102, F-099, F-103, F-112, D-LEG, `lib/legal/entity.ts`, `app/(site)/[locale]/(marketing)/impressum/page.tsx`, docs.stripe.com/payments/twint
+
+### F-154 — Seed listo para producción (un instructor) + retirar vídeo placeholder de About
+
+- Sprint: pre-launch · Estado: done · Prioridad: P2
+- Depende de: — (re-subir el vídeo real queda abierto en D-VIDEO)
+- Motivación: preparar los datos del seed para el lanzamiento real. El seed dev modelaba un demo multi-instructor (Javi + Lara Müller + reservas demo F-036 + historial "Mia Veteran" F-087); producción arranca con **un solo instructor (el owner)**. Además `/about` mostraba un `<video>` con poster de muestra (Unsplash) sin `.mp4` real — mala imagen — que se retira hasta tener el clip bueno.
+- AC:
+  - [x] `prisma/seed.ts`: solo el owner (Javi) + temporada. Eliminados Lara, `upsertSeedBooker`/`upsertHistoryBooker`, `reseedBookings` (F-036) y `reseedStudentHistory` (F-087).
+  - [x] Disponibilidad de Javi = **toda la temporada** (2026-11-15 → 2027-04-30) **menos domingos y lunes** y menos el **break navideño 2026-12-28 → 2027-01-08** (110 bloques `AVAILABLE` 08:00–17:00; días excluidos = sin bloque, absence = no reservable).
+  - [x] `/about`: retirado el `<figure>`/`<video>` de `sobre/page.tsx`, la clave i18n `about.video_caption` (en/de/es) y la aserción `about-video` de `e2e/f-095-about.spec.ts`. El `.mp4` nunca existió (solo se veía el poster de Unsplash).
+  - [x] `scripts/cleanup-instructors.ts`: script one-off guardado (dry-run por defecto, `CONFIRM_DELETE=true` para aplicar) que borra de la BD viva a Lara y cualquier "… Gracia" sobrantes; **rechaza** los que tengan reservas (FK `Booking→Instructor`/`booker` es `Restrict`).
+  - [ ] **Subir el vídeo real** de About: reintroducir `<figure>`/`<video>` + `about.video_caption` + aserción `about-video`. Abierto en **D-VIDEO**.
+- Tests: [x] Vitest `tests/seed.test.ts` reescrito (single instructor + reglas de disponibilidad + guardas de que no reaparezcan Lara/reservas demo). Specs de funnel con fecha sembrada movidos de lunes `2026-11-16` → martes `2026-11-17` (f-027/f-043 son `describe.skip`; `f-060` activo además salta Sun/Mon + break al buscar hueco libre).
+- Notas:
+  - El seed sigue guardado contra producción (`assertNotProduction` / `ALLOW_PRODUCTION_SEED`).
+  - El seed **no** toca filas ya existentes en la BD viva → limpiar dev/prod con `scripts/cleanup-instructors.ts`.
+  - No existía un instructor "Ale Gracia" en el código del seed (solo en docs); el script lo cubre por si sigue en la BD.
+  - El post-mortem histórico de F-125 ("Javi/Lara/Ale") se deja intacto: describe el estado de entonces.
+- Refs: F-154, F-095, F-021, F-036, F-087, D-VIDEO, `prisma/seed.ts`, `scripts/cleanup-instructors.ts`, `app/(site)/[locale]/(marketing)/sobre/page.tsx`, `messages/{en,de,es}.json`, `e2e/f-095-about.spec.ts`
 
 ### F-141 — Precios promocionales (precio tachado + copy por duración)
 

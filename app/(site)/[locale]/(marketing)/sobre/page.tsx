@@ -76,26 +76,6 @@ export default async function AboutPage({ params }: Props) {
           <p className="text-lg leading-relaxed text-foreground/80">
             {t("me_body_2")}
           </p>
-
-          {/* D-VIDEO blocker: owner drops the real riding clip at
-              /public/about/javi-riding.mp4. Until then the poster carries it.
-              ponytail: native <video>, no player lib — controls + poster is the
-              whole feature. */}
-          <figure className="space-y-3 pt-2">
-            <video
-              data-testid="about-video"
-              controls
-              preload="none"
-              playsInline
-              poster="https://images.unsplash.com/photo-1605540436563-5bca919ae766?auto=format&fit=crop&w=1600&q=80"
-              className="aspect-video w-full border border-foreground/15 bg-foreground/5 object-cover"
-            >
-              <source src="/about/javi-riding.mp4" type="video/mp4" />
-            </video>
-            <figcaption className="text-sm text-muted-foreground">
-              {t("video_caption")}
-            </figcaption>
-          </figure>
         </Reveal>
 
         <Reveal className="space-y-5">

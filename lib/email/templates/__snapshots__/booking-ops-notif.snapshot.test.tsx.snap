@@ -1,0 +1,291 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`booking-ops-notif email template — snapshot > renders the new-booking ops notification 1`] = `
+"<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html dir="ltr" lang="en">
+  <head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+    <meta name="x-apple-disable-message-reformatting" />
+  </head>
+  <body style="background-color:#f7f5f0;margin:0">
+    <!--$-->
+    <div
+      style="display:none;overflow:hidden;line-height:1px;opacity:0;max-height:0;max-width:0"
+      data-skip-in-text="true">
+      A new lesson was booked.
+      <div>
+         ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿
+      </div>
+    </div>
+    <table
+      border="0"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      role="presentation"
+      align="center">
+      <tbody>
+        <tr>
+          <td
+            style="background-color:#f7f5f0;color:#17130f;font-family:Archivo, -apple-system, BlinkMacSystemFont, &#x27;Segoe UI&#x27;, sans-serif;margin:0">
+            <table
+              align="center"
+              width="100%"
+              border="0"
+              cellpadding="0"
+              cellspacing="0"
+              role="presentation"
+              style="max-width:560px;background-color:#ffffff;border:1px solid #ded8ce;margin:40px auto;padding:40px">
+              <tbody>
+                <tr style="width:100%">
+                  <td>
+                    <h1
+                      style="font-family:Georgia, &#x27;Times New Roman&#x27;, serif;font-size:24px;font-weight:400;line-height:1.1;margin:0 0 24px">
+                      Ride Flumserberg · Ops
+                    </h1>
+                    <p
+                      style="font-size:16px;line-height:1.6;margin:0 0 16px;margin-top:0;margin-right:0;margin-bottom:16px;margin-left:0">
+                      A new lesson was booked and paid. The slot is now held.
+                    </p>
+                    <table
+                      align="center"
+                      width="100%"
+                      border="0"
+                      cellpadding="0"
+                      cellspacing="0"
+                      role="presentation"
+                      style="background-color:#f7f5f0;border:1px solid #ded8ce;margin:8px 0 16px;padding:20px 24px">
+                      <tbody>
+                        <tr>
+                          <td>
+                            <p
+                              style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 12px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
+                              Booked slot
+                            </p>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Date
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    Saturday, 5 December 2026
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Start
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    11:00
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Length
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    1 hour
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Instructor
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    Lara
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    2 riders
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right"></td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Total
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    CHF 110.00
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <table
+                      align="center"
+                      width="100%"
+                      border="0"
+                      cellpadding="0"
+                      cellspacing="0"
+                      role="presentation"
+                      style="background-color:#f7f5f0;border:1px solid #ded8ce;margin:8px 0 16px;padding:20px 24px">
+                      <tbody>
+                        <tr>
+                          <td>
+                            <p
+                              style="font-size:12px;line-height:24px;font-weight:600;letter-spacing:0.18em;margin:0 0 12px;text-transform:uppercase;margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0">
+                              Booker
+                            </p>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Name
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    Lara Tester
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Email
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    lara@example.test
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="border-collapse:collapse;margin:0 0 4px;width:100%">
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="color:#5f574f;font-size:14px;line-height:1.6;padding:0">
+                                    Phone
+                                  </td>
+                                  <td
+                                    style="color:#17130f;font-size:14px;line-height:1.6;padding:0;text-align:right"
+                                    align="right">
+                                    +41791234567
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <p
+                      style="font-size:13px;line-height:1.6;color:#5f574f;margin:24px 0 0;margin-top:24px;margin-right:0;margin-bottom:0;margin-left:0">
+                      — automated notification
+                    </p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <!--7--><!--/$-->
+  </body>
+</html>
+"
+`;

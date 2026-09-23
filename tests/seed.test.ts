@@ -38,10 +38,6 @@ describe("prisma/seed.ts (F-021)", () => {
     ]);
   });
 
-  it("pre-seeds eight weeks of availability blocks", () => {
-    expect(seedSource).toMatch(/SEED_WEEKS\s*=\s*8/);
-  });
-
   it("uses upsert / find-first patterns so re-running is idempotent", () => {
     expect(seedSource).toMatch(/prisma\.user\.upsert/);
     expect(seedSource).toMatch(/prisma\.instructor\.upsert/);
@@ -55,51 +51,38 @@ describe("prisma/seed.ts (F-021)", () => {
   });
 });
 
-describe("prisma/seed.ts (F-036)", () => {
-  it("seeds a second instructor (Lara Müller) with [de, en]", () => {
-    expect(seedSource).toMatch(/upsertLaraInstructor/);
+describe("prisma/seed.ts availability (F-154)", () => {
+  it("spans the whole season (iterates to season.endDate, no fixed week count)", () => {
+    expect(seedSource).toMatch(/day\s*<=\s*season\.endDate/);
+    expect(seedSource).not.toMatch(/SEED_WEEKS/);
+  });
+
+  it("closes Sundays and Mondays (no block on weekday 0 or 1)", () => {
+    expect(seedSource).toMatch(/weekday\s*===\s*0\s*\|\|\s*weekday\s*===\s*1/);
+  });
+
+  it("closes the winter-holiday break 2026-12-28 → 2027-01-08 (inclusive)", () => {
+    expect(seedSource).toMatch(/HOLIDAY_BREAK_START\s*=\s*dateOnly\("2026-12-28"\)/);
+    expect(seedSource).toMatch(/HOLIDAY_BREAK_END\s*=\s*dateOnly\("2027-01-08"\)/);
     expect(seedSource).toMatch(
-      /languages:\s*\[\s*Locale\.de\s*,\s*Locale\.en\s*\]/,
+      /day\s*>=\s*HOLIDAY_BREAK_START\s*&&\s*day\s*<=\s*HOLIDAY_BREAK_END/,
     );
   });
+});
 
-  it("seeds a fake booker user with student role", () => {
-    expect(seedSource).toMatch(/upsertSeedBooker/);
-    expect(seedSource).toMatch(/student\+seed@rideflumserberg\.ch/);
-  });
-
-  it("reseeds bookings idempotently using the seed prefix", () => {
-    expect(seedSource).toMatch(/SEED_BOOKING_PREFIX\s*=\s*"seed-f036-"/);
-    expect(seedSource).toMatch(/icsUid:\s*\{\s*startsWith:\s*SEED_BOOKING_PREFIX/);
-  });
-
-  it("plans Lara @ 09:00 every seeded day", () => {
-    expect(seedSource).toMatch(
-      /instructor:\s*lara,\s*date:\s*day,\s*anchorTime:\s*"09:00"/,
+describe("prisma/seed.ts prod-shape guards (F-154)", () => {
+  it("no longer seeds a second instructor, demo bookings, or student history", () => {
+    expect(seedSource).not.toMatch(/upsertLaraInstructor|upsertLaraUser/);
+    expect(seedSource).not.toMatch(
+      /SEED_BOOKING_PREFIX|reseedBookings|buildBookingPlan/,
     );
+    expect(seedSource).not.toMatch(/reseedStudentHistory|SEED_HISTORY_PREFIX/);
+    expect(seedSource).not.toMatch(/upsertSeedBooker|upsertHistoryBooker/);
   });
 
-  it("plans Javi @ 13:00 every Wednesday in window", () => {
-    expect(seedSource).toMatch(/day\.getUTCDay\(\)\s*===\s*3/);
-    expect(seedSource).toMatch(
-      /instructor:\s*javi,\s*date:\s*day,\s*anchorTime:\s*"13:00"/,
-    );
-  });
-
-  it("plans the saturated 15:00 anchor on 2026-12-02 (both instructors)", () => {
-    expect(seedSource).toMatch(
-      /SATURATED_DAY\s*=\s*dateOnly\("2026-12-02"\)/,
-    );
-  });
-
-  it("alternates CONFIRMED and PENDING_PAYMENT status across bookings", () => {
-    expect(seedSource).toMatch(/BookingStatus\.CONFIRMED/);
-    expect(seedSource).toMatch(/BookingStatus\.PENDING_PAYMENT/);
-  });
-
-  it("each seeded booking creates one attendee with isBooker = true", () => {
-    expect(seedSource).toMatch(/isBooker:\s*true/);
-    expect(seedSource).toMatch(/Level\.INTERMEDIATE/);
+  it("keeps the production-seed guard", () => {
+    expect(seedSource).toMatch(/assertNotProduction/);
+    expect(seedSource).toMatch(/ALLOW_PRODUCTION_SEED/);
   });
 });
 
@@ -118,9 +101,5 @@ describe("prisma/seed.ts (F-039)", () => {
 
   it("upsertSeason writes INITIAL_PRICE_CENTS into priceCentsByDuration", () => {
     expect(seedSource).toMatch(/priceCentsByDuration:\s*INITIAL_PRICE_CENTS/);
-  });
-
-  it("seeded bookings derive totalPriceCents from INITIAL_PRICE_CENTS", () => {
-    expect(seedSource).toMatch(/totalPriceCents:\s*INITIAL_PRICE_CENTS\[entry\.duration\]/);
   });
 });

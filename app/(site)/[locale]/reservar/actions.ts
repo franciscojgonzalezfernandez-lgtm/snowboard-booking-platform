@@ -13,6 +13,7 @@ import {
 import { prisma } from "@/lib/db";
 import { getStripe } from "@/lib/stripe/server";
 import { sendBookingConfirmedEmail } from "@/lib/email/send-booking-confirmed";
+import { sendBookingOpsNotif } from "@/lib/email/send-booking-ops-notif";
 import { buildCalendarSyncDeps, insertEventWith } from "@/lib/calendar/sync";
 import type {
   CreateBookingDraftInput,
@@ -67,6 +68,17 @@ export async function createBookingDraft(
       } catch (err) {
         Sentry.captureException(err, {
           tags: { source: "create-draft-zero-charge-email" },
+          extra: { bookingId },
+        });
+      }
+      // F-140: instructor + admin notif (single deduped email), same trigger as
+      // the booker confirmation. Independent try/catch so it fires even if the
+      // booker email above threw, and never fails the booking.
+      try {
+        await sendBookingOpsNotif({ bookingId });
+      } catch (err) {
+        Sentry.captureException(err, {
+          tags: { source: "create-draft-zero-charge-ops-notif" },
           extra: { bookingId },
         });
       }

@@ -23,9 +23,10 @@ const FAR_EXPIRY = new Date("2027-12-01T00:00:00.000Z");
 // ONE_HOUR lesson price from prisma/seed.ts (CHF 110.00).
 const ONE_HOUR_PRICE_CENTS = 11000;
 
-// Availability is seeded for 8 weeks from 2026-11-15. Search inside that window
-// for slots the seed booking plan hasn't already taken.
-const WINDOW_START = new Date("2026-11-16T00:00:00.000Z");
+// Availability is seeded season-long, open Tue–Sat (Sun/Mon closed) minus the
+// winter-holiday break. Search inside the season window for free slots; the
+// findFreeSlots loop skips the closed days so the funnel accepts every pick.
+const WINDOW_START = new Date("2026-11-17T00:00:00.000Z"); // Tuesday (season opens Sun 11-15)
 const WINDOW_END = new Date("2027-01-08T00:00:00.000Z");
 const ANCHORS = [
   "09:00",
@@ -86,6 +87,10 @@ async function findFreeSlots(forInstructorId: string, count: number): Promise<Sl
     day.setUTCDate(day.getUTCDate() + 1)
   ) {
     const iso = day.toISOString().slice(0, 10);
+    // Mirror the seed's closed days so every picked slot is actually bookable.
+    const wd = day.getUTCDay();
+    if (wd === 0 || wd === 1) continue; // school closed Sun + Mon
+    if (iso >= "2026-12-28" && iso <= "2027-01-08") continue; // holiday break
     const occupied = occupiedByDate.get(iso) ?? [];
     for (const anchor of ANCHORS) {
       const start = toMinutes(anchor);

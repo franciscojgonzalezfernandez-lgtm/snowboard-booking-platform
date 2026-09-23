@@ -28,8 +28,16 @@ function makeBooking(
     language: Locale.en,
     cancellationEmailSentAt: null,
     opsCancellationNotifSentAt: null,
-    booker: { name: "Lara Tester", email: "lara@example.test" },
-    instructor: { user: { name: "Javi" } },
+    bookerPhone: "+41791234567",
+    booker: {
+      name: "Lara Tester",
+      email: "lara@example.test",
+      phone: "+41791234567",
+    },
+    // Default fixture = a non-owner instructor (Lara), so the ops notif fans out
+    // to two distinct recipients {instructor, admin}. The owner-teaches-own-lesson
+    // dedup case has its own test below.
+    instructor: { user: { name: "Lara", email: "lara@rideflumserberg.ch" } },
     attendees: [{ id: "att_1" }, { id: "att_2" }],
     ...overrides,
   };
@@ -149,7 +157,11 @@ describe("sendCancellationEmailsWith — credit variant", () => {
       ]),
     );
 
-    expect(calls[1]![0].to).toBe("franciscojgonzalezfernandez@gmail.com");
+    // F-140: instructor + admin, both distinct here → two recipients, one email.
+    expect(calls[1]![0].to).toEqual([
+      "lara@rideflumserberg.ch",
+      "franciscojgonzalezfernandez@gmail.com",
+    ]);
     expect(calls[1]![1]?.idempotencyKey).toBe("cancel-book_1-ops_notif-ops");
     expect(calls[1]![0].tags).toEqual(
       expect.arrayContaining([
@@ -157,6 +169,23 @@ describe("sendCancellationEmailsWith — credit variant", () => {
         { name: "locale", value: "en" },
       ]),
     );
+  });
+
+  test("dedupes the ops notif to one recipient when the instructor IS the admin", async () => {
+    // Owner teaches his own lesson: instructor email == admin inbox (here with
+    // different casing, to prove the compare is case-insensitive). F-140 requires
+    // exactly one email, never a duplicate.
+    const { deps, client } = makeDeps({
+      booking: makeBooking({
+        instructor: {
+          user: { name: "Javi", email: "FranciscoJGonzalezFernandez@gmail.com" },
+        },
+      }),
+    });
+    await sendCancellationEmailsWith(deps, creditArgs);
+    const calls = callsOf(client);
+    // Single recipient, in the first-seen (instructor) casing.
+    expect(calls[1]![0].to).toEqual(["FranciscoJGonzalezFernandez@gmail.com"]);
   });
 
   test("booker subject uses booker locale (de)", async () => {
@@ -204,6 +233,13 @@ describe("sendCancellationEmailsWith — forfeit variant", () => {
     await sendCancellationEmailsWith(deps, forfeitArgs);
     const calls = callsOf(client);
     expect(calls[1]![0].text as string).toContain("forfeited");
+  });
+
+  test("ops notif includes the booker phone when on file", async () => {
+    const { deps, client } = makeDeps();
+    await sendCancellationEmailsWith(deps, forfeitArgs);
+    const calls = callsOf(client);
+    expect(calls[1]![0].text as string).toContain("Phone: +41791234567");
   });
 });
 

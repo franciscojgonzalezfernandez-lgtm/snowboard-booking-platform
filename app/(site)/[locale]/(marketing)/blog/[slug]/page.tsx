@@ -12,17 +12,48 @@ import {
   getAllPostParams,
   getPostBySlug,
   getSlugsForId,
+  type BlogPost,
 } from "@/lib/blog/posts";
 import { SITE_URL, toAbsoluteUrl } from "@/lib/seo/site-url";
 import { articleOpenGraph } from "@/lib/seo/page-metadata";
+import { getActiveSeasonPrices } from "@/lib/seo/price-range";
+import { hasPriceTokens, interpolatePrices } from "@/lib/blog/prices";
 import { JsonLd } from "@/app/components/JsonLd";
-import { buildBlogPosting } from "@/lib/seo/structured-data";
+import { buildBlogPosting, buildFaqPage } from "@/lib/seo/structured-data";
 import { blogMdxComponents } from "../mdx-components";
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
 
+// ISR (mirrors /precios): lets a price answer-post (F-145) pick up live prices
+// and, because its price read is tagged SEASON_PRICE_RANGE_TAG, revalidate when
+// an admin edits prices (F-144). Non-price posts are unaffected.
+export const revalidate = 3600;
+
 export function generateStaticParams() {
   return getAllPostParams();
+}
+
+/** If a post carries {{price}} tokens anywhere (body/description/faq), fetch the
+ * active-season prices ONCE and interpolate all three surfaces so the visible
+ * copy, the meta description and the JSON-LD stay in sync and live. Posts with no
+ * tokens are returned untouched — no DB hit. */
+async function withLivePrices(post: BlogPost): Promise<BlogPost> {
+  const needs =
+    hasPriceTokens(post.body) ||
+    hasPriceTokens(post.description) ||
+    (post.faq?.some((f) => hasPriceTokens(f.q) || hasPriceTokens(f.a)) ?? false);
+  if (!needs) return post;
+
+  const prices = await getActiveSeasonPrices();
+  return {
+    ...post,
+    body: interpolatePrices(post.body, prices),
+    description: interpolatePrices(post.description, prices),
+    faq: post.faq?.map((f) => ({
+      q: interpolatePrices(f.q, prices),
+      a: interpolatePrices(f.a, prices),
+    })),
+  };
 }
 
 /** Absolute URL for a post in a given locale. `localePrefix: "always"` means
@@ -48,9 +79,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
   if (slugs.en) languages["x-default"] = postUrl("en", slugs.en);
 
+  // Live prices so the meta/OG description matches the visible lead + JSON-LD.
+  const live = await withLivePrices(post);
+
   return {
     title: post.title,
-    description: post.description,
+    description: live.description,
     alternates: {
       canonical: postUrl(locale as Locale, post.slug),
       languages,
@@ -68,7 +102,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         alternateLocales: Object.keys(slugs).filter((l) => l !== locale),
       }),
       title: post.title,
-      description: post.description,
+      description: live.description,
     },
   };
 }
@@ -93,15 +127,18 @@ export default async function BlogPostPage({ params }: Props) {
   }
 
   const t = await getTranslations({ locale, namespace: "blog" });
+  // Interpolate live prices (if the post uses {{price}} tokens) before compiling
+  // the body and building the JSON-LD, so copy + structured data stay in sync.
+  const live = await withLivePrices(post);
   const { content } = await compileMDX({
-    source: post.body,
+    source: live.body,
     components: blogMdxComponents,
     options: { parseFrontmatter: false },
   });
 
   const blogPostingJsonLd = buildBlogPosting({
-    headline: post.title,
-    description: post.description,
+    headline: live.title,
+    description: live.description,
     url: postUrl(typedLocale, post.slug),
     datePublished: post.date,
     image: post.cover ? toAbsoluteUrl(post.cover) : null,
@@ -115,6 +152,12 @@ export default async function BlogPostPage({ params }: Props) {
       className="mx-auto max-w-[820px] px-6 py-16 sm:py-24 lg:px-7"
     >
       <JsonLd data={blogPostingJsonLd} />
+      {/* Answer-first posts (F-145) also emit FAQPage JSON-LD so the direct
+          answer can surface in AI/search answers. Built from the post's own
+          `faq` frontmatter → structured data can't drift from the copy. */}
+      {live.faq && live.faq.length > 0 ? (
+        <JsonLd data={buildFaqPage(live.faq)} />
+      ) : null}
       <Link
         href="/blog"
         className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-primary"
@@ -132,7 +175,7 @@ export default async function BlogPostPage({ params }: Props) {
           {post.title}
         </h1>
         <p className="text-xl leading-relaxed text-foreground/70">
-          {post.description}
+          {live.description}
         </p>
       </header>
 

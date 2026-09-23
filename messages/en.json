@@ -75,6 +75,8 @@
     "terms_link": "Terms",
     "privacy_link": "Privacy",
     "contact_link": "Contact",
+    "impressum_link": "Legal notice",
+    "operated_by": "Operated by",
     "nav_aria": "Footer",
     "phone_label": "Phone"
   },
@@ -109,7 +111,7 @@
     "last_updated": "Last updated 19 May 2026",
     "intro": "This page explains what personal data we collect when you book a lesson, who processes it on our behalf, and how to exercise your rights under the Swiss nFADP and the EU GDPR.",
     "section_controller_title": "Data controller",
-    "section_controller_body": "Ride Flumserberg, the website operator. Contact: franciscojgonzalezfernandez@gmail.com. Operating from Flumserberg, canton of St. Gallen, Switzerland.",
+    "section_controller_body": "Gonzalez Fernandez Snowball Effect (Einzelfirma), proprietor Francisco Javier González Fernández, Josefstrasse 4, 8610 Uster, Switzerland — trading as Ride Flumserberg. Contact: franciscojgonzalezfernandez@gmail.com. Lessons are provided in Flumserberg, canton of St. Gallen.",
     "section_data_title": "Data we collect",
     "section_data_body": "Name, email address, phone number and the data required to complete payment. Card details are handled directly by Stripe and never reach our servers. We also store a session cookie issued by our authentication library; it is strictly necessary to keep you signed in and contains no tracking information.",
     "section_processors_title": "Service providers",
@@ -120,6 +122,22 @@
     "section_rights_body": "You may at any time request access to, correction of, or deletion of your personal data. Under the Swiss nFADP and the EU GDPR you also have the right to data portability and the right to object to processing. We will respond within 30 days.",
     "section_contact_title": "Contact",
     "section_contact_body": "To exercise these rights or to raise any privacy-related question, write to franciscojgonzalezfernandez@gmail.com. If you believe your rights have been infringed, you may also lodge a complaint with the Swiss Federal Data Protection and Information Commissioner (FDPIC)."
+  },
+  "impressum": {
+    "metadata_title": "Legal Notice — Ride Flumserberg",
+    "metadata_description": "Legal notice (Impressum) for Ride Flumserberg: the operator's name, legal form, registered address and contact details.",
+    "last_updated": "Last updated 18 September 2026",
+    "heading": "Legal Notice",
+    "intro": "rideflumserberg.ch is operated by the sole proprietorship named below. Snowboard lessons are provided on Flumserberg, canton of St. Gallen.",
+    "label_company": "Company",
+    "label_legal_form": "Legal form",
+    "legal_form_gloss": "sole proprietorship",
+    "label_owner": "Proprietor",
+    "label_address": "Registered address",
+    "label_email": "Email",
+    "label_phone": "Phone",
+    "country": "Switzerland",
+    "vat_note": "Not subject to Swiss VAT: annual turnover is below the CHF 100,000 threshold. This changes automatically once the threshold is crossed."
   },
   "login": {
     "metadata_title": "Sign in — Ride Flumserberg",
@@ -567,7 +585,6 @@
     "me_title": "Who you're riding with",
     "me_body_1": "I'm a certified coach from Spain with several years teaching both adults and kids — from first turns to carving and freestyle.",
     "me_body_2": "Kids get an experience built on how much I love riding with them. And an engineer's head means that when an adult wants to understand why a turn actually works, I can explain it.",
-    "video_caption": "Me, somewhere on the hill. (Real clip drops in here soon.)",
     "philosophy_title": "What a lesson with me is actually about",
     "philosophy_body": "It's built on confidence. The part I love most is watching someone face down a fear they walked in with — so we build that trust a step at a time, keeping every session safe and genuinely fun.",
     "mountain_title": "Why Flumserberg",

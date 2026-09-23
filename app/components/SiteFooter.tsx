@@ -5,6 +5,7 @@ import {
   OPERATIONAL_PHONE_DISPLAY,
   OPERATIONAL_PHONE_TEL,
 } from "@/lib/contact/phone";
+import { LEGAL_ENTITY } from "@/lib/legal/entity";
 
 export async function SiteFooter() {
   const tHome = await getTranslations("home");
@@ -51,6 +52,13 @@ export async function SiteFooter() {
             {tFooter("privacy_link")}
           </Link>
           <Link
+            href="/impressum"
+            data-testid="footer-impressum-link"
+            className="hover:text-primary"
+          >
+            {tFooter("impressum_link")}
+          </Link>
+          <Link
             href="/contacto"
             data-testid="footer-contact-link"
             className="hover:text-primary"
@@ -64,7 +72,11 @@ export async function SiteFooter() {
         </nav>
       </div>
 
-      <div className="mx-auto max-w-[1320px] px-7 pb-12 text-[11px] font-bold tracking-[0.1em]">
+      <div className="mx-auto flex max-w-[1320px] flex-wrap items-center justify-between gap-3 px-7 pb-12 text-[11px] font-bold tracking-[0.1em]">
+        <span data-testid="footer-operator" className="text-background/70">
+          {tFooter("operated_by")} {LEGAL_ENTITY.legalName},{" "}
+          {LEGAL_ENTITY.legalForm}
+        </span>
         <a
           href={`tel:${OPERATIONAL_PHONE_TEL}`}
           data-testid="footer-phone-link"

@@ -1,11 +1,11 @@
+// Production-shaped seed: one instructor (Javi, the owner) + one active season,
+// with season-long availability minus the days the school is closed. No demo
+// bookings or fake students — the multi-instructor/demo scaffolding was removed
+// when the seed was made prod-ready (F-154). Idempotent: safe to re-run.
 import {
   PrismaClient,
   AvailabilityKind,
-  BookingStatus,
-  CreditReason,
-  CreditStatus,
   Duration,
-  Level,
   Locale,
   Role,
   type AvailabilityBlock,
@@ -17,17 +17,7 @@ import {
 const prisma = new PrismaClient();
 
 const OWNER_EMAIL = "franciscojgonzalezfernandez@gmail.com";
-const LARA_EMAIL = "lara@rideflumserberg.ch";
-const SEED_BOOKER_EMAIL = "student+seed@rideflumserberg.ch";
-// A second booker with a *finished* history — completed classes carrying
-// instructor notes (from both coaches), a future booking, and a cancellation
-// with leftover credit. Feeds the admin student directory (F-087) so the list,
-// the profile's notes timeline, and the lifetime stats all have real content.
-const HISTORY_BOOKER_EMAIL = "student+history@rideflumserberg.ch";
 const SEASON_NAME = "Season 26/27";
-const SEED_WEEKS = 8;
-const SEED_BOOKING_PREFIX = "seed-f036-";
-const SEED_HISTORY_PREFIX = "seed-f087-";
 // F-142: stable id for the migrated F-053 hero band so re-seeds are idempotent
 // and never clobber the owner's later edits (update: {}).
 const HERO_BANNER_ID = "seed_hero_default";
@@ -37,10 +27,15 @@ const OPERATIONAL_PHONE_TEL = "+41766381870";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+// School is closed over the winter holidays: 2026-12-28 through 2027-01-08
+// (inclusive). No availability blocks are emitted on these days.
+const HOLIDAY_BREAK_START = dateOnly("2026-12-28");
+const HOLIDAY_BREAK_END = dateOnly("2027-01-08");
+
 // Initial CHF prices in cents, VAT-inclusive. Locked in Sprint 2 planning
 // (2026-05-19). Mirrored into Season.priceCentsByDuration by upsertSeason()
 // so the app reads the same values from DB; admin editor in Sprint 4 will
-// rewrite the row, this object only exists for the seed booking totals.
+// rewrite the row — this object seeds the initial Season.priceCentsByDuration.
 const INITIAL_PRICE_CENTS: Record<Duration, number> = {
   ONE_HOUR: 11_000,
   TWO_HOURS: 20_000,
@@ -58,10 +53,6 @@ function setUtcTime(base: Date, hhmm: string): Date {
   const out = new Date(base);
   out.setUTCHours(Number(hStr), Number(mStr), 0, 0);
   return out;
-}
-
-function isoDate(date: Date): string {
-  return date.toISOString().slice(0, 10);
 }
 
 async function upsertOwner(): Promise<User> {
@@ -127,81 +118,6 @@ async function upsertOwnerInstructor(userId: string): Promise<Instructor> {
   });
 }
 
-async function upsertLaraUser(): Promise<User> {
-  return prisma.user.upsert({
-    where: { email: LARA_EMAIL },
-    update: {
-      name: "Lara Müller",
-      locale: Locale.de,
-      roles: [Role.instructor],
-      emailVerified: true,
-    },
-    create: {
-      email: LARA_EMAIL,
-      name: "Lara Müller",
-      locale: Locale.de,
-      roles: [Role.instructor],
-      emailVerified: true,
-    },
-  });
-}
-
-async function upsertLaraInstructor(userId: string): Promise<Instructor> {
-  const bio = [
-    "Grew up between Zurich and the Bündner alps, snowboarding since I was nine.",
-    "Carving and freeride are my home turf — kids and intermediates progress fast with me because I keep drills short and feedback specific.",
-    "Lessons run mostly in German; happy to switch to English if it helps the rider relax.",
-  ].join(" ");
-
-  const specialties = [
-    "beginner-friendly",
-    "intermediate-progression",
-    "carving",
-    "freeride",
-    "kids-4-12",
-  ];
-
-  return prisma.instructor.upsert({
-    where: { userId },
-    update: {
-      bio,
-      specialties,
-      languages: [Locale.de, Locale.en],
-      active: true,
-      acceptsSameDayIfBooked: false,
-      calendarConnected: false,
-    },
-    create: {
-      userId,
-      bio,
-      specialties,
-      languages: [Locale.de, Locale.en],
-      active: true,
-      acceptsSameDayIfBooked: false,
-      calendarConnected: false,
-    },
-  });
-}
-
-async function upsertSeedBooker(): Promise<User> {
-  return prisma.user.upsert({
-    where: { email: SEED_BOOKER_EMAIL },
-    update: {
-      name: "Sam Booker",
-      locale: Locale.en,
-      roles: [Role.student],
-      emailVerified: true,
-    },
-    create: {
-      email: SEED_BOOKER_EMAIL,
-      name: "Sam Booker",
-      locale: Locale.en,
-      roles: [Role.student],
-      emailVerified: true,
-    },
-  });
-}
-
 async function upsertSeason(): Promise<Season> {
   const existing = await prisma.season.findFirst({ where: { name: SEASON_NAME } });
   const data = {
@@ -228,17 +144,23 @@ async function upsertSeason(): Promise<Season> {
   return prisma.season.create({ data });
 }
 
+// Availability for the whole season, one full-day AVAILABLE block (08:00–17:00
+// per Season.operatingHours) per open day. The school is closed on Sundays and
+// Mondays and over the winter-holiday break, so those days simply get no block
+// (absence = unbookable; the engine derives slots from Season.anchorTimes).
+// Destructive + idempotent: it clears the instructor's blocks in the season
+// window and rewrites them.
 async function reseedAvailability(
   instructor: Instructor,
   season: Season,
 ): Promise<AvailabilityBlock[]> {
-  const start = dateOnly("2026-11-15");
-  const end = new Date(start.getTime() + SEED_WEEKS * 7 * DAY_MS);
+  const start = new Date(season.startDate.getTime());
+  const endExclusive = new Date(season.endDate.getTime() + DAY_MS);
 
   await prisma.availabilityBlock.deleteMany({
     where: {
       instructorId: instructor.id,
-      startDateTime: { gte: start, lt: end },
+      startDateTime: { gte: start, lt: endExclusive },
     },
   });
 
@@ -248,9 +170,17 @@ async function reseedAvailability(
     endDateTime: Date;
     kind: AvailabilityKind;
   }[] = [];
-  for (let i = 0; i < SEED_WEEKS * 7; i++) {
-    const day = new Date(start.getTime() + i * DAY_MS);
-    if (day > season.endDate) break;
+
+  for (
+    let day = new Date(start.getTime());
+    day <= season.endDate;
+    day = new Date(day.getTime() + DAY_MS)
+  ) {
+    // Dates are UTC-midnight (@db.Date), so getUTCDay() is the calendar weekday.
+    const weekday = day.getUTCDay();
+    if (weekday === 0 || weekday === 1) continue; // closed Sun + Mon
+    if (day >= HOLIDAY_BREAK_START && day <= HOLIDAY_BREAK_END) continue; // holiday break
+
     blocks.push({
       instructorId: instructor.id,
       startDateTime: setUtcTime(day, season.operatingHoursStart),
@@ -264,290 +194,15 @@ async function reseedAvailability(
   return prisma.availabilityBlock.findMany({
     where: {
       instructorId: instructor.id,
-      startDateTime: { gte: start, lt: end },
+      startDateTime: { gte: start, lt: endExclusive },
     },
     orderBy: { startDateTime: "asc" },
   });
 }
 
-type SeedBookingPlan = {
-  instructor: Instructor;
-  date: Date;
-  anchorTime: string;
-  duration: Duration;
-  language: Locale;
-};
-
-const SATURATED_DAY = dateOnly("2026-12-02"); // Wednesday — both instructors @ 15:00
-
-function buildBookingPlan(javi: Instructor, lara: Instructor): SeedBookingPlan[] {
-  const plan: SeedBookingPlan[] = [];
-  const start = dateOnly("2026-11-15");
-
-  for (let i = 0; i < SEED_WEEKS * 7; i++) {
-    const day = new Date(start.getTime() + i * DAY_MS);
-
-    // Lara: 09:00 every single seeded day.
-    plan.push({
-      instructor: lara,
-      date: day,
-      anchorTime: "09:00",
-      duration: Duration.ONE_HOUR,
-      language: Locale.de,
-    });
-
-    // Javi: 13:00 every Wednesday (UTC day 3 = Wed).
-    if (day.getUTCDay() === 3) {
-      plan.push({
-        instructor: javi,
-        date: day,
-        anchorTime: "13:00",
-        duration: Duration.ONE_HOUR,
-        language: Locale.en,
-      });
-    }
-
-    // Saturated day: both instructors at 15:00 on 2026-12-02.
-    if (day.getTime() === SATURATED_DAY.getTime()) {
-      plan.push({
-        instructor: javi,
-        date: day,
-        anchorTime: "15:00",
-        duration: Duration.ONE_HOUR,
-        language: Locale.en,
-      });
-      plan.push({
-        instructor: lara,
-        date: day,
-        anchorTime: "15:00",
-        duration: Duration.ONE_HOUR,
-        language: Locale.de,
-      });
-    }
-  }
-
-  return plan;
-}
-
-async function reseedBookings(
-  javi: Instructor,
-  lara: Instructor,
-  booker: User,
-): Promise<{ created: number; confirmed: number; pendingPayment: number }> {
-  // Wipe previous seed-owned bookings (idempotency). Attendees cascade via FK.
-  await prisma.booking.deleteMany({
-    where: { icsUid: { startsWith: SEED_BOOKING_PREFIX } },
-  });
-
-  const plan = buildBookingPlan(javi, lara);
-  let confirmed = 0;
-  let pendingPayment = 0;
-
-  for (const [index, entry] of plan.entries()) {
-    // Alternate CONFIRMED and PENDING_PAYMENT to exercise both engine paths.
-    const status =
-      index % 2 === 0 ? BookingStatus.CONFIRMED : BookingStatus.PENDING_PAYMENT;
-    if (status === BookingStatus.CONFIRMED) confirmed += 1;
-    else pendingPayment += 1;
-
-    const icsUid = [
-      SEED_BOOKING_PREFIX,
-      entry.instructor.id.slice(-6),
-      "-",
-      isoDate(entry.date),
-      "-",
-      entry.anchorTime.replace(":", ""),
-    ].join("");
-
-    await prisma.booking.create({
-      data: {
-        bookerId: booker.id,
-        instructorId: entry.instructor.id,
-        date: entry.date,
-        anchorTime: entry.anchorTime,
-        duration: entry.duration,
-        language: entry.language,
-        status,
-        totalPriceCents: INITIAL_PRICE_CENTS[entry.duration],
-        icsUid,
-        attendees: {
-          create: [
-            {
-              name: "Sam Booker",
-              birthDate: dateOnly("1995-06-12"),
-              level: Level.INTERMEDIATE,
-              isBooker: true,
-            },
-          ],
-        },
-      },
-    });
-  }
-
-  return { created: plan.length, confirmed, pendingPayment };
-}
-
-async function upsertHistoryBooker(): Promise<User> {
-  return prisma.user.upsert({
-    where: { email: HISTORY_BOOKER_EMAIL },
-    update: {
-      name: "Mia Veteran",
-      locale: Locale.de,
-      phone: "+41 79 555 01 02",
-      roles: [Role.student],
-      emailVerified: true,
-    },
-    create: {
-      email: HISTORY_BOOKER_EMAIL,
-      name: "Mia Veteran",
-      locale: Locale.de,
-      phone: "+41 79 555 01 02",
-      roles: [Role.student],
-      emailVerified: true,
-    },
-  });
-}
-
-type HistoryPlanEntry = {
-  instructor: Instructor;
-  date: Date;
-  anchorTime: string;
-  duration: Duration;
-  language: Locale;
-  status: BookingStatus;
-  note?: string;
-};
-
-// Real student history for the F-087 directory. Past, COMPLETED classes carry
-// notes from both coaches (so the timeline must attribute authors), plus one
-// future CONFIRMED class and one cancellation that leaves an ACTIVE credit.
-async function reseedStudentHistory(
-  javi: Instructor,
-  lara: Instructor,
-  booker: User,
-): Promise<{ created: number; completed: number; notes: number; creditCents: number }> {
-  // Credits FK-reference bookings, so wipe credits before the bookings they
-  // point at. Both are scoped to this fixture's icsUid prefix (idempotent).
-  await prisma.accountCredit.deleteMany({
-    where: { sourceBooking: { icsUid: { startsWith: SEED_HISTORY_PREFIX } } },
-  });
-  await prisma.booking.deleteMany({
-    where: { icsUid: { startsWith: SEED_HISTORY_PREFIX } },
-  });
-
-  const plan: HistoryPlanEntry[] = [
-    {
-      instructor: lara,
-      date: dateOnly("2026-02-10"),
-      anchorTime: "10:00",
-      duration: Duration.ONE_HOUR,
-      language: Locale.de,
-      status: BookingStatus.COMPLETED,
-      note: "Solid toeside; next time work on switch riding.",
-    },
-    {
-      instructor: javi,
-      date: dateOnly("2026-03-05"),
-      anchorTime: "13:00",
-      duration: Duration.TWO_HOURS,
-      language: Locale.en,
-      status: BookingStatus.COMPLETED,
-      note: "Linked turns on red runs — confidence clearly up.",
-    },
-    {
-      instructor: lara,
-      date: dateOnly("2026-03-20"),
-      anchorTime: "09:00",
-      duration: Duration.INTENSIVE,
-      language: Locale.de,
-      status: BookingStatus.COMPLETED,
-      note: "Carving clean; ready for steeper terrain.",
-    },
-    {
-      instructor: javi,
-      date: dateOnly("2026-12-09"),
-      anchorTime: "11:00",
-      duration: Duration.ONE_HOUR,
-      language: Locale.en,
-      status: BookingStatus.CONFIRMED,
-    },
-    {
-      instructor: lara,
-      date: dateOnly("2026-01-15"),
-      anchorTime: "14:00",
-      duration: Duration.ONE_HOUR,
-      language: Locale.de,
-      status: BookingStatus.CANCELLED_BY_USER,
-    },
-  ];
-
-  let completed = 0;
-  let notes = 0;
-  let cancelledBookingId: string | null = null;
-
-  for (const [index, entry] of plan.entries()) {
-    const icsUid = [
-      SEED_HISTORY_PREFIX,
-      isoDate(entry.date),
-      "-",
-      entry.anchorTime.replace(":", ""),
-      "-",
-      String(index),
-    ].join("");
-
-    const created = await prisma.booking.create({
-      data: {
-        bookerId: booker.id,
-        instructorId: entry.instructor.id,
-        date: entry.date,
-        anchorTime: entry.anchorTime,
-        duration: entry.duration,
-        language: entry.language,
-        status: entry.status,
-        totalPriceCents: INITIAL_PRICE_CENTS[entry.duration],
-        instructorNote: entry.note ?? null,
-        instructorNoteSetAt: entry.note ? setUtcTime(entry.date, "18:00") : null,
-        icsUid,
-        attendees: {
-          create: [
-            {
-              name: "Mia Veteran",
-              birthDate: dateOnly("1998-03-22"),
-              level: Level.ADVANCED,
-              isBooker: true,
-            },
-          ],
-        },
-      },
-      select: { id: true },
-    });
-
-    if (entry.status === BookingStatus.COMPLETED) completed += 1;
-    if (entry.note) notes += 1;
-    if (entry.status === BookingStatus.CANCELLED_BY_USER) cancelledBookingId = created.id;
-  }
-
-  let creditCents = 0;
-  if (cancelledBookingId) {
-    creditCents = INITIAL_PRICE_CENTS.ONE_HOUR;
-    await prisma.accountCredit.create({
-      data: {
-        userId: booker.id,
-        amountCents: creditCents,
-        sourceBookingId: cancelledBookingId,
-        reason: CreditReason.USER_CANCEL,
-        status: CreditStatus.ACTIVE,
-        expiresAt: new Date(Date.now() + 365 * DAY_MS),
-      },
-    });
-  }
-
-  return { created: plan.length, completed, notes, creditCents };
-}
-
 // Production-seed guard (added after the main branch was seeded by accident).
-// This seed is destructive: it deleteMany's AvailabilityBlock/Booking rows and
-// overwrites the owner/instructor profiles. It must NEVER hit the Neon `main`
+// This seed is destructive: it deleteMany's AvailabilityBlock rows and
+// overwrites the owner/instructor profile. It must NEVER hit the Neon `main`
 // branch (production, https://rideflumserberg.ch) unless the operator opts in
 // explicitly with ALLOW_PRODUCTION_SEED=true. Local/dev work targets the Neon
 // `dev` branch.
@@ -569,7 +224,7 @@ function assertNotProduction(): void {
         "Refusing to seed: DATABASE_URL points at PRODUCTION (Neon `main`).",
         `  host: ${host || "<unparseable DATABASE_URL>"}`,
         "",
-        "This seed wipes availability + bookings and overwrites instructor profiles.",
+        "This seed wipes availability and overwrites the instructor profile.",
         "If you truly intend to seed production, re-run with ALLOW_PRODUCTION_SEED=true.",
         "For local/dev work, point DATABASE_URL at the Neon `dev` endpoint",
         "(ep-proud-block-ajbk5wz5) before seeding.",
@@ -605,38 +260,21 @@ async function main() {
 
   const owner = await upsertOwner();
   const javi = await upsertOwnerInstructor(owner.id);
-  const laraUser = await upsertLaraUser();
-  const lara = await upsertLaraInstructor(laraUser.id);
-  const booker = await upsertSeedBooker();
-  const historyBooker = await upsertHistoryBooker();
   const season = await upsertSeason();
 
   const javiBlocks = await reseedAvailability(javi, season);
-  const laraBlocks = await reseedAvailability(lara, season);
-  const bookings = await reseedBookings(javi, lara, booker);
-  const studentHistory = await reseedStudentHistory(javi, lara, historyBooker);
   const heroBanner = await reseedAdBanner();
 
   console.log(
     JSON.stringify(
       {
         seeded: {
-          users: {
-            owner: { id: owner.id, email: owner.email },
-            lara: { id: laraUser.id, email: laraUser.email },
-            booker: { id: booker.id, email: booker.email },
-            historyBooker: { id: historyBooker.id, email: historyBooker.email },
-          },
-          instructors: {
+          owner: { id: owner.id, email: owner.email },
+          instructor: {
             javi: {
               id: javi.id,
               languages: javi.languages.length,
               specialties: javi.specialties.length,
-            },
-            lara: {
-              id: lara.id,
-              languages: lara.languages.length,
-              specialties: lara.specialties.length,
             },
           },
           season: {
@@ -646,10 +284,7 @@ async function main() {
           },
           availabilityBlocks: {
             javi: javiBlocks.length,
-            lara: laraBlocks.length,
           },
-          bookings,
-          studentHistory,
           adBanner: { id: heroBanner.id, enabled: heroBanner.enabled },
         },
       },

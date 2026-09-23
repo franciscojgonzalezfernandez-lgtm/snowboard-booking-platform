@@ -37,6 +37,7 @@ const baseOpsProps = {
   anchorTime: "11:00",
   bookerName: "Lara Tester",
   bookerEmail: "lara@example.test",
+  bookerPhone: "+41791234567",
   attendeeCount: 2,
 };
 

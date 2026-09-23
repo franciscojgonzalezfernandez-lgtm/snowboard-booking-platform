@@ -596,6 +596,33 @@ describe("createBookingDraftWith — phone auto-backfill (F-064a)", () => {
     const call = spies.userUpdate.mock.calls[0]![0];
     expect(call.where).toEqual({ id: "user_javi", phone: null });
     expect(userUpdates).toEqual([{ id: "user_javi", phone: "+41761112233" }]);
+    // F-140: the same normalised number is snapshotted on the booking itself,
+    // so the ops/instructor email reflects THIS booking's phone regardless of
+    // the profile value.
+    const bookingData = spies.bookingCreate.mock.calls[0]![0].data as {
+      bookerPhone?: string;
+    };
+    expect(bookingData.bookerPhone).toBe("+41761112233");
+  });
+
+  test("snapshots the booking phone even when the profile already has one", async () => {
+    // Returning booker edits the prefilled number: the profile guard is a no-op,
+    // but the booking must still capture what they typed this time.
+    const { deps, enginePrisma, spies, userUpdates } = makeDeps({
+      userHasPhone: true,
+    });
+
+    const result = await createBookingDraftWith(deps, enginePrisma, {
+      ...VALID_INPUT,
+      bookerPhone: "+41 78 999 88 77",
+    });
+
+    expect(result.ok).toBe(true);
+    expect(userUpdates).toEqual([]); // profile untouched
+    const bookingData = spies.bookingCreate.mock.calls[0]![0].data as {
+      bookerPhone?: string;
+    };
+    expect(bookingData.bookerPhone).toBe("+41789998877");
   });
 
   test("does not overwrite an existing phone (guard matches no row)", async () => {

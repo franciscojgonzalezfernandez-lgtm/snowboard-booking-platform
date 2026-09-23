@@ -60,6 +60,10 @@ export const routing = defineRouting({
     "/blog/[slug]": "/blog/[slug]",
     "/terms": "/terms",
     "/privacy": "/privacy",
+    // Legal notice / Impressum (F-153). Like /terms and /privacy it keeps an
+    // identical slug across locales (the German term is the recognised CH
+    // standard); only the page content is translated.
+    "/impressum": "/impressum",
     "/login": "/login",
     "/dashboard": "/dashboard",
     "/reservar": "/reservar",

@@ -36,6 +36,7 @@ const STATIC_ROUTES: StaticRoute[] = [
   { href: "/blog", priority: 0.6, changeFrequency: "weekly" },
   { href: "/terms", priority: 0.2, changeFrequency: "yearly" },
   { href: "/privacy", priority: 0.2, changeFrequency: "yearly" },
+  { href: "/impressum", priority: 0.2, changeFrequency: "yearly" },
 ];
 
 /** Blog uses localized content slugs (not the `pathnames` map); the `/blog`

@@ -5,7 +5,7 @@ type Locale = "en" | "de" | "es";
 
 const LOCALES: Locale[] = ["en", "de", "es"];
 
-const SEEDED_DATE = "2026-11-16"; // Monday within the seeded window (F-021)
+const SEEDED_DATE = "2026-11-17"; // Tuesday within the seeded window (Sun/Mon are closed)
 const SEEDED_TIME = "11:00";
 
 const SUMMARY_TITLE = {
