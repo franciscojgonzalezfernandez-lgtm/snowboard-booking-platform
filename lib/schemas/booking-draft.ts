@@ -60,12 +60,16 @@ export type CreateBookingDraftResult =
        * the success page.
        */
       clientSecret: string | null;
-      /** Full lesson price (ledger value), independent of credits applied. */
+      /** Full lesson price (ledger value = effective/charged price), independent of credits applied. */
       totalPriceCents: number;
       /** Amount actually charged to the card = max(0, total - creditsApplied). */
       chargeAmountCents: number;
       /** Sum of the credits effectively consumed (may exceed total on overshoot). */
       creditsAppliedCents: number;
+      /** F-141: regular (pre-promo) price, set only when a promo applied (else null). */
+      originalPriceCents: number | null;
+      /** F-141: resolved promo copy in the booking's language, set only when a promo applied. */
+      promoLabel: string | null;
       reused: boolean;
     }
   | {

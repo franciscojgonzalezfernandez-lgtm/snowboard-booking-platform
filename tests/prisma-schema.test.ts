@@ -26,6 +26,7 @@ describe("prisma schema shape (F-020)", () => {
       [
         "Account",
         "AccountCredit",
+        "AdBanner",
         "Attendee",
         "AvailabilityBlock",
         "Booking",

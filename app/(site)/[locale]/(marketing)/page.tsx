@@ -1,12 +1,21 @@
 import type { Metadata } from "next";
+import type { Duration, Locale } from "@prisma/client";
 import Image from "next/image";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { HeroAnnouncement } from "@/app/components/HeroAnnouncement";
 import { CardScroller, scrollerItem } from "@/components/marketing/card-scroller";
 import { GoogleReviewBadge } from "@/components/marketing/google-review-badge";
+import { PromoPrice } from "@/components/pricing/promo-price";
 import { TierPhoto } from "@/components/marketing/tier-photo";
 import { marketingAlternates, marketingOpenGraph } from "@/lib/seo/page-metadata";
+import { getActiveSeasonForPricing } from "@/lib/marketing/cache";
+import { formatChf } from "@/lib/pricing/format";
+import {
+  getPromoLabel,
+  PriceConfigurationError,
+  resolvePriceCents,
+} from "@/lib/pricing/get-price";
 import { RECOMMENDED_TIER, TIER_KEY, TIER_ORDER } from "@/lib/pricing/tiers";
 import { Link } from "@/i18n/navigation";
 import { Reveal } from "@/lib/motion/reveal";
@@ -44,6 +53,38 @@ export default async function HomePage({ params }: HomePageProps) {
 
   const t = await getTranslations("home");
   const tPricing = await getTranslations("pricing");
+
+  // F-141: the home tier cards now show prices (with promo strikethrough). Read
+  // the active season via the cached, `pricing`-tagged reader so the page stays
+  // static (F-124) and picks up owner edits on tag invalidation. A missing or
+  // malformed price for a duration simply omits that card's price — the card
+  // still links to the funnel — so the landing page never fails on pricing.
+  const season = await getActiveSeasonForPricing();
+  type CardPrice = {
+    priceLabel: string;
+    originalPriceLabel: string | null;
+    promoLabel: string | null;
+  };
+  const priceByDuration: Partial<Record<Duration, CardPrice>> = {};
+  if (season) {
+    for (const duration of TIER_ORDER) {
+      try {
+        const resolved = resolvePriceCents(season, duration);
+        priceByDuration[duration] = {
+          priceLabel: formatChf(resolved.cents),
+          originalPriceLabel: resolved.isPromo
+            ? formatChf(resolved.originalCents)
+            : null,
+          promoLabel: resolved.isPromo
+            ? getPromoLabel(season, duration, locale as Locale)
+            : null,
+        };
+      } catch (error) {
+        if (!(error instanceof PriceConfigurationError)) throw error;
+        // Leave this duration priceless; the card still links to the funnel.
+      }
+    }
+  }
 
   return (
     <main>
@@ -148,6 +189,7 @@ export default async function HomePage({ params }: HomePageProps) {
               {TIER_ORDER.map((duration) => {
                 const key = TIER_KEY[duration];
                 const recommended = key === RECOMMENDED_TIER;
+                const price = priceByDuration[duration];
 
                 return (
                   <StaggerItem key={duration} className={scrollerItem()}>
@@ -179,6 +221,22 @@ export default async function HomePage({ params }: HomePageProps) {
                         <p className="mt-3 text-[15px] leading-[1.5] text-foreground/75">
                           {t(`class_blurb_${key}`)}
                         </p>
+                        {price ? (
+                          <div
+                            className="mt-auto pt-5"
+                            data-testid={`home-price-${duration}`}
+                          >
+                            <PromoPrice
+                              priceClassName="font-display text-[22px]"
+                              priceLabel={price.priceLabel}
+                              originalPriceLabel={price.originalPriceLabel}
+                              promoLabel={price.promoLabel}
+                              regularPriceA11yLabel={tPricing(
+                                "regular_price_a11y",
+                              )}
+                            />
+                          </div>
+                        ) : null}
                       </div>
 
                       <span className="flex items-center justify-between border-t-2 border-foreground px-6 py-4 text-[12px] font-bold uppercase tracking-[0.18em] transition-colors group-hover:bg-foreground group-hover:text-background">

@@ -7,6 +7,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { auth } from "@/lib/auth";
 import { setUtcTime, startOfUtcDay } from "@/lib/booking-engine/time";
+import { PromoPrice } from "@/components/pricing/promo-price";
 import { prisma } from "@/lib/db";
 import { formatChf } from "@/lib/pricing/format";
 
@@ -71,6 +72,8 @@ export default async function ExitoPage({ params }: ExitoPageProps) {
       anchorTime: true,
       duration: true,
       totalPriceCents: true,
+      originalPriceCents: true,
+      promoLabel: true,
       booker: { select: { name: true } },
       instructor: { select: { user: { select: { name: true } } } },
       attendees: { select: { id: true } },
@@ -131,6 +134,11 @@ export default async function ExitoPage({ params }: ExitoPageProps) {
   const durationLabel = tStep1(DURATION_LABEL_KEY[booking.duration]);
   const instructorName = booking.instructor.user.name ?? "—";
   const totalLabel = formatChf(booking.totalPriceCents);
+  const originalPriceLabel =
+    booking.originalPriceCents != null
+      ? formatChf(booking.originalPriceCents)
+      : null;
+  const tPricing = await getTranslations("pricing");
   const attendeesCount = booking.attendees.length;
 
   return (
@@ -224,11 +232,15 @@ export default async function ExitoPage({ params }: ExitoPageProps) {
           <span className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
             {t("summary_total")}
           </span>
-          <span
-            className="font-display text-2xl tracking-tight"
-            data-testid="exito-summary-total"
-          >
-            {totalLabel}
+          <span data-testid="exito-summary-total">
+            <PromoPrice
+              className="items-end text-right"
+              priceClassName="font-display text-2xl"
+              priceLabel={totalLabel}
+              originalPriceLabel={originalPriceLabel}
+              promoLabel={booking.promoLabel}
+              regularPriceA11yLabel={tPricing("regular_price_a11y")}
+            />
           </span>
         </div>
         <p className="mt-2 text-xs text-muted-foreground">

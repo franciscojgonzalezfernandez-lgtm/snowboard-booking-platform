@@ -18,6 +18,12 @@ const prisma = new PrismaClient();
 
 const OWNER_EMAIL = "franciscojgonzalezfernandez@gmail.com";
 const SEASON_NAME = "Season 26/27";
+// F-142: stable id for the migrated F-053 hero band so re-seeds are idempotent
+// and never clobber the owner's later edits (update: {}).
+const HERO_BANNER_ID = "seed_hero_default";
+// The owner's operational phone as a tel: href (from lib/contact/phone.ts;
+// inlined because the seed intentionally has no @/ alias imports).
+const OPERATIONAL_PHONE_TEL = "+41766381870";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -227,6 +233,28 @@ function assertNotProduction(): void {
   }
 }
 
+// F-142: migrate the former F-053 messages-authored hero band into the AdBanner
+// table as the first enabled banner. `update: {}` keeps a re-seed from
+// overwriting whatever the owner has since edited in the admin panel.
+async function reseedAdBanner() {
+  return prisma.adBanner.upsert({
+    where: { id: HERO_BANNER_ID },
+    update: {},
+    create: {
+      id: HERO_BANNER_ID,
+      enabled: true,
+      sortIndex: 0,
+      body: {
+        en: "Planning a team or group day on the mountain? I run private sessions all winter.",
+        de: "Team- oder Gruppentag am Berg geplant? Den ganzen Winter gebe ich private Kurse.",
+        es: "¿Un día de equipo o grupo en la montaña? Doy clases privadas todo el invierno.",
+      },
+      ctaLabel: { en: "Get in touch", de: "Melde dich", es: "Escríbeme" },
+      ctaHref: `tel:${OPERATIONAL_PHONE_TEL}`,
+    },
+  });
+}
+
 async function main() {
   assertNotProduction();
 
@@ -235,6 +263,7 @@ async function main() {
   const season = await upsertSeason();
 
   const javiBlocks = await reseedAvailability(javi, season);
+  const heroBanner = await reseedAdBanner();
 
   console.log(
     JSON.stringify(
@@ -256,6 +285,7 @@ async function main() {
           availabilityBlocks: {
             javi: javiBlocks.length,
           },
+          adBanner: { id: heroBanner.id, enabled: heroBanner.enabled },
         },
       },
       null,

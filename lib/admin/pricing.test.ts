@@ -1,7 +1,8 @@
 import { describe, expect, test, vi } from "vitest";
-import { Duration } from "@prisma/client";
+import { Duration, Prisma } from "@prisma/client";
 
 import {
+  activeSeasonHasPromo,
   getActiveSeasonPricingWith,
   updateSeasonPricingWith,
   type AdminPricingDeps,
@@ -11,17 +12,21 @@ type SeasonRow = {
   id: string;
   name: string;
   priceCentsByDuration: unknown;
+  promoPriceCentsByDuration?: unknown;
+  promoLabelByDuration?: unknown;
 } | null;
 
-function makeDeps(season: SeasonRow) {
+function makeDeps(season: SeasonRow, enabledBanners = 0) {
   const findFirst = vi.fn(async () => season);
   const update = vi.fn(async () => ({ id: season?.id ?? "season_x" }));
+  const count = vi.fn(async () => enabledBanners);
   const deps: AdminPricingDeps = {
     prisma: {
       season: { findFirst, update },
+      adBanner: { count },
     } as unknown as AdminPricingDeps["prisma"],
   };
-  return { deps, spies: { findFirst, update } };
+  return { deps, spies: { findFirst, update, count } };
 }
 
 const VALID = {
@@ -31,17 +36,85 @@ const VALID = {
   FULL_DAY: 50_000,
 };
 
+const LABEL = { en: "Season opening", de: "Saisonstart", es: "Apertura" };
+
 describe("updateSeasonPricingWith", () => {
-  test("writes all four cents prices to the active season", async () => {
+  test("writes the four cents prices, promo columns NULL when no promo", async () => {
     const { deps, spies } = makeDeps({ id: "s1", name: "26/27", priceCentsByDuration: {} });
     const result = await updateSeasonPricingWith(deps, VALID);
 
     expect(result).toEqual({ ok: true });
-    expect(spies.update).toHaveBeenCalledTimes(1);
     expect(spies.update).toHaveBeenCalledWith({
       where: { id: "s1" },
-      data: { priceCentsByDuration: VALID },
+      data: {
+        priceCentsByDuration: VALID,
+        promoPriceCentsByDuration: Prisma.DbNull,
+        promoLabelByDuration: Prisma.DbNull,
+      },
     });
+    // No promo → no banner check.
+    expect(spies.count).not.toHaveBeenCalled();
+  });
+
+  test("writes a partial promo map + labels when a promo is set (banner present)", async () => {
+    const { deps, spies } = makeDeps(
+      { id: "s1", name: "26/27", priceCentsByDuration: {} },
+      1,
+    );
+    const result = await updateSeasonPricingWith(deps, {
+      ...VALID,
+      promos: { ONE_HOUR: { priceCents: 9_500, label: LABEL } },
+    });
+
+    expect(result).toEqual({ ok: true });
+    expect(spies.count).toHaveBeenCalledWith({ where: { enabled: true } });
+    expect(spies.update).toHaveBeenCalledWith({
+      where: { id: "s1" },
+      data: {
+        priceCentsByDuration: VALID,
+        promoPriceCentsByDuration: { ONE_HOUR: 9_500 },
+        promoLabelByDuration: { ONE_HOUR: LABEL },
+      },
+    });
+  });
+
+  test("blocks a promo with no enabled banner (PROMO_REQUIRES_BANNER)", async () => {
+    const { deps, spies } = makeDeps(
+      { id: "s1", name: "26/27", priceCentsByDuration: {} },
+      0,
+    );
+    const result = await updateSeasonPricingWith(deps, {
+      ...VALID,
+      promos: { ONE_HOUR: { priceCents: 9_500, label: LABEL } },
+    });
+
+    expect(result).toEqual({ ok: false, error: "PROMO_REQUIRES_BANNER" });
+    expect(spies.update).not.toHaveBeenCalled();
+  });
+
+  test("rejects a promo that is not below the regular price", async () => {
+    const { deps, spies } = makeDeps(
+      { id: "s1", name: "26/27", priceCentsByDuration: {} },
+      1,
+    );
+    const result = await updateSeasonPricingWith(deps, {
+      ...VALID,
+      promos: { ONE_HOUR: { priceCents: 11_000, label: LABEL } },
+    });
+
+    expect(result).toEqual({ ok: false, error: "INVALID_INPUT" });
+    expect(spies.update).not.toHaveBeenCalled();
+  });
+
+  test("rejects a promo missing a locale label", async () => {
+    const { deps } = makeDeps({ id: "s1", name: "26/27", priceCentsByDuration: {} }, 1);
+    const result = await updateSeasonPricingWith(deps, {
+      ...VALID,
+      promos: {
+        ONE_HOUR: { priceCents: 9_500, label: { en: "x", de: "", es: "y" } },
+      },
+    });
+    expect(result).toEqual({ ok: false, error: "INVALID_INPUT" });
   });
 
   test("rejects a negative price without touching the DB", async () => {
@@ -92,9 +165,39 @@ describe("updateSeasonPricingWith", () => {
   });
 });
 
+describe("activeSeasonHasPromo", () => {
+  test("true when the active season has a valid promo", async () => {
+    const { deps } = makeDeps({
+      id: "s1",
+      name: "26/27",
+      priceCentsByDuration: VALID,
+      promoPriceCentsByDuration: { ONE_HOUR: 9_500 },
+    });
+    expect(await activeSeasonHasPromo(deps)).toBe(true);
+  });
+
+  test("false when there is no promo or no active season", async () => {
+    const { deps: none } = makeDeps({
+      id: "s1",
+      name: "26/27",
+      priceCentsByDuration: VALID,
+      promoPriceCentsByDuration: null,
+    });
+    expect(await activeSeasonHasPromo(none)).toBe(false);
+    const { deps: noSeason } = makeDeps(null);
+    expect(await activeSeasonHasPromo(noSeason)).toBe(false);
+  });
+});
+
 describe("getActiveSeasonPricingWith", () => {
-  test("returns cents per duration for a fully-priced season", async () => {
-    const { deps } = makeDeps({ id: "s1", name: "26/27", priceCentsByDuration: VALID });
+  test("returns cents + promo per duration for a fully-priced season", async () => {
+    const { deps } = makeDeps({
+      id: "s1",
+      name: "26/27",
+      priceCentsByDuration: VALID,
+      promoPriceCentsByDuration: { ONE_HOUR: 9_500 },
+      promoLabelByDuration: { ONE_HOUR: LABEL },
+    });
     const result = await getActiveSeasonPricingWith(deps);
 
     expect(result).toEqual({
@@ -103,6 +206,12 @@ describe("getActiveSeasonPricingWith", () => {
         seasonId: "s1",
         seasonName: "26/27",
         priceCentsByDuration: VALID,
+        promoByDuration: {
+          [Duration.ONE_HOUR]: { priceCents: 9_500, label: LABEL },
+          [Duration.TWO_HOURS]: null,
+          [Duration.INTENSIVE]: null,
+          [Duration.FULL_DAY]: null,
+        },
       },
     });
   });
@@ -117,6 +226,12 @@ describe("getActiveSeasonPricingWith", () => {
         seasonId: "s1",
         seasonName: "26/27",
         priceCentsByDuration: {
+          [Duration.ONE_HOUR]: null,
+          [Duration.TWO_HOURS]: null,
+          [Duration.INTENSIVE]: null,
+          [Duration.FULL_DAY]: null,
+        },
+        promoByDuration: {
           [Duration.ONE_HOUR]: null,
           [Duration.TWO_HOURS]: null,
           [Duration.INTENSIVE]: null,

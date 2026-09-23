@@ -26,6 +26,8 @@ function makeBooking(
     duration: Duration.ONE_HOUR,
     language: Locale.en,
     totalPriceCents: 11000,
+    originalPriceCents: null,
+    promoLabel: null,
     icsUid: "booking-fixed-uuid@rideflumserberg.ch",
     confirmationEmailSentAt: null,
     booker: { name: "Lara Tester", email: "lara@example.test" },

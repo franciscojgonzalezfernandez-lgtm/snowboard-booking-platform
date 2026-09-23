@@ -22,6 +22,10 @@ export type BookingConfirmedEmailProps = {
   instructorName: string;
   attendeesCount: number;
   totalLabel: string;
+  /** F-141: regular price struck through; set only when a promo applied. */
+  originalPriceLabel?: string | null;
+  /** F-141: promo copy; set only when a promo applied. */
+  promoLabel?: string | null;
   contactEmail: string;
   manageBookingUrl: string;
   meetingName: string;
@@ -41,6 +45,7 @@ type BookingConfirmedCopy = {
   attendeesLabel: string;
   attendeesValue: (count: number) => string;
   totalLabel: string;
+  regularPriceLabel: string;
   vatNote: string;
   meetingLabel: string;
   meetingDirections: string;
@@ -66,6 +71,7 @@ const COPY: Record<Locale, BookingConfirmedCopy> = {
     attendeesValue: (count: number) =>
       count === 1 ? "1 rider" : `${count} riders`,
     totalLabel: "Total",
+    regularPriceLabel: "Regular price",
     vatNote: "CHF, VAT included.",
     meetingLabel: "Meeting point",
     meetingDirections: "Open in Google Maps",
@@ -91,6 +97,7 @@ const COPY: Record<Locale, BookingConfirmedCopy> = {
     attendeesValue: (count: number) =>
       count === 1 ? "1 Fahrer:in" : `${count} Fahrer:innen`,
     totalLabel: "Gesamt",
+    regularPriceLabel: "Regulärer Preis",
     vatNote: "CHF, inkl. MwSt.",
     meetingLabel: "Treffpunkt",
     meetingDirections: "In Google Maps öffnen",
@@ -116,6 +123,7 @@ const COPY: Record<Locale, BookingConfirmedCopy> = {
     attendeesValue: (count: number) =>
       count === 1 ? "1 rider" : `${count} riders`,
     totalLabel: "Total",
+    regularPriceLabel: "Precio habitual",
     vatNote: "CHF, IVA incluido.",
     meetingLabel: "Punto de encuentro",
     meetingDirections: "Abrir en Google Maps",
@@ -144,6 +152,8 @@ export function BookingConfirmedEmail({
   instructorName,
   attendeesCount,
   totalLabel,
+  originalPriceLabel,
+  promoLabel,
   contactEmail,
   manageBookingUrl,
   meetingName,
@@ -177,6 +187,19 @@ export function BookingConfirmedEmail({
             <Hr style={hr} />
 
             <InfoRow label={t.totalLabel} value={totalLabel} bold />
+            {originalPriceLabel ? (
+              <Text style={promoNote}>
+                <span style={strikethrough}>
+                  {t.regularPriceLabel}: {originalPriceLabel}
+                </span>
+                {promoLabel ? (
+                  <>
+                    {" · "}
+                    <span style={promoTag}>{promoLabel}</span>
+                  </>
+                ) : null}
+              </Text>
+            ) : null}
             <Text style={vatNote}>{t.vatNote}</Text>
           </Section>
 
@@ -342,6 +365,26 @@ const vatNote = {
   fontSize: "12px",
   lineHeight: "1.5",
   margin: "8px 0 0",
+};
+
+// F-141 promo note under the total.
+const promoNote = {
+  fontSize: "13px",
+  lineHeight: "1.5",
+  margin: "6px 0 0",
+};
+
+const strikethrough = {
+  color: "#8a7f74",
+  textDecoration: "line-through" as const,
+};
+
+const promoTag = {
+  color: "#17130f",
+  fontSize: "11px",
+  fontWeight: 700,
+  letterSpacing: "0.08em",
+  textTransform: "uppercase" as const,
 };
 
 const secondaryCopy = {
