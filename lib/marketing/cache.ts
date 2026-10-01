@@ -24,17 +24,27 @@ export const MARKETING_TAGS = {
  * resolve promos identically. `null` when there is no active season.
  */
 export const getActiveSeasonForPricing = unstable_cache(
-  async () =>
-    prisma.season.findFirst({
-      where: { active: true },
-      orderBy: { startDate: "asc" },
-      select: {
-        id: true,
-        priceCentsByDuration: true,
-        promoPriceCentsByDuration: true,
-        promoLabelByDuration: true,
-      },
-    }),
+  async () => {
+    // Degrade to `null` if the DB is unreachable instead of throwing. The home
+    // + /precios tier cards read this on render and must still render without a
+    // database (F-022/F-124: CI builds and smoke-tests with no Postgres). The
+    // callers already treat `null` as "no prices shown"; mirrors the
+    // try/catch → null convention in lib/seo/price-range.ts.
+    try {
+      return await prisma.season.findFirst({
+        where: { active: true },
+        orderBy: { startDate: "asc" },
+        select: {
+          id: true,
+          priceCentsByDuration: true,
+          promoPriceCentsByDuration: true,
+          promoLabelByDuration: true,
+        },
+      });
+    } catch {
+      return null;
+    }
+  },
   ["active-season-pricing"],
   { tags: [MARKETING_TAGS.pricing] },
 );
@@ -44,12 +54,20 @@ export const getActiveSeasonForPricing = unstable_cache(
  * by the home hero band (`HeroAnnouncement`).
  */
 export const getEnabledAdBanners = unstable_cache(
-  async () =>
-    prisma.adBanner.findMany({
-      where: { enabled: true },
-      orderBy: [{ sortIndex: "asc" }, { createdAt: "asc" }],
-      select: { id: true, body: true, ctaLabel: true, ctaHref: true },
-    }),
+  async () => {
+    // Degrade to `[]` if the DB is unreachable instead of throwing — the home
+    // hero band renders on every home load and must survive a no-Postgres build
+    // (F-022/F-124). `HeroAnnouncement` renders nothing for an empty list.
+    try {
+      return await prisma.adBanner.findMany({
+        where: { enabled: true },
+        orderBy: [{ sortIndex: "asc" }, { createdAt: "asc" }],
+        select: { id: true, body: true, ctaLabel: true, ctaHref: true },
+      });
+    } catch {
+      return [];
+    }
+  },
   ["enabled-ad-banners"],
   { tags: [MARKETING_TAGS.banners] },
 );
