@@ -9,7 +9,7 @@ import { routing, type Locale } from "@/i18n/routing";
 import { formatBlogDate } from "@/lib/blog/format";
 import { getAllPosts } from "@/lib/blog/posts";
 import { getActiveSeasonPrices } from "@/lib/seo/price-range";
-import { hasPriceTokens, interpolatePrices } from "@/lib/blog/prices";
+import { hasTokens, interpolateTokens } from "@/lib/blog/tokens";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -38,14 +38,14 @@ export default async function BlogIndexPage({ params }: Props) {
   const typedLocale = locale as Locale;
   const t = await getTranslations({ locale, namespace: "blog" });
   const rawPosts = getAllPosts(typedLocale);
-  // Interpolate live prices into any card whose description carries {{price}}
-  // tokens (the price answer-post), so the listing never shows raw tokens.
-  const prices = rawPosts.some((p) => hasPriceTokens(p.description))
+  // Interpolate live prices + dated facts into any card whose description
+  // carries {{tokens}} (the answer-posts), so the listing never shows raw tokens.
+  const prices = rawPosts.some((p) => hasTokens(p.description))
     ? await getActiveSeasonPrices()
     : null;
   const posts = rawPosts.map((p) =>
-    hasPriceTokens(p.description)
-      ? { ...p, description: interpolatePrices(p.description, prices) }
+    hasTokens(p.description)
+      ? { ...p, description: interpolateTokens(p.description, prices) }
       : p,
   );
 

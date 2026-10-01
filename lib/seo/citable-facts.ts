@@ -1,17 +1,18 @@
-import { formatChf } from "@/lib/pricing/format";
+import { HOURS_BY_DURATION } from "@/lib/pricing/tiers";
 import { LANGUAGES, SEASON } from "@/lib/seo/business";
 
 // F-147 — On-site authority. Autoridad = the lowest GenScore metric (15/100):
 // answer engines name Ride Flumserberg but lean on OTHER sites as the cited
 // source. To be cited, a page has to carry concrete facts that are dated and
-// attributable to us. This module is the single source of those facts — the
-// structured VALUES only, locale-independent — so the trilingual pages built in
-// F-145/F-146 render their own copy around them without any number or date
-// drifting between locales, the visible text and the Schema.org output.
+// attributable to us. This is the audit registry of those facts — which claim,
+// answering which GenScore query family, published at which on-site path, and
+// as of when — each value sourced from the SAME single source the live surfaces
+// use (SEASON, HOURS_BY_DURATION), so the registry can't drift from what the
+// pages actually render. `citable-facts.test.ts` enforces that.
 //
-// Deliberately NOT here: prices. Prices live in the DB (Season.priceCentsByDuration,
-// F-080) and must not be re-hardcoded; pages pass their DB figures through
-// {@link datedPriceRange} to get the same dated, sourced framing.
+// Deliberately NOT a value source of its own: prices live in the DB
+// (Season.priceCentsByDuration, F-080) and the season label + lesson hours have
+// their own single sources (business.ts, tiers.ts). This module points AT them.
 
 /** Date these facts were last verified against the product. Advance it whenever
  * a fact below is re-checked or changed — it is what makes each one *dated*. */
@@ -67,8 +68,9 @@ export const CITABLE_FACTS = [
   },
   {
     id: "full-day-hours",
-    // Full-day lesson = 6 hours on snow (matches WORKLOAD_BY_DURATION.FULL_DAY).
-    value: "6",
+    // Full-day lesson length — single source is HOURS_BY_DURATION.FULL_DAY, the
+    // same value JSON-LD renders as `courseWorkload: PT6H`.
+    value: String(HOURS_BY_DURATION.FULL_DAY),
     asOf: FACTS_VERIFIED_ON,
     source: "/precios",
     answers: "full-day lesson length + price (2.18, 2.23)",
@@ -96,24 +98,4 @@ export function citableFact(id: (typeof CITABLE_FACTS)[number]["id"]): CitableFa
   const fact = CITABLE_FACTS.find((f) => f.id === id);
   if (!fact) throw new Error(`Unknown citable fact id: ${id}`);
   return fact;
-}
-
-/**
- * Frame a DB-sourced price range as a dated, attributable fact (F-147). Pages
- * pass their `Season.priceCentsByDuration` figures — never a hardcoded number —
- * and get back the CHF range plus the season label + validity date, so the
- * visible "as of the 2026/27 season" line, the copy and the `Offer.priceValidUntil`
- * all quote the same window. Cents are validated by {@link formatChf}.
- */
-export function datedPriceRange(minCents: number, maxCents: number) {
-  if (maxCents < minCents) {
-    throw new Error(`datedPriceRange: maxCents (${maxCents}) < minCents (${minCents})`);
-  }
-  return {
-    min: formatChf(minCents),
-    max: formatChf(maxCents),
-    season: SEASON.label,
-    priceValidUntil: SEASON.priceValidUntil,
-    source: "/precios",
-  } as const;
 }
