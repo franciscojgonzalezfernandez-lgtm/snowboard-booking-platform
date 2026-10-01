@@ -72,6 +72,13 @@ export default async function AdminLayout({
             >
               Seasons
             </Link>
+            <Link
+              href="/admin/announcements"
+              data-testid="admin-nav-announcements"
+              className="text-xs font-bold uppercase tracking-[0.18em] underline-offset-4 hover:underline"
+            >
+              Announcements
+            </Link>
           </nav>
         </div>
         <form action={signOutAction}>

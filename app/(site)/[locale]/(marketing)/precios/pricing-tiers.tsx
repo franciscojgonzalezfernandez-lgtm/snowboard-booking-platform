@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import type { Duration } from "@prisma/client";
 
 import { CardScroller, scrollerItem } from "@/components/marketing/card-scroller";
+import { PromoPrice } from "@/components/pricing/promo-price";
 import { TierPhoto } from "@/components/marketing/tier-photo";
 import { Link } from "@/i18n/navigation";
 import { RECOMMENDED_TIER, TIER_KEY } from "@/lib/pricing/tiers";
@@ -10,8 +11,12 @@ import { cn } from "@/lib/utils";
 
 export type PricingTier = {
   duration: Duration;
-  /** Pre-formatted CHF string from the active Season (server-side). */
+  /** Effective (charged) price, pre-formatted CHF string from the active Season. */
   priceLabel: string;
+  /** F-141: regular price struck through, set only when this tier is promoted. */
+  originalPriceLabel?: string | null;
+  /** F-141: localized promo copy, set only when this tier is promoted. */
+  promoLabel?: string | null;
 };
 
 // Two columns from `sm`, four from `xl` — these cards are dense, so four of
@@ -75,17 +80,23 @@ export async function PricingTiers({ tiers }: { tiers: PricingTier[] }) {
                     {t(`tier.${key}.name`)}
                   </p>
 
-                  <p
-                    className="mt-5 flex flex-wrap items-baseline gap-x-2"
+                  <div
+                    className="mt-5"
                     data-testid={`pricing-price-${tier.duration}`}
                   >
-                    <span className="font-display text-[30px] leading-none tracking-tight">
-                      {tier.priceLabel}
-                    </span>
-                    <span className="text-[13px] text-muted-foreground">
-                      {t("price_suffix")}
-                    </span>
-                  </p>
+                    <PromoPrice
+                      priceLabel={tier.priceLabel}
+                      originalPriceLabel={tier.originalPriceLabel}
+                      promoLabel={tier.promoLabel}
+                      regularPriceA11yLabel={t("regular_price_a11y")}
+                      priceClassName="font-display text-[30px]"
+                      suffix={
+                        <span className="text-[13px] text-muted-foreground">
+                          {t("price_suffix")}
+                        </span>
+                      }
+                    />
+                  </div>
 
                   <p className="mt-5 text-sm leading-relaxed text-foreground/85">
                     {t(`tier.${key}.blurb`)}

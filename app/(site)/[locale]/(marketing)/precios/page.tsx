@@ -3,10 +3,16 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { marketingAlternates, marketingOpenGraph } from "@/lib/seo/page-metadata";
 
-import { prisma } from "@/lib/db";
+import type { Locale } from "@prisma/client";
+
 import { routing } from "@/i18n/routing";
 import { formatChf } from "@/lib/pricing/format";
-import { getPriceCents, PriceConfigurationError } from "@/lib/pricing/get-price";
+import { getActiveSeasonForPricing } from "@/lib/marketing/cache";
+import {
+  getPromoLabel,
+  PriceConfigurationError,
+  resolvePriceCents,
+} from "@/lib/pricing/get-price";
 import { TIER_KEY, TIER_ORDER } from "@/lib/pricing/tiers";
 import { Reveal } from "@/lib/motion/reveal";
 import { JsonLd } from "@/app/components/JsonLd";
@@ -45,27 +51,33 @@ export default async function PricingPage({ params }: Props) {
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "pricing" });
 
-  const season = await prisma.season.findFirst({
-    where: { active: true },
-    orderBy: { startDate: "asc" },
-    select: { id: true, priceCentsByDuration: true },
-  });
+  const season = await getActiveSeasonForPricing();
 
   // No active season, or a season with malformed/incomplete prices → honest
   // empty state rather than a half-filled grid (same contract as F-080). The
-  // Course/Offer JSON-LD is built from the same priced durations, so it appears
-  // only when every price is valid — never a broken Offer.
+  // Course/Offer JSON-LD is built from the same priced durations (at the
+  // EFFECTIVE promo price, so structured data matches the visible price), so it
+  // appears only when every price is valid — never a broken Offer.
   let tiers: PricingTier[] | null = null;
   let courses: Record<string, unknown>[] = [];
   if (season) {
     try {
-      const priced = TIER_ORDER.map((duration) => ({
-        duration,
-        cents: getPriceCents(season, duration),
-      }));
-      tiers = priced.map(({ duration, cents }) => ({
+      const priced = TIER_ORDER.map((duration) => {
+        const resolved = resolvePriceCents(season, duration);
+        return {
+          duration,
+          cents: resolved.cents,
+          originalCents: resolved.isPromo ? resolved.originalCents : null,
+          promoLabel: resolved.isPromo
+            ? getPromoLabel(season, duration, locale as Locale)
+            : null,
+        };
+      });
+      tiers = priced.map(({ duration, cents, originalCents, promoLabel }) => ({
         duration,
         priceLabel: formatChf(cents),
+        originalPriceLabel: originalCents !== null ? formatChf(originalCents) : null,
+        promoLabel,
       }));
       const pricingUrl = `${SITE_URL}/${locale}/precios`;
       courses = priced.map(({ duration, cents }) =>
