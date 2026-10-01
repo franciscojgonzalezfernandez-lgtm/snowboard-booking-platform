@@ -17,7 +17,7 @@ import {
 import { SITE_URL, toAbsoluteUrl } from "@/lib/seo/site-url";
 import { articleOpenGraph } from "@/lib/seo/page-metadata";
 import { getActiveSeasonPrices } from "@/lib/seo/price-range";
-import { hasPriceTokens, interpolatePrices } from "@/lib/blog/prices";
+import { hasTokens, interpolateTokens } from "@/lib/blog/tokens";
 import { JsonLd } from "@/app/components/JsonLd";
 import { buildBlogPosting, buildFaqPage } from "@/lib/seo/structured-data";
 import { blogMdxComponents } from "../mdx-components";
@@ -39,19 +39,19 @@ export function generateStaticParams() {
  * tokens are returned untouched — no DB hit. */
 async function withLivePrices(post: BlogPost): Promise<BlogPost> {
   const needs =
-    hasPriceTokens(post.body) ||
-    hasPriceTokens(post.description) ||
-    (post.faq?.some((f) => hasPriceTokens(f.q) || hasPriceTokens(f.a)) ?? false);
+    hasTokens(post.body) ||
+    hasTokens(post.description) ||
+    (post.faq?.some((f) => hasTokens(f.q) || hasTokens(f.a)) ?? false);
   if (!needs) return post;
 
   const prices = await getActiveSeasonPrices();
   return {
     ...post,
-    body: interpolatePrices(post.body, prices),
-    description: interpolatePrices(post.description, prices),
+    body: interpolateTokens(post.body, prices),
+    description: interpolateTokens(post.description, prices),
     faq: post.faq?.map((f) => ({
-      q: interpolatePrices(f.q, prices),
-      a: interpolatePrices(f.a, prices),
+      q: interpolateTokens(f.q, prices),
+      a: interpolateTokens(f.a, prices),
     })),
   };
 }

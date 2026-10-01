@@ -1,6 +1,7 @@
 import { Duration } from "@prisma/client";
 
-import { BUSINESS, BUSINESS_ID } from "@/lib/seo/business";
+import { BUSINESS, BUSINESS_ID, LANGUAGES, SEASON } from "@/lib/seo/business";
+import { HOURS_BY_DURATION } from "@/lib/pricing/tiers";
 
 // F-100 — Schema.org structured data builders. Each builder returns a single
 // node WITHOUT `@context`; the `<JsonLd>` component injects `@context` (and wraps
@@ -89,13 +90,10 @@ export function buildLocalBusiness(options: LocalBusinessOptions = {}): JsonLdNo
 
 // --- Course + Offer (one per lesson duration) -----------------------------
 
-/** Lesson length per duration, as an ISO 8601 duration for `courseWorkload`. */
-const WORKLOAD_BY_DURATION: Record<Duration, string> = {
-  ONE_HOUR: "PT1H",
-  TWO_HOURS: "PT2H",
-  INTENSIVE: "PT4H",
-  FULL_DAY: "PT6H",
-};
+/** Lesson length as an ISO 8601 duration for `courseWorkload`, derived from the
+ * canonical hours map so the machine-readable length can't drift from the copy
+ * (e.g. the "six hours" in the full-day post) or the per-hour price math. */
+const workload = (duration: Duration): string => `PT${HOURS_BY_DURATION[duration]}H`;
 
 export type CourseInput = {
   /** Course name, e.g. "2-hour snowboard lesson". */
@@ -105,6 +103,15 @@ export type CourseInput = {
   url: string;
   duration: Duration;
   priceCents: number;
+  /**
+   * ISO date (YYYY-MM-DD) the price is guaranteed through. Defaults to the
+   * season end ({@link SEASON.priceValidUntil}). This is what makes the Offer a
+   * dated, citable fact for AEO (F-147) — an AI answer can attribute the price to
+   * a season with a validity window instead of an undated number.
+   */
+  priceValidUntil?: string;
+  /** BCP-47 languages the course is taught in. Defaults to {@link LANGUAGES}. */
+  inLanguage?: readonly string[];
 };
 
 export function buildCourse(input: CourseInput): JsonLdNode {
@@ -114,6 +121,11 @@ export function buildCourse(input: CourseInput): JsonLdNode {
     priceCurrency: CURRENCY,
     availability: "https://schema.org/InStock",
     url: input.url,
+    // Dated validity window (F-147): prices hold from season open through end.
+    // `validFrom`/`priceValidUntil` turn the Offer into a fact an answer engine
+    // can cite with a date rather than a bare figure.
+    validFrom: SEASON.startDate,
+    priceValidUntil: input.priceValidUntil ?? SEASON.priceValidUntil,
   };
 
   return {
@@ -122,11 +134,12 @@ export function buildCourse(input: CourseInput): JsonLdNode {
     description: input.description,
     url: input.url,
     provider: ORGANIZATION_REF,
+    inLanguage: [...(input.inLanguage ?? LANGUAGES)],
     offers: offer,
     hasCourseInstance: {
       "@type": "CourseInstance",
       courseMode: "Onsite",
-      courseWorkload: WORKLOAD_BY_DURATION[input.duration],
+      courseWorkload: workload(input.duration),
       location: { "@id": BUSINESS_ID },
     },
   };

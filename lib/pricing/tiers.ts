@@ -28,6 +28,20 @@ export const TIER_KEY: Record<Duration, TierKey> = {
 };
 
 /**
+ * Lesson length in hours per duration — the single numeric source of lesson
+ * length. `structured-data` renders it as the ISO 8601 `courseWorkload`
+ * (`PT6H`), the blog token pass divides each lesson price by it for the per-hour
+ * figure, and the F-147 citable-facts registry quotes it. A product constant
+ * (unlike prices, which are admin-editable per season), so it lives in code.
+ */
+export const HOURS_BY_DURATION: Record<Duration, number> = {
+  ONE_HOUR: 1,
+  TWO_HOURS: 2,
+  INTENSIVE: 4,
+  FULL_DAY: 6,
+};
+
+/**
  * Product photo per tier. The cards render 4:3 and `object-cover` does the
  * rest, so a replacement only has to be 4:3 and at least ~1300px wide (twice
  * the widest slot a card gets) — swap the file in `public/brand/tiers/`, not
