@@ -19,7 +19,7 @@ import {
   getCachedCalendar,
   getCachedSlots,
 } from "@/lib/booking-engine/cache";
-import { getPriceCents } from "@/lib/pricing/get-price";
+import { getPriceCents, getPromoLabel } from "@/lib/pricing/get-price";
 import {
   buildFunnelReturnUrl,
   buildFunnelUrl,
@@ -242,6 +242,11 @@ export default async function ReservarPage({
   let resolvedLanguage: Locale | undefined = parsedLanguage;
   let publishableKey: string | undefined;
   let lessonPriceCents = 0;
+  // F-141: the promo label to SHOW at Step 5, resolved in the UI locale — not the
+  // booking's lesson language. The booking snapshots `promoLabel` in its lesson
+  // language (for the record + email), but on-screen the tag must match the rest
+  // of the step-5 chrome the visitor is reading. Null when no promo/label applies.
+  let promoLabelDisplay: string | null = null;
   // F-140: the booker's saved phone (E.164) prefills the Section 4 phone field
   // so a returning booker isn't asked to retype what we already have. Null when
   // logged out or none on file → the field renders empty as before.
@@ -275,7 +280,11 @@ export default async function ReservarPage({
       const [season, credits, bookerRow] = await Promise.all([
         prisma.season.findFirst({
           where: { active: true },
-          select: { id: true, priceCentsByDuration: true },
+          select: {
+            id: true,
+            priceCentsByDuration: true,
+            promoLabelByDuration: true,
+          },
         }),
         prisma.accountCredit.findMany({
           where: {
@@ -299,6 +308,7 @@ export default async function ReservarPage({
           // Misconfigured season pricing surfaces as PRICING_MISSING when the
           // booker submits; the credit UI just renders without a price cap.
         }
+        promoLabelDisplay = getPromoLabel(season, initialDuration, locale as Locale);
       }
       redeemableCredits = credits.map((c) => ({
         id: c.id,
@@ -469,6 +479,7 @@ export default async function ReservarPage({
                 dateLabel={formatDateForLocale(parsedDateStr, locale)}
                 attendeeCountKey="summary_attendees_count"
                 lessonPriceCents={lessonPriceCents}
+                promoLabelDisplay={promoLabelDisplay}
                 credits={redeemableCredits}
                 autoApplyCredits={sp.credit === "auto"}
                 section4={{

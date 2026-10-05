@@ -3446,6 +3446,41 @@ Las 28 acciones GenScore quedan cubiertas; F-148 es aditivo (gap de la auditorí
   - El post-mortem histórico de F-125 ("Javi/Lara/Ale") se deja intacto: describe el estado de entonces.
 - Refs: F-154, F-095, F-021, F-036, F-087, D-VIDEO, `prisma/seed.ts`, `scripts/cleanup-instructors.ts`, `app/(site)/[locale]/(marketing)/sobre/page.tsx`, `messages/{en,de,es}.json`, `e2e/f-095-about.spec.ts`
 
+### F-141 — Precios promocionales (precio tachado + copy por duración)
+
+- Sprint: post-Sprint 5 · Estado: en PR
+- Motivación: poder lanzar promociones simples sobre el precio de las clases sin fechas de fin ni límite de stock (eso queda para más adelante). El cliente ve el precio final, el precio original tachado y un copy corto de promoción ("Season opening") en su idioma.
+- Decisiones (con el owner): promo **por duración** (precio promo opcional junto a cada uno de los 4 precios); **un copy por duración promocionada**, obligatorio en los 3 idiomas; se muestra en **home + página de precios + funnel + email**.
+- Modelo: dos columnas JSON nullable en `Season` — `promoPriceCentsByDuration` (mapa parcial `Duration → cents`) y `promoLabelByDuration` (parcial `Duration → {en,de,es}`). Snapshot en `Booking`: `originalPriceCents Int?` + `promoLabel String?` (el `totalPriceCents` pasa a ser el precio efectivo/cobrado). Migración `20260830090000_f141_promo_and_banners`.
+- Núcleo: `lib/pricing/get-price.ts:resolvePriceCents()` es la ÚNICA fuente de "qué precio aplica" (promo sólo si presente, entero y estrictamente < regular) — futuras puertas (fechas/stock) se añaden ahí. `getPromoLabel()` resuelve el copy por locale.
+- Editor admin (extiende F-080): campo promo por duración + al rellenarlo se revelan los 3 inputs de copy; validación en cliente y servidor (`0 < promo < regular`, 3 idiomas obligatorios). El home/precios leen vía `unstable_cache` con tag `marketing-pricing`, invalidado por la acción — sin salir de estático (F-124: home 193 KB, sigue SSG).
+- AC: [x] resolver + tests; [x] editor con promo + copy condicional; [x] home cards con precio + tachado; [x] página de precios + JSON-LD al precio efectivo; [x] funnel §5 + resume + éxito + email; [x] `getSeasonPriceRange` al precio efectivo; [x] E2E `e2e/f-141-promo-pricing.spec.ts`.
+- Refs: F-141, F-080, F-039, F-100 (JSON-LD), F-124 (estático), `booking-platform-perf`
+
+### F-142 — Sistema de banners (home) gestionable desde admin + rotación
+
+- Sprint: post-Sprint 5 · Estado: en PR (junto a F-141)
+- Motivación: acoplado a F-141 — si hay promo, el owner **debe** configurar el/los banner(s) del hero de la home; y si hay más de uno, que roten cada 5 s.
+- Decisiones (con el owner): lista curada de banners (sección admin propia), independiente de las promos; una promo **fuerza ≥1 banner habilitado** (bloqueo duro). Se **migra** el banner de F-053 (antes en `messages/*.json`) a la nueva tabla.
+- Modelo: nueva tabla `AdBanner` (`enabled`, `sortIndex`, `body {en,de,es}`, `ctaLabel {en,de,es}?`, `ctaHref?` — href validado con `isAllowedCtaHref`). Seed migra el copy de F-053 como primer banner idempotente.
+- Acoplamiento promo↔banner: forward en `lib/admin/pricing.ts` (`PROMO_REQUIRES_BANNER`), reverse en `lib/admin/announcements.ts` (`BANNER_REQUIRED_BY_PROMO`, al deshabilitar/borrar el último con promo viva). Comparten `activeSeasonHasPromo()`.
+- Render: `HeroAnnouncement` pasa a leer de BD (`unstable_cache` tag `ad-banners`). 1 banner = HTML estático (LCP-safe, F-124); 2+ = isla cliente `HeroAnnouncementCarousel` que rota 5 s con fundido en sitio (altura fija, sin CLS), **gated tras `prefers-reduced-motion`** (reduce = estático + prev/next manuales), pausa en hover/focus, y el descarte por cookie de F-124 intacto.
+- AC: [x] `AdBanner` + migración + seed; [x] CRUD admin (`/admin/announcements`) + toggle/reorder/borrar; [x] guards cruzados + tests; [x] carrusel con reduced-motion; [x] E2E `e2e/f-142-ad-banner.spec.ts`. Pendiente: pinta fina de diseño del banner con Impeccable.
+- Refs: F-142, F-141, F-053 (migrado), F-124, `lib/hero-announcement.ts`
+
+### F-155 — Guards de banner↔promo a prueba de concurrencia (write-skew) + endurecer reorder
+
+- Sprint: backlog (post-F-142) · Estado: abierto · Prioridad: baja hoy (operador único MVP), sube con multi-instructor
+- Motivación: los invariantes promo↔banner de F-142 son **check-then-act sin transacción/lock**, así que con operaciones concurrentes se puede violar el invariante "promo viva ⇒ ≥1 banner habilitado". Detectado en review del PR de F-141/F-142.
+- Casos (write-skew):
+  - **Reverse × reverse**: dos `deshabilitar`/`borrar` concurrentes de los 2 últimos banners habilitados — cada uno lee `enabledOthers=1` (ve al otro) → ambos commitean → **0 habilitados + promo viva**.
+  - **Forward × reverse (cruzado)**: `updateSeasonPricing` activa promo (lee `enabledBanners=1`) mientras otra tx deshabilita ese banner (`activeSeasonHasPromo` lee la promo aún no commiteada → `false` → permite) → promo + 0 banners.
+  - Consecuencia: cosmética (home muestra precio promo sin banda publicitaria; no toca dinero), se auto-corrige al siguiente edit.
+- Fix propuesto: envolver mutar→re-chequear invariante→throw-rollback en `$transaction` interactiva con `isolationLevel: 'Serializable'` en los 3 reverse (`setAnnouncementEnabledWith`, `deleteAnnouncementWith`, `updateAnnouncementWith` al deshabilitar) + el forward (`updateSeasonPricingWith` al activar promo). Postgres serializable aborta uno con 40001 ante write-skew; capturarlo y devolver el error de invariante correspondiente.
+- Relacionado: `reorderAnnouncementsWith` ya valida en F-141 que `orderedIds` sea permutación exacta **dentro** de la tx (corrige payload stale → 500/orden solapado), pero esa validación read-then-write comparte la misma familia de carrera concurrente con create/delete — mismo fix de aislamiento aquí.
+- AC: [ ] serializable + recheck en los 4 guards; [ ] captura de 40001 → error de invariante; [ ] tests concurrentes (o al menos del recheck post-mutación); [ ] reorder bajo la misma garantía.
+- Refs: F-155, F-141, F-142, `lib/admin/announcements.ts`, `lib/admin/pricing.ts`
+
 ---
 
 ## Bloqueantes / decisiones abiertas (consolidadas)

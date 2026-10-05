@@ -33,6 +33,8 @@ const BOOKING_SELECT = {
   duration: true,
   language: true,
   totalPriceCents: true,
+  originalPriceCents: true,
+  promoLabel: true,
   icsUid: true,
   confirmationEmailSentAt: true,
   booker: { select: { name: true, email: true } },
@@ -95,6 +97,12 @@ export async function sendBookingConfirmedEmailWith(
   }).format(startUtc);
   const timeLabel = booking.anchorTime;
   const totalLabel = formatChf(booking.totalPriceCents);
+  // F-141: struck-through original + promo copy, snapshotted on the booking.
+  const originalPriceLabel =
+    booking.originalPriceCents != null
+      ? formatChf(booking.originalPriceCents)
+      : null;
+  const promoLabel = booking.promoLabel;
   const contactEmail = deps.contactEmail ?? CONTACT_EMAIL;
   const baseUrl = deps.appBaseUrl ?? APP_BASE_URL;
   const manageBookingUrl = `${baseUrl}/${locale}/dashboard`;
@@ -136,6 +144,8 @@ export async function sendBookingConfirmedEmailWith(
         instructorName,
         attendeesCount: booking.attendees.length,
         totalLabel,
+        originalPriceLabel,
+        promoLabel,
         contactEmail,
         manageBookingUrl,
         meetingName: MEETING_POINT_LABEL,
@@ -150,6 +160,8 @@ export async function sendBookingConfirmedEmailWith(
         instructorName,
         attendeesCount: booking.attendees.length,
         totalLabel,
+        originalPriceLabel,
+        promoLabel,
         manageBookingUrl,
         contactEmail,
         meetingName: MEETING_POINT_LABEL,
@@ -185,12 +197,20 @@ function buildPlainText(args: {
   instructorName: string;
   attendeesCount: number;
   totalLabel: string;
+  originalPriceLabel: string | null;
+  promoLabel: string | null;
   manageBookingUrl: string;
   contactEmail: string;
   meetingName: string;
   meetingMapsHref: string;
 }): string {
   const { copy } = args;
+  // F-141: when a promo applied, note the regular price + promo copy inline.
+  const totalLine = args.originalPriceLabel
+    ? `${copy.totalLabel}: ${args.totalLabel} (${copy.vatNote}) — ${copy.regularPriceLabel}: ${args.originalPriceLabel}${
+        args.promoLabel ? ` · ${args.promoLabel}` : ""
+      }`
+    : `${copy.totalLabel}: ${args.totalLabel} (${copy.vatNote})`;
   return [
     copy.greeting(args.bookerName),
     copy.body,
@@ -201,7 +221,7 @@ function buildPlainText(args: {
     `${copy.durationLabel}: ${args.durationLabel}`,
     `${copy.instructorLabel}: ${args.instructorName}`,
     `${copy.attendeesLabel}: ${copy.attendeesValue(args.attendeesCount)}`,
-    `${copy.totalLabel}: ${args.totalLabel} (${copy.vatNote})`,
+    totalLine,
     "",
     `${copy.meetingLabel}: ${args.meetingName} — ${args.meetingMapsHref}`,
     "",
