@@ -2,7 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { loadStripe, type Stripe } from "@stripe/stripe-js";
+import {
+  loadStripe,
+  type Stripe,
+  type StripeElementLocale,
+} from "@stripe/stripe-js";
 import {
   Elements,
   PaymentElement,
@@ -47,6 +51,11 @@ export function PaymentBlock({
       stripe={stripePromise}
       options={{
         clientSecret,
+        // Render the Payment Element in the app's UI locale. Without this Stripe
+        // defaults to `locale: "auto"` — the visitor's BROWSER language — so a
+        // de/es page could show a payment form in a third language. Our app
+        // locales (en|de|es) are all valid Stripe locales.
+        locale: locale as StripeElementLocale,
         appearance: {
           theme: "flat",
           variables: {

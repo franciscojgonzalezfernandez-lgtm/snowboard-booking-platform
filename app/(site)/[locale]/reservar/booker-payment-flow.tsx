@@ -147,6 +147,9 @@ type Props = {
   dateLabel: string;
   attendeeCountKey: string;
   lessonPriceCents: number;
+  // F-141: UI-locale promo copy for the Step 5 tag (the booking snapshots its
+  // label in the lesson language; on-screen it must match the UI). Null = none.
+  promoLabelDisplay: string | null;
   credits: CreditOption[];
   autoApplyCredits: boolean;
   section4: SectionCopy;
@@ -183,6 +186,7 @@ export function BookerPaymentFlow({
   dateLabel,
   attendeeCountKey,
   lessonPriceCents,
+  promoLabelDisplay,
   credits,
   autoApplyCredits,
   section4,
@@ -1053,7 +1057,11 @@ export function BookerPaymentFlow({
                         ? formatChf(draft.originalPriceCents)
                         : null
                     }
-                    promoLabel={draft.promoLabel}
+                    promoLabel={
+                      draft.promoLabel
+                        ? (promoLabelDisplay ?? draft.promoLabel)
+                        : null
+                    }
                     regularPriceA11yLabel={tPricing("regular_price_a11y")}
                   />
                 </span>
