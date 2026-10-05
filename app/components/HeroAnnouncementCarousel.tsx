@@ -8,6 +8,7 @@ import { Link } from "@/i18n/navigation";
 
 import type { LocalizedBanner } from "./HeroAnnouncement";
 import { HeroAnnouncementClose } from "./HeroAnnouncementClose";
+import { HeroAnnouncementMarquee } from "./HeroAnnouncementMarquee";
 
 // Rotating home banner band (F-142). Only mounted when 2+ banners are enabled;
 // a single banner is static server markup in HeroAnnouncement.tsx.
@@ -86,15 +87,14 @@ export function HeroAnnouncementCarousel({
       onFocusCapture={() => setPaused(true)}
       onBlurCapture={() => setPaused(false)}
     >
-      <div className="mx-auto flex w-full max-w-[1320px] items-center gap-x-4 gap-y-1 px-7 py-2.5 pr-12 max-[420px]:flex-wrap">
+      <div className="mx-auto flex w-full max-w-[1320px] items-center gap-x-4 gap-y-1 px-7 py-3 pr-12 max-[420px]:flex-wrap">
         {/* aria-live off: rotation is decorative, not an alert. */}
-        <div className="min-w-0 flex-1" aria-live="off">
-          <p
-            key={item.id}
-            className="truncate text-[13px] font-medium leading-snug motion-safe:[animation:hero-announcement-fade_400ms_ease]"
-          >
-            {item.body}
-          </p>
+        <div
+          key={item.id}
+          className="flex min-w-0 flex-1 motion-safe:[animation:hero-announcement-fade_400ms_ease]"
+          aria-live="off"
+        >
+          <HeroAnnouncementMarquee text={item.body} />
         </div>
 
         {item.ctaLabel && item.ctaHref ? (

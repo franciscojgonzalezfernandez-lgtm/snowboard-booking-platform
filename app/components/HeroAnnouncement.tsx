@@ -12,6 +12,7 @@ import { getEnabledAdBanners } from "@/lib/marketing/cache";
 
 import { HeroAnnouncementCarousel } from "./HeroAnnouncementCarousel";
 import { HeroAnnouncementClose } from "./HeroAnnouncementClose";
+import { HeroAnnouncementMarquee } from "./HeroAnnouncementMarquee";
 
 const ctaClassName =
   "shrink-0 text-[12px] font-bold uppercase tracking-[0.16em] underline underline-offset-4 transition-all hover:no-underline";
@@ -107,10 +108,8 @@ export async function HeroAnnouncement() {
         data-hero-announcement
         className="relative bg-primary text-primary-foreground"
       >
-        <div className="mx-auto flex w-full max-w-[1320px] items-center gap-x-5 gap-y-1 px-7 py-2.5 pr-12 max-[375px]:flex-wrap">
-          <p className="min-w-0 flex-1 truncate text-[13px] font-medium leading-snug">
-            {item.body}
-          </p>
+        <div className="mx-auto flex w-full max-w-[1320px] items-center gap-x-5 gap-y-1 px-7 py-3 pr-12 max-[375px]:flex-wrap">
+          <HeroAnnouncementMarquee text={item.body} />
           {item.ctaLabel && item.ctaHref ? (
             item.ctaIsInternal ? (
               <Link
