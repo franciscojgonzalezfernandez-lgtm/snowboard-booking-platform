@@ -287,3 +287,22 @@
     transform: translateX(-50%);
   }
 }
+
+/* F-142: on mobile the rotating band's manual controls (prev/next + the N/M
+   counter) crowd the ticker into a tiny window, so hide them under 520px — the
+   auto-rotation already advances the slides there. Exception: under reduced
+   motion the auto-advance is suppressed, so the arrows must stay (they're the
+   only way to reach the other banners); the counter stays hidden regardless. */
+@media (max-width: 519.98px) {
+  .hero-ann-count {
+    display: none;
+  }
+  .hero-ann-arrow {
+    display: none;
+  }
+}
+@media (max-width: 519.98px) and (prefers-reduced-motion: reduce) {
+  .hero-ann-arrow {
+    display: grid; /* restore (the control is a `grid place-items-center` button) */
+  }
+}

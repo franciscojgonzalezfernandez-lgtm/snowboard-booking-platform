@@ -73,8 +73,11 @@ export function HeroAnnouncementCarousel({
     return () => window.clearInterval(id);
   }, [reduced, paused, count]);
 
+  // `hero-ann-arrow` / `hero-ann-count` (globals.css): hidden on mobile to give
+  // the ticker room — auto-rotation covers advancing there — but the arrows come
+  // back under reduced motion, where they're the only way to reach other banners.
   const controlClass =
-    "grid size-8 place-items-center rounded-full text-primary-foreground/75 transition-colors hover:text-primary-foreground";
+    "hero-ann-arrow grid size-8 place-items-center rounded-full text-primary-foreground/75 transition-colors hover:text-primary-foreground";
 
   return (
     <aside
@@ -121,7 +124,7 @@ export function HeroAnnouncementCarousel({
           >
             <ChevronLeft className="size-4" aria-hidden />
           </button>
-          <span className="text-[11px] font-medium tabular-nums text-primary-foreground/75">
+          <span className="hero-ann-count text-[11px] font-medium tabular-nums text-primary-foreground/75">
             {safeIndex + 1}/{count}
           </span>
           <button
