@@ -222,20 +222,43 @@ export async function deleteAnnouncementWith(
 }
 
 /**
- * Persist a new display order. `orderedIds` is the full list of banner ids in the
- * desired order; each gets its array index as `sortIndex` in one transaction.
+ * Persist a new display order. `orderedIds` must be an exact permutation of the
+ * current banner ids — the full set, each exactly once — and each id gets its
+ * array index as `sortIndex`.
+ *
+ * Validated against the live id set inside the transaction: a stale or malformed
+ * payload (a missing id, a duplicate, or an id deleted since the admin loaded the
+ * list) is rejected with `INVALID_INPUT` instead of producing overlapping/partial
+ * `sortIndex` (non-deterministic order) or throwing P2025 → a 500. NOTE: this is
+ * not yet safe against a *concurrent* create/delete racing between the check and
+ * the writes — that write-skew class is tracked for hardening (see the reverse
+ * banner guard) [F-155].
  */
 export async function reorderAnnouncementsWith(
   deps: AdminAnnouncementsDeps,
   orderedIds: string[],
 ): Promise<AnnouncementResult> {
-  await deps.prisma.$transaction(
-    orderedIds.map((id, index) =>
-      deps.prisma.adBanner.update({
-        where: { id },
+  return deps.prisma.$transaction(async (tx) => {
+    const current = await tx.adBanner.findMany({ select: { id: true } });
+    const currentIds = current.map((b) => b.id);
+
+    const unique = new Set(orderedIds);
+    const isExactPermutation =
+      orderedIds.length === currentIds.length &&
+      unique.size === orderedIds.length &&
+      currentIds.every((id) => unique.has(id));
+    if (!isExactPermutation) {
+      return { ok: false, error: "INVALID_INPUT" as const };
+    }
+
+    // Sequential (not Promise.all): queries on one interactive-tx client must
+    // not overlap. The banner count is tiny, so this is cheap.
+    for (let index = 0; index < orderedIds.length; index++) {
+      await tx.adBanner.update({
+        where: { id: orderedIds[index] },
         data: { sortIndex: index },
-      }),
-    ),
-  );
-  return { ok: true };
+      });
+    }
+    return { ok: true };
+  });
 }

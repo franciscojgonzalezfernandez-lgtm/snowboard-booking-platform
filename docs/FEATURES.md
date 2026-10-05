@@ -3468,6 +3468,19 @@ Las 28 acciones GenScore quedan cubiertas; F-148 es aditivo (gap de la auditorí
 - AC: [x] `AdBanner` + migración + seed; [x] CRUD admin (`/admin/announcements`) + toggle/reorder/borrar; [x] guards cruzados + tests; [x] carrusel con reduced-motion; [x] E2E `e2e/f-142-ad-banner.spec.ts`. Pendiente: pinta fina de diseño del banner con Impeccable.
 - Refs: F-142, F-141, F-053 (migrado), F-124, `lib/hero-announcement.ts`
 
+### F-155 — Guards de banner↔promo a prueba de concurrencia (write-skew) + endurecer reorder
+
+- Sprint: backlog (post-F-142) · Estado: abierto · Prioridad: baja hoy (operador único MVP), sube con multi-instructor
+- Motivación: los invariantes promo↔banner de F-142 son **check-then-act sin transacción/lock**, así que con operaciones concurrentes se puede violar el invariante "promo viva ⇒ ≥1 banner habilitado". Detectado en review del PR de F-141/F-142.
+- Casos (write-skew):
+  - **Reverse × reverse**: dos `deshabilitar`/`borrar` concurrentes de los 2 últimos banners habilitados — cada uno lee `enabledOthers=1` (ve al otro) → ambos commitean → **0 habilitados + promo viva**.
+  - **Forward × reverse (cruzado)**: `updateSeasonPricing` activa promo (lee `enabledBanners=1`) mientras otra tx deshabilita ese banner (`activeSeasonHasPromo` lee la promo aún no commiteada → `false` → permite) → promo + 0 banners.
+  - Consecuencia: cosmética (home muestra precio promo sin banda publicitaria; no toca dinero), se auto-corrige al siguiente edit.
+- Fix propuesto: envolver mutar→re-chequear invariante→throw-rollback en `$transaction` interactiva con `isolationLevel: 'Serializable'` en los 3 reverse (`setAnnouncementEnabledWith`, `deleteAnnouncementWith`, `updateAnnouncementWith` al deshabilitar) + el forward (`updateSeasonPricingWith` al activar promo). Postgres serializable aborta uno con 40001 ante write-skew; capturarlo y devolver el error de invariante correspondiente.
+- Relacionado: `reorderAnnouncementsWith` ya valida en F-141 que `orderedIds` sea permutación exacta **dentro** de la tx (corrige payload stale → 500/orden solapado), pero esa validación read-then-write comparte la misma familia de carrera concurrente con create/delete — mismo fix de aislamiento aquí.
+- AC: [ ] serializable + recheck en los 4 guards; [ ] captura de 40001 → error de invariante; [ ] tests concurrentes (o al menos del recheck post-mutación); [ ] reorder bajo la misma garantía.
+- Refs: F-155, F-141, F-142, `lib/admin/announcements.ts`, `lib/admin/pricing.ts`
+
 ---
 
 ## Bloqueantes / decisiones abiertas (consolidadas)

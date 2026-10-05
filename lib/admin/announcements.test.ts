@@ -3,6 +3,7 @@ import { describe, expect, test, vi } from "vitest";
 import {
   createAnnouncementWith,
   deleteAnnouncementWith,
+  reorderAnnouncementsWith,
   setAnnouncementEnabledWith,
   updateAnnouncementWith,
   type AdminAnnouncementsDeps,
@@ -18,6 +19,8 @@ type Options = {
   activePromo?: boolean;
   /** Value for aggregate _max.sortIndex. */
   maxSortIndex?: number | null;
+  /** Current banner ids returned by adBanner.findMany (reorder validation). */
+  currentIds?: string[];
 };
 
 function makeDeps(opts: Options = {}) {
@@ -33,19 +36,31 @@ function makeDeps(opts: Options = {}) {
   );
   const update = vi.fn(async () => ({ id: "b1" }));
   const del = vi.fn(async () => ({ id: "b1" }));
+  const findMany = vi.fn(async () => (opts.currentIds ?? []).map((id) => ({ id })));
   const seasonFindFirst = vi.fn(async () =>
     opts.activePromo
       ? { promoPriceCentsByDuration: { ONE_HOUR: 9_500 } }
       : { promoPriceCentsByDuration: null },
   );
 
+  const adBanner = { findUnique, count, aggregate, create, update, delete: del, findMany };
+  // Interactive-transaction form only (callback) — the tx client is the same
+  // adBanner object, so update()/findMany() spies capture the calls.
+  const $transaction = vi.fn(async (fn: (tx: unknown) => unknown) =>
+    fn({ adBanner }),
+  );
+
   const deps: AdminAnnouncementsDeps = {
     prisma: {
-      adBanner: { findUnique, count, aggregate, create, update, delete: del },
+      adBanner,
       season: { findFirst: seasonFindFirst },
+      $transaction,
     } as unknown as AdminAnnouncementsDeps["prisma"],
   };
-  return { deps, spies: { findUnique, count, create, update, del, seasonFindFirst } };
+  return {
+    deps,
+    spies: { findUnique, count, create, update, del, findMany, seasonFindFirst },
+  };
 }
 
 const VALID: AnnouncementInput = {
@@ -166,6 +181,49 @@ describe("updateAnnouncementWith", () => {
       enabled: false,
     });
     expect(result).toEqual({ ok: false, error: "BANNER_REQUIRED_BY_PROMO" });
+    expect(spies.update).not.toHaveBeenCalled();
+  });
+});
+
+describe("reorderAnnouncementsWith", () => {
+  test("persists index as sortIndex for an exact permutation", async () => {
+    const { deps, spies } = makeDeps({ currentIds: ["a", "b", "c"] });
+    const result = await reorderAnnouncementsWith(deps, ["c", "a", "b"]);
+
+    expect(result).toEqual({ ok: true });
+    expect(spies.update).toHaveBeenCalledTimes(3);
+    expect(spies.update).toHaveBeenNthCalledWith(1, {
+      where: { id: "c" },
+      data: { sortIndex: 0 },
+    });
+    expect(spies.update).toHaveBeenNthCalledWith(2, {
+      where: { id: "a" },
+      data: { sortIndex: 1 },
+    });
+    expect(spies.update).toHaveBeenNthCalledWith(3, {
+      where: { id: "b" },
+      data: { sortIndex: 2 },
+    });
+  });
+
+  test("rejects an incomplete set (a missing id) without writing", async () => {
+    const { deps, spies } = makeDeps({ currentIds: ["a", "b", "c"] });
+    const result = await reorderAnnouncementsWith(deps, ["a", "b"]);
+    expect(result).toEqual({ ok: false, error: "INVALID_INPUT" });
+    expect(spies.update).not.toHaveBeenCalled();
+  });
+
+  test("rejects a duplicate id (same length) without writing", async () => {
+    const { deps, spies } = makeDeps({ currentIds: ["a", "b", "c"] });
+    const result = await reorderAnnouncementsWith(deps, ["a", "b", "b"]);
+    expect(result).toEqual({ ok: false, error: "INVALID_INPUT" });
+    expect(spies.update).not.toHaveBeenCalled();
+  });
+
+  test("rejects an unknown id not in the current set", async () => {
+    const { deps, spies } = makeDeps({ currentIds: ["a", "b", "c"] });
+    const result = await reorderAnnouncementsWith(deps, ["a", "b", "zz"]);
+    expect(result).toEqual({ ok: false, error: "INVALID_INPUT" });
     expect(spies.update).not.toHaveBeenCalled();
   });
 });
