@@ -255,6 +255,19 @@
       "language_auto": "La clase será en {language}.",
       "continue": "Continuar"
     },
+    "promo": {
+      "legend": "Código promocional",
+      "placeholder": "Introduce un código",
+      "apply": "Aplicar",
+      "applying": "Aplicando…",
+      "applied": "Descuento de {amount} aplicado",
+      "remove": "Quitar",
+      "error_invalid": "Ese código no es válido.",
+      "error_inactive": "Ese código ya no está activo.",
+      "error_already_used": "Ya has usado este código.",
+      "error_exhausted": "Este código ha alcanzado su límite de usos.",
+      "error_generic": "No se pudo aplicar el código. Inténtalo de nuevo."
+    },
     "step4": {
       "metadata_title": "Tus datos — Snowboard Booking Platform",
       "eyebrow": "Paso 4 de 4 · Tus datos",
@@ -331,6 +344,8 @@
       "summary_attendees_count": "{count, plural, one {# rider} other {# riders}}",
       "summary_total": "Total",
       "summary_lesson_price": "Precio de la clase",
+      "summary_promo": "Promo",
+      "summary_promo_coded": "Promo ({code})",
       "summary_credits": "Saldo",
       "summary_charge": "A pagar",
       "summary_vat_note": "CHF, IVA incluido.",

@@ -259,6 +259,18 @@ model Booking {
   // own `language`, snapshotted the same way.
   originalPriceCents         Int?
   promoLabel                 String?
+  // F-155: promo-code snapshot. `discountCodeId` links the DiscountCode the
+  // booker applied (null = none); `discountCents` is the CHF-cents amount that
+  // code took off the lesson at draft time. Snapshot per booking (like
+  // creditsAppliedCents) so resume-payment + the success/email surfaces stay
+  // correct without re-reading the code — and immune to a later admin edit of
+  // the code's percentage/amount. The charge order is promo THEN credits:
+  // chargeAmountCents = max(0, (totalPriceCents - discountCents) - creditsAppliedCents).
+  // This (bookerId, discountCodeId, status) is also the redemption ledger: the
+  // once-per-customer limit is a count over non-cancelled bookings carrying the
+  // code, so no separate redemption table is needed.
+  discountCodeId             String?
+  discountCents              Int?
   stripePaymentIntentId      String?       @unique
   icsUid                     String        @unique
   googleEventId              String?
@@ -301,10 +313,50 @@ model Booking {
   creditsSourced  AccountCredit[] @relation("CreditSource")
   creditsRedeemed AccountCredit[] @relation("CreditRedemption")
   creditsLocking  AccountCredit[] @relation("CreditLock")
+  discountCode    DiscountCode?   @relation(fields: [discountCodeId], references: [id], onDelete: Restrict)
 
   @@index([bookerId, status])
   @@index([instructorId, date])
   @@index([date, status])
+  // F-155: backs the redemption counts (global + once-per-customer) in
+  // lib/booking/discount.ts, which filter bookings by discountCodeId + status.
+  @@index([discountCodeId, status])
+}
+
+/// DiscountCode (F-155) — an owner-authored promo code a booker types in the
+/// funnel (step before payment) to take a percentage or a fixed CHF amount off
+/// the lesson price. A code carries EITHER `percentOff` (1..100) OR
+/// `amountOffCents` (never both — enforced in lib/schemas/discount-code.ts and
+/// applied defensively in lib/booking/discount.ts). `maxRedemptions` is an
+/// OPTIONAL global cap (null = unlimited); a once-per-customer limit is always
+/// enforced. No redemption table: Booking.discountCodeId + status is the ledger.
+///
+/// Designed to extend to referral codes later (F-referral): add `kind` +
+/// `referrerUserId` here and mint an AccountCredit for the referrer when a
+/// booking carrying a referral code is CONFIRMED — purely additive, no reshape.
+model DiscountCode {
+  id             String   @id @default(cuid())
+  /// Normalized UPPERCASE, e.g. "VERGANI". Matched case-insensitively (the
+  /// booker's input is upper-cased before lookup). Unique across all codes.
+  code           String   @unique
+  /// Optional internal note for the admin list (e.g. "Vergani influencer").
+  /// Never shown to the booker.
+  label          String?
+  /// Percentage off (1..100). Exactly one of percentOff / amountOffCents is set.
+  percentOff     Int?
+  /// Fixed CHF cents off. Clamped to the lesson price at apply time so the
+  /// charge never goes negative. Exactly one of percentOff / amountOffCents.
+  amountOffCents Int?
+  /// Optional global redemption cap (null = unlimited). Counted over bookings
+  /// carrying this code in non-cancelled statuses.
+  maxRedemptions Int?
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  bookings Booking[]
+
+  @@index([active])
 }
 
 /// Attendee = a person attending a class. The booker (Booking.bookerId)

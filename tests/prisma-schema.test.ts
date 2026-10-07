@@ -30,6 +30,7 @@ describe("prisma schema shape (F-020)", () => {
         "Attendee",
         "AvailabilityBlock",
         "Booking",
+        "DiscountCode",
         "Instructor",
         "Season",
         "Session",

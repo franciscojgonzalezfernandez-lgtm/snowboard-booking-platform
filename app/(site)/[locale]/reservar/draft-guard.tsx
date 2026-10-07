@@ -34,6 +34,10 @@ export type DraftSnapshot = {
   originalPriceCents: number | null;
   /** F-141: resolved promo copy in the booking's language, set only when a promo applied. */
   promoLabel: string | null;
+  /** F-155: CHF cents a promo code took off the lesson (0 when none applied). */
+  discountCents: number;
+  /** F-155: the applied promo code (normalized), or null when none applied. */
+  discountCode: string | null;
 };
 
 type GuardContextValue = {

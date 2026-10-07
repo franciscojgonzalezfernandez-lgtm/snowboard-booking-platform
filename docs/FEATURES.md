@@ -3446,6 +3446,27 @@ Las 28 acciones GenScore quedan cubiertas; F-148 es aditivo (gap de la auditorí
   - El post-mortem histórico de F-125 ("Javi/Lara/Ale") se deja intacto: describe el estado de entonces.
 - Refs: F-154, F-095, F-021, F-036, F-087, D-VIDEO, `prisma/seed.ts`, `scripts/cleanup-instructors.ts`, `app/(site)/[locale]/(marketing)/sobre/page.tsx`, `messages/{en,de,es}.json`, `e2e/f-095-about.spec.ts`
 
+### F-155 — Códigos de descuento (promo) aplicables en el funnel + gestión en admin
+
+- Sprint: post-Sprint 7 · Estado: en PR · Prioridad: P2
+- Motivación: el owner quiere lanzar códigos promocionales (p.ej. "Vergani") que el cliente introduce en el paso previo al pago y le aplican un % o un importe fijo de descuento; configurables desde admin (código, límite de canjes, porcentaje o importe).
+- Decisiones (con el owner):
+  - **Stacking**: la promo se aplica primero sobre el precio de la clase y luego el saldo (account credits) sobre el resto → `charge = max(0, (total − promo) − credits)`.
+  - **Límite por cliente**: cada cliente puede usar un código **una vez** (siempre).
+  - **Tope global** (`maxRedemptions`): **opcional** (en blanco = ilimitado, el default elegido; un número = tope duro). Reconcilia el "número de canjes" del pedido original con la respuesta "sin tope total".
+  - **Sin fechas de expiración** — sólo toggle `active`.
+  - Descuento = **porcentaje O importe fijo** (dos columnas nullable + XOR en Zod).
+- Modelo: nueva tabla `DiscountCode` (`code` único en MAYÚSCULAS, `label?`, `percentOff?` XOR `amountOffCents?`, `maxRedemptions?`, `active`). Snapshot en `Booking`: `discountCodeId?` + `discountCents?` (como `creditsAppliedCents`). **Sin tabla de canjes**: `Booking.discountCodeId` + `status` ES el ledger (los recuentos filtran por estado). Migración `20261007214432_discount_codes` (columnas nullable + tabla + índices + FK RESTRICT).
+- Núcleo: `lib/booking/discount.ts` — `computeDiscountCents` (porcentaje con floor, importe con clamp al precio) + `resolveDiscountWith` (valida activo + una-vez-por-cliente + tope global, calcula el descuento). Única fuente de verdad, reusada por la preview y por el draft autoritativo.
+- Charge: en `lib/booking/create-draft.ts` el descuento se aplica antes que los créditos (créditos capados al `afterPromo`); `discountCodeId`/`discountCents` se persisten; el importe de Stripe (`chargeAmountCents`) ya refleja la promo → resume/webhook sin cambios. Una promo del 100% toma el camino zero-charge (CONFIRMED sin PaymentIntent).
+- Funnel: input de promo en el paso 4 (`booker-payment-flow.tsx`, hermano del bloque de créditos) + acción `validateDiscountCode` para la preview en vivo; el resumen del paso 5 muestra la línea "Promo (−X)". Se introduce **tras login** (no hace falta propagarlo por la URL/auth-hop). i18n público en `reservar.promo` (en/de/es).
+- Admin (EN-only, copia del quartet de Seasons): `/admin/discount-codes` (list + dialog + form RHF/Zod/shadcn con radio %/CHF → francos a cents + row con edit/activar-desactivar). Núcleo DI `lib/admin/discount-codes.ts`, schema `lib/schemas/discount-code.ts`, wrappers en `app/(ops)/admin/actions.ts`, link de nav.
+- Forward-compat referidos (no construido): `DiscountCode` extiende con `kind`/`referrerUserId` y el premio al referidor se acuña como `AccountCredit` en el webhook al CONFIRMAR, uniendo por `Booking.discountCodeId` — puramente aditivo.
+- AC: [x] modelo + migración; [x] núcleo + tests; [x] charge promo-luego-créditos + persistencia; [x] preview + UI funnel + resumen; [x] admin CRUD; [x] i18n; [x] E2E `e2e/f-155-discount-codes.spec.ts`.
+- Tests: [x] Vitest `lib/booking/discount.test.ts`, `lib/admin/discount-codes.test.ts`, casos nuevos en `lib/booking/create-draft.test.ts`; snapshot `tests/prisma-schema.test.ts` actualizado (añade `DiscountCode`). [x] E2E admin + funnel.
+- Notas: post-compra (éxito/email/dashboard) siguen mostrando `totalPriceCents` (precio de la clase); surfacear el descuento ahí queda fuera de alcance de este ticket.
+- Refs: F-155, F-060 (créditos), F-141 (precio efectivo), F-080/F-105 (patrón admin), `lib/booking/discount.ts`, `prisma/schema.prisma`, `app/(ops)/admin/discount-codes/*`
+
 ### F-141 — Precios promocionales (precio tachado + copy por duración)
 
 - Sprint: post-Sprint 5 · Estado: en PR

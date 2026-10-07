@@ -2,7 +2,7 @@
 
 import { revalidateTag } from "next/cache";
 import * as Sentry from "@sentry/nextjs";
-import { BookingStatus } from "@prisma/client";
+import { BookingStatus, type Duration } from "@prisma/client";
 
 import { getSessionUser } from "@/lib/auth/session-user";
 import { AVAILABILITY_TAGS } from "@/lib/booking-engine/cache";
@@ -10,6 +10,11 @@ import {
   createBookingDraftWith,
   type CreateDraftDeps,
 } from "@/lib/booking/create-draft";
+import {
+  resolveDiscountWith,
+  type DiscountError,
+} from "@/lib/booking/discount";
+import { PriceConfigurationError, resolvePriceCents } from "@/lib/pricing/get-price";
 import { prisma } from "@/lib/db";
 import { getStripe } from "@/lib/stripe/server";
 import { sendBookingConfirmedEmail } from "@/lib/email/send-booking-confirmed";
@@ -107,6 +112,61 @@ export async function createBookingDraft(
     revalidateTag(AVAILABILITY_TAGS.month(input.date.slice(0, 7)));
   }
   return result;
+}
+
+export type ValidateDiscountCodeResult =
+  | { ok: true; code: string; discountCents: number }
+  | {
+      ok: false;
+      error:
+        | DiscountError
+        | "UNAUTHORIZED"
+        | "NO_ACTIVE_SEASON"
+        | "PRICING_MISSING";
+    };
+
+/**
+ * Server Action (F-155): live preview of a promo code in the step before
+ * payment. Validates the code for the signed-in booker and returns the CHF-cents
+ * discount against the EFFECTIVE (promo-aware) price of the selected duration,
+ * so the funnel summary can show "−CHF X" before the booker pays. Purely a
+ * preview — `createBookingDraft` re-validates and re-prices authoritatively
+ * (`resolveDiscountWith` is the shared core), so a stale preview can never
+ * over-discount the real charge.
+ */
+export async function validateDiscountCode(input: {
+  code: string;
+  duration: Duration;
+}): Promise<ValidateDiscountCodeResult> {
+  const user = await getSessionUser();
+  if (!user) return { ok: false, error: "UNAUTHORIZED" };
+
+  const season = await prisma.season.findFirst({
+    where: { active: true },
+    select: {
+      id: true,
+      priceCentsByDuration: true,
+      promoPriceCentsByDuration: true,
+    },
+  });
+  if (!season) return { ok: false, error: "NO_ACTIVE_SEASON" };
+
+  let totalPriceCents: number;
+  try {
+    totalPriceCents = resolvePriceCents(season, input.duration).cents;
+  } catch (err) {
+    if (err instanceof PriceConfigurationError) {
+      return { ok: false, error: "PRICING_MISSING" };
+    }
+    throw err;
+  }
+
+  const resolved = await resolveDiscountWith(
+    { prisma },
+    { codeInput: input.code, userId: user.id, totalPriceCents },
+  );
+  if (!resolved.ok) return resolved;
+  return { ok: true, code: resolved.code.code, discountCents: resolved.discountCents };
 }
 
 /**
