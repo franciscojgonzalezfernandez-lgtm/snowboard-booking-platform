@@ -31,6 +31,12 @@ export const createBookingDraftSchema = z.object({
   // status and expiry; the array order is irrelevant (oldest-first cap is
   // applied server-side).
   creditIds: z.array(z.string().min(1)).max(10).optional(),
+  // F-155: optional promo code the booker applied in the step before payment.
+  // Stored normalized (uppercase) server-side; validated + priced authoritatively
+  // in `createBookingDraftWith` via `resolveDiscountWith`, which bubbles a
+  // PROMO_* error if it no longer applies. Kept permissive here (the code's
+  // existence/shape is the server's job, not the schema's).
+  discountCode: z.string().trim().min(1).max(40).optional(),
 });
 
 export type CreateBookingDraftInput = z.infer<typeof createBookingDraftSchema>;
@@ -47,7 +53,14 @@ export type CreateBookingDraftError =
   | "NO_ACTIVE_SEASON"
   | "PRICING_MISSING"
   | "SLOT_TAKEN"
-  | "CREDIT_NOT_APPLICABLE";
+  | "CREDIT_NOT_APPLICABLE"
+  // F-155: the applied promo code failed server re-validation at draft time
+  // (unknown/typo, deactivated, already used by this booker, or the global cap
+  // is exhausted). Mirrors the DiscountError union in lib/booking/discount.ts.
+  | "PROMO_INVALID"
+  | "PROMO_INACTIVE"
+  | "PROMO_ALREADY_USED"
+  | "PROMO_EXHAUSTED";
 
 export type CreateBookingDraftResult =
   | {
@@ -70,6 +83,10 @@ export type CreateBookingDraftResult =
       originalPriceCents: number | null;
       /** F-141: resolved promo copy in the booking's language, set only when a promo applied. */
       promoLabel: string | null;
+      /** F-155: CHF cents a promo code took off the lesson (0 when none applied). */
+      discountCents: number;
+      /** F-155: the applied promo code (normalized), or null when none applied. */
+      discountCode: string | null;
       reused: boolean;
     }
   | {

@@ -23,6 +23,8 @@ export type BookingFixture = {
   totalPriceCents: number;
   chargeAmountCents: number | null;
   creditsAppliedCents: number | null;
+  /** F-155: CHF cents a promo code took off the lesson (null/0 when none). */
+  discountCents: number | null;
   stripePaymentIntentId: string | null;
   paidAt: Date | null;
   stripeRefundId: string | null;
@@ -44,6 +46,7 @@ export function makeBookingFixture(
     totalPriceCents: 11000,
     chargeAmountCents: null,
     creditsAppliedCents: null,
+    discountCents: null,
     stripePaymentIntentId: null,
     paidAt: null,
     stripeRefundId: null,

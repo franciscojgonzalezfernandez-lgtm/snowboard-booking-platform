@@ -79,6 +79,13 @@ export default async function AdminLayout({
             >
               Announcements
             </Link>
+            <Link
+              href="/admin/discount-codes"
+              data-testid="admin-nav-discount-codes"
+              className="text-xs font-bold uppercase tracking-[0.18em] underline-offset-4 hover:underline"
+            >
+              Discount codes
+            </Link>
           </nav>
         </div>
         <form action={signOutAction}>

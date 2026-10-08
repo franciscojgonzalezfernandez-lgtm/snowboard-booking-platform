@@ -255,6 +255,19 @@
       "language_auto": "Lesson will run in {language}.",
       "continue": "Continue"
     },
+    "promo": {
+      "legend": "Promo code",
+      "placeholder": "Enter a code",
+      "apply": "Apply",
+      "applying": "Applying…",
+      "applied": "{amount} off applied",
+      "remove": "Remove",
+      "error_invalid": "That code isn’t valid.",
+      "error_inactive": "That code is no longer active.",
+      "error_already_used": "You’ve already used this code.",
+      "error_exhausted": "This code has reached its redemption limit.",
+      "error_generic": "Couldn’t apply that code. Try again."
+    },
     "step4": {
       "metadata_title": "Your details — Snowboard Booking Platform",
       "eyebrow": "Step 4 of 4 · Your details",
@@ -331,6 +344,8 @@
       "summary_attendees_count": "{count, plural, one {# rider} other {# riders}}",
       "summary_total": "Total",
       "summary_lesson_price": "Lesson price",
+      "summary_promo": "Promo",
+      "summary_promo_coded": "Promo ({code})",
       "summary_credits": "Credits",
       "summary_charge": "To pay",
       "summary_vat_note": "CHF, VAT included.",

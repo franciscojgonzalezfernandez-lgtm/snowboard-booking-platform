@@ -37,7 +37,7 @@ import {
   type Step4FormValues,
 } from "@/lib/schemas/step4";
 import type { CreateBookingDraftError } from "@/lib/schemas/booking-draft";
-import { createBookingDraft } from "./actions";
+import { createBookingDraft, validateDiscountCode } from "./actions";
 import { useDraftGuard } from "./draft-guard";
 import { FreezeWhileDraft } from "./freeze-while-draft";
 import { PaymentBlock } from "./payment-block";
@@ -194,6 +194,7 @@ export function BookerPaymentFlow({
 }: Props) {
   const t = useTranslations("reservar.step4");
   const tStep5 = useTranslations("reservar.step5");
+  const tPromo = useTranslations("reservar.promo");
   const tPricing = useTranslations("pricing");
   // F-133: the rider-level select showed `BEGINNER` once chosen — `Select.Value`
   // renders the raw value unless the root is handed the value→label mapping.
@@ -254,16 +255,65 @@ export function BookerPaymentFlow({
   const canAddAttendee = fields.length < ATTENDEES_MAX;
   const attendeeCount = fields.length;
 
+  // F-155: promo code applied in this step (before payment). `appliedPromo` is
+  // the server-validated result (code + CHF-cents off the EFFECTIVE price); it
+  // is merged into the draft payload at submit, exactly like `selectedCreditIds`
+  // (separate React state, not in the RHF schema).
+  const [promoInput, setPromoInput] = useState("");
+  const [promoPending, startPromoTransition] = useTransition();
+  const [appliedPromo, setAppliedPromo] = useState<{
+    code: string;
+    discountCents: number;
+  } | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+
+  const promoDiscountCents = appliedPromo?.discountCents ?? 0;
+  // The price credits (and the zero-charge check) work against: the lesson price
+  // minus the promo. Charge order is promo THEN credits — mirrors the server.
+  const effectivePriceCents = Math.max(0, lessonPriceCents - promoDiscountCents);
+
+  function applyPromo() {
+    const raw = promoInput.trim();
+    if (!raw) return;
+    setPromoError(null);
+    startPromoTransition(async () => {
+      const res = await validateDiscountCode({ code: raw, duration });
+      if (res.ok) {
+        setAppliedPromo({ code: res.code, discountCents: res.discountCents });
+        setPromoInput(res.code);
+        return;
+      }
+      setAppliedPromo(null);
+      const key =
+        res.error === "PROMO_INACTIVE"
+          ? "error_inactive"
+          : res.error === "PROMO_ALREADY_USED"
+            ? "error_already_used"
+            : res.error === "PROMO_EXHAUSTED"
+              ? "error_exhausted"
+              : res.error === "PROMO_INVALID"
+                ? "error_invalid"
+                : "error_generic";
+      setPromoError(tPromo(key));
+    });
+  }
+
+  function removePromo() {
+    setAppliedPromo(null);
+    setPromoInput("");
+    setPromoError(null);
+  }
+
   // F-060: credit redemption. The section renders only when the booker has
   // redeemable credits; `?credit=auto` pre-selects the applicable ones.
   const hasCredits = credits.length > 0;
   const partitioned = useMemo(
-    () => partitionCredits(credits, lessonPriceCents),
-    [credits, lessonPriceCents],
+    () => partitionCredits(credits, effectivePriceCents),
+    [credits, effectivePriceCents],
   );
   const applicableIds = useMemo(
-    () => applicableIdsOf(credits, lessonPriceCents),
-    [credits, lessonPriceCents],
+    () => applicableIdsOf(credits, effectivePriceCents),
+    [credits, effectivePriceCents],
   );
   const [creditsExpanded, setCreditsExpanded] = useState(
     () => hasCredits || autoApplyCredits,
@@ -276,16 +326,17 @@ export function BookerPaymentFlow({
     [credits, selectedCreditIds],
   );
   const creditsAppliedCents = useMemo(
-    () => appliedCentsOf(selectedCredits, lessonPriceCents),
-    [selectedCredits, lessonPriceCents],
+    () => appliedCentsOf(selectedCredits, effectivePriceCents),
+    [selectedCredits, effectivePriceCents],
   );
   const allApplicableSelected =
     applicableIds.length > 0 &&
     applicableIds.every((id) => selectedCreditIds.includes(id));
-  // When the selection already covers the lesson, submitting takes the
+  // When the promo + credits already cover the lesson, submitting takes the
   // zero-charge path (booking confirmed, no card) — reflect that on the CTA.
+  const previewChargeCents = Math.max(0, effectivePriceCents - creditsAppliedCents);
   const willBeFullyCovered =
-    lessonPriceCents > 0 && creditsAppliedCents >= lessonPriceCents;
+    previewChargeCents === 0 && (creditsAppliedCents > 0 || promoDiscountCents > 0);
 
   function toggleCredit(id: string, checked: boolean) {
     setSelectedCreditIds((prev) =>
@@ -331,6 +382,12 @@ export function BookerPaymentFlow({
     if (slotKeyRef.current !== slotKey) {
       slotKeyRef.current = slotKey;
       clearDraft();
+      // F-155: the promo discount is priced against the selected duration, so a
+      // slot change invalidates it too — drop it so the booker re-applies
+      // against the new price (and the server re-prices on the next submit).
+      setAppliedPromo(null);
+      setPromoInput("");
+      setPromoError(null);
     }
   }, [duration, date, time, instructorId, language, clearDraft]);
 
@@ -351,6 +408,8 @@ export function BookerPaymentFlow({
         ...(selectedCreditIds.length > 0
           ? { creditIds: selectedCreditIds }
           : {}),
+        // F-155: the applied promo code (re-validated + re-priced server-side).
+        ...(appliedPromo ? { discountCode: appliedPromo.code } : {}),
       });
 
       if (result.ok) {
@@ -370,6 +429,8 @@ export function BookerPaymentFlow({
           creditsAppliedCents: result.creditsAppliedCents,
           originalPriceCents: result.originalPriceCents,
           promoLabel: result.promoLabel,
+          discountCents: result.discountCents,
+          discountCode: result.discountCode,
         });
         return;
       }
@@ -424,6 +485,27 @@ export function BookerPaymentFlow({
             message: tStep5("error_pricing_body"),
           });
           return;
+        case "PROMO_INVALID":
+        case "PROMO_INACTIVE":
+        case "PROMO_ALREADY_USED":
+        case "PROMO_EXHAUSTED": {
+          // F-155: the code was valid at preview but failed at submit (used /
+          // exhausted / deactivated in between). Drop it, surface the reason on
+          // the promo field, and let the booker resubmit without it.
+          setAppliedPromo(null);
+          const key =
+            result.error === "PROMO_INACTIVE"
+              ? "error_inactive"
+              : result.error === "PROMO_ALREADY_USED"
+                ? "error_already_used"
+                : result.error === "PROMO_EXHAUSTED"
+                  ? "error_exhausted"
+                  : "error_invalid";
+          setPromoError(tPromo(key));
+          setSubmitError({ kind: result.error, message: tPromo(key) });
+          requestAnimationFrame(() => scrollToSection("section-4"));
+          return;
+        }
         case "INVALID_INPUT":
         default:
           setSubmitError({
@@ -768,6 +850,86 @@ export function BookerPaymentFlow({
             ) : null}
           </fieldset>
 
+          <fieldset className="space-y-3" data-testid="step4-promo">
+            <legend className="text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground">
+              {tPromo("legend")}
+            </legend>
+            {appliedPromo ? (
+              <div
+                data-testid="step4-promo-applied"
+                className="flex items-center justify-between gap-3 rounded-md border border-input p-4 text-sm"
+              >
+                <span className="space-y-0.5">
+                  <span className="block font-medium" data-testid="step4-promo-code">
+                    {appliedPromo.code}
+                  </span>
+                  <span className="block text-xs text-muted-foreground">
+                    {tPromo("applied", {
+                      amount: formatChf(appliedPromo.discountCents),
+                    })}
+                  </span>
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  data-testid="step4-promo-remove"
+                  onClick={removePromo}
+                  className="h-auto px-0 text-xs font-medium uppercase tracking-wider text-muted-foreground hover:bg-transparent hover:underline"
+                >
+                  {tPromo("remove")}
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-start gap-2">
+                  <div className="flex-1 space-y-1.5">
+                    <Label htmlFor="promo-code" className="sr-only">
+                      {tPromo("legend")}
+                    </Label>
+                    <Input
+                      id="promo-code"
+                      data-testid="step4-promo-input"
+                      autoComplete="off"
+                      autoCapitalize="characters"
+                      placeholder={tPromo("placeholder")}
+                      value={promoInput}
+                      onChange={(e) => setPromoInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        // Enter applies the code instead of submitting the form.
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          applyPromo();
+                        }
+                      }}
+                      aria-invalid={promoError ? "true" : "false"}
+                      aria-describedby={promoError ? "promo-error" : undefined}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    data-testid="step4-promo-apply"
+                    onClick={applyPromo}
+                    disabled={promoPending || promoInput.trim().length === 0}
+                  >
+                    {promoPending ? tPromo("applying") : tPromo("apply")}
+                  </Button>
+                </div>
+                {promoError ? (
+                  <p
+                    id="promo-error"
+                    className="text-xs text-destructive"
+                    role="alert"
+                    data-testid="step4-promo-error"
+                  >
+                    {promoError}
+                  </p>
+                ) : null}
+              </div>
+            )}
+          </fieldset>
+
           {hasCredits ? (
             <fieldset className="space-y-3" data-testid="step4-credits">
               <div className="flex items-center justify-between gap-3">
@@ -1041,60 +1203,96 @@ export function BookerPaymentFlow({
                   </dd>
                 </div>
               </dl>
-              <div className="mt-3 flex items-baseline justify-between gap-3 border-t border-input pt-3">
-                <span className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                  {draft.creditsAppliedCents > 0
-                    ? tStep5("summary_lesson_price")
-                    : tStep5("summary_total")}
-                </span>
-                <span data-testid="step5-summary-total">
-                  <PromoPrice
-                    className="items-end text-right"
-                    priceClassName="font-display text-2xl"
-                    priceLabel={formatChf(draft.totalPriceCents)}
-                    originalPriceLabel={
-                      draft.originalPriceCents != null
-                        ? formatChf(draft.originalPriceCents)
-                        : null
-                    }
-                    promoLabel={
-                      draft.promoLabel
-                        ? (promoLabelDisplay ?? draft.promoLabel)
-                        : null
-                    }
-                    regularPriceA11yLabel={tPricing("regular_price_a11y")}
-                  />
-                </span>
-              </div>
-              {draft.creditsAppliedCents > 0 ? (
-                <div className="space-y-2 pt-1">
-                  <div className="flex items-baseline justify-between gap-3 text-sm">
-                    <span className="text-muted-foreground">
-                      {tStep5("summary_credits")}
-                    </span>
-                    <span className="font-medium" data-testid="step5-summary-credits">
-                      −
-                      {formatChf(
-                        Math.min(
-                          draft.creditsAppliedCents,
-                          draft.totalPriceCents,
-                        ),
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between gap-3 border-t border-input pt-2">
-                    <span className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                      {tStep5("summary_charge")}
-                    </span>
-                    <span
-                      className="font-display text-2xl tracking-tight"
-                      data-testid="step5-summary-charge"
-                    >
-                      {formatChf(draft.chargeAmountCents)}
-                    </span>
-                  </div>
-                </div>
-              ) : null}
+              {(() => {
+                // F-155: the summary breaks down into Lesson price − Promo −
+                // Credits = To pay whenever either a promo or credits reduced the
+                // charge; otherwise it's a single "Total" line.
+                const hasDeductions =
+                  draft.creditsAppliedCents > 0 || draft.discountCents > 0;
+                return (
+                  <>
+                    <div className="mt-3 flex items-baseline justify-between gap-3 border-t border-input pt-3">
+                      <span className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                        {hasDeductions
+                          ? tStep5("summary_lesson_price")
+                          : tStep5("summary_total")}
+                      </span>
+                      <span data-testid="step5-summary-total">
+                        <PromoPrice
+                          className="items-end text-right"
+                          priceClassName="font-display text-2xl"
+                          priceLabel={formatChf(draft.totalPriceCents)}
+                          originalPriceLabel={
+                            draft.originalPriceCents != null
+                              ? formatChf(draft.originalPriceCents)
+                              : null
+                          }
+                          promoLabel={
+                            draft.promoLabel
+                              ? (promoLabelDisplay ?? draft.promoLabel)
+                              : null
+                          }
+                          regularPriceA11yLabel={tPricing("regular_price_a11y")}
+                        />
+                      </span>
+                    </div>
+                    {hasDeductions ? (
+                      <div className="space-y-2 pt-1">
+                        {draft.discountCents > 0 ? (
+                          <div className="flex items-baseline justify-between gap-3 text-sm">
+                            <span className="text-muted-foreground">
+                              {draft.discountCode
+                                ? tStep5("summary_promo_coded", {
+                                    code: draft.discountCode,
+                                  })
+                                : tStep5("summary_promo")}
+                            </span>
+                            <span
+                              className="font-medium"
+                              data-testid="step5-summary-promo"
+                            >
+                              −{formatChf(draft.discountCents)}
+                            </span>
+                          </div>
+                        ) : null}
+                        {draft.creditsAppliedCents > 0 ? (
+                          <div className="flex items-baseline justify-between gap-3 text-sm">
+                            <span className="text-muted-foreground">
+                              {tStep5("summary_credits")}
+                            </span>
+                            <span
+                              className="font-medium"
+                              data-testid="step5-summary-credits"
+                            >
+                              −
+                              {formatChf(
+                                Math.min(
+                                  draft.creditsAppliedCents,
+                                  Math.max(
+                                    0,
+                                    draft.totalPriceCents - draft.discountCents,
+                                  ),
+                                ),
+                              )}
+                            </span>
+                          </div>
+                        ) : null}
+                        <div className="flex items-baseline justify-between gap-3 border-t border-input pt-2">
+                          <span className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                            {tStep5("summary_charge")}
+                          </span>
+                          <span
+                            className="font-display text-2xl tracking-tight"
+                            data-testid="step5-summary-charge"
+                          >
+                            {formatChf(draft.chargeAmountCents)}
+                          </span>
+                        </div>
+                      </div>
+                    ) : null}
+                  </>
+                );
+              })()}
               <p className="text-xs text-muted-foreground">
                 {tStep5("summary_vat_note")}
               </p>

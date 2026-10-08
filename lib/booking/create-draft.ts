@@ -12,6 +12,7 @@ import {
   PriceConfigurationError,
   resolvePriceCents,
 } from "@/lib/pricing/get-price";
+import { resolveDiscountWith } from "@/lib/booking/discount";
 import {
   createBookingDraftSchema,
   type CreateBookingDraftInput,
@@ -260,6 +261,10 @@ export async function createBookingDraftWith(
       totalPriceCents: true,
       originalPriceCents: true,
       promoLabel: true,
+      // F-155: the promo snapshot persisted on the first submit — reused as-is
+      // (changing the promo requires voiding the draft first, like credits).
+      discountCents: true,
+      discountCode: { select: { code: true } },
     },
   });
 
@@ -281,6 +286,8 @@ export async function createBookingDraftWith(
         creditsAppliedCents: Number.isFinite(reusedCredits) ? reusedCredits : 0,
         originalPriceCents: existing.originalPriceCents,
         promoLabel: existing.promoLabel,
+        discountCents: existing.discountCents ?? 0,
+        discountCode: existing.discountCode?.code ?? null,
         reused: true,
       };
     }
@@ -351,6 +358,34 @@ export async function createBookingDraftWith(
     throw err;
   }
 
+  // F-155: resolve the promo code (if any) against the EFFECTIVE price. Runs
+  // before credit selection because the charge order is promo THEN credits —
+  // credits apply to the post-promo remainder, so they must cap at
+  // `afterPromoCents`, not the full lesson price. Resolved outside the
+  // transaction (like the credit read below); the booking row persists
+  // `discountCodeId` + `discountCents` so resume/webhook bill the right amount
+  // and the success surfaces stay correct without re-reading the code.
+  let discountCents = 0;
+  let discountCodeId: string | null = null;
+  let discountCodeApplied: string | null = null;
+  if (data.discountCode) {
+    const resolved = await resolveDiscountWith(
+      { prisma },
+      {
+        codeInput: data.discountCode,
+        userId: session.user.id,
+        totalPriceCents,
+      },
+    );
+    if (!resolved.ok) {
+      return { ok: false, error: resolved.error };
+    }
+    discountCents = resolved.discountCents;
+    discountCodeId = resolved.code.id;
+    discountCodeApplied = resolved.code.code;
+  }
+  const afterPromoCents = totalPriceCents - discountCents;
+
   // F-060: resolve which of the chosen credits actually apply (owned, ACTIVE,
   // unexpired) and how much they cover. The guarded write inside the transaction
   // is what protects against concurrent double-spend; this read drives the
@@ -381,15 +416,20 @@ export async function createBookingDraftWith(
     if (credits.length !== selectedCreditIds.length) {
       return { ok: false, error: "CREDIT_NOT_APPLICABLE" };
     }
+    // F-155: cap credits at the POST-promo amount — credits fund only what the
+    // promo did not already take off (charge order: promo then credits).
     ({ fullyConsumedIds, partial: partialCredit, creditsAppliedCents } =
-      selectCreditsToApply(credits, totalPriceCents));
+      selectCreditsToApply(credits, afterPromoCents));
   }
 
-  // `creditsAppliedCents` is capped at the price by the selection, so the charge
-  // is never negative. A credit only splits when it covers the lesson in full,
-  // so `partialCredit != null` always implies the zero-charge branch below.
-  const chargeAmountCents = Math.max(0, totalPriceCents - creditsAppliedCents);
-  const isZeroCharge = chargeAmountCents === 0 && creditsAppliedCents > 0;
+  // `creditsAppliedCents` is capped at the post-promo price by the selection, so
+  // the charge is never negative. A credit only splits when it covers the
+  // (post-promo) lesson in full, so `partialCredit != null` always implies the
+  // zero-charge branch below. A promo alone (no credits) can also drive the
+  // charge to 0 (e.g. a 100%-off code).
+  const chargeAmountCents = Math.max(0, afterPromoCents - creditsAppliedCents);
+  const isZeroCharge =
+    chargeAmountCents === 0 && (creditsAppliedCents > 0 || discountCents > 0);
 
   const attendeeRows = buildAttendeeRows(data.attendees, data.bookerName, now);
   const icsUid = newIcsUid();
@@ -418,6 +458,11 @@ export async function createBookingDraftWith(
           // F-141: promo snapshot (null when no promo applied).
           originalPriceCents,
           promoLabel: promoLabelSnapshot,
+          // F-155: promo-code snapshot (null/0 when none applied). Persisted so
+          // resume-payment bills `chargeAmountCents` without re-reading the code,
+          // and so the amount is immune to a later admin edit of the code.
+          discountCodeId,
+          discountCents,
           // F-084: persist the net charge + applied credits so the
           // resume-payment flow bills the right amount without re-reading the
           // Stripe PaymentIntent. `chargeAmountCents` is the Stripe charge (0 on
@@ -567,6 +612,8 @@ export async function createBookingDraftWith(
       creditsAppliedCents,
       originalPriceCents,
       promoLabel: promoLabelSnapshot,
+      discountCents,
+      discountCode: discountCodeApplied,
       reused: false,
     };
   }
@@ -584,6 +631,10 @@ export async function createBookingDraftWith(
         endDateTime: endDateTime.toISOString(),
         creditsAppliedCents: String(creditsAppliedCents),
         lockedCreditIds: fullyConsumedIds.join(","),
+        // F-155: audit trail on the PaymentIntent (not re-read for billing —
+        // the booking row's chargeAmountCents is authoritative).
+        discountCents: String(discountCents),
+        discountCodeId: discountCodeId ?? "",
       },
       description: `Snowboard lesson · ${data.duration} · ${data.date} ${data.time}`,
     },
@@ -608,6 +659,8 @@ export async function createBookingDraftWith(
     creditsAppliedCents,
     originalPriceCents,
     promoLabel: promoLabelSnapshot,
+    discountCents,
+    discountCode: discountCodeApplied,
     reused: false,
   };
 }

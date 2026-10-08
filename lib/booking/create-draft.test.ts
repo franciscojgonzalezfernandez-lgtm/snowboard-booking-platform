@@ -104,6 +104,19 @@ function makeDeps(overrides?: {
   userUpdateError?: Error;
   /** F-060: rows accountCredit.findMany returns (already filter-matched). */
   credits?: CreditFixture[];
+  /** F-155: the DiscountCode row discountCode.findUnique returns (null = unknown). */
+  discountCode?: {
+    id: string;
+    code: string;
+    percentOff: number | null;
+    amountOffCents: number | null;
+    maxRedemptions: number | null;
+    active: boolean;
+  } | null;
+  /** F-155: bookings by this booker already carrying the code (once-per-customer). */
+  promoPerUserCount?: number;
+  /** F-155: total non-cancelled bookings carrying the code (global cap). */
+  promoGlobalCount?: number;
   /**
    * F-060: override the count returned by the guarded lock/use updateMany to
    * simulate a concurrent draft grabbing a credit between read and write.
@@ -133,7 +146,19 @@ function makeDeps(overrides?: {
   });
   const bookingFindFirst = vi.fn(async () => overrides?.existingBooking ?? null);
   // F-122: live PENDING_PAYMENT holds the booker already has (hold-cap check).
-  const bookingCount = vi.fn(async () => overrides?.liveHoldsCount ?? 0);
+  // F-155: the same booking.count also serves the promo redemption counts —
+  // discriminate on the `where` so the hold-cap and the promo checks don't
+  // alias. A query carrying `discountCodeId` is a redemption count (per-user
+  // when `bookerId` is also present, global otherwise).
+  const bookingCount = vi.fn(async (args?: { where?: Record<string, unknown> }) => {
+    const where = args?.where ?? {};
+    if (where.discountCodeId != null) {
+      return where.bookerId != null
+        ? (overrides?.promoPerUserCount ?? 0)
+        : (overrides?.promoGlobalCount ?? 0);
+    }
+    return overrides?.liveHoldsCount ?? 0;
+  });
   const bookingUpdate = vi.fn(
     async (args: {
       where: { id: string };
@@ -201,6 +226,8 @@ function makeDeps(overrides?: {
     return { id: `credit_remnant_${creditCreates.length}` };
   });
 
+  const discountCodeFindUnique = vi.fn(async () => overrides?.discountCode ?? null);
+
   const prisma = {
     season: { findFirst: seasonFindFirst },
     booking: {
@@ -208,6 +235,7 @@ function makeDeps(overrides?: {
       update: bookingUpdate,
       count: bookingCount,
     },
+    discountCode: { findUnique: discountCodeFindUnique },
     accountCredit: { findMany: creditFindMany },
     $transaction: vi.fn(async (cb: (tx: unknown) => Promise<unknown>) =>
       cb({
@@ -284,6 +312,7 @@ function makeDeps(overrides?: {
       creditFindMany,
       creditUpdateMany,
       creditCreate,
+      discountCodeFindUnique,
     },
   };
 }
@@ -947,5 +976,118 @@ describe("createBookingDraftWith — F-060 credit redemption", () => {
     expect(result.reused).toBe(true);
     expect(result.chargeAmountCents).toBe(6000);
     expect(result.creditsAppliedCents).toBe(5000);
+  });
+});
+
+describe("createBookingDraftWith — F-155 promo codes", () => {
+  const PERCENT_10: NonNullable<Parameters<typeof makeDeps>[0]>["discountCode"] = {
+    id: "dc1",
+    code: "VERGANI",
+    percentOff: 10,
+    amountOffCents: null,
+    maxRedemptions: null,
+    active: true,
+  };
+
+  test("applies a percentage promo: charge = price − discount", async () => {
+    const { deps, enginePrisma, spies, created } = makeDeps({
+      discountCode: PERCENT_10,
+    });
+
+    const result = await createBookingDraftWith(deps, enginePrisma, {
+      ...VALID_INPUT,
+      discountCode: "vergani",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.totalPriceCents).toBe(11000);
+    expect(result.discountCents).toBe(1100);
+    expect(result.discountCode).toBe("VERGANI");
+    expect(result.chargeAmountCents).toBe(9900);
+    expect(result.creditsAppliedCents).toBe(0);
+
+    // Persisted snapshot on the booking row.
+    const data = created[0]!.data as {
+      discountCodeId: string | null;
+      discountCents: number;
+    };
+    expect(data.discountCodeId).toBe("dc1");
+    expect(data.discountCents).toBe(1100);
+
+    // Stripe is charged the net.
+    const piCalls = spies.paymentIntentCreate.mock.calls as unknown as Array<
+      [{ amount: number; metadata?: Record<string, string> }]
+    >;
+    const piArgs = piCalls[0]![0];
+    expect(piArgs.amount).toBe(9900);
+    expect(piArgs.metadata?.discountCents).toBe("1100");
+  });
+
+  test("promo then credits stack (credits apply to the post-promo remainder)", async () => {
+    const { deps, enginePrisma } = makeDeps({
+      discountCode: PERCENT_10, // 11000 → 1100 off → 9900
+      credits: [
+        { id: "cr1", amountCents: 5000, expiresAt: new Date("2027-01-01T00:00:00.000Z") },
+      ],
+    });
+
+    const result = await createBookingDraftWith(deps, enginePrisma, {
+      ...VALID_INPUT,
+      discountCode: "VERGANI",
+      creditIds: ["cr1"],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.discountCents).toBe(1100);
+    expect(result.creditsAppliedCents).toBe(5000);
+    // 9900 − 5000 = 4900.
+    expect(result.chargeAmountCents).toBe(4900);
+  });
+
+  test("a 100%-off promo takes the zero-charge path (CONFIRMED, no PaymentIntent)", async () => {
+    const { deps, enginePrisma, spies, created, dispatched } = makeDeps({
+      discountCode: { ...PERCENT_10, percentOff: 100 },
+    });
+
+    const result = await createBookingDraftWith(deps, enginePrisma, {
+      ...VALID_INPUT,
+      discountCode: "VERGANI",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.clientSecret).toBeNull();
+    expect(result.chargeAmountCents).toBe(0);
+    expect(result.discountCents).toBe(11000);
+    expect(spies.paymentIntentCreate).not.toHaveBeenCalled();
+    expect((created[0]!.data as { status: string }).status).toBe("CONFIRMED");
+    expect(dispatched).toEqual(["book_1"]);
+  });
+
+  test("rejects a promo already used by this booker (no booking written)", async () => {
+    const { deps, enginePrisma, spies } = makeDeps({
+      discountCode: PERCENT_10,
+      promoPerUserCount: 1,
+    });
+
+    const result = await createBookingDraftWith(deps, enginePrisma, {
+      ...VALID_INPUT,
+      discountCode: "VERGANI",
+    });
+
+    expect(result).toEqual({ ok: false, error: "PROMO_ALREADY_USED" });
+    expect(spies.bookingCreate).not.toHaveBeenCalled();
+    expect(spies.paymentIntentCreate).not.toHaveBeenCalled();
+  });
+
+  test("rejects an unknown promo code", async () => {
+    const { deps, enginePrisma } = makeDeps({ discountCode: null });
+    const result = await createBookingDraftWith(deps, enginePrisma, {
+      ...VALID_INPUT,
+      discountCode: "NOPE",
+    });
+    expect(result).toEqual({ ok: false, error: "PROMO_INVALID" });
   });
 });

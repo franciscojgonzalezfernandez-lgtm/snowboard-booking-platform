@@ -65,7 +65,8 @@ export type CancelBookingByUserResult =
  * Policy (F-039b):
  *   - `hoursBeforeStart >= 48` AND the booking was actually paid (CONFIRMED)
  *     → credit path: mark CANCELLED_BY_USER + mint an AccountCredit equal to
- *     the lesson price, valid one year.
+ *     what the booker actually paid (lesson price minus any F-155 promo
+ *     discount minus restored credits), valid one year.
  *   - otherwise → forfeit path: mark CANCELLED_BY_USER, no credit.
  *
  * A never-paid PENDING_PAYMENT row never earns a credit regardless of the
@@ -100,6 +101,10 @@ export async function cancelBookingByUserWith(
       anchorTime: true,
       duration: true,
       totalPriceCents: true,
+      // F-155: a promo discount lowers what the booker actually paid. The fresh
+      // cash credit must exclude it (see freshCreditCents below), else a
+      // cancellation would mint more credit than was ever paid.
+      discountCents: true,
     },
   });
   if (!booking) {
@@ -167,12 +172,16 @@ export async function cancelBookingByUserWith(
           });
         }
 
-        // Fresh 1-year credit only for the cash portion (total minus what the
-        // restored credits already cover). A 100%-cash booking restores nothing
-        // and mints one credit of the full price — the original F-058 behaviour.
+        // Fresh 1-year credit only for the cash portion actually paid: the
+        // lesson price, minus any F-155 promo discount (never paid), minus what
+        // the restored credits already cover. This equals the Stripe
+        // `chargeAmountCents` captured at draft (total − discount − credits),
+        // so a cancellation returns exactly what the booker put in — a discount
+        // can't be laundered into credit. A 100%-cash booking with no promo
+        // restores nothing and mints one credit of the full price (F-058).
         const freshCreditCents = Math.max(
           0,
-          booking.totalPriceCents - restoredCents,
+          booking.totalPriceCents - (booking.discountCents ?? 0) - restoredCents,
         );
         if (freshCreditCents > 0) {
           await tx.accountCredit.create({

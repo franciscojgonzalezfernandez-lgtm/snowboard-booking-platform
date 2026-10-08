@@ -67,6 +67,16 @@ import {
   type UpdateSeasonResult,
 } from "@/lib/admin/seasons";
 import type { SeasonInput } from "@/lib/schemas/season";
+import {
+  createDiscountCodeWith,
+  setDiscountCodeActiveWith,
+  updateDiscountCodeWith,
+  type AdminDiscountCodesDeps,
+  type CreateDiscountCodeResult,
+  type SetDiscountCodeActiveResult,
+  type UpdateDiscountCodeResult,
+} from "@/lib/admin/discount-codes";
+import type { DiscountCodeInput } from "@/lib/schemas/discount-code";
 import { sendCancellationEmails } from "@/lib/email/send-cancellation";
 import {
   blockAvailabilityWindowWith,
@@ -649,5 +659,48 @@ export async function deactivateSeason(input: {
   await requireAdmin();
   const result = await deactivateSeasonWith(seasonsDeps(), input.id);
   if (result.ok) revalidateActiveSeasonSurfaces();
+  return result;
+}
+
+// --- F-155: discount codes ------------------------------------------------
+// Thin wrappers over the pure discount-code cores. Each re-checks the admin
+// session and revalidates the admin list. No public surface reads the code set
+// directly (it's applied per-booking in the funnel at submit time), so the
+// funnel pages need no revalidation here.
+
+function discountCodesDeps(): AdminDiscountCodesDeps {
+  return { prisma };
+}
+
+export async function createDiscountCode(
+  input: DiscountCodeInput,
+): Promise<CreateDiscountCodeResult> {
+  await requireAdmin();
+  const result = await createDiscountCodeWith(discountCodesDeps(), input);
+  if (result.ok) revalidatePath("/admin/discount-codes");
+  return result;
+}
+
+export async function updateDiscountCode(
+  input: DiscountCodeInput & { id: string },
+): Promise<UpdateDiscountCodeResult> {
+  await requireAdmin();
+  const { id, ...rest } = input;
+  const result = await updateDiscountCodeWith(discountCodesDeps(), id, rest);
+  if (result.ok) revalidatePath("/admin/discount-codes");
+  return result;
+}
+
+export async function setDiscountCodeActive(input: {
+  id: string;
+  active: boolean;
+}): Promise<SetDiscountCodeActiveResult> {
+  await requireAdmin();
+  const result = await setDiscountCodeActiveWith(
+    discountCodesDeps(),
+    input.id,
+    input.active,
+  );
+  if (result.ok) revalidatePath("/admin/discount-codes");
   return result;
 }
