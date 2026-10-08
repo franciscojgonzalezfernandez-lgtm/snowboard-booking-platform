@@ -178,6 +178,44 @@ describe("cancelBookingByUserWith", () => {
     expect(bookingUpdates[0]!.data.cancelledByUserAt).toEqual(NOW);
   });
 
+  test("F-155: a promo-discounted booking credits only what was paid, not the full lesson price", async () => {
+    // CHF 110 lesson, 10% code → booker paid CHF 99. Cancelling must mint a
+    // CHF 99 credit (what they paid), never CHF 110 — otherwise the discount
+    // would be laundered into free credit.
+    const { deps, creditCreates } = makeDeps({
+      booking: makeBooking({ totalPriceCents: 11000, discountCents: 1100 }),
+    });
+
+    const result = await cancelBookingByUserWith(deps, { bookingId: "book_1" });
+
+    expect(result).toMatchObject({
+      ok: true,
+      outcome: "credit",
+      creditAmountCents: 9900,
+    });
+    expect(creditCreates).toHaveLength(1);
+    expect(creditCreates[0]!.amountCents).toBe(9900);
+  });
+
+  test("F-155: promo + credits — fresh credit excludes both the discount and the restored credits", async () => {
+    // CHF 110 lesson, 10% code (−1100), CHF 50 credit applied → cash paid 4900.
+    // Cancel restores the 5000 credit AND mints a 4900 fresh cash credit.
+    const originalExpiry = new Date("2027-01-15T00:00:00.000Z");
+    const { deps, creditCreates } = makeDeps({
+      booking: makeBooking({ totalPriceCents: 11000, discountCents: 1100 }),
+      usedCredits: [
+        { id: "cr_old", amountCents: 5000, expiresAt: originalExpiry },
+      ],
+    });
+
+    const result = await cancelBookingByUserWith(deps, { bookingId: "book_1" });
+
+    // 5000 restored + 4900 fresh cash = 9900 returned (= what was paid in).
+    expect(result).toMatchObject({ ok: true, outcome: "credit", creditAmountCents: 9900 });
+    expect(creditCreates).toHaveLength(1);
+    expect(creditCreates[0]!.amountCents).toBe(4900);
+  });
+
   test("<48h on a CONFIRMED booking forfeits with no credit", async () => {
     const { deps, creditCreates } = makeDeps({
       // Starts 2026-12-03 07:00Z = NOW + 47h → inside the window.
