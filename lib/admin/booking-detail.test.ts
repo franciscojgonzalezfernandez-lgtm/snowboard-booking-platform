@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
 import {
+  BookingSource,
   BookingStatus,
   CreditReason,
   CreditStatus,
@@ -26,6 +27,10 @@ function buildBooking(): AdminBookingDetail {
     totalPriceCents: 11000,
     chargeAmountCents: 11000,
     creditsAppliedCents: null,
+    attributionChannel: BookingSource.FLYER,
+    attributionCampaign: "flyer-talstation",
+    utmSource: null,
+    utmMedium: null,
     stripePaymentIntentId: "pi_123",
     icsUid: "ics_1@rideflumserberg.ch",
     googleEventId: null,

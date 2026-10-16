@@ -1,4 +1,5 @@
 import type {
+  BookingSource,
   BookingStatus,
   CreditReason,
   CreditStatus,
@@ -55,4 +56,17 @@ export const CREDIT_STATUS_LABEL: Record<CreditStatus, string> = {
   LOCKED: "Locked",
   USED: "Used",
   EXPIRED: "Expired",
+};
+
+// F-156: acquisition-channel labels for the admin bookings list, detail, and
+// campaign rollup. SEM/SEO spelled out so the operator recognises them.
+export const SOURCE_LABEL: Record<BookingSource, string> = {
+  DIRECT: "Direct",
+  PAID_SEARCH: "Paid search (SEM)",
+  ORGANIC_SEARCH: "Organic (SEO)",
+  SOCIAL: "Social",
+  FLYER: "Flyer",
+  STICKER: "Sticker",
+  REFERRAL: "Referral",
+  OTHER: "Other",
 };

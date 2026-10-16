@@ -1,4 +1,4 @@
-import { BookingStatus } from "@prisma/client";
+import { BookingSource, BookingStatus } from "@prisma/client";
 import { z } from "zod";
 
 // URL filter schema for the admin bookings list (F-077). Parsed in
@@ -15,6 +15,7 @@ export const MAX_PAGE_SIZE = 100;
 
 export type AdminBookingsFilters = {
   status?: BookingStatus;
+  source?: BookingSource;
   instructorId?: string;
   from?: Date;
   to?: Date;
@@ -54,6 +55,13 @@ function parseStatus(raw: string | undefined): BookingStatus | undefined {
     : undefined;
 }
 
+function parseSource(raw: string | undefined): BookingSource | undefined {
+  if (!raw) return undefined;
+  return (Object.values(BookingSource) as string[]).includes(raw)
+    ? (raw as BookingSource)
+    : undefined;
+}
+
 function parseQ(raw: string | undefined): string | undefined {
   if (!raw) return undefined;
   const trimmed = raw.trim();
@@ -80,6 +88,7 @@ export function parseAdminBookingsFilters(
   searchParams: Record<string, string | string[] | undefined>,
 ): AdminBookingsFilters {
   const status = parseStatus(readOne(searchParams, "status"));
+  const source = parseSource(readOne(searchParams, "source"));
   const instructorId = parseInstructorId(readOne(searchParams, "instructorId"));
   let from = parseIsoDate(readOne(searchParams, "from"));
   let to = parseIsoDate(readOne(searchParams, "to"));
@@ -95,13 +104,14 @@ export function parseAdminBookingsFilters(
     DEFAULT_PAGE_SIZE,
   );
 
-  return { status, instructorId, from, to, q, page, pageSize };
+  return { status, source, instructorId, from, to, q, page, pageSize };
 }
 
 // Zod schema kept available for future server-side validators (e.g. if a
 // future admin endpoint accepts the same filters as a JSON body).
 export const adminBookingsFiltersSchema = z.object({
   status: z.nativeEnum(BookingStatus).optional(),
+  source: z.nativeEnum(BookingSource).optional(),
   instructorId: z.string().min(1).max(64).optional(),
   from: z.date().optional(),
   to: z.date().optional(),

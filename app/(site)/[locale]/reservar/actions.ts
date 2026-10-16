@@ -1,9 +1,14 @@
 "use server";
 
 import { revalidateTag } from "next/cache";
+import { cookies } from "next/headers";
 import * as Sentry from "@sentry/nextjs";
 import { BookingStatus, type Duration } from "@prisma/client";
 
+import {
+  ATTRIBUTION_COOKIE,
+  decodeAttribution,
+} from "@/lib/attribution/cookie";
 import { getSessionUser } from "@/lib/auth/session-user";
 import { AVAILABILITY_TAGS } from "@/lib/booking-engine/cache";
 import {
@@ -60,10 +65,18 @@ export async function createBookingDraft(
   input: CreateBookingDraftInput,
 ): Promise<CreateBookingDraftResult> {
   const user = await getSessionUser();
+  // F-156: resolve the first-touch marketing attribution from the cookie. A
+  // Server Action is already a dynamic context, so reading cookies here costs
+  // nothing in static terms (unlike reading them from a shared layout, F-124).
+  const cookieStore = await cookies();
+  const attribution = decodeAttribution(
+    cookieStore.get(ATTRIBUTION_COOKIE)?.value,
+  );
   const deps: CreateDraftDeps = {
     session: user ? { user } : null,
     prisma,
     stripe: getStripe(),
+    attribution,
     // F-060 zero-charge path: a fully-credit-covered booking is created
     // CONFIRMED with no PaymentIntent, so no webhook will send the confirmation.
     // Dispatch it here; failures are logged but never fail the booking.
@@ -110,6 +123,10 @@ export async function createBookingDraft(
     revalidateTag(AVAILABILITY_TAGS.duration(input.duration));
     revalidateTag(AVAILABILITY_TAGS.date(input.date));
     revalidateTag(AVAILABILITY_TAGS.month(input.date.slice(0, 7)));
+    // F-156: the attribution is now snapshotted on the booking. Clear the
+    // first-touch cookie so a later booking under a different campaign is
+    // attributed to that one, not stuck on the original tag.
+    if (attribution) cookieStore.delete(ATTRIBUTION_COOKIE);
   }
   return result;
 }

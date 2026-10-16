@@ -62,6 +62,21 @@ enum CreditStatus {
   EXPIRED
 }
 
+/// F-156: acquisition channel a booking is attributed to. Captured once at
+/// draft creation from the first-touch `ride_attr` cookie (middleware), then
+/// immutable. `DIRECT` = no campaign tag seen (normal/organic-direct traffic);
+/// `OTHER` = a `?c=` code not in KNOWN_CAMPAIGNS or an unclassifiable UTM.
+enum BookingSource {
+  DIRECT
+  PAID_SEARCH
+  ORGANIC_SEARCH
+  SOCIAL
+  FLYER
+  STICKER
+  REFERRAL
+  OTHER
+}
+
 model User {
   id            String   @id @default(cuid())
   email         String   @unique
@@ -305,6 +320,16 @@ model Booking {
   instructorNote             String?       @db.Text
   instructorNoteSetAt        DateTime?
   createdAt                  DateTime      @default(now())
+  // F-156: marketing attribution, captured once at draft creation from the
+  // first-touch `ride_attr` cookie and immutable thereafter. `attributionChannel`
+  // defaults to DIRECT so the ADD COLUMN backfills legacy rows (clean slate in
+  // prod per F-154) and the type stays non-null. `attributionCampaign` holds the
+  // offline `?c=` code or `utm_campaign`; `utmSource`/`utmMedium` keep the raw
+  // online-ad granularity. All optional except the channel.
+  attributionChannel         BookingSource @default(DIRECT)
+  attributionCampaign        String?
+  utmSource                  String?
+  utmMedium                  String?
 
   booker          User            @relation(fields: [bookerId], references: [id], onDelete: Restrict)
   instructor      Instructor      @relation(fields: [instructorId], references: [id], onDelete: Restrict)
@@ -321,6 +346,9 @@ model Booking {
   // F-155: backs the redemption counts (global + once-per-customer) in
   // lib/booking/discount.ts, which filter bookings by discountCodeId + status.
   @@index([discountCodeId, status])
+  // F-156: backs the admin bookings source filter + the campaign rollup, which
+  // filter/group by attributionChannel.
+  @@index([attributionChannel])
 }
 
 /// DiscountCode (F-155) — an owner-authored promo code a booker types in the

@@ -3502,6 +3502,25 @@ Las 28 acciones GenScore quedan cubiertas; F-148 es aditivo (gap de la auditorí
 - AC: [ ] serializable + recheck en los 4 guards; [ ] captura de 40001 → error de invariante; [ ] tests concurrentes (o al menos del recheck post-mutación); [ ] reorder bajo la misma garantía.
 - Refs: F-155, F-141, F-142, `lib/admin/announcements.ts`, `lib/admin/pricing.ts`
 
+### F-156 — Atribución de origen de la reserva (campañas SEM/SEO + QR de flyers/pegatinas)
+
+- Sprint: marketing · Estado: in-progress (2026-10-16) · Prioridad: P2
+- Motivación: el owner va a lanzar campañas de marketing distintas — SEM (anuncios de pago), SEO (orgánico), flyers físicos con QR y pegatinas en la estación con QR — y necesita ver, **por reserva**, de dónde vino: tráfico directo/normal, el QR de un flyer concreto, el QR de una pegatina concreta, un clic de Google Ads, etc. Hoy no se captura nada (grep confirma: no hay `source`/`utm`/`campaign`/`referrer` en el esquema ni en la app). Vercel Analytics ya registra UTM para el **tráfico**, pero no puede ligar una **reserva** (y su ingreso en CHF) a la campaña que la produjo — que es justo lo que el owner quiere para saber qué flyers/pegatinas/anuncios convierten.
+- Alcance (confirmado con el owner): enum de canal + código de campaña + UTM source/medium crudos; en admin, columna + filtro + detalle **y** un informe agregado por campaña (reservas + ingreso CHF); se documenta el esquema de URLs + un mapa de códigos conocidos (el owner genera las imágenes QR con cualquier herramienta — sin generador QR in-app).
+- Diseño (4 capas):
+  - **Captura (first-touch, cookie en middleware):** `middleware.ts` ya corre sobre el árbol público. En la llegada lee el tag (`?c=<código>` para offline, UTM/`gclid`/`fbclid` para online) y, si no existe ya la cookie, deja una cookie first-touch `ride_attr`. No cuesta estático: el `Set-Cookie` se escribe en el edge y la cookie **no** se lee en ningún layout compartido (respeta la prohibición F-124). Helpers puros en `lib/attribution/{types,campaigns,parse,cookie}.ts` (unit-testables).
+  - **Persistencia (write-once en draft create):** enum `BookingSource` + columnas `attributionChannel`/`attributionCampaign`/`utmSource`/`utmMedium` en `Booking`. Se capturan **una sola vez** en `createBookingDraft` (lee la cookie vía `cookies()` en la Server Action = contexto dinámico, coste estático cero) y se escriben en el único `tx.booking.create` de `lib/booking/create-draft.ts`. Inmutable después (como `createdAt`): resume/webhook/cancelaciones/cron **no** lo tocan → no aplica la regla de "trazar todos los money-paths" (no es dinero ni mutable).
+  - **Display + reporting (admin):** columna "Source" + filtro en la lista (`lib/admin/bookings.ts`, `filter-bar.tsx`, `booking-row.tsx`, `admin-bookings.ts`), bloque de atribución en el detalle (`lib/admin/booking-detail.ts` + `[id]/page.tsx`), e informe nuevo `lib/admin/campaign-report.ts` + página `app/(ops)/admin/campaigns/page.tsx` (reservas + CHF por campaña/canal; ingreso = `chargeAmountCents` con fallback a `totalPriceCents`).
+  - **Doc (workflow del owner):** `docs/marketing-attribution.md` con el esquema de URLs y la tabla `KNOWN_CAMPAIGNS` (código → canal + etiqueta).
+- AC:
+  - [ ] Llegar a `/?c=flyer-talstation` deja la cookie `ride_attr`; completar una reserva persiste `attributionChannel=FLYER` + `attributionCampaign=flyer-talstation` en el `Booking`.
+  - [ ] `/admin/bookings` muestra la columna Source y filtra por canal; el detalle muestra canal + campaña + utm source/medium.
+  - [ ] `/admin/campaigns` lista reservas + ingreso CHF por campaña.
+  - [ ] Tráfico sin tag → `DIRECT`.
+- Tests: Vitest (`lib/attribution/parse` + `cookie`, `buildWhere` con source, `loadAdminBookings` filtrado, `campaign-report`); Playwright E2E gated-build (cookie + persistencia + filtro + informe) reutilizando el patrón F-060 (martes `2026-11-17` sembrado).
+- Notas: enum `BookingSource { DIRECT, PAID_SEARCH, ORGANIC_SEARCH, SOCIAL, FLYER, STICKER, REFERRAL, OTHER }`. `attributionChannel` con `@default(DIRECT)` (clean-slate F-154: 0 reservas legacy en prod). Migración `prisma migrate dev --name booking_attribution` contra Neon `dev`.
+- Refs: F-156, F-124, F-154, F-084, F-141, F-155, `middleware.ts`, `lib/attribution/*`, `lib/booking/create-draft.ts`, `lib/admin/campaign-report.ts`
+
 ---
 
 ## Bloqueantes / decisiones abiertas (consolidadas)

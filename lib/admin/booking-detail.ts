@@ -1,6 +1,7 @@
 import "server-only";
 
 import type {
+  BookingSource,
   BookingStatus,
   CreditReason,
   CreditStatus,
@@ -44,6 +45,10 @@ export type AdminBookingDetail = {
   totalPriceCents: number;
   chargeAmountCents: number | null;
   creditsAppliedCents: number | null;
+  attributionChannel: BookingSource;
+  attributionCampaign: string | null;
+  utmSource: string | null;
+  utmMedium: string | null;
   stripePaymentIntentId: string | null;
   icsUid: string;
   googleEventId: string | null;
@@ -87,6 +92,10 @@ const DETAIL_SELECT = {
   totalPriceCents: true,
   chargeAmountCents: true,
   creditsAppliedCents: true,
+  attributionChannel: true,
+  attributionCampaign: true,
+  utmSource: true,
+  utmMedium: true,
   stripePaymentIntentId: true,
   icsUid: true,
   googleEventId: true,
