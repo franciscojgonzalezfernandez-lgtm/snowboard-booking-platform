@@ -376,5 +376,19 @@ test.describe("F-156 — booking source attribution", () => {
     await expect(campaignsList).toContainText("CHF");
     // Social split by platform: Instagram is its own line.
     await expect(campaignsList).toContainText("Social · Instagram");
+
+    // Cheat-sheet: the offline code list shows the ready `?c=` URL (server-
+    // rendered), and the UTM builder composes a correct tagged URL live. Wait
+    // for the client island to hydrate before typing — a pre-hydration fill
+    // would be reset by React.
+    const builder = page.getByTestId("campaign-link-builder");
+    await expect(builder).toHaveAttribute("data-hydrated", "true");
+    await expect(page.getByTestId("campaign-codes")).toContainText(
+      "https://rideflumserberg.ch/?c=flyer-talstation",
+    );
+    await page.getByTestId("campaign-builder-campaign").fill("Winter Promo");
+    await expect(page.getByTestId("campaign-builder-url")).toHaveValue(
+      "https://rideflumserberg.ch/?utm_source=instagram&utm_medium=social&utm_campaign=winter-promo",
+    );
   });
 });

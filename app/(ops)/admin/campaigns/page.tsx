@@ -4,9 +4,16 @@ import {
   loadCampaignReport,
   type CampaignReportDeps,
 } from "@/lib/admin/campaign-report";
+import { KNOWN_CAMPAIGNS } from "@/lib/attribution/campaigns";
 import { SOURCE_LABEL } from "@/lib/labels/booking";
 import { prisma } from "@/lib/db";
 import { formatChf } from "@/lib/pricing/format";
+
+import { CampaignLinkBuilder } from "./_components/link-builder";
+
+const KNOWN_CAMPAIGN_LIST = Object.entries(KNOWN_CAMPAIGNS).map(
+  ([code, { label }]) => ({ code, label }),
+);
 
 function reportDeps(): CampaignReportDeps {
   return { prisma };
@@ -105,6 +112,8 @@ export default async function AdminCampaignsPage() {
             </ul>
           )}
         </div>
+
+        <CampaignLinkBuilder knownCampaigns={KNOWN_CAMPAIGN_LIST} />
       </section>
     </div>
   );
