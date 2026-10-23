@@ -24,7 +24,18 @@ import { prisma } from "@/lib/db";
 import { getStripe } from "@/lib/stripe/server";
 import { sendBookingConfirmedEmail } from "@/lib/email/send-booking-confirmed";
 import { sendBookingOpsNotif } from "@/lib/email/send-booking-ops-notif";
-import { buildCalendarSyncDeps, insertEventWith } from "@/lib/calendar/sync";
+import { sendRescheduleEmails } from "@/lib/email/send-reschedule";
+import {
+  buildCalendarSyncDeps,
+  deleteEventWith,
+  insertEventWith,
+} from "@/lib/calendar/sync";
+import {
+  rescheduleBookingWith,
+  type RescheduleBookingDeps,
+  type RescheduleBookingError,
+} from "@/lib/booking/reschedule";
+import { rescheduleBookingSchema } from "@/lib/schemas/reschedule";
 import type {
   CreateBookingDraftInput,
   CreateBookingDraftResult,
@@ -266,4 +277,80 @@ export async function voidActiveDraft(
   revalidateTag(AVAILABILITY_TAGS.month(dateIso.slice(0, 7)));
 
   return { ok: true };
+}
+
+export type RescheduleBookingActionResult = Result<
+  { newDate: string; newAnchorTime: string },
+  RescheduleBookingError | "INVALID_INPUT"
+>;
+
+/**
+ * Server Action (F-157): a booker moves one of their own CONFIRMED bookings to
+ * a new slot, from the reschedule funnel. The pure decision (ownership, the 48h
+ * notice window, the one-year horizon, the availability re-check, and the atomic
+ * move) lives in `rescheduleBookingWith`. Crucially NO money/credit/discount
+ * field is touched — the booker keeps the exact effective price they paid.
+ *
+ * On success, best-effort AFTER the move (a failure here must not undo a move
+ * the booker already confirmed, so each step is logged to Sentry and swallowed):
+ *   1. dispatch the "lesson moved" booker email + ops/instructor notif,
+ *   2. move the Google Calendar event (delete the old, insert at the new time),
+ *   3. bust the availability cache for BOTH the old and the new date — the old
+ *      slot is now free and the new slot is now taken.
+ */
+export async function rescheduleBooking(
+  input: unknown,
+): Promise<RescheduleBookingActionResult> {
+  const parsed = rescheduleBookingSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "INVALID_INPUT" };
+
+  const user = await getSessionUser();
+  const deps: RescheduleBookingDeps = {
+    session: user ? { user } : null,
+    prisma,
+    enginePrisma: prisma,
+  };
+
+  const result = await rescheduleBookingWith(deps, parsed.data);
+  if (!result.ok) return result;
+
+  const bookingId = parsed.data.bookingId;
+
+  try {
+    await sendRescheduleEmails({
+      bookingId,
+      oldDate: result.oldDate,
+      oldAnchorTime: result.oldAnchorTime,
+    });
+  } catch (err) {
+    Sentry.captureException(err, {
+      tags: { source: "reschedule-booking" },
+      extra: { bookingId },
+    });
+  }
+
+  // Move the Google Calendar event: remove the old one (frees googleEventId),
+  // then insert at the new time. Both helpers are best-effort and swallow their
+  // own failures into onError, so a Google hiccup never fails the move. (If the
+  // delete fails the id survives and the insert skips as already_synced, leaving
+  // a stale event — logged to Sentry, acceptable for the single-instructor MVP.)
+  const calendarDeps = buildCalendarSyncDeps(prisma, (err, ctx) => {
+    Sentry.captureException(err, {
+      tags: { source: "reschedule-booking" },
+      extra: { bookingId, ...ctx },
+    });
+  });
+  await deleteEventWith(calendarDeps, bookingId);
+  await insertEventWith(calendarDeps, bookingId);
+
+  const oldIso = result.oldDate.toISOString().slice(0, 10);
+  const newIso = result.newDate.toISOString().slice(0, 10);
+  revalidateTag(AVAILABILITY_TAGS.root);
+  revalidateTag(AVAILABILITY_TAGS.duration(result.duration));
+  for (const iso of new Set([oldIso, newIso])) {
+    revalidateTag(AVAILABILITY_TAGS.date(iso));
+    revalidateTag(AVAILABILITY_TAGS.month(iso.slice(0, 7)));
+  }
+
+  return { ok: true, newDate: newIso, newAnchorTime: result.newAnchorTime };
 }

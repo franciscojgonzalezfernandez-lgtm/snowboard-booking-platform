@@ -189,7 +189,30 @@
       "step5": "Zahlen",
       "mobile_summary": "Schritt {current} von {total}",
       "mobile_aria": "Schritt-Navigator öffnen",
-      "mobile_jump_title": "Zu Schritt springen"
+      "mobile_jump_title": "Zu Schritt springen",
+      "confirm": "Prüfen"
+    },
+    "reschedule": {
+      "eyebrow": "Stunde verschieben",
+      "heading": "Neue Zeit wählen",
+      "sub": "Wähle einen anderen Termin für dieselbe Stunde. Dein ursprünglicher Preis gilt weiter — es gibt nichts mehr zu bezahlen.",
+      "locked_note": "Gleiche Dauer wie deine ursprüngliche Stunde.",
+      "confirm_eyebrow": "Bestätigen",
+      "confirm_heading": "Verschiebung bestätigen",
+      "summary_from": "Aktuell",
+      "summary_to": "Neu",
+      "summary_length": "Dauer",
+      "summary_instructor": "Coach",
+      "no_charge_note": "Nichts zu bezahlen — dein ursprünglicher Preis gilt für die neue Zeit weiter.",
+      "confirm_cta": "Verschiebung bestätigen",
+      "confirm_pending": "Wird verschoben…",
+      "toast_success": "Stunde verschoben",
+      "error_too_late": "Stunden können nur mindestens 48 Stunden im Voraus verschoben werden.",
+      "error_outside_horizon": "Dieses Datum liegt mehr als ein Jahr nach deiner ursprünglichen Buchung.",
+      "error_slot_taken": "Dieser Termin wurde gerade vergeben. Bitte wähle eine andere Zeit.",
+      "error_same_slot": "Das ist dein aktueller Termin — wähle eine andere Zeit.",
+      "error_not_reschedulable": "Diese Buchung kann nicht mehr verschoben werden.",
+      "error_generic": "Die Stunde konnte nicht verschoben werden. Bitte versuche es erneut."
     },
     "dirty": {
       "title": "Zahlung verwerfen, um zu bearbeiten?",
@@ -458,6 +481,11 @@
       "toast_success": "Buchung storniert",
       "error_already_cancelled": "Diese Buchung wurde bereits storniert.",
       "error_generic": "Etwas ist schiefgelaufen. Bitte versuche es erneut."
+    },
+    "reschedule": {
+      "button": "Stunde verschieben",
+      "disabled_too_late": "Nur bis 48 Std. vor der Stunde",
+      "disabled_horizon": "Über dem Ein-Jahres-Limit"
     },
     "credits": {
       "title": "Dein Guthaben",

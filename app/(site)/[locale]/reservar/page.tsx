@@ -26,12 +26,18 @@ import {
   FUNNEL_RETURN_PARAM,
   parseFunnelReturnState,
 } from "@/lib/booking/funnel-return";
+import { setUtcTime, startOfUtcDay, toIsoDate } from "@/lib/booking-engine/time";
+import {
+  RESCHEDULE_HORIZON_MS,
+  RESCHEDULE_WINDOW_HOURS,
+} from "@/lib/booking/reschedule";
 import { BookingHeader } from "./booking-header";
 import { BookingStepper } from "./booking-stepper";
 import { BookerPaymentFlow } from "./booker-payment-flow";
 import { DurationPicker } from "./duration-picker";
 import { FreezeWhileDraft } from "./freeze-while-draft";
 import { MonthCalendar } from "./month-calendar";
+import { RescheduleConfirm } from "./reschedule-confirm";
 import { TimeInstructor } from "./time-instructor";
 
 // F-119: embedded Section-4 auth. Lazy-loaded so better-auth/react stays out
@@ -51,6 +57,8 @@ type ReservarSearchParams = {
   credit?: string;
   /** F-134: packed return state, set only on the hop back from auth. */
   r?: string;
+  /** F-157: reschedule mode — the id of the CONFIRMED booking being moved. */
+  reschedule?: string;
 };
 
 type ReservarPageProps = {
@@ -174,10 +182,94 @@ export default async function ReservarPage({
     redirect(`/${locale}/reservar?${restored.toString()}`);
   }
 
+  // F-157: reschedule mode. `?reschedule=<id>` turns the funnel into a "move
+  // this booking" flow: duration is locked to the booking's, the calendar is
+  // capped at the one-year horizon, and Section 4/5 (auth + payment) are
+  // replaced by a single "confirm move" panel — no new charge is ever made.
+  // Every guard here is re-checked server-side in `rescheduleBookingWith`; this
+  // is UX, not the security boundary.
+  const rescheduleId =
+    typeof sp.reschedule === "string" && sp.reschedule.length > 0
+      ? sp.reschedule
+      : undefined;
+
+  let rescheduleCtx:
+    | {
+        bookingId: string;
+        duration: Duration;
+        /** ISO yyyy-mm-dd — latest date the lesson may move to. */
+        maxDateIso: string;
+        currentDateIso: string;
+        currentTime: string;
+        currentInstructorId: string;
+      }
+    | null = null;
+
+  if (rescheduleId) {
+    const rescheduleSession = await auth.api.getSession({
+      headers: await headers(),
+    });
+    if (!rescheduleSession?.user) {
+      redirect(`/${locale}/login`);
+    }
+    const moving = await prisma.booking.findUnique({
+      where: { id: rescheduleId },
+      select: {
+        id: true,
+        bookerId: true,
+        status: true,
+        date: true,
+        anchorTime: true,
+        duration: true,
+        instructorId: true,
+        originalDate: true,
+      },
+    });
+    // Ownership / status / 48h-window guards all bounce back to the dashboard —
+    // the Move control is only offered when these hold, so reaching here means a
+    // stale link or a hand-edited URL.
+    if (
+      !moving ||
+      moving.bookerId !== rescheduleSession.user.id ||
+      moving.status !== "CONFIRMED"
+    ) {
+      redirect(`/${locale}/dashboard`);
+    }
+    const currentStart = setUtcTime(
+      startOfUtcDay(moving.date),
+      moving.anchorTime,
+    );
+    const hoursBeforeStart =
+      (currentStart.getTime() - Date.now()) / (60 * 60 * 1000);
+    if (hoursBeforeStart < RESCHEDULE_WINDOW_HOURS) {
+      redirect(`/${locale}/dashboard`);
+    }
+    // Keep `d` present + correct in the URL (the stepper and the client islands
+    // read it). The dashboard link includes it, so this only fires on a
+    // tampered/stale `d`, dropping any downstream selections made for the wrong
+    // duration.
+    if (sp.d !== moving.duration) {
+      redirect(`/${locale}/reservar?reschedule=${moving.id}&d=${moving.duration}`);
+    }
+    const anchorDay = startOfUtcDay(moving.originalDate ?? moving.date);
+    rescheduleCtx = {
+      bookingId: moving.id,
+      duration: moving.duration,
+      maxDateIso: toIsoDate(
+        new Date(anchorDay.getTime() + RESCHEDULE_HORIZON_MS),
+      ),
+      currentDateIso: toIsoDate(moving.date),
+      currentTime: moving.anchorTime,
+      currentInstructorId: moving.instructorId,
+    };
+  }
+
   const parsedDuration = durationSchema.safeParse(sp.d);
-  const initialDuration = parsedDuration.success
-    ? parsedDuration.data
-    : undefined;
+  const initialDuration = rescheduleCtx
+    ? rescheduleCtx.duration
+    : parsedDuration.success
+      ? parsedDuration.data
+      : undefined;
 
   const parsedDateStr =
     sp.dt && dateSchema.safeParse(sp.dt).success ? sp.dt : undefined;
@@ -195,6 +287,10 @@ export default async function ReservarPage({
   const tStep3 = await getTranslations({ locale, namespace: "reservar.step3" });
   const tStep4 = await getTranslations({ locale, namespace: "reservar.step4" });
   const tStep5 = await getTranslations({ locale, namespace: "reservar.step5" });
+  const tReschedule = await getTranslations({
+    locale,
+    namespace: "reservar.reschedule",
+  });
 
   // Server-side prefetch into a per-request QueryClient. Dehydrated state
   // travels to the client via HydrationBoundary so the calendar + slots
@@ -258,11 +354,16 @@ export default async function ReservarPage({
   }> = [];
   if (shouldRenderSection4) {
     session = await auth.api.getSession({ headers: await headers() });
-    publishableKey = process.env.STRIPE_PUBLISHABLE_KEY;
-    if (!publishableKey) {
-      throw new Error(
-        "STRIPE_PUBLISHABLE_KEY is not set — required for Section 5 Payment Element",
-      );
+    // F-157: the reschedule confirm panel takes no payment, so Stripe + the
+    // price/credits breakdown below are skipped — only the instructor name (and
+    // the resolved language) are needed to render the "new time" summary.
+    if (!rescheduleCtx) {
+      publishableKey = process.env.STRIPE_PUBLISHABLE_KEY;
+      if (!publishableKey) {
+        throw new Error(
+          "STRIPE_PUBLISHABLE_KEY is not set — required for Section 5 Payment Element",
+        );
+      }
     }
     const inst = await prisma.instructor.findUnique({
       where: { id: parsedInstructor },
@@ -276,7 +377,7 @@ export default async function ReservarPage({
     // F-060: lesson price + redeemable credits feed the Apply-credits section
     // and the Step 5 charge breakdown. The server action re-validates both, so
     // these are display-only — a stale value can never over-discount a charge.
-    if (initialDuration && session?.user) {
+    if (!rescheduleCtx && initialDuration && session?.user) {
       const [season, credits, bookerRow] = await Promise.all([
         prisma.season.findFirst({
           where: { active: true },
@@ -338,7 +439,7 @@ export default async function ReservarPage({
   return (
     <>
       <BookingHeader />
-      <BookingStepper />
+      <BookingStepper reschedule={!!rescheduleCtx} />
 
       <main className="mx-auto max-w-2xl px-6 pb-24 pt-12 sm:pt-16">
         <header className="space-y-2">
@@ -346,15 +447,17 @@ export default async function ReservarPage({
             data-testid="step-eyebrow"
             className="text-xs font-bold uppercase tracking-[0.28em] text-muted-foreground"
           >
-            {t("eyebrow")}
+            {rescheduleCtx ? tReschedule("eyebrow") : t("eyebrow")}
           </p>
           <h1
             data-testid="step1-title"
             className="font-display text-4xl tracking-tight"
           >
-            {t("heading")}
+            {rescheduleCtx ? tReschedule("heading") : t("heading")}
           </h1>
-          <p className="text-sm text-muted-foreground">{t("sub")}</p>
+          <p className="text-sm text-muted-foreground">
+            {rescheduleCtx ? tReschedule("sub") : t("sub")}
+          </p>
         </header>
 
         <HydrationBoundary state={dehydratedState}>
@@ -368,7 +471,10 @@ export default async function ReservarPage({
               <h2 id="section-1-heading" className="sr-only">
                 {t("duration_label")}
               </h2>
-              <DurationPicker initialDuration={initialDuration} />
+              <DurationPicker
+                initialDuration={initialDuration}
+                locked={!!rescheduleCtx}
+              />
             </section>
 
             {initialDuration && (
@@ -394,7 +500,10 @@ export default async function ReservarPage({
                   </p>
                 </header>
                 <div className="mt-8">
-                  <MonthCalendar duration={initialDuration} />
+                  <MonthCalendar
+                    duration={initialDuration}
+                    maxDate={rescheduleCtx?.maxDateIso}
+                  />
                 </div>
               </section>
             )}
@@ -428,7 +537,7 @@ export default async function ReservarPage({
             )}
           </FreezeWhileDraft>
 
-          {shouldRenderSection4 && !session?.user && (
+          {shouldRenderSection4 && !rescheduleCtx && !session?.user && (
             <section
               id="section-4"
               data-testid="section-4-anonymous"
@@ -456,6 +565,7 @@ export default async function ReservarPage({
           )}
 
           {shouldRenderSection4 &&
+            !rescheduleCtx &&
             session?.user &&
             publishableKey &&
             initialDuration &&
@@ -491,6 +601,34 @@ export default async function ReservarPage({
                   eyebrow: tStep5("eyebrow"),
                   heading: tStep5("heading"),
                   sub: tStep5("sub"),
+                }}
+              />
+            )}
+
+          {shouldRenderSection4 &&
+            rescheduleCtx &&
+            session?.user &&
+            initialDuration &&
+            parsedDateStr &&
+            parsedTime &&
+            parsedInstructor && (
+              <RescheduleConfirm
+                bookingId={rescheduleCtx.bookingId}
+                locale={locale}
+                durationLabel={t(DURATION_LABEL_KEY[initialDuration])}
+                current={{
+                  dateLabel: formatDateForLocale(
+                    rescheduleCtx.currentDateIso,
+                    locale,
+                  ),
+                  time: rescheduleCtx.currentTime,
+                }}
+                next={{
+                  date: parsedDateStr,
+                  dateLabel: formatDateForLocale(parsedDateStr, locale),
+                  time: parsedTime,
+                  instructorId: parsedInstructor,
+                  instructorName: instructorName ?? "—",
                 }}
               />
             )}

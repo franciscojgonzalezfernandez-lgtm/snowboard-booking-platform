@@ -40,11 +40,27 @@ function deriveCompleted(state: BookingUrlState): ReadonlySet<Step> {
   return set;
 }
 
-export function BookingStepper() {
+type BookingStepperProps = {
+  /** F-157: reschedule mode has no payment step — show 4 steps and relabel the
+   * last one "Review" instead of "Pay". */
+  reschedule?: boolean;
+};
+
+export function BookingStepper({ reschedule = false }: BookingStepperProps) {
   const t = useTranslations("reservar.stepper");
   const { state } = useBookingUrlState();
   const { requestEdit } = useDraftGuard();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const steps = useMemo<readonly Step[]>(
+    () => (reschedule ? [1, 2, 3, 4] : STEPS),
+    [reschedule],
+  );
+  const labelFor = useCallback(
+    (step: Step) =>
+      reschedule && step === 4 ? t("confirm") : t(STEP_LABEL_KEY[step]),
+    [reschedule, t],
+  );
 
   const current = useMemo(() => deriveCurrentStep(state), [state]);
   const completed = useMemo(() => deriveCompleted(state), [state]);
@@ -73,14 +89,17 @@ export function BookingStepper() {
     >
       <ol
         role="list"
-        className="mx-auto hidden max-w-4xl grid-cols-5 items-stretch gap-2 px-6 py-3 md:grid"
+        className={cn(
+          "mx-auto hidden max-w-4xl items-stretch gap-2 px-6 py-3 md:grid",
+          reschedule ? "grid-cols-4" : "grid-cols-5",
+        )}
       >
-        {STEPS.map((step) => {
+        {steps.map((step) => {
           const isCompleted = completed.has(step);
           const isActive = step === current;
           const isInteractive =
             isCompleted || isActive || (step <= current);
-          const label = t(STEP_LABEL_KEY[step]);
+          const label = labelFor(step);
           return (
             <li key={step} className="contents">
               <button
@@ -135,14 +154,14 @@ export function BookingStepper() {
             data-testid="stepper-mobile-summary"
             className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground"
           >
-            {t("mobile_summary", { current, total: STEPS.length })}
+            {t("mobile_summary", { current, total: steps.length })}
           </span>
           <span className="flex items-center gap-2">
             <span
               data-testid="stepper-mobile-current-label"
               className="text-[12px] font-bold uppercase tracking-[0.18em] text-foreground"
             >
-              {t(STEP_LABEL_KEY[current])}
+              {labelFor(current)}
             </span>
             <span aria-hidden="true" className="text-foreground/40">
               ▾
@@ -156,12 +175,12 @@ export function BookingStepper() {
             </SheetTitle>
           </SheetHeader>
           <ol role="list" className="mt-2 flex flex-col">
-            {STEPS.map((step) => {
+            {steps.map((step) => {
               const isCompleted = completed.has(step);
               const isActive = step === current;
               const isInteractive =
                 isCompleted || isActive || step <= current;
-              const label = t(STEP_LABEL_KEY[step]);
+              const label = labelFor(step);
               return (
                 <li key={step}>
                   <button

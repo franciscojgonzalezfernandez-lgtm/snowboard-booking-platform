@@ -65,6 +65,7 @@ export async function loadEngineContext(
         date: { gte: rangeStart, lte: rangeEnd },
       },
       select: {
+        id: true,
         instructorId: true,
         date: true,
         anchorTime: true,

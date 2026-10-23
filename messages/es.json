@@ -189,7 +189,30 @@
       "step5": "Pagar",
       "mobile_summary": "Paso {current} de {total}",
       "mobile_aria": "Abrir navegador de pasos",
-      "mobile_jump_title": "Saltar a un paso"
+      "mobile_jump_title": "Saltar a un paso",
+      "confirm": "Revisar"
+    },
+    "reschedule": {
+      "eyebrow": "Mueve tu clase",
+      "heading": "Elige un nuevo horario",
+      "sub": "Escoge otro horario para la misma clase. Tu precio original se mantiene: no hay nada más que pagar.",
+      "locked_note": "Misma duración que tu clase original.",
+      "confirm_eyebrow": "Confirmar",
+      "confirm_heading": "Confirmar el cambio",
+      "summary_from": "Actual",
+      "summary_to": "Nuevo",
+      "summary_length": "Duración",
+      "summary_instructor": "Instructor",
+      "no_charge_note": "No hay nada que pagar: tu precio original se mantiene en el nuevo horario.",
+      "confirm_cta": "Confirmar cambio",
+      "confirm_pending": "Moviendo…",
+      "toast_success": "Clase movida",
+      "error_too_late": "Las clases solo se pueden mover con al menos 48 horas de antelación.",
+      "error_outside_horizon": "Esa fecha es más de un año posterior a tu reserva original.",
+      "error_slot_taken": "Ese horario se acaba de ocupar. Elige otro horario.",
+      "error_same_slot": "Ese es tu horario actual: elige otro.",
+      "error_not_reschedulable": "Esta reserva ya no se puede mover.",
+      "error_generic": "No se pudo mover la clase. Inténtalo de nuevo."
     },
     "dirty": {
       "title": "¿Descartar el pago para editar?",
@@ -458,6 +481,11 @@
       "toast_success": "Reserva cancelada",
       "error_already_cancelled": "Esta reserva ya estaba cancelada.",
       "error_generic": "Algo salió mal. Inténtalo de nuevo."
+    },
+    "reschedule": {
+      "button": "Mover clase",
+      "disabled_too_late": "Solo hasta 48 h antes de la clase",
+      "disabled_horizon": "Supera el límite de un año"
     },
     "credits": {
       "title": "Tu saldo",
