@@ -8,6 +8,7 @@ type FindManyArgs = { where: Record<string, unknown>; select: Record<string, unk
 type Row = {
   attributionChannel: BookingSource;
   attributionCampaign: string | null;
+  utmSource: string | null;
   chargeAmountCents: number | null;
   totalPriceCents: number;
 };
@@ -16,6 +17,7 @@ function row(overrides: Partial<Row> = {}): Row {
   return {
     attributionChannel: overrides.attributionChannel ?? BookingSource.DIRECT,
     attributionCampaign: overrides.attributionCampaign ?? null,
+    utmSource: overrides.utmSource ?? null,
     chargeAmountCents:
       overrides.chargeAmountCents === undefined ? 11000 : overrides.chargeAmountCents,
     totalPriceCents: overrides.totalPriceCents ?? 11000,
@@ -98,5 +100,46 @@ describe("loadCampaignReport", () => {
     ]);
     const out = await loadCampaignReport(deps);
     expect(out.rows[0]!.label).toBe("mystery");
+  });
+
+  test("SOCIAL splits into one row per platform, labelled by source", async () => {
+    const { deps } = makeDeps([
+      row({ attributionChannel: BookingSource.SOCIAL, utmSource: "instagram", chargeAmountCents: 11000 }),
+      row({ attributionChannel: BookingSource.SOCIAL, utmSource: "instagram", chargeAmountCents: 11000 }),
+      row({ attributionChannel: BookingSource.SOCIAL, utmSource: "tiktok", chargeAmountCents: 20000 }),
+    ]);
+    const out = await loadCampaignReport(deps);
+
+    const ig = out.rows.find((r) => r.source === "instagram");
+    const tiktok = out.rows.find((r) => r.source === "tiktok");
+    expect(ig).toMatchObject({ label: "Social · Instagram", bookings: 2, revenueCents: 22000 });
+    expect(tiktok).toMatchObject({ label: "Social · TikTok", bookings: 1, revenueCents: 20000 });
+  });
+
+  test("source aliases fold into one platform row (ig = instagram, fb = facebook)", async () => {
+    const { deps } = makeDeps([
+      row({ attributionChannel: BookingSource.SOCIAL, utmSource: "ig" }),
+      row({ attributionChannel: BookingSource.SOCIAL, utmSource: "Instagram" }),
+      row({ attributionChannel: BookingSource.SOCIAL, utmSource: "fb" }),
+    ]);
+    const out = await loadCampaignReport(deps);
+
+    const ig = out.rows.find((r) => r.source === "instagram");
+    const fb = out.rows.find((r) => r.source === "facebook");
+    expect(ig).toMatchObject({ bookings: 2, label: "Social · Instagram" });
+    expect(fb).toMatchObject({ bookings: 1, label: "Social · Facebook" });
+    expect(out.rows).toHaveLength(2);
+  });
+
+  test("a tagged campaign label still wins over the source refinement", async () => {
+    const { deps } = makeDeps([
+      row({
+        attributionChannel: BookingSource.SOCIAL,
+        attributionCampaign: "flyer-talstation",
+        utmSource: "instagram",
+      }),
+    ]);
+    const out = await loadCampaignReport(deps);
+    expect(out.rows[0]!.label).toBe("Flyer · Talstation");
   });
 });

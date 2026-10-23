@@ -82,9 +82,10 @@ export default async function AdminCampaignsPage() {
             <ul data-testid="admin-campaigns-list">
               {report.rows.map((row) => (
                 <li
-                  key={`${row.channel}:${row.campaign ?? ""}`}
+                  key={`${row.channel}:${row.campaign ?? ""}:${row.source ?? ""}`}
                   data-testid="admin-campaign-row"
                   data-channel={row.channel}
+                  data-source={row.source ?? ""}
                   className="grid gap-3 border-b border-input px-4 py-4 last:border-0 sm:grid-cols-[1fr,12rem,7rem,8rem] sm:items-baseline"
                 >
                   <span className="min-w-0 truncate font-medium">

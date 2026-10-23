@@ -317,6 +317,37 @@ test.describe("F-156 — booking source attribution", () => {
       },
       select: { id: true },
     });
+    // A SOCIAL booking carrying utm_source=instagram — the rollup must show it
+    // as its own "Social · Instagram" line, not merged into a generic Social.
+    await prisma.booking.create({
+      data: {
+        bookerId: adminId,
+        instructorId: adminInstructor.id,
+        date: new Date("2027-02-05T00:00:00.000Z"),
+        anchorTime: "12:00",
+        duration: Duration.ONE_HOUR,
+        language: DbLocale.en,
+        status: BookingStatus.CONFIRMED,
+        totalPriceCents: ONE_HOUR_PRICE_CENTS,
+        chargeAmountCents: ONE_HOUR_PRICE_CENTS,
+        paidAt: new Date(),
+        icsUid: `${ICS_UID_PREFIX}ig-${Date.now()}`,
+        attributionChannel: BookingSource.SOCIAL,
+        utmSource: "instagram",
+        utmMedium: "social",
+        attendees: {
+          create: [
+            {
+              name: "IG Booker",
+              birthDate: new Date("1990-01-01T00:00:00.000Z"),
+              level: Level.BEGINNER,
+              isBooker: true,
+            },
+          ],
+        },
+      },
+      select: { id: true },
+    });
 
     // List filtered by source=FLYER shows the flyer booking's source cell.
     await page.goto("/admin/bookings?source=FLYER", { waitUntil: "domcontentloaded" });
@@ -343,5 +374,7 @@ test.describe("F-156 — booking source attribution", () => {
     const campaignsList = page.getByTestId("admin-campaigns-list");
     await expect(campaignsList).toContainText("Flyer · Talstation");
     await expect(campaignsList).toContainText("CHF");
+    // Social split by platform: Instagram is its own line.
+    await expect(campaignsList).toContainText("Social · Instagram");
   });
 });

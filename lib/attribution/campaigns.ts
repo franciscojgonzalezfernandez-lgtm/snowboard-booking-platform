@@ -43,3 +43,40 @@ export function campaignLabel(code: string | null | undefined): string | null {
   if (!code) return null;
   return KNOWN_CAMPAIGNS[code]?.label ?? code;
 }
+
+// F-156: `utm_source` arrives spelled many ways (ig/instagram, fb/meta/facebook).
+// Fold the common variants to one canonical token so the campaign rollup groups
+// a platform into a single row instead of several. Used for grouping + display
+// in lib/admin/campaign-report.ts; the channel enum stays SOCIAL — this is a
+// finer split WITHIN the rollup, not a new first-class channel.
+const SOURCE_ALIASES: Record<string, string> = {
+  instagram: "instagram",
+  ig: "instagram",
+  insta: "instagram",
+  tiktok: "tiktok",
+  "tik-tok": "tiktok",
+  facebook: "facebook",
+  fb: "facebook",
+  meta: "facebook",
+};
+
+const SOURCE_DISPLAY: Record<string, string> = {
+  instagram: "Instagram",
+  tiktok: "TikTok",
+  facebook: "Facebook",
+};
+
+/** Canonical grouping token for a raw `utm_source` (lowercased, aliased). */
+export function normalizeSource(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const key = raw.trim().toLowerCase();
+  if (!key) return null;
+  return SOURCE_ALIASES[key] ?? key;
+}
+
+/** Display label for a `utm_source` (nice-cased for known platforms). */
+export function sourceDisplay(raw: string | null | undefined): string | null {
+  const n = normalizeSource(raw);
+  if (!n) return null;
+  return SOURCE_DISPLAY[n] ?? n;
+}

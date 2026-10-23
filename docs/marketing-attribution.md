@@ -56,6 +56,23 @@ Channel is derived from `utm_medium`:
 `utm_campaign` is stored as the campaign; `utm_source` / `utm_medium` are kept
 raw on the booking detail.
 
+### Telling social platforms apart
+
+Instagram, TikTok and Facebook all map to the **Social** channel. To see them as
+separate lines in **Admin → Campaigns**, tag each with its own `utm_source`:
+
+```
+?utm_source=instagram&utm_medium=social
+?utm_source=tiktok&utm_medium=social
+?utm_source=facebook&utm_medium=social
+```
+
+The rollup groups Social by source and shows a row per platform ("Social ·
+Instagram", "Social · TikTok", …). Common spellings are folded together
+(`ig`/`insta` → Instagram, `fb`/`meta` → Facebook). The bookings **list** filter
+stays at the channel level (Social) — the platform split lives in the rollup and
+on each booking's detail (`utm_source`).
+
 ## Known campaign codes
 
 The source of truth is `lib/attribution/campaigns.ts` (`KNOWN_CAMPAIGNS`). To add
