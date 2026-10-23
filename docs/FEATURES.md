@@ -3523,6 +3523,26 @@ Las 28 acciones GenScore quedan cubiertas; F-148 es aditivo (gap de la auditorí
 
 ---
 
+### F-157 — Mover (reagendar) una reserva en vez de cancelar + volver a reservar
+
+- Sprint: 7 · Estado: review (PR abierta) · Prioridad: alta (reduce fricción + cancelaciones/reembolsos)
+- Motivación: hoy un alumno que no puede asistir solo puede **cancelar** (→ crédito si ≥48h, F-058/F-039b) y volver a reservar desde cero, pagando de nuevo si el crédito no cubre. Queremos una acción **"Mover clase"**: conservar la misma reserva (misma duración y el precio ya pagado) y solo cambiarla de fecha/hora.
+- Reglas:
+  - **Misma duración** — una clase de 4h solo puede moverse a otro hueco de 4h.
+  - **Precio intacto** — sin nuevo pago ni PaymentIntent; no se toca ningún campo de dinero/crédito/descuento.
+  - **Horizonte ≤ 1 año** anclado en la **fecha original de la lección** (`Booking.originalDate`, se fija una vez en el primer movimiento y no se reescribe), para no posponer indefinidamente. Paridad con el horizonte del crédito de cancelación.
+  - **≥ 48h de antelación** sobre la lección actual, en **backend y frontend**.
+- Mecánica: un hueco se ocupa solo por una reserva en estado ocupante, así que "mover" = `UPDATE date/anchorTime/instructorId` de la misma fila (libera el viejo, ocupa el nuevo en una escritura guardada por `status=CONFIRMED`). El hueco nuevo se revalida con `instructorAvailableAt` excluyéndose a sí misma de la ocupación.
+- Implementación:
+  - Schema: `Booking.originalDate @db.Date?`, `rescheduledAt?`, `rescheduleCount @default(0)` (migración aditiva).
+  - Core puro `lib/booking/reschedule.ts` (+ `lib/schemas/reschedule.ts`); Server Action `rescheduleBooking` en `reservar/actions.ts` (emails + mover evento Google Calendar delete→insert + bust de caché de ambas fechas).
+  - Funnel `/reservar?reschedule=<id>` en "modo reschedule": duración bloqueada, calendario con `maxDate`, se saltan auth + pago, panel `RescheduleConfirm`. Entrada desde el menú de acciones del dashboard ("Mover clase", deshabilitado <48h con motivo).
+  - Email `lib/email/send-reschedule.ts` (+ plantillas booker + ops-notif, 3 locales).
+- AC: [x] core con 48h + horizonte + re-check de disponibilidad + guarda de concurrencia (Vitest, 10 casos); [x] no toca precio/crédito/descuento; [x] Playwright cubre mover feliz + gate <48h (`e2e/f-157-reschedule-flow.spec.ts`); [x] i18n en/de/es.
+- Refs: F-157, F-058, F-039b, `lib/booking/reschedule.ts`, `app/(site)/[locale]/reservar/`, Architecture ADR-008
+
+---
+
 ## Bloqueantes / decisiones abiertas (consolidadas)
 
 | Ref     | Decisión                           | Bloquea                           | Acción                               |

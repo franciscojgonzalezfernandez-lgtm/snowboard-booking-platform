@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 
+import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -31,10 +32,25 @@ type Props = {
   earnsCredit: boolean;
   /** Pre-formatted CHF label of the credit the booker would receive. */
   creditAmountLabel: string;
+  /** F-157: Duration enum of this booking, fed to the reschedule funnel as `d`. */
+  rescheduleDuration: string;
+  /** F-157: whether "Move lesson" is offered (upcoming, ≥48h out, in horizon).
+   * The reschedule funnel + server action re-check all of this. */
+  canReschedule: boolean;
+  /** F-157: why Move is disabled, when it is — drives the muted sub-label. */
+  rescheduleBlockedReason?: "too_late" | "horizon";
 };
 
-export function CancelModal({ bookingId, earnsCredit, creditAmountLabel }: Props) {
+export function CancelModal({
+  bookingId,
+  earnsCredit,
+  creditAmountLabel,
+  rescheduleDuration,
+  canReschedule,
+  rescheduleBlockedReason,
+}: Props) {
   const t = useTranslations("dashboard.cancel");
+  const tr = useTranslations("dashboard.reschedule");
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -71,6 +87,36 @@ export function CancelModal({ bookingId, earnsCredit, creditAmountLabel }: Props
           <MoreHorizontal className="size-4" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          {canReschedule ? (
+            <DropdownMenuItem
+              data-testid="dashboard-booking-reschedule-trigger"
+              render={
+                <Link
+                  href={{
+                    pathname: "/reservar",
+                    query: { reschedule: bookingId, d: rescheduleDuration },
+                  }}
+                />
+              }
+            >
+              {tr("button")}
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem
+              data-testid="dashboard-booking-reschedule-disabled"
+              disabled
+              className="flex-col items-start gap-0.5"
+            >
+              <span>{tr("button")}</span>
+              {rescheduleBlockedReason ? (
+                <span className="text-xs text-muted-foreground">
+                  {rescheduleBlockedReason === "too_late"
+                    ? tr("disabled_too_late")
+                    : tr("disabled_horizon")}
+                </span>
+              ) : null}
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem
             variant="destructive"
             data-testid="dashboard-booking-cancel-trigger"

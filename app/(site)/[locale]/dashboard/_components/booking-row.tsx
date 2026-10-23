@@ -2,6 +2,10 @@ import { getTranslations } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
 import { CREDIT_WINDOW_HOURS } from "@/lib/booking/cancel";
+import {
+  RESCHEDULE_HORIZON_MS,
+  RESCHEDULE_WINDOW_HOURS,
+} from "@/lib/booking/reschedule";
 import { setUtcTime, startOfUtcDay } from "@/lib/booking-engine/time";
 import { formatChf } from "@/lib/pricing/format";
 
@@ -43,6 +47,21 @@ export function BookingRowItem({
   const hoursBeforeStart =
     (startDateTime.getTime() - Date.now()) / (60 * 60 * 1000);
   const earnsCredit = hoursBeforeStart >= CREDIT_WINDOW_HOURS;
+
+  // F-157: "Move lesson" is offered on upcoming rows that are still ≥48h out and
+  // whose one-year horizon (anchored on the first-booked date) hasn't passed.
+  // When upcoming but blocked, the menu shows a disabled item with the reason.
+  // The reschedule funnel + server action re-check all of this.
+  const withinRescheduleWindow = hoursBeforeStart >= RESCHEDULE_WINDOW_HOURS;
+  const horizonAnchor = startOfUtcDay(booking.originalDate ?? booking.date);
+  const withinHorizon =
+    horizonAnchor.getTime() + RESCHEDULE_HORIZON_MS > Date.now();
+  const canReschedule = canCancel && withinRescheduleWindow && withinHorizon;
+  const rescheduleBlockedReason = canReschedule
+    ? undefined
+    : !withinRescheduleWindow
+      ? ("too_late" as const)
+      : ("horizon" as const);
 
   // F-084: a PENDING_PAYMENT booking that redeemed credits owes the net charge,
   // not the full lesson price. Show the net as the headline figure with the
@@ -91,6 +110,9 @@ export function BookingRowItem({
             bookingId={booking.id}
             earnsCredit={earnsCredit}
             creditAmountLabel={formatChf(booking.totalPriceCents)}
+            rescheduleDuration={booking.duration}
+            canReschedule={canReschedule}
+            rescheduleBlockedReason={rescheduleBlockedReason}
           />
         ) : null}
         {showNetCharge ? (

@@ -32,6 +32,11 @@ export type EngineAvailabilityBlock = {
  * Stripe PaymentIntent is alive).
  */
 export type EngineBooking = {
+  /** Booking id. Optional so fixtures can omit it; the DB loader always sets it.
+   * Used to exclude a booking from its own occupancy check when rescheduling
+   * (F-157), so a move onto a slot overlapping its current time isn't a
+   * self-collision. */
+  id?: string;
   instructorId: string;
   date: Date;
   anchorTime: string;

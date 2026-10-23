@@ -13,6 +13,10 @@ import { useBookingUrlState } from "./use-booking-url-state";
 
 type Props = {
   duration: Duration;
+  /** F-157: reschedule horizon — latest selectable date (ISO yyyy-mm-dd).
+   * Days after it are disabled and the month nav stops there. Undefined in the
+   * normal booking funnel (no cap). */
+  maxDate?: string;
 };
 
 const WEEKDAY_KEYS = [
@@ -103,7 +107,7 @@ function scrollToSection3() {
   focusable?.focus({ preventScroll: true });
 }
 
-export function MonthCalendar({ duration }: Props) {
+export function MonthCalendar({ duration, maxDate }: Props) {
   const t = useTranslations("reservar.step2");
   const locale = useLocale();
   const queryClient = useQueryClient();
@@ -229,6 +233,8 @@ export function MonthCalendar({ duration }: Props) {
   const total = daysInMonth(month);
   const blanks = leadingBlanks(month);
   const prevDisabled = loading || month <= todayMonth;
+  // F-157: stop the "next month" nav once the horizon month is shown.
+  const nextDisabled = loading || (!!maxDate && month >= maxDate.slice(0, 7));
 
   return (
     <div data-testid="month-calendar" className="space-y-6">
@@ -254,7 +260,7 @@ export function MonthCalendar({ duration }: Props) {
           variant="ghost"
           size="sm"
           data-testid="month-next"
-          disabled={loading}
+          disabled={nextDisabled}
           onClick={() => setMonth(isoMonthAdd(month, 1))}
         >
           {t("next_month")}
@@ -283,8 +289,12 @@ export function MonthCalendar({ duration }: Props) {
           const iso = isoDateOf(month, d);
           const entry = dayMap.get(iso);
           const past = iso < today;
+          // F-157: days beyond the reschedule horizon are disabled like past ones.
+          const beyond = !!maxDate && iso > maxDate;
+          const disabledDay = past || beyond;
           const available = !!entry?.hasAvailability;
-          const interactive = !past && !!entry && !loading;
+          const selectable = available && !disabledDay;
+          const interactive = !disabledDay && !!entry && !loading;
           const isSelected = state.date === iso;
           return (
             <button
@@ -293,31 +303,32 @@ export function MonthCalendar({ duration }: Props) {
               data-testid={`day-${iso}`}
               data-available={available ? "true" : "false"}
               data-past={past ? "true" : "false"}
+              data-beyond={beyond ? "true" : "false"}
               data-selected={isSelected ? "true" : "false"}
-              disabled={past || loading || !entry}
+              disabled={disabledDay || loading || !entry}
               onMouseEnter={
-                available ? () => handlePrefetchSlots(iso) : undefined
+                selectable ? () => handlePrefetchSlots(iso) : undefined
               }
-              onFocus={available ? () => handlePrefetchSlots(iso) : undefined}
-              onClick={() => entry && handleDayClick(entry)}
+              onFocus={selectable ? () => handlePrefetchSlots(iso) : undefined}
+              onClick={() => entry && !disabledDay && handleDayClick(entry)}
               aria-label={
-                available
+                selectable
                   ? t("day_available", { date: iso })
                   : t("day_full", { date: iso })
               }
               className={cn(
                 "aspect-square rounded-md border text-sm transition-colors",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                past && "border-transparent text-muted-foreground/40",
-                !past &&
+                disabledDay && "border-transparent text-muted-foreground/40",
+                !disabledDay &&
                   available &&
                   !isSelected &&
                   "border-foreground bg-background font-medium hover:bg-foreground hover:text-background",
-                !past &&
+                !disabledDay &&
                   available &&
                   isSelected &&
                   "border-foreground bg-foreground font-medium text-background",
-                !past &&
+                !disabledDay &&
                   !available &&
                   "border-input text-muted-foreground hover:border-muted-foreground",
                 !interactive && "cursor-not-allowed",

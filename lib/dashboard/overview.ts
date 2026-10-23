@@ -18,6 +18,9 @@ const BOOKING_SELECT = {
   duration: true,
   language: true,
   status: true,
+  // F-157: horizon anchor for the "Move lesson" control (the lesson's
+  // first-booked date; null until first moved).
+  originalDate: true,
   totalPriceCents: true,
   chargeAmountCents: true,
   creditsAppliedCents: true,

@@ -47,10 +47,15 @@ const DURATION_LABEL_KEYS: Record<(typeof DURATIONS)[number], string> = {
 
 type Props = {
   initialDuration?: Duration;
+  /** F-157: reschedule mode locks the duration to the booking being moved — a
+   * move keeps the original lesson's length (and its price). Renders a
+   * read-only summary instead of the picker + continue button. */
+  locked?: boolean;
 };
 
-export function DurationPicker({ initialDuration }: Props) {
+export function DurationPicker({ initialDuration, locked = false }: Props) {
   const t = useTranslations("reservar.step1");
+  const tr = useTranslations("reservar.reschedule");
   const { state, set } = useBookingUrlState();
   const { requestEdit } = useDraftGuard();
   const sectionRef = useRef<HTMLDivElement | null>(null);
@@ -127,6 +132,26 @@ export function DurationPicker({ initialDuration }: Props) {
         focusable?.focus({ preventScroll: true });
       });
     });
+  }
+
+  // F-157: reschedule mode shows the locked duration, no picker. All hooks above
+  // still run (stable `locked` keeps hook order consistent) so this early return
+  // is safe.
+  if (locked) {
+    const lockedLabel =
+      initialDuration != null ? t(DURATION_LABEL_KEYS[initialDuration]) : "—";
+    return (
+      <div data-testid="duration-picker" data-locked="true" className="space-y-2">
+        <p className="text-sm font-medium">{t("duration_label")}</p>
+        <p
+          data-testid="duration-locked-value"
+          className="font-display text-2xl tracking-tight"
+        >
+          {lockedLabel}
+        </p>
+        <p className="text-xs text-muted-foreground">{tr("locked_note")}</p>
+      </div>
+    );
   }
 
   return (

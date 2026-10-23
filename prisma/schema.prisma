@@ -330,6 +330,17 @@ model Booking {
   attributionCampaign        String?
   utmSource                  String?
   utmMedium                  String?
+  /// F-157: reschedule (move) bookkeeping. `originalDate` is the one-year-horizon
+  /// anchor — the lesson's date as FIRST booked. It is set once, on the first
+  /// move (to the pre-move `date`), and never overwritten, so a booker moving
+  /// a lesson repeatedly cannot postpone it beyond a year from where it started.
+  /// Null until a booking is first moved. `rescheduledAt` is the last move's
+  /// timestamp; `rescheduleCount` the number of moves (audit / optional future
+  /// per-booking cap). Moving NEVER touches any price/credit/discount field — the
+  /// booker keeps the exact effective price they originally paid.
+  originalDate               DateTime?     @db.Date
+  rescheduledAt              DateTime?
+  rescheduleCount            Int           @default(0)
 
   booker          User            @relation(fields: [bookerId], references: [id], onDelete: Restrict)
   instructor      Instructor      @relation(fields: [instructorId], references: [id], onDelete: Restrict)

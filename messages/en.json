@@ -189,7 +189,30 @@
       "step5": "Pay",
       "mobile_summary": "Step {current} of {total}",
       "mobile_aria": "Open step navigator",
-      "mobile_jump_title": "Jump to step"
+      "mobile_jump_title": "Jump to step",
+      "confirm": "Review"
+    },
+    "reschedule": {
+      "eyebrow": "Move your lesson",
+      "heading": "Pick a new time",
+      "sub": "Choose another slot for the same lesson. Your original price carries over — there's nothing more to pay.",
+      "locked_note": "Same length as your original lesson.",
+      "confirm_eyebrow": "Confirm",
+      "confirm_heading": "Confirm the move",
+      "summary_from": "Current",
+      "summary_to": "New",
+      "summary_length": "Length",
+      "summary_instructor": "Instructor",
+      "no_charge_note": "Nothing to pay — your original price carries over to the new time.",
+      "confirm_cta": "Confirm move",
+      "confirm_pending": "Moving…",
+      "toast_success": "Lesson moved",
+      "error_too_late": "Lessons can only be moved at least 48 hours in advance.",
+      "error_outside_horizon": "That date is more than a year after your original booking.",
+      "error_slot_taken": "That slot was just taken. Please pick another time.",
+      "error_same_slot": "That's your current slot — pick a different time.",
+      "error_not_reschedulable": "This booking can no longer be moved.",
+      "error_generic": "Could not move the lesson. Please try again."
     },
     "dirty": {
       "title": "Discard payment to edit?",
@@ -458,6 +481,11 @@
       "toast_success": "Booking cancelled",
       "error_already_cancelled": "This booking was already cancelled.",
       "error_generic": "Something went wrong. Please try again."
+    },
+    "reschedule": {
+      "button": "Move lesson",
+      "disabled_too_late": "Only up to 48h before the lesson",
+      "disabled_horizon": "Past the one-year limit"
     },
     "credits": {
       "title": "Your credits",
