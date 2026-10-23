@@ -17,8 +17,10 @@ import {
   DURATION_LABEL,
   LANGUAGE_LABEL,
   LEVEL_LABEL,
+  SOURCE_LABEL,
   STATUS_LABEL,
 } from "@/lib/labels/booking";
+import { campaignLabel } from "@/lib/attribution/campaigns";
 import {
   loadAdminBookingDetail,
   type AdminBookingDetailDeps,
@@ -103,6 +105,21 @@ export default async function AdminBookingDetailPage({ params }: Props) {
         <Field label="Charged via Stripe">
           {b.chargeAmountCents !== null ? formatChf(b.chargeAmountCents) : "—"}
         </Field>
+      </Section>
+
+      <Section title="Attribution">
+        <Field label="Channel">
+          <span data-testid="admin-detail-source">
+            {SOURCE_LABEL[b.attributionChannel]}
+          </span>
+        </Field>
+        <Field label="Campaign">
+          <span data-testid="admin-detail-campaign">
+            {campaignLabel(b.attributionCampaign) ?? "—"}
+          </span>
+        </Field>
+        <Field label="UTM source">{b.utmSource ?? "—"}</Field>
+        <Field label="UTM medium">{b.utmMedium ?? "—"}</Field>
       </Section>
 
       <Section title="Booker">

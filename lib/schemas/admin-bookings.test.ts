@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { BookingStatus } from "@prisma/client";
+import { BookingSource, BookingStatus } from "@prisma/client";
 
 import {
   DEFAULT_PAGE_SIZE,
@@ -11,6 +11,7 @@ describe("parseAdminBookingsFilters", () => {
   test("returns defaults when nothing is passed", () => {
     expect(parseAdminBookingsFilters({})).toEqual({
       status: undefined,
+      source: undefined,
       instructorId: undefined,
       from: undefined,
       to: undefined,
@@ -25,6 +26,13 @@ describe("parseAdminBookingsFilters", () => {
       BookingStatus.CONFIRMED,
     );
     expect(parseAdminBookingsFilters({ status: "NOT_A_STATUS" }).status).toBeUndefined();
+  });
+
+  test("accepts a valid source and drops bogus ones", () => {
+    expect(parseAdminBookingsFilters({ source: "FLYER" }).source).toBe(
+      BookingSource.FLYER,
+    );
+    expect(parseAdminBookingsFilters({ source: "NOT_A_SOURCE" }).source).toBeUndefined();
   });
 
   test("validates ISO date format for from/to and drops malformed values", () => {

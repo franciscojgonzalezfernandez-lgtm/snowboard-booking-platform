@@ -1,7 +1,9 @@
 import { randomUUID } from "crypto";
 
-import { BookingStatus, CreditReason, CreditStatus } from "@prisma/client";
+import { BookingSource, BookingStatus, CreditReason, CreditStatus } from "@prisma/client";
 import type Stripe from "stripe";
+
+import type { Attribution } from "@/lib/attribution/types";
 
 import { durationMinutes } from "@/lib/booking-engine/duration";
 import { instructorAvailableAt } from "@/lib/booking-engine/availability";
@@ -42,6 +44,13 @@ export type CreateDraftDeps = {
   stripe: StripeSurface;
   /** Reference clock — tests inject a fixed Date, production passes new Date(). */
   now?: Date;
+  /**
+   * F-156: marketing attribution resolved from the first-touch `ride_attr`
+   * cookie by the caller (the Server Action reads the cookie; the lib stays
+   * request-agnostic). Snapshotted once onto the Booking here and never changed
+   * afterwards. `null`/absent → the booking records channel DIRECT.
+   */
+  attribution?: Attribution | null;
   /** Override the ICS UID generator so test snapshots stay stable. */
   newIcsUid?: () => string;
   /**
@@ -472,6 +481,13 @@ export async function createBookingDraftWith(
           creditsAppliedCents,
           icsUid,
           notes,
+          // F-156: snapshot the acquisition source once, here. `deps.attribution`
+          // was resolved from the first-touch cookie by the action; no signal →
+          // DIRECT. Immutable after create — resume/webhook/cancel never touch it.
+          attributionChannel: deps.attribution?.channel ?? BookingSource.DIRECT,
+          attributionCampaign: deps.attribution?.campaign ?? null,
+          utmSource: deps.attribution?.utmSource ?? null,
+          utmMedium: deps.attribution?.utmMedium ?? null,
           ...(isZeroCharge ? { paidAt: now } : {}),
         },
         select: { id: true },

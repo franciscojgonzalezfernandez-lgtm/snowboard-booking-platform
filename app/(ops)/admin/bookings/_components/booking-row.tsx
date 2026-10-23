@@ -1,7 +1,8 @@
 import Link from "next/link";
 
 import { formatAdminDate, formatAdminTime } from "@/lib/admin/format";
-import { DURATION_LABEL, STATUS_LABEL } from "@/lib/labels/booking";
+import { DURATION_LABEL, SOURCE_LABEL, STATUS_LABEL } from "@/lib/labels/booking";
+import { campaignLabel } from "@/lib/attribution/campaigns";
 import type { AdminBookingRow } from "@/lib/admin/bookings";
 import { formatChf } from "@/lib/pricing/format";
 
@@ -11,7 +12,7 @@ export function BookingRow({ row }: { row: AdminBookingRow }) {
       data-testid="admin-booking-row"
       data-booking-id={row.id}
       data-status={row.status}
-      className="grid gap-3 border-b border-input px-4 py-4 sm:grid-cols-[8.5rem,1fr,1fr,8rem,8rem,5rem] sm:items-baseline"
+      className="grid gap-3 border-b border-input px-4 py-4 sm:grid-cols-[8rem,1fr,1fr,7rem,8rem,7rem,4rem] sm:items-baseline"
     >
       <div className="font-display text-base tracking-tight tabular-nums">
         <p>{formatAdminDate(row.date)}</p>
@@ -50,6 +51,21 @@ export function BookingRow({ row }: { row: AdminBookingRow }) {
         >
           {STATUS_LABEL[row.status]}
         </p>
+      </div>
+
+      <div className="min-w-0">
+        <p
+          className="truncate text-sm"
+          data-testid="admin-booking-source"
+          data-source={row.attributionChannel}
+        >
+          {SOURCE_LABEL[row.attributionChannel]}
+        </p>
+        {campaignLabel(row.attributionCampaign) ? (
+          <p className="truncate text-xs text-muted-foreground">
+            {campaignLabel(row.attributionCampaign)}
+          </p>
+        ) : null}
       </div>
 
       <div className="text-sm tabular-nums">

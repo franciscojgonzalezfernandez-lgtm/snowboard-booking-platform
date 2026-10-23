@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { BookingStatus, Prisma } from "@prisma/client";
+import type { BookingSource, BookingStatus, Prisma } from "@prisma/client";
 
 import type { AdminBookingsFilters } from "@/lib/schemas/admin-bookings";
 import type { Db } from "@/lib/db";
@@ -24,6 +24,9 @@ const ROW_SELECT = {
   totalPriceCents: true,
   chargeAmountCents: true,
   creditsAppliedCents: true,
+  // F-156: acquisition source for the Source column.
+  attributionChannel: true,
+  attributionCampaign: true,
   createdAt: true,
   booker: { select: { id: true, name: true, email: true } },
   instructor: { select: { user: { select: { name: true } } } },
@@ -44,6 +47,7 @@ export type AdminBookingsPage = {
 
 type BookingWhereInput = {
   status?: BookingStatus;
+  attributionChannel?: BookingSource;
   instructorId?: string;
   date?: { gte?: Date; lte?: Date };
   OR?: Array<{
@@ -61,6 +65,7 @@ export type AdminBookingsDeps = {
 function buildWhere(filters: AdminBookingsFilters): BookingWhereInput {
   const where: BookingWhereInput = {};
   if (filters.status) where.status = filters.status;
+  if (filters.source) where.attributionChannel = filters.source;
   if (filters.instructorId) where.instructorId = filters.instructorId;
   if (filters.from || filters.to) {
     where.date = {};

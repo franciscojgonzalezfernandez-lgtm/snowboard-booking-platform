@@ -62,6 +62,7 @@ export default async function AdminBookingsPage({ searchParams }: Props) {
           instructors={instructorOptions}
           values={{
             status: filters.status,
+            source: filters.source,
             instructorId: filters.instructorId,
             from: toIsoDateString(filters.from),
             to: toIsoDateString(filters.to),
@@ -71,13 +72,14 @@ export default async function AdminBookingsPage({ searchParams }: Props) {
 
         <div className="overflow-hidden rounded-lg border border-input">
           <div
-            className="hidden border-b border-input bg-card/50 px-4 py-3 text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground sm:grid sm:grid-cols-[8.5rem,1fr,1fr,8rem,8rem,5rem] sm:gap-3"
+            className="hidden border-b border-input bg-card/50 px-4 py-3 text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground sm:grid sm:grid-cols-[8rem,1fr,1fr,7rem,8rem,7rem,4rem] sm:gap-3"
             aria-hidden
           >
             <span>Date · time</span>
             <span>Booker</span>
             <span>Instructor</span>
             <span>Status</span>
+            <span>Source</span>
             <span>Price</span>
             <span className="text-right">—</span>
           </div>

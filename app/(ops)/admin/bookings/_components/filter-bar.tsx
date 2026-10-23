@@ -1,10 +1,10 @@
 import Link from "next/link";
 
-import { BookingStatus } from "@prisma/client";
+import { BookingSource, BookingStatus } from "@prisma/client";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { STATUS_LABEL } from "@/lib/labels/booking";
+import { SOURCE_LABEL, STATUS_LABEL } from "@/lib/labels/booking";
 import type { InstructorOption } from "../../_components/instructor-selector";
 
 // Server-rendered <form method="get"> — no JS island. Filtering submits the
@@ -16,6 +16,7 @@ type Props = {
   instructors: InstructorOption[];
   values: {
     status: BookingStatus | undefined;
+    source: BookingSource | undefined;
     instructorId: string | undefined;
     from: string | undefined;
     to: string | undefined;
@@ -24,13 +25,14 @@ type Props = {
 };
 
 const STATUSES = Object.values(BookingStatus);
+const SOURCES = Object.values(BookingSource);
 
 export function FilterBar({ instructors, values }: Props) {
   return (
     <form
       method="get"
       data-testid="admin-bookings-filters"
-      className="grid gap-3 rounded-lg border border-input bg-card p-4 sm:grid-cols-[1fr,1fr,9rem,9rem,8rem] sm:items-end"
+      className="grid gap-3 rounded-lg border border-input bg-card p-4 sm:grid-cols-[1fr,1fr,8rem,8rem,8rem,8rem] sm:items-end"
     >
       <input type="hidden" name="page" value="1" />
 
@@ -99,6 +101,29 @@ export function FilterBar({ instructors, values }: Props) {
 
       <div className="space-y-1.5">
         <label
+          htmlFor="filter-source"
+          className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground"
+        >
+          Source
+        </label>
+        <select
+          id="filter-source"
+          name="source"
+          defaultValue={values.source ?? ""}
+          data-testid="admin-bookings-source"
+          className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <option value="">All</option>
+          {SOURCES.map((s) => (
+            <option key={s} value={s}>
+              {SOURCE_LABEL[s]}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="space-y-1.5">
+        <label
           htmlFor="filter-from"
           className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground"
         >
@@ -129,7 +154,7 @@ export function FilterBar({ instructors, values }: Props) {
         />
       </div>
 
-      <div className="sm:col-span-5 flex items-center gap-3">
+      <div className="sm:col-span-6 flex items-center gap-3">
         <Button type="submit" data-testid="admin-bookings-submit">
           Apply
         </Button>

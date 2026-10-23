@@ -46,6 +46,7 @@ describe("prisma schema shape (F-020)", () => {
     expect(extract("enum")).toMatchInlineSnapshot(`
       [
         "AvailabilityKind",
+        "BookingSource",
         "BookingStatus",
         "CreditReason",
         "CreditStatus",

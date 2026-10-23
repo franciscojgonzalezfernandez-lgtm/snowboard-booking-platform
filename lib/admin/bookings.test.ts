@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import { BookingStatus, Duration, Locale } from "@prisma/client";
+import { BookingSource, BookingStatus, Duration, Locale } from "@prisma/client";
 
 import {
   DEFAULT_PAGE_SIZE,
@@ -30,6 +30,8 @@ function makeRow(overrides: Partial<{ id: string; status: BookingStatus; date: D
     totalPriceCents: 11000,
     chargeAmountCents: null,
     creditsAppliedCents: null,
+    attributionChannel: BookingSource.DIRECT,
+    attributionCampaign: null,
     createdAt: new Date("2026-12-01T00:00:00.000Z"),
     booker: { id: "usr_1", name: "Jane", email: "jane@example.com" },
     instructor: { user: { name: "Javi" } },
@@ -93,6 +95,17 @@ describe("loadAdminBookings", () => {
     await loadAdminBookings(deps, parseAdminBookingsFilters({ status: "CONFIRMED" }));
     expect(getFindManyArgs().where).toEqual({ status: BookingStatus.CONFIRMED });
     expect(getCountArgs().where).toEqual({ status: BookingStatus.CONFIRMED });
+  });
+
+  test("source filter maps to attributionChannel equality", async () => {
+    const { deps, getFindManyArgs, getCountArgs } = makeDeps([]);
+    await loadAdminBookings(deps, parseAdminBookingsFilters({ source: "FLYER" }));
+    expect(getFindManyArgs().where).toEqual({
+      attributionChannel: BookingSource.FLYER,
+    });
+    expect(getCountArgs().where).toEqual({
+      attributionChannel: BookingSource.FLYER,
+    });
   });
 
   test("date range inclusive both bounds (gte / lte)", async () => {
