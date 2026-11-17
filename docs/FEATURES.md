@@ -3521,6 +3521,27 @@ Las 28 acciones GenScore quedan cubiertas; F-148 es aditivo (gap de la auditorí
 - Notas: enum `BookingSource { DIRECT, PAID_SEARCH, ORGANIC_SEARCH, SOCIAL, FLYER, STICKER, REFERRAL, OTHER }`. `attributionChannel` con `@default(DIRECT)` (clean-slate F-154: 0 reservas legacy en prod). Migración `prisma migrate dev --name booking_attribution` contra Neon `dev`.
 - Refs: F-156, F-124, F-154, F-084, F-141, F-155, `middleware.ts`, `lib/attribution/*`, `lib/booking/create-draft.ts`, `lib/admin/campaign-report.ts`
 
+### F-158 — Admin bookings/students tables render as stacked cards on desktop
+
+- Sprint: ops polish · Estado: todo (2026-11-17) · Prioridad: P2
+- Motivación: en producción (`rideflumserberg.ch`), `/admin/bookings` y `/admin/students` muestran el layout móvil (filas apiladas como tarjetas) incluso a 1920px de ancho. El operador pierde la vista de tabla escaneable en escritorio. Detectado al capturar el README (PR #222).
+- AC:
+  - [ ] A ≥1024px ambas páginas renderizan tabla con columnas; el layout apilado queda sólo para móvil.
+  - [ ] Sin regresión en móvil (375px).
+- Tests: Playwright visual a 1440px y 375px en ambas rutas.
+- Refs: F-158, `app/(ops)/admin/bookings`, `app/(ops)/admin/students`
+
+### F-159 — ES booking-confirmed email shows untranslated "riders"
+
+- Sprint: i18n polish · Estado: todo (2026-11-17) · Prioridad: P3
+- Motivación: el email de confirmación en español muestra "2 riders" en la fila de asistentes (copy `es` de `attendeesValue`). Visible en la captura trilingüe del README.
+- AC:
+  - [ ] `attendeesValue` en `es` usa wording español (p.ej. "2 personas"), con singular/plural correcto.
+  - [ ] Revisar `de` y resto de plantillas `lib/email/templates/*` por el mismo problema.
+  - [ ] Regenerar `docs/screenshots/email-booking-confirmed-trilingual.jpg`.
+- Tests: Vitest render del template por locale.
+- Refs: F-159, `lib/email/templates/booking-confirmed.tsx`
+
 ---
 
 ## Bloqueantes / decisiones abiertas (consolidadas)
