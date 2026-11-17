@@ -18,6 +18,8 @@
 
 **[Live Demo →](https://rideflumserberg.ch)** · **[PRD](docs/PRD.md)** · **[Architecture](docs/Architecture.md)** · **[Workflow](docs/WORKFLOW.md)** · **[Backlog](docs/FEATURES.md)**
 
+**Jump to:** [Booking flow](#the-booking-flow) · [Admin panel](#full-admin-panel) · [Instructor panel](#instructor-panel) · [Emails](#emails-customers-and-instructors-receive) · [Stripe](#stripe-integration) · [Sentry](#observability-with-sentry) · [AI-first workflow](#ai-first-development) · [CI/CD](#cicd--github-actions--vercel--neon)
+
 ![Ride Flumserberg — editorial landing hero](docs/screenshots/hero.jpg)
 
 ---
@@ -76,19 +78,67 @@ Every dependency is intentional. See [`docs/Architecture.md`](docs/Architecture.
 
 ---
 
-## Operator surface
+## Full admin panel
 
-Two audiences, one codebase. Students get the trilingual booking flow + dashboard; the owner gets an English-only operator cockpit.
+Two audiences, one codebase. Students get the trilingual booking flow + dashboard; the owner runs the business from an English-only operator cockpit at `/admin`. Ten sections, all Server Components + Server Actions, all re-checking the `admin` role on the server.
 
-| Student dashboard | Admin · all bookings | Admin · calendar |
+| Lesson pricing | Season calendar |
+|---|---|
+| ![Admin — lesson pricing editor with per-duration prices and optional promo price](docs/screenshots/admin-pricing.jpg) | ![Admin — month calendar of every instructor's open days](docs/screenshots/admin-calendar-live.jpg) |
+| **Per-duration prices** for the active season (1h · 2h · Intensive 4h · Full day 6h), each with an optional **promo price** that the funnel shows struck through (F-080, F-141). Changes apply to new bookings instantly. | Every instructor's classes and open days for the month, filterable by coach, with a **range opener** to publish a whole block of availability in one go. |
+| **Discount codes** | **Home banners** |
+| ![Admin — discount codes with redemption counters](docs/screenshots/admin-discount-codes.jpg) | ![Admin — rotating home banners, trilingual, toggle on/off](docs/screenshots/admin-announcements.jpg) |
+| Percentage or fixed-CHF codes for partner businesses, applied in the step before payment. One use per customer, with a redemption cap and live counter (F-155). | The band above the home hero. Trilingual copy (EN · DE · ES), arrow-key reordering, enable/disable. While a promo is live, at least one banner must stay on. |
+
+**Campaign attribution (F-156).** Every booking is tagged with its marketing source — UTM links, QR codes on flyers at the valley station, stickers in the gondola, Google Ads. The admin builds the link, the funnel records the source, and the bookings table filters by it.
+
+![Admin — campaign link builder with UTM parameters and flyer/sticker QR codes](docs/screenshots/admin-campaigns.jpg)
+
+Also in the cockpit: **all bookings** (search, status/source/date filters, per-booking attendees + payment + credit ledger), **student directory**, **instructor management**, **seasons**, and a **cancel-day tool** that closes every lesson on a bad-weather day in one batch — each booking refunded to the card individually, with per-row retry on partial failure.
+
+| Student dashboard | Admin · all bookings | Admin · booking calendar |
 |---|---|---|
 | ![Student dashboard](docs/screenshots/dashboard.png) | ![Admin — all bookings](docs/screenshots/admin-bookings.png) | ![Admin — instructor calendar](docs/screenshots/admin-calendar.png) |
 
-- **Student dashboard** — upcoming / past / cancelled lessons, receipts and account-credit balance in one place.
-- **Admin** — every reservation across the season with attendee, payment and credit-ledger detail; a month calendar of every instructor's classes with availability editing; plus students, instructors, pricing, seasons and a day-cancellation tool.
-- **Instructor panel** — a per-coach calendar, week timeline and availability editor, scoped to that instructor's own schedule.
+> Pricing, calendar, discount codes, banners and campaigns are **live production** captures. The last row (dashboard, bookings table, booking calendar) uses **seeded demo data** so no customer appears on screen.
 
-> Operator screenshots are captured against **seeded demo data** — no real customer information.
+---
+
+## Instructor panel
+
+Each coach gets their own scoped panel at `/instructor` — a week agenda, an availability editor and their public profile. Nothing outside their own schedule is reachable.
+
+| When you can teach | How bookers see you |
+|---|---|
+| ![Instructor — availability windows](docs/screenshots/instructor-availability.jpg) | ![Instructor — public profile editor: photo, bio, specialties](docs/screenshots/instructor-profile.jpg) |
+| Add availability windows by date and time; the booking calendar on `/reservar` updates immediately. | Photo (Vercel Blob), bio, languages and specialty tags power **Step 3** of the funnel, where the booker picks a coach. |
+
+### Instructor feedback
+
+After the lesson, the loop closes in both directions:
+
+- **Coach → school (private notes, F-065).** On every `COMPLETED` booking the instructor writes an internal note — level, what to work on next, anything the next coach should know. Notes stack into a **cross-booking history per student**, so a returning rider never starts from zero. They are never shown on the student's dashboard.
+- **No-show handling.** The instructor marks a no-show straight from the agenda, so the booking history stays accurate.
+- **Student → school (post-class email).** After the lesson, the student gets a thank-you with a **Google review CTA** and a "book your next lesson" link (see below).
+
+---
+
+## Emails customers and instructors receive
+
+Transactional email via **Resend + React Email**, one template per event, rendered in the booker's locale. Every template is snapshot-tested with Vitest.
+
+**Booking confirmed — the same email in EN · DE · ES**, with an `.ics` calendar invite attached:
+
+![Booking confirmation email in English, German and Spanish](docs/screenshots/email-booking-confirmed-trilingual.jpg)
+
+| New booking → instructor | Reminder → student | After the lesson → student | Cancellation → student |
+|---|---|---|---|
+| ![Ops notification to the instructor with booked slot and booker contact](docs/screenshots/email-booking-ops-notif.jpg) | ![Reminder email the day before the lesson](docs/screenshots/email-booking-reminder.jpg) | ![Post-class email with Google review CTA](docs/screenshots/email-post-class.jpg) | ![Cancellation email issuing account credit](docs/screenshots/email-cancellation-credit.jpg) |
+| Sent on the signed Stripe webhook. Instructor + admin, deduplicated. | Cron-driven, 24h before. Meeting point, Maps link, contact phone. | Review CTA + book-again link. | Credit amount + expiry when cancelled ≥ 48h ahead; a forfeit variant inside 48h. |
+
+Also wired: magic-link sign-in, email verification, new-signup notice to ops, and ops-side cancellation notices.
+
+> Email captures are rendered from the production templates with sample data (`@react-email/render`).
 
 ---
 
@@ -226,7 +276,12 @@ review + green checks ─────►  merge to main
 
 ## Stripe Integration
 
-Switzerland-specific payments wired correctly from day one.
+Switzerland-specific payments wired correctly from day one — and taking real money in production.
+
+<p align="center">
+  <img src="docs/screenshots/stripe-gross.jpg" alt="Stripe live dashboard — gross volume CHF 530.50 since October 2026" width="420">
+</p>
+<p align="center"><sub>Live Stripe account, quarter to date — gross volume across card and TWINT payments (before refunds).</sub></p>
 
 - **Stripe Payment Element** — single component renders Card, TWINT, Apple Pay, Google Pay based on the customer's device + locale. No bespoke wallet code.
 - **TWINT first-class.** Required for Swiss customers — Bókun and most generic SaaS still treat it as second-tier or charge extra.
@@ -253,6 +308,19 @@ The `stripe-best-practices` skill is invoked on every PR that touches `lib/strip
 | **Cron Jobs** | `/api/cron/reminders` (24h-before SMS/email), `/api/cron/calendar-resync` — both gated by `CRON_SECRET`. |
 | **Observability** | Vercel Analytics + Speed Insights for RUM; Sentry for errors + source maps; Vercel Logs for function-level traces. |
 | **Rollback** | One-click promote of any previous deploy from the Vercel dashboard. |
+
+---
+
+## Observability with Sentry
+
+Errors and performance from every runtime — browser, Node.js and edge — land in one Sentry project.
+
+- **Three entry points.** `instrumentation-client.ts` (browser), `sentry.server.config.ts` and `sentry.edge.config.ts`, loaded through Next.js `instrumentation.ts`. `onRequestError = Sentry.captureRequestError` catches every server-rendering and Route Handler failure; `app/global-error.tsx` reports React render crashes.
+- **Ad-blocker-proof.** Events go through a first-party **tunnel route** (`/monitoring`), so privacy extensions don't silently drop them.
+- **Readable stack traces.** Source maps are uploaded on every Vercel build (`widenClientFileUpload`) and tied to the release, so a production error points at the real TypeScript line.
+- **Tracing + structured logs** enabled (`tracesSampleRate`, `enableLogs`), alongside Vercel Speed Insights for Web Vitals.
+- **Performance budget first.** Session Replay was deliberately removed (F-125): rrweb is ~40 KB gzipped and was being shipped to anonymous marketing traffic, breaking the 200 KB home budget. Sentry loads off the critical path.
+- **Smoke-testable.** An ops-only `/sentry-example-page` throws a frontend and a backend error on demand to verify the pipeline after a config change.
 
 ---
 
@@ -449,7 +517,9 @@ npm run test:e2e         # Playwright
 | **Sprint 2–3** | Stripe Payment Element end-to-end, cancellation + account credit ledger, student dashboard | ✅ Done |
 | **Sprint 4** | Instructor panel (availability calendar, week timeline, no-show), admin surfaces, GCal sync | ✅ Done |
 | **Sprint 5** | Marketing wave: brand "Ride Flumserberg", MDX blog EN/DE/ES, translated slugs, SEO (sitemap/robots/metadata/OG/Schema.org), WCAG AA | ✅ Done |
-| **Post-Sprint 5** | Plan-your-visit hub (F-115), desktop header rework (F-116), blog↔YouTube (F-117) | 🚧 In progress |
+| **Post-Sprint 5** | Plan-your-visit hub (F-115), desktop header rework (F-116), blog↔YouTube (F-117) | ✅ Done |
+| **Sprint 6–7** | Static marketing tree + perf (F-124/F-125), GEO / AI visibility (F-145–F-151), promo pricing + home banners (F-141), discount codes (F-155), campaign attribution (F-156) | ✅ Done |
+| **Winter 2026/27** | First season live — real bookings and payments | 🚧 In progress |
 
 Live at **[rideflumserberg.ch](https://rideflumserberg.ch)**. Follow progress in [`docs/FEATURES.md`](docs/FEATURES.md) — every shipped commit references an `F-XXX` ticket there.
 
