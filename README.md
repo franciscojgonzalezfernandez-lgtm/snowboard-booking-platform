@@ -322,6 +322,19 @@ Errors and performance from every runtime — browser, Node.js and edge — land
 - **Performance budget first.** Session Replay was deliberately removed (F-125): rrweb is ~40 KB gzipped and was being shipped to anonymous marketing traffic, breaking the 200 KB home budget. Sentry loads off the critical path.
 - **Smoke-testable.** An ops-only `/sentry-example-page` throws a frontend and a backend error on demand to verify the pipeline after a config change.
 
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/sentry-issues.jpg" alt="Sentry issues feed for the production Next.js project: a slow DB query on the expire-pending cron, plus three low-volume errors" /></td>
+    <td width="50%"><img src="docs/screenshots/sentry-web-vitals.jpg" alt="Sentry Web Vitals dashboard: p75 LCP 1.65s, CLS 0.003, TTFB 1.54s" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub><b>Issues feed</b> — every issue tagged with route and runtime; the cron's slow query surfaces as a performance issue.</sub></td>
+    <td align="center"><sub><b>Web Vitals</b> — real-user p75 LCP 1.65 s and CLS 0.003, inside the project budget.</sub></td>
+  </tr>
+</table>
+
+<sub>Live production data, last 30 days.</sub>
+
 ---
 
 ## Internationalization
