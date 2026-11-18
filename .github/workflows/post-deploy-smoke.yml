@@ -13,7 +13,7 @@ jobs:
     if: >-
       github.event.deployment_status.state == 'success' &&
       github.event.deployment.environment == 'Production'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # pinned: Playwright 1.60 has no chromium for ubuntu-26.04 (ubuntu-latest)
     timeout-minutes: 10
     env:
       NEXT_TELEMETRY_DISABLED: "1"

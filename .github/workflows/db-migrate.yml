@@ -50,7 +50,7 @@ jobs:
     if: |
       (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) ||
       (github.event_name == 'workflow_dispatch' && inputs.target == 'dev')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # pinned: Playwright 1.60 has no chromium for ubuntu-26.04 (ubuntu-latest)
     timeout-minutes: 10
     concurrency:
       group: neon-dev-migrate
@@ -92,7 +92,7 @@ jobs:
     if: |
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       (github.event_name == 'workflow_dispatch' && inputs.target == 'main')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # pinned: Playwright 1.60 has no chromium for ubuntu-26.04 (ubuntu-latest)
     timeout-minutes: 10
     concurrency:
       group: neon-main-migrate

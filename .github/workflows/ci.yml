@@ -12,7 +12,7 @@ concurrency:
 jobs:
   ci:
     name: lint + typecheck + unit + e2e smoke
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # pinned: Playwright 1.60 has no chromium for ubuntu-26.04 (ubuntu-latest)
     timeout-minutes: 15
     env:
       NEXT_TELEMETRY_DISABLED: "1"
