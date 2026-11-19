@@ -33,21 +33,21 @@
     "@prisma/client": "^6.19.3",
     "@react-email/components": "^1.0.12",
     "@react-email/render": "^2.0.8",
-    "@sentry/nextjs": "^10.53.1",
+    "@sentry/nextjs": "^10.78.0",
     "@stripe/react-stripe-js": "^6.4.0",
     "@stripe/stripe-js": "^9.6.0",
     "@tanstack/react-query": "^5.100.11",
     "@vercel/analytics": "^2.0.1",
     "@vercel/blob": "^2.4.0",
     "@vercel/speed-insights": "^2.0.0",
-    "better-auth": "^1.6.11",
+    "better-auth": "^1.7.26",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "gray-matter": "^4.0.3",
     "ics": "^3.12.0",
     "lucide-react": "^1.16.0",
     "motion": "^12.40.0",
-    "next": "15.5.18",
+    "next": "15.5.29",
     "next-intl": "^4.12.0",
     "next-mdx-remote": "^6.0.0",
     "next-themes": "^0.4.6",
@@ -58,17 +58,16 @@
     "reading-time": "^1.5.0",
     "resend": "^6.12.3",
     "server-only": "^0.0.1",
-    "shadcn": "^4.7.0",
+    "shadcn": "^4.23.0",
     "sonner": "^2.0.7",
     "stripe": "^22.1.1",
     "tailwind-merge": "^3.6.0",
     "tw-animate-css": "^1.4.0",
-    "ws": "^8.20.1",
-    "zod": "^4.4.3"
+    "ws": "^8.23.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
-    "@better-auth/cli": "^1.4.21",
     "@eslint/eslintrc": "^3",
     "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4",
@@ -77,19 +76,32 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.0.2",
-    "@vitest/coverage-v8": "^4.1.6",
+    "@vitest/coverage-v8": "^4.1.12",
     "eslint": "^9",
-    "eslint-config-next": "15.5.18",
-    "happy-dom": "^20.9.0",
+    "eslint-config-next": "15.5.29",
+    "happy-dom": "^21.0.4",
     "tailwindcss": "^4",
     "tsx": "^4.22.1",
     "typescript": "^5",
-    "vitest": "^4.1.6"
+    "vitest": "^4.1.12"
   },
   "browserslist": [
     "chrome >= 111",
     "edge >= 111",
     "firefox >= 128",
     "safari >= 16.4"
-  ]
+  ],
+  "overrides": {
+    "deepmerge-ts": "^8.0.2",
+    "next": {
+      "postcss": "^8.5.33"
+    },
+    "@sentry/bundler-plugins": {
+      "glob": "^14.0.6"
+    },
+    "@ts-morph/common": {
+      "minimatch": "^11.0.9"
+    },
+    "brace-expansion@1": "^1.1.22"
+  }
 }
