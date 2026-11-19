@@ -3542,6 +3542,19 @@ Las 28 acciones GenScore quedan cubiertas; F-148 es aditivo (gap de la auditorí
 - Tests: Vitest render del template por locale.
 - Refs: F-159, `lib/email/templates/booking-confirmed.tsx`
 
+### F-160 — Patch dependency vulnerabilities (Next.js, better-auth, Sentry, transitive)
+
+- Sprint: security · Estado: done (2026-11-19) · Prioridad: P0
+- Motivación: `npm audit` reportaba 64 vulnerabilidades (4 critical, 28 high), incluidas varias de `next@15.5.18` (RCE en Image Optimization con AVIF/SVG, cache poisoning SSG/ISR, SSRF en Server Actions/rewrites, DoS), `better-auth@1.6.x` (account takeover vía OAuth/magic link, stale sessions), `@sentry/nextjs` (middleware bypass vía tunnel route) y transitivas (`proxy-addr`, `undici`, `sharp`, `postcss`, `fast-uri`…).
+- AC:
+  - [x] `npm audit` → 0 vulnerabilidades sin cambiar de major en el runtime (Next 15, Prisma 6, React 19).
+  - [x] `next` + `eslint-config-next` 15.5.29; `better-auth` ^1.7.26; `@sentry/nextjs` ^10.78.0; `zod`, `ws`, `shadcn`, `happy-dom`, `vitest` parcheados.
+  - [x] `@better-auth/cli` eliminado de devDependencies (sin uso en código; arrastraba `drizzle-orm` vulnerable). Se sigue invocando con `npx @better-auth/cli generate`.
+  - [x] `overrides`: `postcss` dentro de `next` (Next fija 8.4.31), `deepmerge-ts` ^8 (`@prisma/config`, hasta F-111), `glob` en `@sentry/bundler-plugins`, `minimatch` en `@ts-morph/common`, `brace-expansion@1`.
+- Tests: typecheck + lint + Vitest (698) + `next build` + Playwright auth/marketing (login locales, embedded login, magic-link callback, static marketing) contra build en puerto dedicado. `f-077-admin-bookings` falla igual en `main` (FK en cleanup sobre la BD dev compartida) — preexistente, no relacionado.
+- Notas: retirar los `overrides` cuando suban los padres (Next 16 / Prisma 7 vía F-111 / Sentry 11).
+- Refs: F-160, F-111, `package.json`, `package-lock.json`
+
 ---
 
 ## Bloqueantes / decisiones abiertas (consolidadas)
